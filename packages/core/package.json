@@ -1,0 +1,48 @@
+{
+  "name": "@compass/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./auth": {
+      "@compass/source": "./src/auth/index.ts",
+      "types": "./dist/auth/index.d.ts",
+      "default": "./dist/auth/index.js"
+    },
+    "./api": {
+      "@compass/source": "./src/api/index.ts",
+      "types": "./dist/api/index.d.ts",
+      "default": "./dist/api/index.js"
+    },
+    "./catalog": {
+      "@compass/source": "./src/catalog/index.ts",
+      "types": "./dist/catalog/index.d.ts",
+      "default": "./dist/catalog/index.js"
+    },
+    "./simulated": {
+      "@compass/source": "./src/simulated/index.ts",
+      "types": "./dist/simulated/index.d.ts",
+      "default": "./dist/simulated/index.js"
+    },
+    "./rules": {
+      "@compass/source": "./src/rules/index.ts",
+      "types": "./dist/rules/index.d.ts",
+      "default": "./dist/rules/index.js"
+    },
+    "./scanner": {
+      "@compass/source": "./src/scanner/index.ts",
+      "types": "./dist/scanner/index.d.ts",
+      "default": "./dist/scanner/index.js"
+    },
+    "./spec": {
+      "@compass/source": "./src/spec/index.ts",
+      "types": "./dist/spec/index.d.ts",
+      "default": "./dist/spec/index.js"
+    },
+    "./passes": {
+      "@compass/source": "./src/passes/index.ts",
+      "types": "./dist/passes/index.d.ts",
+      "default": "./dist/passes/index.js"
+    }
+  }
+}
