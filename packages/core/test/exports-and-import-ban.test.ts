@@ -1,8 +1,9 @@
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { readFileSync, existsSync, writeFileSync, rmSync } from 'node:fs';
+import { describe, expect, test } from 'vitest';
+import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { ESLint } from 'eslint';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { ESLint, type Linter } from 'eslint';
+import tseslintParser from '@typescript-eslint/parser';
 
 // Unit tests for the @compass/core exports map and the cross-package import ban
 // (foundation-contracts, S0).
@@ -129,14 +130,16 @@ describe('Feature: foundation-contracts, no eslint-plugin-import dependency', ()
   });
 });
 
-// The no-restricted-imports assertions run the real flat config from the repo root over
-// temporary fixture files written inside packages/core/src, so the typescript-eslint
-// project service can resolve them. The fixtures are removed after the suite, even if an
-// assertion fails.
+// The no-restricted-imports assertions lint fixture code with a dedicated, hermetic
+// ESLint instance. The rule is purely syntactic, so no type information and no on-disk
+// file inside src is needed. The old approach wrote fixture files into packages/core/src
+// and linted them with the repo root config and the typescript-eslint project service.
+// That mutated shared on-disk state that other suites (for example rules-browser-safe,
+// which statically scans packages/core/src) read concurrently under vitest's parallel
+// runner, so the full suite failed intermittently. Linting virtual text with
+// overrideConfigFile keeps the test deterministic and writes nothing to disk.
 describe('Feature: foundation-contracts, no-restricted-imports cross-package ban', () => {
   const srcRoot = join(coreRoot, 'src');
-  const banFixture = join(srcRoot, '__import_ban_fixture__.ts');
-  const okFixture = join(srcRoot, '__import_ok_fixture__.ts');
 
   // A deep relative cross-package import that matches the banned
   // '../../*/src/**' group in the flat config.
@@ -144,36 +147,92 @@ describe('Feature: foundation-contracts, no-restricted-imports cross-package ban
   // A legitimate subpath package import that must not trip the rule.
   const okCode = "import { z } from '@compass/core/rules';\nexport const useZ = z;\n";
 
-  // Lint the given text as the given fixture file and return the no-restricted-imports
-  // messages. The ESLint instance loads the repo root flat config automatically.
+  // The exact patterns the repo flat config feeds to no-restricted-imports. These MUST
+  // mirror eslint.config.js (crossPackageRelativeImportPatterns). They are used only as a
+  // fallback if the real config cannot be imported as data below.
+  const fallbackPatterns = [
+    {
+      group: ['**/packages/*/src/**', '**/packages/*/dist/**'],
+      message:
+        'Import across packages through the declared package subpath export (for example @compass/core/rules), never a deep relative path into another package.',
+    },
+    {
+      group: ['../*/src/**', '../*/dist/**', '../../*/src/**', '../../*/dist/**'],
+      message:
+        'Import across packages through the declared package subpath export (for example @compass/core/rules), never a deep relative path into another package.',
+    },
+  ];
+
+  // Load the real no-restricted-imports option from the repo eslint.config.js. The config
+  // is an ESM module that default-exports the flat config array built by tseslint.config.
+  // Finding the entry whose rules carry no-restricted-imports and reusing its exact option
+  // proves the REPO config bans the import, not a copy. If the dynamic import fails for any
+  // reason, fall back to the mirrored patterns above.
+  async function loadNoRestrictedImportsOption(): Promise<Linter.RuleEntry> {
+    const configPath = join(repoRoot, 'eslint.config.js');
+    try {
+      const mod = (await import(pathToFileURL(configPath).href)) as {
+        default?: unknown;
+      };
+      const configArray = Array.isArray(mod.default) ? mod.default : [];
+      for (const block of configArray) {
+        const rules = (block as { rules?: Record<string, unknown> }).rules;
+        if (rules && rules['no-restricted-imports'] !== undefined) {
+          return rules['no-restricted-imports'] as Linter.RuleEntry;
+        }
+      }
+    } catch {
+      // Fall through to the mirrored patterns below.
+    }
+    return ['error', { patterns: fallbackPatterns }];
+  }
+
+  // Build a dedicated ESLint instance that applies ONLY no-restricted-imports with the
+  // repo's exact option, parsed by the typescript-eslint parser WITHOUT projectService or
+  // project (no type-aware linting). overrideConfigFile: true stops the repo root config
+  // from loading, so there is no project-service requirement and lintText works on a
+  // virtual filePath with no tsconfig project and no file on disk.
+  async function buildHermeticEslint(): Promise<ESLint> {
+    const noRestrictedImports = await loadNoRestrictedImportsOption();
+    return new ESLint({
+      cwd: repoRoot,
+      overrideConfigFile: true,
+      overrideConfig: [
+        {
+          // Match the flat config's TypeScript block so no-restricted-imports applies.
+          files: ['**/*.ts', '**/*.mts', '**/*.cts'],
+          languageOptions: {
+            parser: tseslintParser as Linter.Parser,
+          },
+          rules: {
+            'no-restricted-imports': noRestrictedImports,
+          },
+        },
+      ],
+    });
+  }
+
+  // Lint the given text as a virtual .ts path and return the no-restricted-imports
+  // messages. The virtual path lives under packages/core/src so it matches the TypeScript
+  // files glob, but nothing is written there: lintText operates on the text alone.
   async function noRestrictedImportsMessages(
-    filePath: string,
+    virtualName: string,
     code: string,
-  ): Promise<ESLint.LintMessage[]> {
-    const eslint = new ESLint({ cwd: repoRoot });
+  ): Promise<Linter.LintMessage[]> {
+    const eslint = await buildHermeticEslint();
+    const filePath = join(srcRoot, virtualName);
     const results = await eslint.lintText(code, { filePath });
     const messages = results.flatMap((result) => result.messages);
     return messages.filter((m) => m.ruleId === 'no-restricted-imports');
   }
 
-  beforeAll(() => {
-    writeFileSync(banFixture, banCode, 'utf8');
-    writeFileSync(okFixture, okCode, 'utf8');
-  });
-
-  afterAll(() => {
-    // Remove the temporary fixtures so they are never committed, even on failure.
-    rmSync(banFixture, { force: true });
-    rmSync(okFixture, { force: true });
-  });
-
   test('a deep relative cross-package import is rejected', async () => {
-    const messages = await noRestrictedImportsMessages(banFixture, banCode);
+    const messages = await noRestrictedImportsMessages('__virtual_ban__.ts', banCode);
     expect(messages.length).toBeGreaterThan(0);
   });
 
   test('a legitimate subpath package import is not rejected', async () => {
-    const messages = await noRestrictedImportsMessages(okFixture, okCode);
+    const messages = await noRestrictedImportsMessages('__virtual_ok__.ts', okCode);
     expect(messages.length).toBe(0);
   });
 });
