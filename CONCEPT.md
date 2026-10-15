@@ -90,100 +90,90 @@ Both surfaces are used: the Compass local MCP server talks REST, and the officia
 
 ## 6. Architecture
 
+The full design, threat model, routes and costs are in the approved [build plan](docs/architecture/build-plan.md). In short:
+
 ```
-Attendee's laptop                                      AWS (us-east-1, Terraform)
-+-----------------------------------------------+     +-----------------------------------+
-| Kiro IDE                                      |     | API Gateway REST API (throttled)  |
-|  +- Compass Power (plugin.json)               |     |   + AWS WAF rate-based rule       |
-|  |   +- skills/ (first-timer guide, planning) |     |            |                      |
-|  |   +- mcp.json                              |     |            v                      |
-|  |       +- compass   (local stdio MCP) ------+--+  | Lambda: pass signer (stateless)   |
-|  |       +- awsevents (official remote MCP)   |  |  |   reads keys from Secrets Manager |
-|  +- .kiro/specs/my-reinvent-week/ (generated) |  |  +-----------------------------------+
-|  +- .kiro/hooks/ (guardrails, schedule sync)  |  |               ^
-+-----------------------------------------------+  |               | pass fields only
-          | REST + Builder ID (PKCE, loopback)     |               | (no token, no code)
-          v                                        +---------------+
-   api.awsevents.com/v1                                  returns .pkpass / Google Wallet link
+Attendee's computer                          AWS us-east-1 (Terraform, HCP)          Phone
++-------------------------------+            +-------------------------------+      +-------------------+
+| Kiro (or another MCP client)  |  ID token  | CloudFront + WAF              |      | QR -> /board page |
+|  Power: skills, mcp.json,     |  + pass    |  /      -> showcase site (S3) |<-----| Add to Wallet     |
+|  hooks (Kiro only)            |  fields    |  /api/* -> API Gateway REST   |      | Wallet registers  |
+|  Compass MCP server ----------+----------->|    Lambda api: issue, update, |      | for updates       |
+|   rules, scanner, week spec,  |            |      void, hand-off, forget_me|      +---------^---------+
+|   passes, sync, .ics          |            |    Lambda passkit: Apple web  |                |
+|  keychain: access, refresh,   |            |      service, APNs pushes ----+----------------+
+|  ID tokens                    |            |    DynamoDB (TTL), Secrets    |
++---------------+---------------+            +-------------------------------+
+                | access token (never leaves the computer for anywhere else)
+                v
+      api.awsevents.com/v1 (12 operations) + /mcp (read-only in the Power)
 ```
 
-Key rule: **the attendee's access token never leaves their machine.** The signer only receives the fields printed on the pass.
+Key rules: the **access token** goes only to the Events API. The Compass API receives the ID token (proof of sign-in, never stored) and the printable pass fields only.
 
 ## 7. Principles (non-negotiable)
 
-1. **The badge is the ticket.** Passes are reminders and must say so.
-2. **No impersonation.** No AWS logos, colours or official wording on passes.
+1. **The badge is the ticket.** Passes are reminders, say so, and carry no barcode.
+2. **No impersonation.** No AWS logos, colours or official wording.
 3. **A human approves every write.** No background booking, no seat polling.
-4. **Local first.** Sign-in, tokens, code scanning and the catalog cache stay on the attendee's machine.
-5. **Trust `GetSchedule`, not the response.** A 200 does not mean success.
-6. **Explain every pick.** A first-timer should learn why, not just what.
-7. **Works without registration.** A simulated mode with recorded fixtures lets judges and non-attendees try everything.
+4. **Local first.** Tokens, the schedule, the catalog cache and code scanning stay on the attendee's machine.
+5. **Minimal, expiring server data.** Pass fields until session end plus 24 hours; hand-offs 15 minutes; `forget_me` deletes everything.
+6. **Trust `GetSchedule`, not the response.** A 200 does not mean success.
+7. **Explain every pick.** A first-timer should learn why, not just what.
+8. **Try it anywhere.** The showcase site demo runs on any phone with no install, on made-up sessions.
 
 ## 8. Scope
 
-**MVP (must ship by 5 November):**
-- Builder ID sign-in, typed REST client for all 12 operations, catalog cache, simulated mode
-- Rules engine: boarding time, connections, clashes, layovers, repeat detection
-- Compass local MCP server and Kiro Power
-- Repo scanner (Terraform, CDK TypeScript, AWS SDK for JavaScript v3, boto3)
-- Week spec generator and two hooks (pre-reservation guardrail, post-write sync)
-- Apple Wallet and Google Wallet passes via the signer, `.ics` fallback
-- Terraform for the signer (personal AWS account, `us-east-1`)
+Eight Kiro specs (S0 to S7) in the build plan, section 8. **Never cut:** the 12-operation client, guardrails in the server, the Power with hooks, Apple passes that void on cancel and expire at session end, the QR hand-off, the site story and clash demo, README, post and video. The ranked cut list is in plan section 12.
 
-**Deliverables (planned separately, later):**
-- README (hackathon requirement: setup, dependencies, how to run)
-- Builder Center project post (hackathon requirement, 25% of the score)
-- Showcase website for the project
-- Demo video
+**Deliverables:** README, Builder Center post (25% of the score), showcase website, demo video.
 
-**Stretch:**
-- Live pass updates through Apple's pass web service (needs device registration storage)
-- More scanners (CloudFormation, SAM, Pulumi, Python CDK)
-- Trail import (community-curated weeks)
+**On hold:** extra scanners beyond Terraform, CDK TypeScript, SDK JS v3 and boto3; community trail import.
 
-## 9. Timeline (22 days)
+## 9. Timeline (submit 1 November)
 
-| Dates | Work | Kiro spec |
-|---|---|---|
-| 15 to 18 Oct | Sign-in, REST client, catalog cache, fixtures, simulated mode | Spec 1: events-client |
-| 19 to 22 Oct | Rules engine | Spec 2: itinerary-rules |
-| 23 to 28 Oct | Local MCP server, repo scanner, week spec generator, hooks, Power packaging | Spec 3: compass-power |
-| 29 Oct to 2 Nov | Boarding passes, signer Lambda, Terraform, `.ics` | Specs 4 and 5 |
-| 1 to 4 Nov | Showcase website (alongside the specs above) | Spec 6: showcase-site |
-| 3 to 4 Nov | QA and security reviews, fixes, README | |
-| 5 Nov | Builder Center post, demo video, **submit** (one day of buffer) | |
+| Date | Milestone |
+|---|---|
+| 16 Oct | Contracts locked (S0); day-1 spikes |
+| 17 to 26 Oct | Six Kiro engineers build S1 to S6 in parallel, each in its own worktree |
+| 21 Oct | First dev deploy |
+| 25 Oct | Real iPhone and Android checks |
+| 28 Oct | Feature freeze |
+| 29 Oct | Site freeze, `release/1.0.0`, TAM and CTO reviews |
+| 30 Oct | Release gate and production release (owner runs it) |
+| 31 Oct | Demo video, README and post final |
+| **1 Nov** | **Submit** (hackathon deadline 6 Nov stays as buffer) |
 
-After each spec: run the QA and security review agents before starting the next. Before submitting: TAM go/no-go and CTO sign-off.
+Details: [KIRO-SPEC-PROMPTS.md](KIRO-SPEC-PROMPTS.md) and build plan section 9.
 
 ## 10. Risks
 
-| Risk | Mitigation |
-|---|---|
-| Wallet signing keys cannot ship in a public repo | Hosted stateless signer. `.ics` fallback needs no keys. |
-| The public signer could be abused to sign arbitrary passes | Fixed server-side template, strict field validation and lengths, fixed disclaimer, no client images, throttling and WAF |
-| A pass could be mistaken for an official ticket | "Unofficial. Your badge is your ticket." on the front, no AWS branding |
-| Venue field is often empty | Recover the venue from the room text, plus a curated venue table |
-| Judges may not be registered | Simulated mode with recorded fixtures |
-| Google Wallet issuers start in demo mode, where only listed test users can save passes | Request publishing access in the Google Pay and Wallet Console early. Apple Wallet and `.ics` cover everyone meanwhile. |
-| A secret or private value lands in the public repo | Public/private split in tech.md, `.gitignore`, secret scanning with push protection, gitleaks in CI |
-| Time | MVP cut is defined. Stretch items are optional. |
+The full register (16 risks with owner, likelihood and mitigation) is in build plan section 13. The biggest: the schedule (parallel streams and a cut list), the owner's time for approvals and deploys, the Apple certificate and pushes working by 25 October, Google publishing access, and judges never installing anything (the browser demo answers that).
 
-## 11. Demo story (for the article and video, about 3 minutes)
+## 11. Demo story (for the post and video, about 3 minutes)
 
 1. A first-timer opens their own project in Kiro and says: "Plan my re:Invent."
 2. The Power activates. Compass scans the repo: "You run Lambda, DynamoDB and Step Functions at production depth. You have never touched Bedrock."
 3. Kiro writes `.kiro/specs/my-reinvent-week/`. We scroll the design: reasons, connection times, a lunch layover.
-4. They run the tasks. One reservation is blocked by the hook: "Tight connection: Mandalay Bay to Wynn is 35 minutes; you have 20. Try the repeat on Thursday." They accept the swap.
-5. The final task issues boarding passes. Cut to an iPhone lock screen at the Venetian: "DAT302, Seat released at 10:20, 6 min walk."
-6. They cancel a session. The pass disappears. `GetSchedule` confirms it.
+4. They run the tasks. One reservation is blocked: "Tight connection: Mandalay Bay to Wynn is 35 minutes; you have 20. Try the repeat on Thursday." They accept the safe swap.
+5. The final task issues boarding passes. They scan the QR code with an iPhone and add them to Wallet. Cut to the lock screen at the Venetian: "DAT302, Seat released at 10:20, 6 min walk."
+6. They cancel a session. Compass voids the pass: it leaves the main Wallet view and moves to expired passes. `GetSchedule` confirms the cancellation. (No wallet lets anyone delete a pass remotely; voiding is the closest, and every pass also expires at its session end.)
+7. On the showcase site, on a phone, anyone can try the clash demo with no install.
 
-## 12. Decisions (15 October 2026)
+## 12. Decisions
+
+All decisions are ADRs in [docs/decisions](docs/decisions/). The headline ones (15 October 2026):
 
 | Topic | Decision |
 |---|---|
 | Product name | **re:Invent Compass** |
 | Repository | [henniefrancis/aws-re_invent-compass](https://github.com/henniefrancis/aws-re_invent-compass) (public) |
-| Licence | **Apache-2.0**, with a `NOTICE` file crediting Hennie Francis and a README line reserving the product name |
-| Wallets | Apple Developer Program already in place, and Google Wallet. Both in the MVP. |
-| AWS | Hennie's personal account, region **`us-east-1`** |
-| Open source | Everything public except security-sensitive material (see "Public and private" in tech.md) |
+| Licence | **Apache-2.0**, with a `NOTICE` file crediting Hennie Francis and reserving the product name |
+| Devices | Plan on a computer, board on any device (ADR-005) |
+| Wallets | Apple (with the PassKit update service) and Google, both in scope (ADR-010) |
+| Compass API | Attendee-only, authenticated by the Builder ID ID token (ADR-009) |
+| AWS | Owner's personal account, `us-east-1`, Terraform in HCP Terraform (ADR-001, ADR-014) |
+| Branching | `main` production, `develop` integration, `feature/*`, `release/*`, `hotfix/*`; one worktree per Kiro session (ADR-002) |
+| Toolchain | npm workspaces, ESLint and Prettier, TypeScript 6, vitest 4, Node 24, Angular 22 (ADR-006) |
+| Submission | 1 November 2026 (ADR-003) |
+| Open source | Everything public except security-sensitive and account-specific material (tech.md, "Public and private") |

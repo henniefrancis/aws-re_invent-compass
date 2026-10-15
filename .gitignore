@@ -11,8 +11,8 @@
 *.tfvars
 *.tfvars.json
 !*.tfvars.example
-backend.hcl
-!backend.hcl.example
+cloud.auto.tfbackend
+!cloud.auto.tfbackend.example
 *.tfstate
 *.tfstate.*
 *.tfplan
