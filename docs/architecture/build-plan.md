@@ -18,12 +18,12 @@ A small serverless Compass API in the owner's AWS account (us-east-1, Terraform 
 
 | # | Item | Status |
 |---|---|---|
-| A1 | The Apple update service has to rebuild the latest pass, so the printable pass fields are kept on the server **until session end plus 24 hours** (at most about 5 December 2026), not just for the 15-minute hand-off. This is the minimum the update service needs. | **Owner to confirm at plan approval** |
+| A1 | The Apple update service has to rebuild the latest pass, so the printable pass fields are kept on the server **until session end plus 24 hours** (at most about 5 December 2026), not just for the 15-minute hand-off. This is the minimum the update service needs. | **Accepted by the owner, 2026-10-15 (ADR-022)** |
 | A2 | The Builder ID ID token can be verified against a public key set. | Day-1 spike SP2; fallback in section 5.4 |
 | A3 | Kiro passes `tool_name` and `tool_input` to command hooks and lets a PreToolUse hook block the call. | Day-1 spike SP1; guardrails are enforced in the server either way |
 | A4 | Event dates, timezone and session reservability come from `GetEvent` and `ListSessions`, not hard-coded values. | Design rule |
 | A5 | The npm name `reinvent-compass` is free. | Owner task O6 |
-| A6 | The owner's AWS account is not on the AWS Free Tier account plan, and its Lambda concurrency quota is at least 100. | Owner task O7 |
+| A6 | The owner's AWS account is not on the AWS Free Tier account plan, and its Lambda concurrency quota is at least 100. | Owner task O5 |
 | A7 | Up to 6 Kiro sessions run in parallel. With 4, merge streams as shown in section 9.3. | Owner confirmed "multiple" |
 
 ## 3. Architecture
@@ -249,7 +249,7 @@ The pass `webServiceURL` is `https://<distribution>.cloudfront.net/api/passkit`.
   - CloudFront caching for the site; caching disabled for `/api/*` (managed `CachingDisabled` and `AllViewerExceptHostHeader` policies, [managed policies](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-origin-request-policies.html)).
   - Budgets in section 11.
 - **Cost optimisation:**
-  - About USD 11 a month, section 7.4.
+  - About USD 12 to 13 a month, section 7.4.
   - The dev environment is destroyed after submission.
   - Optional CloudFront flat-rate Free plan (ADR-021).
 - **Sustainability:**
@@ -297,13 +297,13 @@ Not managed by Terraform (not AWS infrastructure; each has an owner runbook): th
 
 | Item | Estimate (USD) | Source |
 |---|---|---|
-| WAF: web ACL 5 + 4 rules at 1 each + requests | about 9.10 | [AWS WAF pricing](https://aws.amazon.com/waf/pricing/) |
+| WAF: web ACL 5 + 5 rules at 1 each (rate rule, 3 managed rule groups, kill switch) + requests | about 10.10 | [AWS WAF pricing](https://aws.amazon.com/waf/pricing/) |
 | Secrets Manager: 3 secrets at 0.40 | 1.20 | [Secrets Manager pricing](https://aws.amazon.com/secrets-manager/pricing/) |
 | API Gateway REST at 3.50 per million | under 0.40 | [API Gateway pricing](https://aws.amazon.com/api-gateway/pricing/) |
 | CloudFront | 0 (always-free allowance) | [CloudFront pricing](https://aws.amazon.com/cloudfront/pricing/) |
 | Lambda, DynamoDB on demand, S3, CloudWatch Logs | under 1.00 | [Lambda](https://aws.amazon.com/lambda/pricing/), [DynamoDB](https://aws.amazon.com/dynamodb/pricing/) |
 | HCP Terraform | 0 (500 resources free) | link in 7.1 |
-| **Total** | **about 11 to 12** (dev adds about the same until it is destroyed) | |
+| **Total** | **about 12 to 13** (dev adds about the same until it is destroyed) | |
 
 Option: CloudFront's flat-rate Free plan (USD 0, 1M requests, WAF with up to 5 rules included; accounts on the AWS Free Tier are not eligible) ([flat-rate plans](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/flat-rate-pricing-plan.html)). Adopt it only if the subscription can be managed in Terraform (likely through the `awscc` provider for `AWS::PricingPlanManager::Subscription`; checked in SP6). The golden rule forbids subscribing in the console.
 
@@ -510,7 +510,7 @@ There is no deploy workflow, no push trigger and no cron. Soft cap: **300 minute
 | O7 | Ask on the hackathon Discussion tab whether a catalog snapshot may be published (ADR-016 stays until then). |
 | O8 | Block time for 16, 21, 25, 30 and 31 Oct. |
 
-## 15. ADRs this plan creates (all Proposed until the plan is approved)
+## 15. ADRs this plan creates (written 2026-10-15; all Accepted except ADR-021, Proposed until SP6)
 
 - **ADR-005** Device strategy: plan on a computer, board on any device.
 - **ADR-006** Toolchain: npm workspaces, ESLint plus Prettier, TS 6, vitest 4, Node 24, Angular 22 (replaces pnpm and Biome).
