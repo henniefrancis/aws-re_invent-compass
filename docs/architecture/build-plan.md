@@ -1,0 +1,532 @@
+<!-- Mirror of the approved build plan. The owner's vault holds the reading copy; change both together. -->
+
+# re:Invent Compass Build Plan
+
+Status: **Approved by the owner, 2026-10-15**, including A1 (pass fields kept until session end plus 24 hours) and two amendments: one git worktree per Kiro session, and Claude as integrator (merges reviewed `feature/*` branches into `develop` locally and owns the lockfile; Kiro writes all code). Author: solutions-architect. Inputs: the requirements list, ADR-001 to ADR-004, CONCEPT.md, `.kiro/steering/*`, New Project Playbook v1.1, Retrospective 2026-10.
+
+Once approved, this plan is the single source for the Kiro spec prompts. Where it conflicts with tech.md, structure.md, CONCEPT.md or KIRO-SPEC-PROMPTS.md, this plan wins, and S0 updates those files in the same change (one ADR per decision, section 15).
+
+---
+
+## 1. Summary
+
+re:Invent Compass is a local-first planning tool for first-time re:Invent attendees, shipped as a Kiro Power plus a local MCP server that any desktop MCP client can run. It reads the attendee's code to suggest an agenda and writes the week as a Kiro spec. Every booking goes through guardrails (the 10-minute seat release, walking connections, clashes, meals). Every reserved seat gets an unofficial Apple or Google Wallet boarding pass, which reaches the phone through a QR hand-off.
+
+A small serverless Compass API in the owner's AWS account (us-east-1, Terraform only) signs passes for signed-in attendees only, keeps Apple passes current through the PassKit web service, and voids or expires passes when a session is cancelled or ends. A static, responsive showcase site tells the story and lets anyone, on any device, try a click-through demo on made-up sessions. The target is 1st place, submitted on **1 November 2026**.
+
+## 2. Assumptions and open items
+
+| # | Item | Status |
+|---|---|---|
+| A1 | The Apple update service has to rebuild the latest pass, so the printable pass fields are kept on the server **until session end plus 24 hours** (at most about 5 December 2026), not just for the 15-minute hand-off. This is the minimum the update service needs. | **Accepted by the owner, 2026-10-15 (ADR-022)** |
+| A2 | The Builder ID ID token can be verified against a public key set. | Day-1 spike SP2; fallback in section 5.4 |
+| A3 | Kiro passes `tool_name` and `tool_input` to command hooks and lets a PreToolUse hook block the call. | Day-1 spike SP1; guardrails are enforced in the server either way |
+| A4 | Event dates, timezone and session reservability come from `GetEvent` and `ListSessions`, not hard-coded values. | Design rule |
+| A5 | The npm name `reinvent-compass` is free. | Owner task O6 |
+| A6 | The owner's AWS account is not on the AWS Free Tier account plan, and its Lambda concurrency quota is at least 100. | Owner task O5 |
+| A7 | Up to 6 Kiro sessions run in parallel. With 4, merge streams as shown in section 9.3. | Owner confirmed "multiple" |
+
+## 3. Architecture
+
+### 3.1 Components
+
+| Component | Where it runs | What it does |
+|---|---|---|
+| **Kiro Power** (`power/`) | Attendee's computer, inside Kiro | `plugin.json`, `mcp.json` (Compass local server, plus the official `awsevents` remote server in read-only mode), skills, hook templates |
+| **Compass MCP server and CLI** (`packages/mcp-server`, published as `reinvent-compass`) | Attendee's computer (stdio) | Tools for sign-in, catalog, scan, plan, guardrailed writes, passes, hand-off, sync. The CLI also runs the hook commands. |
+| **Core library** (`packages/core`) | Attendee's computer; the `rules` subpath also runs in the browser | Events API client, auth, catalog cache, rules engine, scanner, spec generator, pass model, `.ics` file, itinerary page, sync |
+| **Contracts** (`packages/contracts`, `contracts/compass-api.openapi.yaml`) | Build time | Shared types and zod schemas, the Compass API OpenAPI file, generated API types |
+| **Compass API** (`packages/pass-service`) | AWS Lambda behind API Gateway REST and CloudFront | Pass issue, update and void; hand-off; Apple PassKit web service; APNs pushes; Google Wallet object updates |
+| **Showcase site** (`site/`) | S3 behind CloudFront | Story, browser demo, install guide, privacy page, and the `/board` hand-off page |
+| **Infrastructure** (`infra/`) | HCP Terraform (personal org), owner-run | All AWS resources (section 7) |
+
+### 3.2 Diagram
+
+```
+ ATTENDEE COMPUTER (trust zone 1: attendee owns it)                 PHONE / TABLET (zone 4)
++--------------------------------------------------------------+   +---------------------------+
+| Kiro (or Claude Desktop / VS Code / Kiro CLI)                |   | Camera scans QR           |
+|  Power: plugin.json, skills, mcp.json, hooks (Kiro only)     |   |  -> https://<cf>/board#h= |
+|   |                                                          |   | Safari: Add to Wallet     |
+|   | stdio                                                    |   | Android: Save to G Wallet |
+|   v                                                          |   | Wallet app registers for  |
+|  Compass MCP server ---- OS keychain (access, refresh, ID)   |   | updates, gets APNs pushes |
+|   | core: client, rules, scanner, spec, passes               |   +-------------+-------------+
+|   | app-data: catalog cache, schedule snapshot, issued passes|                 |
+|   | loopback 127.0.0.1:8484-8489 (sign-in only, one request) |                 |
++---+----------------------+-------------------------------+---+                 |
+    | Bearer ACCESS token  | Bearer ID token               | browser (PKCE)      |
+    v                      v                               v                     |
++-----------------+  +----------------------------------------------------+      |
+| api.awsevents   |  | AWS us-east-1, owner account (zone 3)              |      |
+| .com/v1 (REST)  |  | CloudFront <cf>.cloudfront.net  + WAF (CLOUDFRONT) |<-----+
+| + /mcp (remote, |  |  /        -> S3 site bucket (OAC, private)         |
+|   read-only in  |  |  /api/*   -> API Gateway REST (regional, from      |
+|   the Power)    |  |              OpenAPI, request validation)          |
++-----------------+  |               |  x-origin-verify header checked    |
+oauth.awsevents.com  |               v                                    |
+(zone 2: AWS Events) |  Lambda api (issue/update/void/handoff/me)          |
+                     |  Lambda passkit (Apple device web service)         |
+                     |   |-- DynamoDB compass-<env> (TTL, hashed ids)     |
+                     |   |-- Secrets Manager (Apple, Google, app pepper)  |
+                     |   |-- APNs api.push.apple.com (HTTP/2, cert) ------+--> Apple (zone 5)
+                     |   '-- Google Wallet API walletobjects -------------+--> Google (zone 5)
+                     +----------------------------------------------------+
+```
+
+Trust boundaries: zone 1 to zone 2 carries only the access token and Events API calls. Zone 1 to zone 3 carries only the ID token and printable pass fields, never the access token. Zone 4 to zone 3 carries the hand-off capability and Apple's per-pass token. Zone 3 to zone 5 carries push tokens with an empty payload (Apple) and pass objects (Google).
+
+### 3.3 Main data flows
+
+1. **Sign-in.** Authorization code with PKCE through the loopback redirect. The access, refresh and ID tokens all go into the OS keychain. On Linux with no Secret Service, they are kept in memory only, and the attendee signs in again each session.
+2. **Plan.** `refresh_catalog` (all pages) → `scan_repo` → `plan_week` writes `.kiro/specs/my-reinvent-week/`.
+3. **Write.** `reserve_with_guardrails` runs the input schema → `checkReservation` → ReserveSessions → per-session results → `GetSchedule` confirmation. The Kiro PreToolUse hook calls the same check first, as defence in depth.
+4. **Issue.** For each reserved session, `GetSession` → build PassFields → `POST /api/v1/passes`. The server stores the pass record, inserts the Google object, and returns serials. Local files can also be downloaded.
+5. **Hand-off.** `POST /api/v1/handoffs` returns a `boardUrl`. Compass prints a QR code (terminal and chat). The phone opens `/board#h=<id>`, the page calls `GET /api/v1/handoffs/{id}`, and the attendee taps Add to Apple Wallet (a `.pkpasses` bundle of up to 10 passes) or Save to Google Wallet.
+6. **Cancel or change.** After every write, `sync_passes` compares `GetSchedule` with the issued-pass record:
+   - A cancelled session is sent to `POST /api/v1/passes/{serial}/void`. The server sets `voided: true` and `expirationDate: now`, bumps `lastUpdated`, pushes over APNs to each registered device, and patches the Google object `state: INACTIVE`. The device then fetches the latest pass, and Wallet moves it to Expired.
+   - A changed session (time or room) is sent to `PUT /api/v1/passes/{serial}` and follows the same push path.
+7. **Expiry.** Every pass carries `expirationDate` (Apple) and `validTimeInterval.end` (Google) set to the session end. TTL removes the server records 24 hours later.
+
+Official sources for the platform behaviour: Apple's update service, endpoints, push rules and bundle limits: [Adding a web service to update passes](https://developer.apple.com/documentation/walletpasses/adding-a-web-service-to-update-passes), [Register](https://developer.apple.com/documentation/walletpasses/register-a-pass-for-update-notifications), [Get updatable passes](https://developer.apple.com/documentation/walletpasses/get-the-list-of-updatable-passes), [Send an updated pass](https://developer.apple.com/documentation/walletpasses/send-an-updated-pass), [Unregister](https://developer.apple.com/documentation/walletpasses/unregister-a-pass-for-update-notifications), [Log a message](https://developer.apple.com/documentation/walletpasses/log-a-message), [Pass keys](https://developer.apple.com/documentation/walletpasses/pass), [Distributing and updating a pass](https://developer.apple.com/documentation/walletpasses/distributing-and-updating-a-pass). Wallet hiding expired boarding passes and event tickets: [Apple Support 102544](https://support.apple.com/en-us/102544). Google object `state` and `validTimeInterval`: [GenericObject](https://developers.google.com/wallet/generic/rest/v1/genericobject).
+
+### 3.4 Key choices and the options rejected
+
+| Choice | Why | Rejected |
+|---|---|---|
+| API Gateway **REST** behind CloudFront | The API is imported from the OpenAPI file with request validation ([request validation](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-validation.html)); per-method throttling; binary media types for `.pkpass` ([binary payloads](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-payload-encodings.html)); comparison in [REST vs HTTP APIs](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-vs-rest.html) | **HTTP API:** no request validation. **Lambda function URL with OAC:** POST through OAC needs the client to send `x-amz-content-sha256` ([docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-lambda.html)), and Apple Wallet's registration POST cannot send it |
+| WAF on CloudFront (CLOUDFRONT scope, us-east-1) | One web ACL covers the site and the API ([WAF resources](https://docs.aws.amazon.com/waf/latest/developerguide/how-aws-waf-works-resources.html)) | A second regional WAF on API Gateway (cost). The `execute-api` URL is shielded by an origin-verify header that the Lambda checks instead. |
+| No stored pass bundles | The hand-off and latest-pass endpoints sign on demand from the DynamoDB pass record, so there is no blob store. S3 lifecycle works in days ([S3 expiry](https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html)), which is too coarse for a 15-minute hand-off. | An S3 hand-off bucket with presigned URLs |
+| Expiry enforced in code, TTL only for clean-up | DynamoDB TTL deletes "within a few days" ([TTL](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html)), so every read checks `expiresAt` | Relying on TTL for correctness |
+| Single-table DynamoDB, on demand | Small, cheap, TTL built in | Aurora, or several tables |
+| Two Lambdas, arm64, Node 24 | Least privilege splits the attendee API from the device service. `nodejs24.x` is supported until 30 Apr 2028 ([runtimes](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html)); arm64 per [Lambda architectures](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html) | One Lambda per route (overhead), or one Lambda for all routes (broad permissions) |
+| Apple push with the Pass Type ID certificate | Apple: the push "uses the same certificate and private key that the creator of the pass used to sign", with an empty JSON payload, and works only in production | Token-based (.p8) push, which the pass docs do not use |
+| `aws-jwt-verify` for the ID token | AWS recommends it for Node ([Cognito JWT verification](https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-verifying-a-jwt.html)) | Hand-rolled verification |
+
+## 4. Identifiers and personal data
+
+### 4.1 Identifiers (opaque from day one)
+
+| Identifier | Format | Where it appears | Personal? |
+|---|---|---|---|
+| `serialNumber` | UUID v4, generated server-side | Pass, API path, DynamoDB key, Google object id suffix | No (random) |
+| Apple `authenticationToken` | 32 random bytes, base64url (43 chars; Apple requires at least 16) | In the pass only. The server stores SHA-256 of it. | Secret, not personal |
+| `handoffId` | 16 random bytes, base64url | QR code URL **fragment** (`/board#h=`, never sent to CloudFront), then the API path | Capability, expires in 15 minutes |
+| `subHash` | HMAC-SHA256(Builder ID `sub`, pepper from Secrets Manager) | DynamoDB only | Pseudonymous personal data |
+| `deviceHash` | HMAC-SHA256(`deviceLibraryIdentifier`, pepper) | DynamoDB key | Pseudonymous personal data |
+| Google object id | `<issuerId>.<serialNumber>` | Google Wallet | No |
+| Session code | Catalog code, for example `DAT302-R` | Pass content | No (public catalog value) |
+
+**Named exception to "no personal data in URLs":** Apple fixes the PassKit paths, and they contain `deviceLibraryIdentifier` and `serialNumber`. Mitigations:
+- API Gateway access logs record `$context.resourcePath` (the template), never `$context.path` ([access log variables](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-variables-for-access-logging.html)).
+- CloudFront standard logs are off.
+- WAF logging is off, and sampled requests are disabled on the API rules, because samples include headers.
+- Lambdas never log paths, headers or bodies.
+
+### 4.2 Personal data fields (POPIA record)
+
+The responsible party is the owner (Hennie Francis), acting personally. No human reads server data in normal operation. The owner's administrator access to the account is break-glass only.
+
+| # | Field | Where it lives | Retention | Who can see it |
+|---|---|---|---|---|
+| P1 | Access token | OS keychain (memory-only fallback) | 60 minutes | Attendee; sent only to `api.awsevents.com` |
+| P2 | Refresh token | OS keychain | 30 days, or until sign-out (revoked) | Attendee; sent only to `oauth.awsevents.com` |
+| P3 | ID token (contains `sub` and `email`) | OS keychain | 60 minutes | Attendee; sent only to the Compass API as a bearer token. Never logged or stored server-side; only `subHash` is kept. |
+| P4 | Schedule snapshot (reservations, favorites, personal time with its free-text titles) | App-data folder (`%APPDATA%`, `~/Library/Application Support`, `$XDG_DATA_HOME` + `/reinvent-compass`), mode 0600 | Overwritten on each read. Purged 30 days after the event ends, or by `forget_me` | Attendee only |
+| P5 | Issued-pass record (serial, session code, fields hash, platform) | App-data folder | Same as P4 | Attendee only |
+| P6 | Week spec (`.kiro/specs/my-reinvent-week/`) | Attendee's workspace | Attendee's choice. Compass offers to add it to `.gitignore`, because a public repo would publish where and when the attendee will be | Attendee |
+| P7 | Repo scan result | Memory. The spec gets service names and depth only, no file paths | Session | Attendee |
+| P8 | Attendee name (opt-in, typed locally, never taken from the token) | Local config; the pass; the server pass record | Pass record retention (P10) | Attendee; Lambda roles |
+| P9 | Generated `.pkpass`, `.ics` and itinerary HTML | App-data `output/` | Attendee's choice | Attendee |
+| P10 | Pass record: PassFields, `subHash`, auth-token hash, status, version, `lastUpdated` | DynamoDB | Session end plus 24 hours (TTL; reads treat it as gone after `expiresAt`) | `api` and `passkit` Lambda roles |
+| P11 | Device registration: `deviceHash`, `pushToken` (raw, needed to push), serial | DynamoDB | Deleted on unregister, on an APNs "invalid token" reply, or at pass TTL | `passkit` role (read and write), `api` role (read, to push) |
+| P12 | Hand-off record: hash of `handoffId`, serial list, `expiresAt` | DynamoDB | 15 minutes (enforced in code); TTL clean-up | `api` role |
+| P13 | Rate counters keyed by `subHash` and minute | DynamoDB | 2 minutes (TTL) | `api` role |
+| P14 | Source IP addresses | WAF rate counting, held in memory by AWS | Not logged by Compass | Nobody |
+| P15 | Google Wallet objects (pass fields, plus the name if the attendee opted in) | Google (a processor) | State set to `INACTIVE` on void; expires at session end | Google, the attendee |
+| P16 | APNs request (push token, empty payload) | Apple | Apple's policy | Apple |
+
+`DELETE /api/v1/me` (MCP tool `forget_me`) voids every pass for the caller's `subHash` and deletes P10 to P13 for that hash. The local `forget_me` also deletes P4, P5 and P9. This is how an attendee exercises POPIA rights.
+
+### 4.3 Threat model (STRIDE)
+
+| Component | Threat | Mitigation |
+|---|---|---|
+| **Compass API (sign, issue, update)** | S: someone signs passes without being an attendee | Builder ID ID token verified: signature against JWKS, `iss`, `aud = 7vmom55m1qstvq8i71ph127bfq`, `token_use = id`, `exp`, RS256 only |
+| | T: crafted pass content (phishing text, URLs, fake ticket) | Fixed server template; zod limits (section 5.3); URL, bidi and control-character rejection; dates must fall within the event window; fixed disclaimer; no barcode; no client images |
+| | R: abuse with no trace | Metrics per route and outcome; `subHash` counts; no identity in logs |
+| | I: ID token or email leak | Token never logged; email claim never read; `Authorization` excluded from WAF samples; errors never echo input |
+| | D: flooding, cost run-up | WAF per-IP rate rule; API Gateway stage and method throttling; per-`subHash` limits (60 pass writes per hour, 10 hand-offs per hour, 80 active passes); AWS Budgets alarm; kill-switch variable |
+| | E: one attendee voids another's pass | Update, void and download check that the record's `subHash` matches the caller |
+| **PassKit update service** | S: a fake device registers or fetches a pass | `ApplePass <token>` compared with the stored SHA-256 in constant time; unknown serial answers 401 |
+| | T: push-token poisoning | Registration is only accepted with a valid pass token; one push token per device and pass |
+| | I: push tokens and device ids exposed | Device id stored as an HMAC; TTL; no logs; least-privilege roles; encrypted at rest |
+| | D: log endpoint spam | Counted as a metric only, nothing stored; WAF rate rule |
+| **Hand-off** | S or I: QR photographed or guessed | 128-bit random id; 15-minute expiry; only the hash is stored; the id sits in the URL fragment; it gives only serials the attendee chose; same 404 for unknown and expired |
+| | D: enumeration | WAF rate rule; constant 404 |
+| **Local MCP server** | S: another local process steals tokens | OS keychain; no token files; loopback server binds to `127.0.0.1`, takes one request, validates `state`, closes |
+| | T or E: prompt injection through session abstracts or repo files makes the agent book sessions | Write tools are never in `autoApprove`; human approval per call; `checkReservation` inside the server; catalog text returned as labelled data; scanner returns counts, not file text |
+| | I: tokens or personal data in logs | Redacting logger; a test proves no token or email reaches stderr or errors |
+| | T: supply chain | Exact pins; npm provenance through trusted publishing; hooks pin `reinvent-compass@<version>` |
+| **Kiro hooks** | T: a workspace edits the hook to skip the guardrail | The guardrail also runs in the server (the hook is a convenience, not the control) |
+| | E: hook command injection | Hook reads the tool input as JSON from the documented channel (SP1); never through a shell; fixed argv |
+| **Remote `awsevents` server** | E: the agent books through the remote server and bypasses Compass | Power `mcp.json` lists its write tools in `disabledTools` ([Kiro MCP config](https://kiro.dev/docs/mcp/configuration/)); a PreToolUse hook on `@awsevents` write tools as backup |
+| **Site** | T or I: XSS on `/board` reading the fragment | Strict CSP from a CloudFront response headers policy; Angular escaping; the fragment is validated as base64url, 22 chars |
+
+## 5. Route and API shape
+
+### 5.1 Contract
+
+- **Single source:** `contracts/compass-api.openapi.yaml` (OpenAPI 3.0.1, because API Gateway REST import supports 3.0).
+- **Byte-identical copies, checked by SHA-256 in the CI job:**
+  - `infra/modules/api/openapi.yaml`, fed to `aws_api_gateway_rest_api.body` with `x-amazon-apigateway-*` extensions held in the copy step as overlays. The extensions are kept in the single source to stay byte-identical.
+  - `packages/contracts/openapi.yaml`, from which TypeScript types are generated (`openapi-typescript`).
+- The local MCP tool schemas live in `packages/contracts/src/mcp-tools.ts`.
+- Errors use `application/problem+json`: `{type, title, status, code}`. Input is never echoed back.
+
+### 5.2 Routes
+
+Base: `https://<distribution>.cloudfront.net`. API Gateway stage `live`; CloudFront `/api/*` goes to that stage.
+
+| Method and path | Auth | Request | Response |
+|---|---|---|---|
+| `GET /api/v1/health` | none | none | 200 `{status, version}` |
+| `POST /api/v1/passes` | Bearer ID token | `{platforms: ("apple"\|"google")[], passes: PassFields[1..25]}` | 201 `{passes: [{serialNumber, sessionCode, platforms}]}`; 400; 401; 429 |
+| `GET /api/v1/passes/{serialNumber}/apple` | Bearer ID token, owner match | none | 200 `application/vnd.apple.pkpass` |
+| `PUT /api/v1/passes/{serialNumber}` | Bearer ID token, owner match | `PassFields` | 200 `{serialNumber, version}` (pushes and patches) |
+| `POST /api/v1/passes/{serialNumber}/void` | Bearer ID token, owner match | none | 200 `{serialNumber, status: "voided"}` (idempotent) |
+| `POST /api/v1/handoffs` | Bearer ID token | `{serialNumbers: uuid[1..80], include: {apple: bool, google: bool, calendar: bool}}` | 201 `{handoffId, boardUrl, expiresAt}` |
+| `GET /api/v1/handoffs/{handoffId}` | capability | none | 200 `{expiresAt, sessions: [{serialNumber, sessionCode, title, startsAt}], apple: {bundlePaths: string[]}, google: {saveUrl} \| null, calendarPath \| null}`; 404 |
+| `GET /api/v1/handoffs/{handoffId}/apple/{bundleIndex}` | capability | none | 200 `application/vnd.apple.pkpasses` (up to 10 passes per bundle, Apple's limit) |
+| `GET /api/v1/handoffs/{handoffId}/calendar.ics` | capability | none | 200 `text/calendar` (reserved sessions only, built from pass fields) |
+| `DELETE /api/v1/me` | Bearer ID token | none | 202 `{voided, deleted}` |
+| `POST /api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}` | `ApplePass <authenticationToken>` | `{pushToken}` | 201 new, 200 existing, 401 |
+| `GET /api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}?passesUpdatedSince=` | none (Apple sends none) | none | 200 `{serialNumbers, lastUpdated}`, 204 |
+| `GET /api/passkit/v1/passes/{passTypeIdentifier}/{serialNumber}` | `ApplePass <authenticationToken>` | `If-Modified-Since` | 200 `application/vnd.apple.pkpass` with `Last-Modified`; 304; 401 |
+| `DELETE /api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}` | `ApplePass <authenticationToken>` | none | 200, 401 |
+| `POST /api/passkit/v1/log` | none | `{logs: string[]}` | 200 (counted, not stored) |
+
+The pass `webServiceURL` is `https://<distribution>.cloudfront.net/api/passkit`. SP3 confirms how the path is joined. The site's `/board` page is a static route, not an API.
+
+### 5.3 PassFields (`packages/contracts/src/pass-fields.ts`, zod, the single source)
+
+| Field | Rule |
+|---|---|
+| `sessionCode` | `^[A-Z0-9]{2,12}(-R[0-9]?)?$` (SP5 tightens it against the real catalog) |
+| `title` | 1 to 80 characters, truncated locally with an ellipsis character |
+| `venue`, `room` | 0 to 40 characters each; empty means "Venue not published" on the pass |
+| `startsAt`, `endsAt` | ISO 8601 with offset; inside the event window (from config set from `GetEvent`); `endsAt` after `startsAt`; at most 10 hours long |
+| `walkFromPrevious` | optional `{minutes: 0..90, fromVenue: 0..40 chars}` |
+| `nextConnection` | optional `{sessionCode, startsAt, venue, walkMinutes}` |
+| `attendeeName` | optional, 1 to 40 characters, only when opted in |
+| Server-derived | `boardingClosesAt = startsAt - 10 min`, the disclaimer "Unofficial. Your badge is your ticket.", `expirationDate = endsAt`, `relevantDates` = boarding closes minus 30 min until `endsAt`, `transitType = PKTransitTypeGeneric`, `sharingProhibited = true`, no `barcodes` |
+| All text | Letters, digits, spaces and basic punctuation only. Reject anything that looks like a URL or domain, control characters and bidi overrides. |
+
+### 5.4 ID token verification and fallback
+
+1. **Expected (SP2 confirms):** the issuer is a Cognito user pool (`https://cognito-idp.us-east-1.amazonaws.com/<poolId>`, since the `oauth2/*` and `/logout` paths match Cognito's hosted endpoints). Verify with `CognitoJwtVerifier` (`tokenUse: "id"`, `clientId`), with the JWKS cached per `kid`.
+2. **If the issuer is another OIDC provider with a public JWKS:** use the generic `JwtVerifier` from the same library, with pinned `iss`, `aud` and RS256.
+3. **If the token cannot be verified:** issuance runs unauthenticated with a stricter per-IP WAF rule (60 requests per 5 minutes on `POST /api/v1/passes*`). Update, void and download are authorised by a per-pass `manageToken`: 32 random bytes held in the issued-pass record, with only its hash stored on the server. This needs a new owner decision (ADR-009 alternative).
+
+## 6. Well-Architected lens
+
+- **Operational excellence:**
+  - Everything in Terraform, plus one owner release script with a plan gate.
+  - Structured logs with no identifiers; CloudWatch alarms on 5xx, throttles, APNs failures and Lambda errors.
+  - Runbooks for release, rollback, secret loading, the Google class and the kill switch.
+- **Security:**
+  - Section 4.
+  - HCP dynamic provider credentials, so there are no AWS keys ([HCP AWS dynamic credentials](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials/aws-configuration)).
+  - Separate least-privilege roles for the plan and apply phases, and for each Lambda.
+  - Secrets resolved at runtime and cached.
+- **Reliability:**
+  - Stateless Lambdas and DynamoDB on demand.
+  - Point-in-time recovery on the table.
+  - The client sync is idempotent (void is idempotent).
+  - Pushes are best effort, and Wallet also refreshes when the pass is opened.
+  - The local product works with no Compass API at all (`.ics` and the itinerary page).
+- **Performance efficiency:**
+  - CloudFront caching for the site; caching disabled for `/api/*` (managed `CachingDisabled` and `AllViewerExceptHostHeader` policies, [managed policies](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-origin-request-policies.html)).
+  - Budgets in section 11.
+- **Cost optimisation:**
+  - About USD 12 to 13 a month, section 7.4.
+  - The dev environment is destroyed after submission.
+  - Optional CloudFront flat-rate Free plan (ADR-021).
+- **Sustainability:**
+  - arm64 Lambdas, no idle compute, short TTLs, a prerendered static site.
+
+## 7. AWS resources (Terraform, us-east-1)
+
+### 7.1 HCP Terraform (personal organisation)
+
+| Workspace | Execution | Credentials | Purpose |
+|---|---|---|---|
+| `reinvent-compass-bootstrap` | Local (owner's own credentials in CloudShell, once) | Owner session | OIDC provider `app.terraform.io` (audience `aws.workload.identity`); plan and apply roles for dev and prod, trusted on `organization:<org>:project:<p>:workspace:<ws>:run_phase:plan\|apply` |
+| `reinvent-compass-dev` | Remote, CLI-driven | `TFC_AWS_PROVIDER_AUTH=true`, `TFC_AWS_PLAN_ROLE_ARN`, `TFC_AWS_APPLY_ROLE_ARN` | Dev environment, destroyed after 1 Nov |
+| `reinvent-compass-prod` | Remote, CLI-driven | as above | Production |
+
+- The free tier covers up to 500 managed resources ([HashiCorp blog](https://www.hashicorp.com/en/blog/continuing-hcp-terraform-s-enhanced-free-tier-experience)). This project uses about 90 per environment.
+- The org and workspace names are private: they live in a git-ignored `infra/envs/<env>/cloud.auto.tfbackend` or the `TF_CLOUD_ORGANIZATION` and `TF_WORKSPACE` environment variables, with a committed `.example`.
+- Terraform `>= 1.15, < 2.0`; AWS provider `~> 6.0` (same pins as Passembly). File conventions follow Passembly: `versions.tf`, `provider.tf` with `default_tags`, validated `variables.tf`, `locals.tf`, one file per concern, `tests/*.tftest.hcl` with mock providers.
+
+### 7.2 Modules
+
+| Module | Resources |
+|---|---|
+| `infra/bootstrap` | `aws_iam_openid_connect_provider` (HCP), plan role (read-only plus state), apply role (scoped to tagged project resources), policies |
+| `infra/modules/site` | Private S3 bucket (block public access, SSE-S3, versioning), OAC, bucket policy limited to the distribution |
+| `infra/modules/edge` | CloudFront distribution (site origin `/`, API origin `/api/*` with an `x-origin-verify` header), response headers policy (CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy: no-referrer`, `Permissions-Policy`), WAF web ACL (CLOUDFRONT scope): per-IP rate rule, `AWSManagedRulesCommonRuleSet`, `AWSManagedRulesKnownBadInputsRuleSet`, `AWSManagedRulesAmazonIpReputationList`, a kill-switch rule; logging off and API rule sampling off |
+| `infra/modules/api` | API Gateway REST API from `openapi.yaml`, stage `live` with throttling and access logs (template path, no IP), binary media types, 2 Lambdas (arm64, `nodejs24.x`, 512 MB, timeouts of 10 s and 5 s), one IAM role each, log groups with 14-day retention |
+| `infra/modules/data` | DynamoDB `compass-<env>`: on demand, TTL on `ttl`, PITR on, deletion protection on. GSI1 is pass to devices; GSI2 is `subHash` to passes. |
+| `infra/modules/secrets` | `compass/<env>/apple-pass`, `compass/<env>/google-wallet`, `compass/<env>/app` (pepper and origin-verify value generated by `random_password`, marked sensitive, never output). The Apple and Google values are loaded by the owner out of band (runbook). |
+| `infra/modules/observability` | SNS topic for alarms (email address as a workspace variable), CloudWatch alarms, an AWS Budgets monthly budget at USD 20 with alerts at 50%, 80% and 100% |
+| `infra/envs/dev`, `infra/envs/prod` | Compose the modules; `terraform.tfvars.example` committed |
+
+Not managed by Terraform (not AWS infrastructure; each has an owner runbook): the Apple Pass Type ID and certificate (Apple portal); the Google Wallet issuer and class (an idempotent owner-run `scripts/google-wallet-class.mjs`); the npm trusted publisher; GitHub repository settings.
+
+### 7.3 Retained resources (`prevent_destroy`, with roll-forward notes in the rollback runbook)
+
+| Resource | Why it is retained | Roll-forward note |
+|---|---|---|
+| CloudFront distribution | Its domain is baked into every issued pass (`webServiceURL`) and into the npm package's default API URL; a new distribution orphans them | `release.sh` refuses any plan that replaces or destroys it. If it is lost, issued passes stop updating; attendees reissue through `sync_passes --reissue-all`. |
+| DynamoDB table | Live device registrations and pass records | Deletion protection plus PITR. Restore into a new table, then `terraform import` (owner) and switch the name variable. |
+| Secrets (3) | The deletion recovery window blocks re-creating the same name | Restore inside the window with an owner-run `restore-secret`, then `terraform import`. |
+| Site bucket | Reproducible, but holds the live site | Can be re-created; `prevent_destroy` only so a mistaken plan does not take the site down. |
+
+### 7.4 Monthly cost (prod, hackathon scale: under 100k requests a month)
+
+| Item | Estimate (USD) | Source |
+|---|---|---|
+| WAF: web ACL 5 + 5 rules at 1 each (rate rule, 3 managed rule groups, kill switch) + requests | about 10.10 | [AWS WAF pricing](https://aws.amazon.com/waf/pricing/) |
+| Secrets Manager: 3 secrets at 0.40 | 1.20 | [Secrets Manager pricing](https://aws.amazon.com/secrets-manager/pricing/) |
+| API Gateway REST at 3.50 per million | under 0.40 | [API Gateway pricing](https://aws.amazon.com/api-gateway/pricing/) |
+| CloudFront | 0 (always-free allowance) | [CloudFront pricing](https://aws.amazon.com/cloudfront/pricing/) |
+| Lambda, DynamoDB on demand, S3, CloudWatch Logs | under 1.00 | [Lambda](https://aws.amazon.com/lambda/pricing/), [DynamoDB](https://aws.amazon.com/dynamodb/pricing/) |
+| HCP Terraform | 0 (500 resources free) | link in 7.1 |
+| **Total** | **about 12 to 13** (dev adds about the same until it is destroyed) | |
+
+Option: CloudFront's flat-rate Free plan (USD 0, 1M requests, WAF with up to 5 rules included; accounts on the AWS Free Tier are not eligible) ([flat-rate plans](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/flat-rate-pricing-plan.html)). Adopt it only if the subscription can be managed in Terraform (likely through the `awscc` provider for `AWS::PricingPlanManager::Subscription`; checked in SP6). The golden rule forbids subscribing in the console.
+
+## 8. Specs (one Kiro spec per stream, one `feature/<spec>` branch each)
+
+| # | Spec and branch | Goal | Inputs | Outputs | Acceptance headlines | Test focus |
+|---|---|---|---|---|---|---|
+| S0 | `foundation-contracts` | Lock the contracts and scaffolding so every stream can start | This plan; official `https://api.awsevents.com/v1/openapi.json` ([REST docs](https://docs.aws.amazon.com/events/latest/devguide/rest-api.html)) | npm workspaces; TS 6 strict; ESLint, Prettier, vitest 4 configs; `packages/contracts` (Session, Schedule, Commitment, Venue, PassFields, error types, MCP tool schemas, generated Events API types); `contracts/compass-api.openapi.yaml` and copies; a synthetic catalog generator plus a 120-session catalog in the real shape; venue schema; subpath exports for `@compass/core/*`; the CI workflow; doc updates (tech.md, structure.md, CONCEPT dates) | Contracts compile; hash check passes; CI job green; every later stream can import its types; no shared barrel file | Schema tests against the official OpenAPI; synthetic catalog validates against the same zod schemas used for live data |
+| S1 | `events-client` | Typed client for all 12 operations, auth, catalog, simulated mode | S0 | `core/src/{auth,api,catalog,simulated}` | PKCE loopback sign-in; keychain with memory fallback; ID token kept for the Compass API; 401 refresh once; 429 waits `Retry-After`; pagination until `nextToken` is absent; per-session results; confirmed-write helper; quota tracker; `COMPASS_MODE=simulated` | Fixtures for every operation and error path; token-never-logged test |
+| S2 | `itinerary-rules` | Pure rules engine plus venue data | S0 | `core/src/rules`, `data/venues.json` | Boarding time, connections, clashes (midnight, all-day), layovers, repeats, safe swap, energy score, `checkReservation` returning allow, warn or block with reasons; browser-safe (no Node imports) | Property-style edge cases; 100% branches |
+| S3 | `compass-power` | Power, MCP server and CLI, scanner, week spec generator, hooks | S0; S1 and S2 interfaces (mocked until merged) | `packages/mcp-server`, `core/src/{scanner,spec}`, `power/`, `fixtures/sample-repo` | 16 tools (section 8.1); write tools never auto-approved and guardrailed in-server; `awsevents` writes in `disabledTools`; PreToolUse and PostToolUse hooks per SP1; gitignore offer; `npx reinvent-compass` works | Full simulated E2E: scan, plan, blocked clash, swap, reserve, issue (in-process pass-service), hand-off, cancel, void |
+| S4 | `boarding-passes` | Local pass side | S0, contract | `core/src/passes`: PassFields builder, Compass API client, issued-pass record, sync diff (added, changed, cancelled, unchanged), `.ics` with "leave now" and "boarding closes" alarms, offline itinerary HTML (single file, inline CSS, no JS or network), QR rendering | Sync calls void and update correctly; `.ics` valid; itinerary page meets WCAG 2.2 AA on a phone | Snapshot tests; sync diff tests; an RFC 5545 validator |
+| S5 | `pass-service` | Compass API Lambdas | S0 contract; SP2, SP3, SP4 results | `packages/pass-service`: handlers, ID token verifier, rate limiter, Apple builder (`passkit-generator`), bundle builder, PassKit web service, APNs HTTP/2 client, Google Wallet client (insert, patch, save JWT), origin-verify check, original artwork | Every route in 5.2 matches the OpenAPI (tested); void leads to push and a Google `INACTIVE` patch; TTL and expiry enforced; nothing identifying logged | JWT negative cases (wrong `aud`, `iss`, `alg: none`, expired, unknown `kid`); PassKit 200, 201, 204, 304, 401; hand-off expiry; 429 |
+| S6 | `infra` | All Terraform plus scripts | S0 contract; S5 bundle path | `infra/**`, `scripts/release.sh`, `scripts/bootstrap.sh`, `scripts/load-secrets.sh` (owner-run, reads from files, never echoes), runbooks in `docs/runbooks/` | `terraform validate`, `tflint` and Trivy clean; tests assert `prevent_destroy`, retention, tags, no sampled requests on API rules, no IP in the access log format; dev deploys from scratch | Native `terraform test` with mock providers; shellcheck |
+| S7 | `showcase-site` | Story, demo, board page, privacy page | S0; S2 merged (demo uses `@compass/core/rules`); contract for `/board` | `site/`: Angular 22 zoneless, prerendered (`outputMode: "static"`, [Angular SSR and prerender guide](https://angular.dev/guide/ssr)) | Pages: home story, demo (choose made-up sessions, guardrail blocks a clash, sample pass image, sample `.ics` download), install, privacy, board, links; no cookies or analytics; WCAG 2.2 AA; 7 device profiles | Playwright (on demand), axe, Lighthouse |
+
+The old Spec 5 `pass-signer-infra` is split into S5 (code) and S6 (Terraform), so two engineers can work at once. `packages/pass-signer` is renamed `packages/pass-service`.
+
+### 8.1 MCP tools (S3) and API use
+
+Tools: `sign_in`, `sign_out`, `refresh_catalog`, `find_sessions`, `scan_repo`, `plan_week`, `check_itinerary`, `reserve_with_guardrails`, `cancel_reservation` (including the safe swap), `add_standby`, `remove_standby`, `add_layover` (create, update, delete), `issue_boarding_passes`, `send_to_phone` (hand-off QR), `sync_passes`, `export_calendar`, `forget_me`. Read tools may be auto-approved; write tools never are.
+
+All 12 operations are used:
+- ListEvents and GetEvent: event window and timezone.
+- ListSessions: cache.
+- GetSession: refresh before a pass is issued.
+- GetSchedule: confirmation and sync.
+- ReserveSessions and CancelReservation.
+- AssociateFavorites and DisassociateFavorite: standby.
+- Create, Update and DeletePersonalTime: layovers.
+
+The remote MCP server is used for read exploration in the Power.
+
+## 9. Parallel streams and dates
+
+### 9.1 File ownership (no two streams edit the same file)
+
+| Stream | Owns |
+|---|---|
+| S0 | Root configs, `package.json` workspaces, **`package-lock.json` (after day 1, only the integrator changes it)**, `packages/contracts/**`, `contracts/**`, `.github/**`, `fixtures/synthetic/**`, steering docs |
+| S1 | `packages/core/src/{auth,api,catalog,simulated}/**`, `fixtures/api/**` |
+| S2 | `packages/core/src/rules/**`, `data/venues.json` |
+| S3 | `packages/mcp-server/**`, `packages/core/src/{scanner,spec}/**`, `power/**`, `fixtures/sample-repo/**` |
+| S4 | `packages/core/src/passes/**` |
+| S5 | `packages/pass-service/**` |
+| S6 | `infra/**` except `infra/modules/api/openapi.yaml` (a copy owned by S0), `scripts/**`, `docs/runbooks/**` |
+| S7 | `site/**` |
+
+S0 pre-installs every planned dependency with exact pins. A stream that needs a new dependency asks the integrator (Claude on `develop`), who adds it and rebases. Contract changes after day 1 go through an S0 change request: a small PR into `develop`, which every stream rebases onto.
+
+### 9.2 Day-1 contract lock (Friday 16 October)
+
+1. Engineer 1 runs S0. Claude reviews it the same day, and it is merged into `develop` locally by the evening.
+2. Locked at the end of the day:
+   - `PassFields`, `Session`, `Schedule`, `Commitment`, `Verdict`, the MCP tool schemas, the OpenAPI file and the synthetic catalog.
+3. The spikes (section 10) run alongside, and their results adjust S1, S3 and S5 before those specs are written.
+
+### 9.3 Engineers, dates and gates
+
+Today is Thursday 15 October.
+
+| Engineer (Kiro session) | Work | Start | Spec freeze | Review gate (QA plus security) | Merged to `develop` |
+|---|---|---|---|---|---|
+| 1 | S0, then S1 `events-client` | 16 Oct | S0 16 Oct; S1 21 Oct | S0 16 Oct; S1 22 Oct | 16 Oct; 22 Oct |
+| 2 | S2 `itinerary-rules`, then S7 `showcase-site` | 17 Oct | S2 20 Oct; S7 29 Oct | 21 Oct; 29 Oct | 21 Oct; 29 Oct |
+| 3 | S3 `compass-power` | 17 Oct | 26 Oct | 27 Oct | 27 Oct |
+| 4 | S4 `boarding-passes` | 17 Oct | 23 Oct | 24 Oct | 24 Oct |
+| 5 | S5 `pass-service` | 17 Oct | 24 Oct | 25 Oct | 25 Oct |
+| 6 | S6 `infra` | 17 Oct | 24 Oct (dev env up 21 Oct) | 25 Oct | 25 Oct |
+
+With only 4 sessions: Engineer 2 also takes S4 after S2, and Engineer 5 takes S6 after S5. The site then starts on 24 Oct, and cut-list items 1 to 3 are cut up front.
+
+| Date | Milestone | Owner action |
+|---|---|---|
+| 15 Oct (Thu) | Plan approved; owner tasks O1 to O8 started | Approve; start the Apple, Google, HCP and npm set-up |
+| 16 Oct (Fri) | Contract lock; spikes SP1 to SP6 | Sign in for SP2; iPhone for SP3; Android for SP4 |
+| 21 Oct (Wed) | First dev deploy (S6 slice: edge, API stub, data) | Run `bootstrap.sh`, then `release.sh dev` |
+| 25 Oct (Sun) | Pass service on dev; real-device conformance (iPhone register, push, void, hidden in Expired; Android save and `INACTIVE`) | Devices, about 1 hour |
+| 26 to 27 Oct | Integration on `develop`: simulated E2E plus live E2E on dev with the owner's Builder ID | Approve any live writes |
+| 28 Oct (Wed) | **Feature freeze** (everything except the site); article draft 2 with dev screenshots | Read the article draft |
+| 29 Oct (Thu) | Site freeze; `release/1.0.0` cut; TAM Go/No-Go and CTO sign-off on the frozen commit | Decisions on any Lows |
+| 30 Oct (Fri) | **Release gate**: 7 device profiles plus real devices plus the Power on Windows, macOS and Linux; PR `release/1.0.0` into `main` (CI); tag `v1.0.0`; `release.sh prod` (backend, then site); npm publish (tag workflow); 30 to 60 minute watch | Merge, tag, run the release, verify |
+| 31 Oct (Sat) | Demo video on prod; README and article final | Record the video (script from Claude) |
+| **1 Nov (Sun)** | **Submit** (Builder Center post and entry) | Submit |
+| 2 to 6 Nov | Buffer: `hotfix/*` only | |
+
+Article: Claude writes an outline by 18 Oct, draft 1 by 24 Oct, draft 2 by 28 Oct, and the final on 31 Oct, using the vault notes and screenshots from each review gate.
+
+## 10. Day-1 spikes (16 October)
+
+| # | Spike | How | Pass when | Fallback |
+|---|---|---|---|---|
+| SP1 | Kiro hook arguments and blocking | A toy Power with a stdio tool and PreToolUse and PostToolUse command hooks. Record where the JSON (`hook_event_name`, `tool_name` such as `mcp_<server>_<tool>`, `tool_input`) arrives, and which exit code or output blocks the call ([hook types](https://kiro.dev/docs/hooks/types/), [hooks](https://kiro.dev/docs/hooks/)). Check whether a Power can ship hooks or must copy them, and whether `disabledTools` works for a Power's remote server. | The hook blocks a call with a reason shown to the user | Hooks warn only; the in-server guardrail is the control |
+| SP2 | ID token verification | Owner-run local script after sign-in. It prints only `alg`, `kid`, `iss`, `aud`, `token_use`, `exp` and the claim **names**, never values. It fetches `<iss>/.well-known/openid-configuration` and the JWKS, then verifies with `aws-jwt-verify`. | Offline verification succeeds | Section 5.4, steps 2 and 3 |
+| SP3 | PassKit on a real iPhone | A local Node server over LAN HTTP (Apple allows HTTP while testing). A pass signed with the new certificate. Register, push through production APNs, fetch, void, then check it is hidden in Expired. Also confirm how the `webServiceURL` path is joined and that a `.pkpasses` bundle works in Safari. | All steps observed and recorded on video for the article | If the push fails: passes still expire through `expirationDate`, and sync tells the attendee which pass to delete |
+| SP4 | Google Wallet demo mode | Create the issuer and class; add the owner's Android account as a test user; save a generic object through a JWT link; patch it to `INACTIVE`. **Request publishing access the same day** ([publishing access](https://developers.google.com/wallet/generic/test-and-go-live/request-publishing-access)). | The pass is saved and moves to Expired | Ship Google as "beta, test users" if publishing access is not granted by 28 Oct |
+| SP5 | Real data shape | The owner records the live API locally into `fixtures/.raw/` (git-ignored). A script diffs its shape against the synthetic catalog and the official OpenAPI. | No unexplained fields or shape differences | Adjust the contracts before 17 Oct |
+| SP6 | Account and cost checks | Lambda concurrency quota; whether the account is on the Free Tier plan; `awscc` support for the CloudFront pricing plan subscription | Recorded | Pay-as-you-go WAF (section 7.4) |
+
+## 11. CI budget, test matrix, release and hotfix flow
+
+### 11.1 CI (GitHub Actions; standard runners are free for public repos, but the playbook cap still applies)
+
+| Workflow | Trigger | Job |
+|---|---|---|
+| `check.yml` | `pull_request` into `main` only (the required check) | One job, target under 8 minutes: `npm ci`, contract hash check, `prettier --check`, `eslint`, `tsc -b`, `vitest --coverage` (100% thresholds), build (site prerender, Lambda bundle, MCP bundle), gitleaks, `npm audit --omit=dev --audit-level=high`, `terraform fmt -check`, `validate`, `tflint`, `terraform test`, Trivy fs and config, shellcheck |
+| `e2e.yml` | `workflow_dispatch` only | Playwright, 7 profiles plus axe plus Lighthouse |
+| `publish.yml` | Tag `v*` | One job: build and `npm publish` through trusted publishing with provenance ([npm trusted publishers](https://docs.npmjs.com/trusted-publishers)) |
+| CodeQL | Default setup | |
+| Dependabot | Monthly, `open-pull-requests-limit: 0` until after 1 Nov | |
+
+There is no deploy workflow, no push trigger and no cron. Soft cap: **300 minutes for the project**. Expected use is about 150 (10 PR runs, 3 e2e runs, 2 publishes). Check usage before every push (`gh api users/henniefrancis/settings/billing/usage`, path to confirm for a personal account). Actions are pinned by SHA.
+
+### 11.2 Test matrix
+
+| Level | Scope | Where |
+|---|---|---|
+| Unit, 100% lines, branches, functions and statements | All packages. Named exclusions only: `packages/mcp-server/src/bin.ts`, `packages/pass-service/src/lambda-entry/*.ts` (one-line adapters), generated types | CI |
+| Fixture and contract | 12 operations including partial failure, 429, multi-page, unknown codes, expired token; pass-service responses validated against the OpenAPI | CI |
+| Simulated E2E | Power flow from S3 | CI |
+| Terraform | Native tests with mock providers | CI |
+| Live smoke (`COMPASS_LIVE_TESTS=1`) | Owner's Builder ID: sign-in, catalog, schedule, favorite and personal time round trip, and one reservation the owner chooses | Owner, local |
+| Browser | 7 profiles: Desktop Chrome, Firefox, WebKit; iPad portrait and landscape; iPhone portrait and landscape (including the landscape-phone test for positioned elements); axe; forced colors; tests wait on app state, never on URLs or sleeps | On demand, and the release gate |
+| Real devices | iPhone (add bundle, lock screen relevance, update, void, hidden in Expired), Apple Watch if available, Android (Google save, `INACTIVE`), Mac (Power E2E, AirDrop), Windows 11 (Power E2E, Credential Manager), Linux or WSL (memory-only tokens) | Release gate, owner plus Claude |
+| Budgets | Site: initial JS 250 kB maximum compressed, demo chunk 150 kB, LCP under 2.5 s on Lighthouse mobile. MCP server: cold start under 1.5 s. Full catalog refresh under 60 s. API: p95 under 1.5 s with signing. Lambda bundle under 5 MB. | CI build and Lighthouse on demand |
+| Security | Token-redaction test; JWT negative tests; PassKit authorisation; hand-off expiry; PassFields rejection cases (URLs, bidi, control characters, out-of-window dates, oversized fields); ambiguous inputs refused, never reinterpreted | CI |
+
+### 11.3 Release and hotfix flow (ADR-002 confirmed)
+
+- **Release:**
+  1. `feature/*` branches merge locally into `develop`.
+  2. Cut `release/x.y.z` from `develop` and freeze it; run the release gate.
+  3. PR into `main` (the only CI run). The owner merges and tags `vX.Y.Z`.
+  4. The owner runs `scripts/release.sh prod`:
+     - environment set-up;
+     - build the bundle;
+     - `terraform plan -out` in HCP;
+     - refuse any destroy or replace of retained resources, or any unexpected resource type;
+     - typed `yes`;
+     - apply;
+     - sync the site and invalidate the cache;
+     - health check through `https://<cf>/api/v1/health`.
+  5. The tag triggers `publish.yml`.
+  6. Merge `main` back into `develop`.
+  - Order: backend, then site, then npm. The npm client points only at prod, so the mismatch window is backend-new with client-old: compatible by design, because the API is additive.
+- **Hotfix:**
+  1. `hotfix/x.y.z` from `main`, with a fix and tests.
+  2. PR into `main` (CI), owner merge, patch tag.
+  3. `release.sh` if the backend changed; publish if the client changed.
+  4. Merge into `develop`.
+  - Any change after the freeze restarts the gate for the areas it touches.
+- **Rollback:**
+  - Revert the tag and re-run `release.sh` with the previous commit's bundle.
+  - Retained resources are never destroyed; their notes are in section 7.3.
+
+## 12. Cut list (cut from the top if the 28 Oct feature freeze is at risk)
+
+| Rank | Cut | Effect |
+|---|---|---|
+| 1 | Offline itinerary HTML page | The phone still gets passes and `.ics` |
+| 2 | Energy budget score | Rules still flag overload by count |
+| 3 | boto3 scanner | Terraform, CDK TypeScript and SDK JS v3 remain |
+| 4 | Merging manual edits when the spec is regenerated | Write `week-<date>.md` and show the diff |
+| 5 | `.ics` through the hand-off (`calendar.ics` route returns 404 "not enabled") | `.ics` stays a local file |
+| 6 | Field updates for changed sessions (`PUT`) | Void and reissue instead |
+| 7 | Apple `locations` relevance and Apple Watch checks | Time relevance only |
+| 8 | Ranking walk-up options in rebooking | Repeats and standby only |
+| 9 | Google Wallet updates (keep issuance) | Google passes still expire at session end; cancellation is not reflected |
+| 10 | Google Wallet entirely (if publishing access is refused) | Apple plus `.ics` |
+
+**Never cut:** the 12-operation client; guardrails in the server; the Power with hooks; Apple passes with void on cancel and expiry at session end; the hand-off; the site story and the clash demo; README, article and video.
+
+## 13. Risks
+
+| # | Risk | Owner | Likelihood | Impact | Mitigation |
+|---|---|---|---|---|---|
+| R1 | Eight specs in 17 days overrun | Claude (integrator) | High | High | Parallel streams; day-1 lock; freeze dates; cut list; daily tracker |
+| R2 | Owner availability blocks approvals, devices and deploys | Owner | High | High | Owner time blocks: 16, 21, 25, 30 and 31 Oct; batched approvals |
+| R3 | Apple certificate or APNs push not working by 25 Oct | Owner (certificate), Engineer 5 | Medium | High | SP3 on day 1; fallback: expiry plus sync instructions |
+| R4 | Google publishing access not granted in time | Owner | High | Medium | Request on 16 Oct; ship as beta; cut items 9 and 10 |
+| R5 | Merge conflicts between Kiro sessions | Claude | Medium | Medium | Ownership map; integrator owns the lockfile and contracts |
+| R6 | Prompt injection through the catalog or repo leads to unwanted bookings | Engineer 3 | Medium | High | No auto-approve on writes; server guardrail; remote writes disabled |
+| R7 | Abuse of the pass service by any Builder ID holder (sign-up is free) | Engineer 5 | Medium | Medium | Per-sub and per-IP limits; event-window and content rules; kill switch; budget alarm |
+| R8 | ID token not verifiable | Claude (SP2) | Low | Medium | Section 5.4 fallback |
+| R9 | Breach of server personal data (push tokens) | Engineer 5 and 6 | Low | High | HMAC ids, TTL, no logs, least privilege, short retention |
+| R10 | CloudFront domain lost, so issued passes are orphaned | Owner (release) | Low | High | `prevent_destroy`; release-script gate |
+| R11 | Judges do not install the Power | Claude (content) | Medium | High | Browser demo, `npx` one-liner, simulated mode, video |
+| R12 | Real API shape differs from reports | Engineer 1 | Low | Medium | Generate from the official OpenAPI; SP5 |
+| R13 | Walking times are wrong and an attendee misses a seat | Engineer 2 | Medium | Medium | Source notes, "estimate" labels, a configurable buffer |
+| R14 | Low Lambda concurrency quota or ineligibility for the flat-rate plan | Owner | Low | Low | SP6; pay-as-you-go |
+| R15 | npm name taken, or trusted publishing needs an existing package | Owner | Medium | Medium | O6 today; a first manual publish of `0.0.1` by the owner if npm requires it |
+| R16 | The update service keeps pass content for longer than "short-lived" (A1) | Owner | Certain | Low | Session end plus 24 hours, minimal fields, `forget_me` |
+
+## 14. Owner tasks (start today)
+
+| # | Task |
+|---|---|
+| O1 | Apple: register Pass Type ID `pass.<reverse-domain>.reinventcompass`; create its certificate; download WWDR G4. Do not send files to Claude; load them with `scripts/load-secrets.sh` once S6 lands. |
+| O2 | Google Pay and Wallet Console: issuer account, business profile, add your Android account as a test user; request publishing access after SP4. |
+| O3 | HCP Terraform: personal organisation, project `reinvent-compass`, three workspaces (section 7.1), a user token for the CLI. |
+| O4 | GitHub: branch protection on `main` (PR plus the `check` job required, no force pushes); secret scanning with push protection; private vulnerability reporting; CodeQL default setup; Dependabot paused. |
+| O5 | AWS: confirm account plan and Lambda concurrency quota; choose the budget alert email. |
+| O6 | npm: check `reinvent-compass` is free; set up the trusted publisher for the repo and `publish.yml`. |
+| O7 | Ask on the hackathon Discussion tab whether a catalog snapshot may be published (ADR-016 stays until then). |
+| O8 | Block time for 16, 21, 25, 30 and 31 Oct. |
+
+## 15. ADRs this plan creates (written 2026-10-15; all Accepted except ADR-021, Proposed until SP6)
+
+- **ADR-005** Device strategy: plan on a computer, board on any device.
+- **ADR-006** Toolchain: npm workspaces, ESLint plus Prettier, TS 6, vitest 4, Node 24, Angular 22 (replaces pnpm and Biome).
+- **ADR-007** Monorepo layout, subpath exports and file ownership for parallel streams; `pass-signer` renamed `pass-service`.
+- **ADR-008** Contract first: one OpenAPI file for the Compass API, byte-identical copies checked by hash.
+- **ADR-009** Attendee-only Compass API authenticated by the Builder ID ID token, with the per-pass manage-token fallback.
+- **ADR-010** Pass lifecycle: Apple PassKit web service with APNs; Google object `INACTIVE`; expiry at session end on both.
+- **ADR-011** Cloud hand-off through a 15-minute capability in the URL fragment and the site's `/board` page; bundles signed on demand, never stored.
+- **ADR-012** Server-side personal data: HMAC-hashed identifiers, TTLs, the Apple path exception, no identifier logging, `forget_me` (POPIA record).
+- **ADR-013** Edge: one CloudFront distribution, WAF at CloudFront, API Gateway REST imported from OpenAPI, origin-verify header.
+- **ADR-014** Terraform: personal HCP org, bootstrap, dev and prod workspaces, dynamic provider credentials, owner-run `release.sh`; replaces the GitHub OIDC deploy.
+- **ADR-015** Retained resources: the CloudFront distribution, DynamoDB table, secrets and site bucket, with `prevent_destroy` and roll-forward notes.
+- **ADR-016** Synthetic catalog for tests and the public demo; real recordings private and git-ignored.
+- **ADR-017** Remote `awsevents` MCP server read-only in the Power; all writes go through Compass guardrails.
+- **ADR-018** CI: a single PR job, on-demand e2e, tag-triggered npm trusted publishing, no deploy workflow.
+- **ADR-019** Google Wallet service account key in Secrets Manager (workload identity federation as a later improvement).
+- **ADR-020** Dev environment deployed before prod; destroyed after submission.
+- **ADR-021** CloudFront flat-rate Free plan, only if Terraform can manage the subscription.
+- **ADR-022** Pass content retained server-side until session end plus 24 hours for the update service (records assumption A1).
