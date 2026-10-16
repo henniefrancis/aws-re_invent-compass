@@ -24,7 +24,7 @@ const crossPackageRelativeImportPatterns = [
       'Import across packages through the declared package subpath export (for example @compass/core/rules), never a deep relative path into another package.',
   },
   {
-    group: ['../*/src/**', '../*/dist/**', '../../*/src/**', '../../*/dist/**'],
+    group: ['../../*/src/**', '../../*/dist/**', '../../../*/src/**', '../../../*/dist/**'],
     message:
       'Import across packages through the declared package subpath export (for example @compass/core/rules), never a deep relative path into another package.',
   },
