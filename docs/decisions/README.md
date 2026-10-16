@@ -29,3 +29,4 @@ One record per architecture decision for re:Invent Compass, mirrored from the pr
 | [ADR-023](ADR-023-events-api-openapi-source.md)                 | Events API OpenAPI source                          | Accepted |
 | ADR-024                                                         | Kiro hook input and blocking (SP1 result, to come) | Reserved |
 | [ADR-025](ADR-025-early-contract-lock.md)                       | Early contract lock                                | Accepted |
+| [ADR-026](ADR-026-audit-allowlist.md)                           | Audit allowlist for accepted advisories            | Accepted |
