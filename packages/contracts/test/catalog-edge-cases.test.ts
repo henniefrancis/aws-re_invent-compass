@@ -23,7 +23,10 @@ const catalogPath = resolve(repoRoot, 'fixtures', 'synthetic', 'catalog.json');
 interface Session {
   abbreviation?: string;
   venue?: string;
+  type?: string;
   isAllDaySession?: boolean;
+  isReservable?: boolean;
+  seatAvailability?: string;
   sessionTime?: { time?: string; length?: string };
 }
 
@@ -54,6 +57,28 @@ describe('Feature: foundation-contracts, synthetic catalog edge cases', () => {
         s.sessionTime.length === undefined,
     );
     expect(missingEnd.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('contains at least one non-reservable breakout session (walk-up only)', () => {
+    // The re:Invent FAQ: lecture-style breakout sessions take no reservation.
+    const nonReservableBreakouts = catalog.filter(
+      (s) => s.type === 'Breakout session' && s.isReservable === false,
+    );
+    expect(nonReservableBreakouts.length).toBeGreaterThanOrEqual(1);
+    // Every breakout is non-reservable and walk-up.
+    for (const s of catalog.filter((s) => s.type === 'Breakout session')) {
+      expect(s.isReservable).toBe(false);
+      expect(s.seatAvailability).toBe('walkUp');
+    }
+  });
+
+  test('contains at least one keynote, non-reservable and walk-up', () => {
+    const keynotes = catalog.filter((s) => s.type === 'Keynote');
+    expect(keynotes.length).toBeGreaterThanOrEqual(1);
+    for (const s of keynotes) {
+      expect(s.isReservable).toBe(false);
+      expect(s.seatAvailability).toBe('walkUp');
+    }
   });
 
   test('every committed session still validates against SessionWireSchema', () => {

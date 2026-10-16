@@ -129,6 +129,9 @@ const LAST_NAMES = [
 ] as const;
 
 // Known session types and levels (made-up but shaped like the real taxonomy).
+// Per the official re:Invent FAQ, keynotes and lecture-style breakout sessions
+// take no reservation, so "Breakout session" (and the separately added keynotes)
+// are non-reservable. The other four types are reservable.
 const TYPES = [
   'Breakout session',
   'Chalk talk',
@@ -136,6 +139,9 @@ const TYPES = [
   'Builders session',
   'Code talk',
 ] as const;
+
+// The session types that take no reservation (walk-up only).
+const NON_RESERVABLE_TYPES = new Set<string>(['Breakout session', 'Keynote']);
 
 const LEVELS = ['100', '200', '300', '400'] as const;
 
@@ -151,7 +157,9 @@ const SERVICES = [
   'containers',
 ] as const;
 
-const SEAT_BANDS = ['available', 'limited', 'veryLimited', 'walkUp'] as const;
+// Seat availability bands for reservable sessions: a realistic mix. Non-reservable
+// sessions (breakouts and keynotes) always use "walkUp".
+const RESERVABLE_SEAT_BANDS = ['available', 'limited', 'veryLimited', 'unavailable'] as const;
 
 // The five event days (re:Invent 2026 window, local dates, no hard-coded use in
 // the contract: these are catalog content only).
@@ -212,7 +220,11 @@ export function generateCatalog(
   const rng = mulberry32(seed);
   const sessions: GeneratedSession[] = [];
 
-  for (let i = 0; i < count; i += 1) {
+  // Reserve the last two ids for the keynotes so the total stays at count.
+  const KEYNOTE_COUNT = 2;
+  const generatedCount = Math.max(count - KEYNOTE_COUNT, 0);
+
+  for (let i = 0; i < generatedCount; i += 1) {
     // A zero-padded sequence so ids sort lexicographically in numeric order.
     const seq = String(i + 1).padStart(3, '0');
     const sessionId = `syn-${seq}`;
@@ -237,16 +249,24 @@ export function generateCatalog(
     const startTime = pick(rng, START_TIMES);
     const length = pick(rng, LENGTHS);
 
+    const type = pick(rng, TYPES);
+    // A session is reservable only when it is not all-day and its type takes a
+    // reservation. Breakouts (and keynotes, added below) are walk-up only.
+    const reservable = !isAllDay && !NON_RESERVABLE_TYPES.has(type);
+    // Non-reservable sessions are always "walkUp"; reservable sessions get a
+    // realistic mix of available, limited, veryLimited and unavailable.
+    const seatAvailability = reservable ? pick(rng, RESERVABLE_SEAT_BANDS) : 'walkUp';
+
     const session: GeneratedSession = {
       sessionId,
       title,
       abbreviation,
       abstract: `A made-up abstract for ${title}. Synthetic data for testing only.`,
-      type: pick(rng, TYPES),
+      type,
       level: pick(rng, LEVELS),
       isAllDaySession: isAllDay,
-      isReservable: !isAllDay,
-      seatAvailability: pick(rng, SEAT_BANDS),
+      isReservable: reservable,
+      seatAvailability,
       speakers: [{ name: speaker }],
       services: [pick(rng, SERVICES)],
     };
@@ -278,6 +298,43 @@ export function generateCatalog(
     }
 
     sessions.push(session);
+  }
+
+  // Two keynotes (made-up titles). Per the re:Invent FAQ keynotes take no
+  // reservation, so they are non-reservable and walk-up only, held at The
+  // Venetian. Their ids continue the zero-padded sequence so sorting is stable.
+  const KEYNOTE_TITLES = [
+    'Opening Keynote: The year ahead',
+    'Innovation Keynote: Builders at scale',
+  ] as const;
+  const KEYNOTE_DAYS = ['2026-11-30', '2026-12-01'] as const;
+
+  for (let k = 0; k < KEYNOTE_COUNT; k += 1) {
+    const seq = String(generatedCount + k + 1).padStart(3, '0');
+    const prefix = pick(rng, CODE_PREFIXES);
+    const codeNumber = 100 + Math.floor(rng() * 400);
+    const speaker = `${pick(rng, FIRST_NAMES)} ${pick(rng, LAST_NAMES)}`;
+    sessions.push({
+      sessionId: `syn-${seq}`,
+      title: KEYNOTE_TITLES[k] as string,
+      abbreviation: `KEY${codeNumber}`,
+      abstract: `A made-up abstract for ${KEYNOTE_TITLES[k]}. Synthetic data for testing only.`,
+      type: 'Keynote',
+      level: pick(rng, LEVELS),
+      isAllDaySession: false,
+      isReservable: false,
+      seatAvailability: 'walkUp',
+      venue: 'The Venetian',
+      room: 'Main hall',
+      sessionTime: {
+        date: KEYNOTE_DAYS[k] as string,
+        time: '09:00',
+        length: '90',
+        timezone: 'America/Los_Angeles',
+      },
+      speakers: [{ name: speaker }],
+      services: [pick(rng, SERVICES)],
+    });
   }
 
   // Sort by sessionId so ordering never depends on insertion details.
