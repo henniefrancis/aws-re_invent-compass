@@ -9,3 +9,11 @@ export interface GenTypesTarget {
 export declare const TARGETS: GenTypesTarget[];
 
 export declare function genTypes(options?: { targets?: GenTypesTarget[] }): Promise<string[]>;
+
+export interface CliResult {
+  code: number;
+  stdout: string;
+  stderr: string;
+}
+
+export declare function runCli(options?: { targets?: GenTypesTarget[] }): Promise<CliResult>;

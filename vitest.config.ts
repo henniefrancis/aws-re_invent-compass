@@ -20,7 +20,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       all: true,
-      include: ['packages/*/src/**/*.ts', 'spikes/src/**/*.ts'],
+      include: [
+        'packages/*/src/**/*.ts',
+        'spikes/src/**/*.ts',
+        '.github/scripts/*.mjs',
+        'fixtures/synthetic/generate.ts',
+      ],
       exclude: [
         'packages/mcp-server/src/bin.ts',
         'packages/pass-service/src/lambda-entry/*.ts',

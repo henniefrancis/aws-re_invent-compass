@@ -14,3 +14,11 @@ export interface HashCheckResult {
 }
 
 export declare function hashCheck(options?: { files?: string[] }): Promise<HashCheckResult>;
+
+export interface CliResult {
+  code: number;
+  stdout: string;
+  stderr: string;
+}
+
+export declare function runCli(options?: { files?: string[] }): Promise<CliResult>;

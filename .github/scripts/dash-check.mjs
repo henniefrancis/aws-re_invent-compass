@@ -11,7 +11,8 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { maybeRunCli } from './cli.mjs';
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(thisDir, '..', '..');
@@ -88,23 +89,33 @@ export function dashCheck({ cwd = repoRoot, files } = {}) {
   return { ok: findings.length === 0, findings };
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (invokedDirectly) {
+/**
+ * Pure CLI driver: returns the exit code and the lines to print without touching
+ * the process. Covers the ok, findings and error branches in-process.
+ *
+ * @param {object} [options]
+ * @param {string} [options.cwd]
+ * @param {string[]} [options.files]
+ * @returns {{ code: number, stdout: string, stderr: string }}
+ */
+export function runCli({ cwd = repoRoot, files, dashCheckFn = dashCheck } = {}) {
   try {
-    const { ok, findings } = dashCheck();
+    const { ok, findings } = dashCheckFn({ cwd, files });
     if (ok) {
-      process.stdout.write('dash check ok: no em or en dashes in tracked files\n');
-    } else {
-      process.stderr.write('dash check FAILED: em or en dashes found\n');
-      for (const f of findings) {
-        process.stderr.write(`  ${f.file}:${f.line}:${f.column} (${f.kind})\n`);
-      }
-      process.exitCode = 1;
+      return {
+        code: 0,
+        stdout: 'dash check ok: no em or en dashes in tracked files\n',
+        stderr: '',
+      };
     }
+    let stderr = 'dash check FAILED: em or en dashes found\n';
+    for (const f of findings) {
+      stderr += `  ${f.file}:${f.line}:${f.column} (${f.kind})\n`;
+    }
+    return { code: 1, stdout: '', stderr };
   } catch (error) {
-    process.stderr.write(`${error.message}\n`);
-    process.exitCode = 1;
+    return { code: 1, stdout: '', stderr: `${error.message}\n` };
   }
 }
+
+await maybeRunCli({ runCli, argv1: process.argv[1], metaUrl: import.meta.url });

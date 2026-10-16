@@ -331,8 +331,9 @@ export function generateCatalog({
     });
   }
 
-  // Sort by sessionId so ordering never depends on insertion details.
-  sessions.sort((a, b) => (a.sessionId < b.sessionId ? -1 : a.sessionId > b.sessionId ? 1 : 0));
+  // Sort by sessionId so ordering never depends on insertion details. localeCompare
+  // is a single expression, so there is no unreachable equal-ids branch to cover.
+  sessions.sort((a, b) => a.sessionId.localeCompare(b.sessionId));
   return sessions;
 }
 

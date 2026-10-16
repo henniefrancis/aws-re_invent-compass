@@ -12,7 +12,8 @@
 
 import { readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { maybeRunCli } from './cli.mjs';
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(thisDir, '..', '..');
@@ -109,28 +110,32 @@ export async function placeholderSafety({ files = FILES } = {}) {
   return { ok: findings.length === 0, findings };
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (invokedDirectly) {
-  placeholderSafety()
-    .then(({ ok, findings }) => {
-      if (ok) {
-        process.stdout.write(
-          `placeholder safety ok: no forbidden tokens in ${FILES.length} files\n`,
-        );
-        return;
-      }
-      process.stderr.write('placeholder safety FAILED: forbidden tokens found\n');
-      for (const f of findings) {
-        process.stderr.write(
-          `  ${relative(repoRoot, f.file)}:${f.line}:${f.column} (${f.pattern})\n`,
-        );
-      }
-      process.exitCode = 1;
-    })
-    .catch((error) => {
-      process.stderr.write(`${error.message}\n`);
-      process.exitCode = 1;
-    });
+/**
+ * Pure CLI driver: returns the exit code and the lines to print without touching
+ * the process. Covers the ok, findings and error branches in-process.
+ *
+ * @param {object} [options]
+ * @param {string[]} [options.files]
+ * @returns {Promise<{ code: number, stdout: string, stderr: string }>}
+ */
+export async function runCli({ files = FILES } = {}) {
+  try {
+    const { ok, findings } = await placeholderSafety({ files });
+    if (ok) {
+      return {
+        code: 0,
+        stdout: `placeholder safety ok: no forbidden tokens in ${files.length} files\n`,
+        stderr: '',
+      };
+    }
+    let stderr = 'placeholder safety FAILED: forbidden tokens found\n';
+    for (const f of findings) {
+      stderr += `  ${relative(repoRoot, f.file)}:${f.line}:${f.column} (${f.pattern})\n`;
+    }
+    return { code: 1, stdout: '', stderr };
+  } catch (error) {
+    return { code: 1, stdout: '', stderr: `${error.message}\n` };
+  }
 }
+
+await maybeRunCli({ runCli, argv1: process.argv[1], metaUrl: import.meta.url });

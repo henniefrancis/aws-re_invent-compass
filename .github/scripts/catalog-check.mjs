@@ -17,6 +17,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { maybeRunCli } from './cli.mjs';
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(thisDir, '..', '..');
@@ -24,6 +25,18 @@ const syntheticDir = resolve(repoRoot, 'fixtures', 'synthetic');
 
 export const CATALOG_PATH = resolve(syntheticDir, 'catalog.json');
 export const INDEX_PATH = resolve(syntheticDir, 'index.json');
+
+/**
+ * Describe a thrown value as a message string. Errors contribute their message;
+ * any other thrown value is stringified. Exported so both the "describes an
+ * Error" and "describes a non-Error" branches are covered directly by tests.
+ *
+ * @param {unknown} cause
+ * @returns {string}
+ */
+export function describeError(cause) {
+  return cause instanceof Error ? cause.message : String(cause);
+}
 
 const generatorUrl = pathToFileURL(resolve(syntheticDir, 'generate.ts')).href;
 const sessionSchemaUrl = pathToFileURL(
@@ -64,22 +77,26 @@ export async function emit() {
 
 /**
  * Check the committed files against the regenerated output and validate every
- * committed session against SessionWireSchema.
+ * committed session against SessionWireSchema. The catalog and index paths are
+ * injectable so tests can drive the mismatch, invalid-JSON, non-array and
+ * schema-failure branches against crafted files.
  *
+ * @param {object} [options]
+ * @param {string} [options.catalogPath]
+ * @param {string} [options.indexPath]
  * @returns {Promise<{ ok: boolean, problems: string[] }>}
  */
-export async function check() {
+export async function check({ catalogPath = CATALOG_PATH, indexPath = INDEX_PATH } = {}) {
   const problems = [];
   const { catalog, index } = await regenerate();
 
   let committedCatalog;
   let committedIndex;
   try {
-    committedCatalog = await readFile(CATALOG_PATH, 'utf8');
-    committedIndex = await readFile(INDEX_PATH, 'utf8');
+    committedCatalog = await readFile(catalogPath, 'utf8');
+    committedIndex = await readFile(indexPath, 'utf8');
   } catch (cause) {
-    const reason = cause instanceof Error ? cause.message : String(cause);
-    problems.push(`cannot read a committed catalog file: ${reason}`);
+    problems.push(`cannot read a committed catalog file: ${describeError(cause)}`);
     return { ok: false, problems };
   }
 
@@ -97,8 +114,7 @@ export async function check() {
   try {
     parsed = JSON.parse(committedCatalog);
   } catch (cause) {
-    const reason = cause instanceof Error ? cause.message : String(cause);
-    problems.push(`committed catalog.json is not valid JSON: ${reason}`);
+    problems.push(`committed catalog.json is not valid JSON: ${describeError(cause)}`);
     return { ok: false, problems };
   }
 
@@ -110,8 +126,8 @@ export async function check() {
   for (let i = 0; i < parsed.length; i += 1) {
     const result = SessionWireSchema.safeParse(parsed[i]);
     if (!result.success) {
-      const issue = result.error.issues[0];
-      const path = issue ? issue.path.join('.') : '(unknown path)';
+      // zod guarantees at least one issue on a failed parse, so issues[0] exists.
+      const path = result.error.issues[0].path.join('.');
       problems.push(`session index ${i} fails SessionWireSchema at field "${path}"`);
       break;
     }
@@ -120,38 +136,50 @@ export async function check() {
   return { ok: problems.length === 0, problems };
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (invokedDirectly) {
-  const mode = process.argv[2];
+/**
+ * Pure CLI driver: returns the exit code and the lines to print without touching
+ * the process. The "--write" mode emits the catalog; the default mode checks it.
+ * Covers the write, ok, failure and error branches in-process.
+ *
+ * @param {object} [options]
+ * @param {string} [options.mode] "--write" to emit, otherwise check
+ * @returns {Promise<{ code: number, stdout: string, stderr: string }>}
+ */
+export async function runCli({
+  mode = process.argv[2],
+  checkOptions,
+  emitFn = emit,
+  checkFn = check,
+} = {}) {
   if (mode === '--write') {
-    emit()
-      .then((r) => {
-        process.stdout.write(
-          `wrote catalog.json (${r.catalogBytes} bytes) and index.json (${r.indexBytes} bytes) for ${r.count} sessions\n`,
-        );
-      })
-      .catch((error) => {
-        process.stderr.write(`${error.message}\n`);
-        process.exitCode = 1;
-      });
-  } else {
-    check()
-      .then(({ ok, problems }) => {
-        if (ok) {
-          process.stdout.write('catalog check ok: committed catalog matches and validates\n');
-          return;
-        }
-        process.stderr.write('catalog check FAILED:\n');
-        for (const p of problems) {
-          process.stderr.write(`  ${p}\n`);
-        }
-        process.exitCode = 1;
-      })
-      .catch((error) => {
-        process.stderr.write(`${error.message}\n`);
-        process.exitCode = 1;
-      });
+    try {
+      const r = await emitFn();
+      return {
+        code: 0,
+        stdout: `wrote catalog.json (${r.catalogBytes} bytes) and index.json (${r.indexBytes} bytes) for ${r.count} sessions\n`,
+        stderr: '',
+      };
+    } catch (error) {
+      return { code: 1, stdout: '', stderr: `${error.message}\n` };
+    }
+  }
+  try {
+    const { ok, problems } = await checkFn(checkOptions);
+    if (ok) {
+      return {
+        code: 0,
+        stdout: 'catalog check ok: committed catalog matches and validates\n',
+        stderr: '',
+      };
+    }
+    let stderr = 'catalog check FAILED:\n';
+    for (const p of problems) {
+      stderr += `  ${p}\n`;
+    }
+    return { code: 1, stdout: '', stderr };
+  } catch (error) {
+    return { code: 1, stdout: '', stderr: `${error.message}\n` };
   }
 }
+
+await maybeRunCli({ runCli, argv1: process.argv[1], metaUrl: import.meta.url });

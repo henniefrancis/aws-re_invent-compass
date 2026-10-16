@@ -10,7 +10,8 @@
 
 import { mkdir, readFile, rename, writeFile, unlink } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { maybeRunCli } from './cli.mjs';
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 // This script lives at .github/scripts/, so the repo root is two levels up.
@@ -40,25 +41,48 @@ export async function genCopy({ source = SOURCE, copies = COPIES } = {}) {
       await writeFile(tempPath, bytes);
       await rename(tempPath, dest);
     } catch (cause) {
-      await unlink(tempPath).catch(() => {});
+      await removeQuietly(tempPath);
       throw cause;
     }
   }
   return { source, copies, bytes: bytes.byteLength };
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (invokedDirectly) {
-  genCopy()
-    .then((result) => {
-      process.stdout.write(
-        `Copied ${result.bytes} bytes from ${result.source} to ${result.copies.length} destinations\n`,
-      );
-    })
-    .catch((error) => {
-      process.stderr.write(`${error.message}\n`);
-      process.exitCode = 1;
-    });
+/**
+ * Remove a file, ignoring any error (best-effort cleanup). Named and exported so
+ * both its success and its ignored-error paths are covered by tests.
+ *
+ * @param {string} path
+ * @returns {Promise<void>}
+ */
+export async function removeQuietly(path) {
+  try {
+    await unlink(path);
+  } catch {
+    // Best effort: a missing temp file is fine.
+  }
 }
+
+/**
+ * Pure CLI driver: returns the exit code and the lines to print without touching
+ * the process. Covers the success and error branches in-process.
+ *
+ * @param {object} [options]
+ * @param {string} [options.source]
+ * @param {string[]} [options.copies]
+ * @returns {Promise<{ code: number, stdout: string, stderr: string }>}
+ */
+export async function runCli({ source = SOURCE, copies = COPIES } = {}) {
+  try {
+    const result = await genCopy({ source, copies });
+    return {
+      code: 0,
+      stdout: `Copied ${result.bytes} bytes from ${result.source} to ${result.copies.length} destinations\n`,
+      stderr: '',
+    };
+  } catch (error) {
+    return { code: 1, stdout: '', stderr: `${error.message}\n` };
+  }
+}
+
+await maybeRunCli({ runCli, argv1: process.argv[1], metaUrl: import.meta.url });

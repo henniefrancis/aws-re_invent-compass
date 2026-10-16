@@ -26,3 +26,15 @@ export declare function listTrackedFiles(cwd?: string): string[];
 export declare function scanText(text: string): ScanFinding[];
 
 export declare function dashCheck(options?: { cwd?: string; files?: string[] }): DashCheckResult;
+
+export interface CliResult {
+  code: number;
+  stdout: string;
+  stderr: string;
+}
+
+export declare function runCli(options?: {
+  cwd?: string;
+  files?: string[];
+  dashCheckFn?: (options?: { cwd?: string; files?: string[] }) => DashCheckResult;
+}): CliResult;

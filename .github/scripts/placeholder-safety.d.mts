@@ -18,3 +18,11 @@ export interface PlaceholderSafetyResult {
 export declare function placeholderSafety(options?: {
   files?: string[];
 }): Promise<PlaceholderSafetyResult>;
+
+export interface CliResult {
+  code: number;
+  stdout: string;
+  stderr: string;
+}
+
+export declare function runCli(options?: { files?: string[] }): Promise<CliResult>;
