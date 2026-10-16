@@ -1,0 +1,16 @@
+# Example HCP Terraform backend config for the prod environment
+# (foundation-contracts, S0).
+#
+# Copy to cloud.auto.tfbackend and fill in the real organisation and workspace
+# locally. The real file is git-ignored and is never committed, because the HCP
+# organisation and workspace names are private (tech.md). Placeholder values only.
+#
+# This file contains no em dash or en dash.
+
+# Your HCP Terraform organisation name (private; placeholder here).
+organization = "REPLACE_WITH_HCP_ORG"
+
+workspaces {
+  # The prod workspace name (private; placeholder here).
+  name = "reinvent-compass-prod"
+}
