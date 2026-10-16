@@ -1,0 +1,11 @@
+{
+  "name": "reinvent-compass",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@compass/contracts": "0.0.0",
+    "@compass/core": "0.0.0",
+    "@modelcontextprotocol/sdk": "1.32.1"
+  }
+}

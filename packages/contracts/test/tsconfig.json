@@ -1,0 +1,16 @@
+{
+  "comment": "Local tsconfig so the vitest oxc transformer resolves compiler options for the contracts tests without walking up to the solution tsconfig, whose project references point at per-workspace tsconfigs. This is a test-run arrangement for the contracts tests, not the packages/contracts package tsconfig (that is ../tsconfig.json).",
+  "compilerOptions": {
+    "target": "ES2024",
+    "lib": ["ES2024"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts"]
+}

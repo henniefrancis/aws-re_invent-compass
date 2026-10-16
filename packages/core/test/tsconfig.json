@@ -1,0 +1,16 @@
+{
+  "comment": "Local tsconfig so the vitest oxc transformer resolves compiler options for this test without walking up to the solution tsconfig, whose project references point at per-workspace tsconfigs that later tasks create. This file is a test-run arrangement for the core placeholder test, not the packages/core package tsconfig.",
+  "compilerOptions": {
+    "target": "ES2024",
+    "lib": ["ES2024"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts"]
+}
