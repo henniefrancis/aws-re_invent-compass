@@ -31,3 +31,29 @@ export {
   type QuotaTracker,
   type ClientContext,
 } from './transport.js';
+
+// Live HTTP transport (Component 1, live path).
+export {
+  createHttpTransport,
+  type FetchLike,
+  type FetchInit,
+  type FetchResponseLike,
+  type HttpTransportDeps,
+} from './http-transport.js';
+
+// Typed error taxonomy (Component 4) and the status-to-error mapper.
+export {
+  EventsApiError,
+  ValidationError,
+  BadRequestError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ConflictError,
+  RateLimitedError,
+  ServerError,
+  UnexpectedResponseError,
+  EventWindowError,
+  QuotaExceededError,
+  errorForStatus,
+} from './errors.js';
