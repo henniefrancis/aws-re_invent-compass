@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
-import { createRedactingLogger, type LogSink } from '../src/api/redacting-logger.js';
+import { createRedactingLogger, type LogSink } from '../../src/api/redacting-logger.js';
 import {
   selectTransport,
   type Transport,
   type TransportDeps,
   type EnvLike,
   type RawResponse,
-} from '../src/api/transport.js';
+} from '../../src/api/transport.js';
 
 // Property and unit tests for the redacting logger and the transport-selection seam
 // (events-client, S1). The logger is Component 8: the single logging mechanism for

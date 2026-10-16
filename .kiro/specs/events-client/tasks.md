@@ -23,7 +23,7 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
 
 ## Tasks
 
-- [ ] 1. Establish shared API seams and the redacting logger
+- [x] 1. Establish shared API seams and the redacting logger
   - [x] 1.1 Define the transport seam and client context
     - Create `src/api/transport.ts` with `OperationName`, `ClientRequest`, `RawResponse`, `Transport` and `ClientContext` (`{ transport, accessToken, quota, logger, now, sleep }`), importing wire/domain types from `@compass/contracts`
     - Add `selectTransport(env, deps)` returning the simulated transport when `COMPASS_MODE=simulated`, else the HTTP transport factory (HTTP body filled in task 2.1)
@@ -37,7 +37,7 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
     - **Property 7: No secret ever appears in logs or errors** (partial: logger scrubbing; full flow asserted in task 17.1)
     - **Validates: Requirements 2.5, 7.7, 20.1, 20.2**
 
-  - [ ] 1.4 Commit
+  - [x] 1.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Include `.kiro/specs/events-client/` in this first commit. Verify every edit landed. Never push.
 
 - [ ] 2. Implement the HTTP transport and typed errors
