@@ -191,9 +191,7 @@ export async function runShapeDiff({
     const recording = await readJson(file);
     // Array.isArray narrows recording to any[]; keep the element typed as unknown
     // so no any flows into diffShape (which accepts unknown).
-    const sample: unknown = Array.isArray(recording)
-      ? (recording as unknown[])[0]
-      : recording;
+    const sample: unknown = Array.isArray(recording) ? (recording as unknown[])[0] : recording;
     const diffs = diffShape(reference, sample);
     lines.push(`Recording ${file}:`);
     lines.push(...formatDiffReport(diffs));

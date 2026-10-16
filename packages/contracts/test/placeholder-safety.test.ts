@@ -56,9 +56,7 @@ describe('Feature: foundation-contracts, Property 9: The safety scanner flags fo
   // ----------------------------------------------------------------------------
   test('Feature: foundation-contracts, Property 9: safe content is never flagged', async () => {
     const safeChar = fc.constantFrom(
-      ...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;!?()/+#@-'.split(
-        '',
-      ),
+      ...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;!?()/+#@-'.split(''),
     );
     await fc.assert(
       fc.asyncProperty(
@@ -96,13 +94,20 @@ describe('Feature: foundation-contracts, Property 9: The safety scanner flags fo
       // A disallowed dollar-brace marker (any name other than the two allowed).
       fc
         .string({ minLength: 1, maxLength: 10 })
-        .filter((n) => /^[a-z_]+$/.test(n) && !['api_lambda_invoke_arn', 'passkit_lambda_invoke_arn'].includes(n))
+        .filter(
+          (n) =>
+            /^[a-z_]+$/.test(n) &&
+            !['api_lambda_invoke_arn', 'passkit_lambda_invoke_arn'].includes(n),
+        )
         .map((name) => ({
           text: '${' + name + '}',
           expect: 'disallowed dollar-brace template marker',
         })),
       // An unterminated bare dollar-brace.
-      fc.constant({ text: 'a ${ bare marker', expect: 'unterminated dollar-brace template marker' }),
+      fc.constant({
+        text: 'a ${ bare marker',
+        expect: 'unterminated dollar-brace template marker',
+      }),
       // A percent-brace marker.
       fc.constant({ text: '%{ for x in xs }', expect: 'percent-brace template marker' }),
     );

@@ -244,7 +244,11 @@ const scheduleWireArb = (): fc.Arbitrary<Record<string, unknown>> =>
 
 const listSessionsArb = (): fc.Arbitrary<Record<string, unknown>> =>
   fc.record(
-    { items: fc.array(sessionWireArb(), { maxLength: 2 }), totalCount: fc.nat(), nextToken: plainString() },
+    {
+      items: fc.array(sessionWireArb(), { maxLength: 2 }),
+      totalCount: fc.nat(),
+      nextToken: plainString(),
+    },
     { requiredKeys: ['items', 'totalCount'] },
   );
 
@@ -529,20 +533,12 @@ describe('Feature: foundation-contracts, Property 5: Schema parsing is idempoten
     // A known band maps to its literal; an unknown string maps to the sentinel "unknown".
     // "unknown" is not one of the five known bands, so parsing it again yields "unknown":
     // the transform is stable on its own output. Both branches are generated.
-    assertScalarIdempotent(
-      SeatAvailabilitySchema,
-      anySeatString(),
-      'SeatAvailabilitySchema',
-    );
+    assertScalarIdempotent(SeatAvailabilitySchema, anySeatString(), 'SeatAvailabilitySchema');
   });
 
   test('Feature: foundation-contracts, Property 5: BulkFailureCodeSchema parsing is idempotent', () => {
     // Known and unknown codes both map to themselves (an identity transform), so
     // parse(parse(x)) equals parse(x) over any generated string.
-    assertScalarIdempotent(
-      BulkFailureCodeSchema,
-      anyBulkCodeString(),
-      'BulkFailureCodeSchema',
-    );
+    assertScalarIdempotent(BulkFailureCodeSchema, anyBulkCodeString(), 'BulkFailureCodeSchema');
   });
 });

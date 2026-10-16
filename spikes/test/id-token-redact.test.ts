@@ -56,10 +56,9 @@ describe('Feature: foundation-contracts, Property 11: ID token redaction never l
           for (const [name, value] of Object.entries(sensitiveClaims)) {
             expect(redacted.claimNames).toContain(name);
             expect(redacted.safeValues[name]).toBeUndefined();
-            expect(
-              report.includes(value),
-              `report leaked the value of claim "${name}"`,
-            ).toBe(false);
+            expect(report.includes(value), `report leaked the value of claim "${name}"`).toBe(
+              false,
+            );
           }
 
           // Only allowlisted fields have a shown value.

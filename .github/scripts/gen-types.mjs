@@ -55,8 +55,7 @@ export async function genTypes({ targets = TARGETS } = {}) {
 }
 
 const invokedDirectly =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (invokedDirectly) {
   genTypes()

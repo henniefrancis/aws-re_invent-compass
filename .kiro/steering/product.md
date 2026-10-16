@@ -30,18 +30,18 @@ A reserved seat is only held until 10 minutes before the session starts, then it
 
 ## The metaphor (use it in UI copy, docs and code names)
 
-| Airline term | re:Invent meaning |
-|---|---|
-| Itinerary | The attendee's week (a Kiro spec) |
-| Boarding pass | Unofficial pass for one reserved session |
-| Gate | Venue and room |
-| Boarding closes | Session start minus 10 minutes |
-| Connection | Walk between two consecutive commitments |
-| Tight connection | Walk time plus buffer is longer than the gap |
-| Rebooking | Moving to a repeat of the same session (`-R` in the session code) |
-| Standby | Favorites kept as backups |
-| Layover | Personal time for meals, water and rest |
-| Cancelled flight | A cancelled reservation: its pass is voided |
+| Airline term     | re:Invent meaning                                                 |
+| ---------------- | ----------------------------------------------------------------- |
+| Itinerary        | The attendee's week (a Kiro spec)                                 |
+| Boarding pass    | Unofficial pass for one reserved session                          |
+| Gate             | Venue and room                                                    |
+| Boarding closes  | Session start minus 10 minutes                                    |
+| Connection       | Walk between two consecutive commitments                          |
+| Tight connection | Walk time plus buffer is longer than the gap                      |
+| Rebooking        | Moving to a repeat of the same session (`-R` in the session code) |
+| Standby          | Favorites kept as backups                                         |
+| Layover          | Personal time for meals, water and rest                           |
+| Cancelled flight | A cancelled reservation: its pass is voided                       |
 
 ## Core features
 

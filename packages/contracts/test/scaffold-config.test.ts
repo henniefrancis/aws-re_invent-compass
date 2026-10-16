@@ -87,18 +87,14 @@ describe('Feature: foundation-contracts, scaffold configuration smoke tests', ()
 
   test('tsconfig.base.json compilerOptions.strict is true', () => {
     const base = readJson(join(repoRoot, 'tsconfig.base.json'));
-    const compilerOptions = base.compilerOptions as
-      | { strict?: unknown }
-      | undefined;
+    const compilerOptions = base.compilerOptions as { strict?: unknown } | undefined;
     expect(compilerOptions?.strict).toBe(true);
   });
 
   test('base and every existing workspace tsconfig carry strict true', () => {
     // The base config must assert strict true itself.
     const base = readJson(join(repoRoot, 'tsconfig.base.json'));
-    const baseCompilerOptions = base.compilerOptions as
-      | { strict?: unknown }
-      | undefined;
+    const baseCompilerOptions = base.compilerOptions as { strict?: unknown } | undefined;
     expect(baseCompilerOptions?.strict).toBe(true);
 
     // For each workspace tsconfig that already exists, it must either set strict true
@@ -110,14 +106,11 @@ describe('Feature: foundation-contracts, scaffold configuration smoke tests', ()
         continue;
       }
       const config = readJson(tsconfigPath);
-      const compilerOptions = config.compilerOptions as
-        | { strict?: unknown }
-        | undefined;
+      const compilerOptions = config.compilerOptions as { strict?: unknown } | undefined;
       const extendsField = config.extends;
       const setsStrictDirectly = compilerOptions?.strict === true;
       const extendsBase =
-        typeof extendsField === 'string' &&
-        extendsField.includes('tsconfig.base.json');
+        typeof extendsField === 'string' && extendsField.includes('tsconfig.base.json');
       expect(
         setsStrictDirectly || extendsBase,
         `${tsconfigPath} must set compilerOptions.strict true or extend tsconfig.base.json`,
@@ -136,10 +129,7 @@ describe('Feature: foundation-contracts, scaffold configuration smoke tests', ()
       const pattern = new RegExp(`${metric}\\s*:\\s*(\\d+)`);
       const match = pattern.exec(configText);
       expect(match, `vitest coverage threshold for ${metric} must be present`).not.toBeNull();
-      expect(
-        Number(match?.[1]),
-        `vitest coverage threshold for ${metric} must be 100`,
-      ).toBe(100);
+      expect(Number(match?.[1]), `vitest coverage threshold for ${metric} must be 100`).toBe(100);
     }
   });
 });

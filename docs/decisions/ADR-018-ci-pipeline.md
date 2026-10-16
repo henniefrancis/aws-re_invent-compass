@@ -8,13 +8,13 @@ The playbook caps CI minutes, even though standard runners are free for public r
 
 ## Decision
 
-| Workflow | Trigger | Job |
-|---|---|---|
-| `check.yml` | `pull_request` into `main` only (the required check) | One job, under 8 minutes: `npm ci`, contract hash check, `prettier --check`, `eslint`, `tsc -b`, `vitest --coverage` (100% thresholds), build, gitleaks, `npm audit --omit=dev --audit-level=high`, `terraform fmt -check`, `validate`, `tflint`, `terraform test`, Trivy fs and config, shellcheck |
-| `e2e.yml` | `workflow_dispatch` only | Playwright, 7 profiles plus axe plus Lighthouse |
-| `publish.yml` | Tag `v*` | Build and `npm publish` through trusted publishing with provenance |
-| CodeQL | Default setup | |
-| Dependabot | Monthly, `open-pull-requests-limit: 0` until after 1 Nov | |
+| Workflow      | Trigger                                                  | Job                                                                                                                                                                                                                                                                                                 |
+| ------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check.yml`   | `pull_request` into `main` only (the required check)     | One job, under 8 minutes: `npm ci`, contract hash check, `prettier --check`, `eslint`, `tsc -b`, `vitest --coverage` (100% thresholds), build, gitleaks, `npm audit --omit=dev --audit-level=high`, `terraform fmt -check`, `validate`, `tflint`, `terraform test`, Trivy fs and config, shellcheck |
+| `e2e.yml`     | `workflow_dispatch` only                                 | Playwright, 7 profiles plus axe plus Lighthouse                                                                                                                                                                                                                                                     |
+| `publish.yml` | Tag `v*`                                                 | Build and `npm publish` through trusted publishing with provenance                                                                                                                                                                                                                                  |
+| CodeQL        | Default setup                                            |                                                                                                                                                                                                                                                                                                     |
+| Dependabot    | Monthly, `open-pull-requests-limit: 0` until after 1 Nov |                                                                                                                                                                                                                                                                                                     |
 
 - No deploy workflow, no push trigger, no cron. Actions are pinned by SHA.
 - Soft cap: 300 minutes for the project; expected use about 150. Check usage before every push.

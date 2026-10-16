@@ -47,8 +47,7 @@ const SESSION_CODE_PATTERN = /^[A-Z0-9]{2,12}(-R[0-9]?)?$/;
  * A matching string is additionally parsed with Date.parse to confirm it is a
  * real instant (NaN is rejected). No coercion is performed.
  */
-const ISO_OFFSET_PATTERN =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+const ISO_OFFSET_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 /**
  * The character ALLOWLIST for free text. A value passes only when every
@@ -172,10 +171,7 @@ export function normalisePassText(value: string): string {
  * safety checks. The message references the field by name and never echoes the
  * offending value.
  */
-function safeText(
-  maxLen: number,
-  opts: { minLen: number; fieldName: string },
-): z.ZodString {
+function safeText(maxLen: number, opts: { minLen: number; fieldName: string }): z.ZodString {
   return z
     .string()
     .min(opts.minLen)

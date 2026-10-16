@@ -25,7 +25,4 @@ export declare function listTrackedFiles(cwd?: string): string[];
 
 export declare function scanText(text: string): ScanFinding[];
 
-export declare function dashCheck(options?: {
-  cwd?: string;
-  files?: string[];
-}): DashCheckResult;
+export declare function dashCheck(options?: { cwd?: string; files?: string[] }): DashCheckResult;

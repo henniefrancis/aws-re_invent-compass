@@ -93,9 +93,7 @@ describe('Feature: foundation-contracts, consumer import path', () => {
 
 describe('Feature: foundation-contracts, committed example files are safe', () => {
   const envExamplePath = resolve(repoRoot, '.env.example');
-  const envExample = existsSync(envExamplePath)
-    ? readFileSync(envExamplePath, 'utf8')
-    : undefined;
+  const envExample = existsSync(envExamplePath) ? readFileSync(envExamplePath, 'utf8') : undefined;
 
   test('.env.example exists', () => {
     expect(existsSync(envExamplePath)).toBe(true);

@@ -81,13 +81,13 @@ describe('Feature: foundation-contracts, MCP tool session id bounds', () => {
 
   test('F: add_standby and issue_boarding_passes also reject duplicate session ids', () => {
     expect(mcpTools.add_standby.input.safeParse({ sessionIds: ['X', 'X'] }).success).toBe(false);
-    expect(
-      mcpTools.issue_boarding_passes.input.safeParse({ sessionIds: ['X', 'X'] }).success,
-    ).toBe(false);
+    expect(mcpTools.issue_boarding_passes.input.safeParse({ sessionIds: ['X', 'X'] }).success).toBe(
+      false,
+    );
     expect(mcpTools.add_standby.input.safeParse({ sessionIds: ['X', 'Y'] }).success).toBe(true);
-    expect(
-      mcpTools.issue_boarding_passes.input.safeParse({ sessionIds: ['X', 'Y'] }).success,
-    ).toBe(true);
+    expect(mcpTools.issue_boarding_passes.input.safeParse({ sessionIds: ['X', 'Y'] }).success).toBe(
+      true,
+    );
   });
 
   // F: send_to_phone and sync_passes session id lists are capped at 80.

@@ -50,25 +50,9 @@ function findRepoRoot(): string {
 const repoRoot = findRepoRoot();
 
 // Absolute paths to the real committed document, the helper module and the ADR.
-const committedDocPath = join(
-  repoRoot,
-  'packages',
-  'contracts',
-  'events-api.openapi.json',
-);
-const helperPath = join(
-  repoRoot,
-  'packages',
-  'contracts',
-  'scripts',
-  'fetch-events-api.mjs',
-);
-const adrPath = join(
-  repoRoot,
-  'docs',
-  'decisions',
-  'ADR-023-events-api-openapi-source.md',
-);
+const committedDocPath = join(repoRoot, 'packages', 'contracts', 'events-api.openapi.json');
+const helperPath = join(repoRoot, 'packages', 'contracts', 'scripts', 'fetch-events-api.mjs');
+const adrPath = join(repoRoot, 'docs', 'decisions', 'ADR-023-events-api-openapi-source.md');
 
 // The helper is an .mjs ESM module. Import it by file URL so resolution works on
 // every OS regardless of the test file location. The dynamic import is awaited
@@ -121,9 +105,7 @@ describe('Feature: foundation-contracts, Events API fetch helper', () => {
         outPath: committedDocPath,
       }),
     ).rejects.toThrow(
-      new RegExp(
-        `${EVENTS_API_OPENAPI_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*500`,
-      ),
+      new RegExp(`${EVENTS_API_OPENAPI_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*500`),
     );
 
     // fetch was called exactly once with the source URL, and no real network
@@ -154,9 +136,7 @@ describe('Feature: foundation-contracts, Events API fetch helper', () => {
 
     // The error names the URL and surfaces the underlying cause message.
     await expect(call).rejects.toThrow(
-      new RegExp(
-        EVENTS_API_OPENAPI_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-      ),
+      new RegExp(EVENTS_API_OPENAPI_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
     );
     await expect(call).rejects.toThrow(/boom/);
 
@@ -175,10 +155,7 @@ describe('Feature: foundation-contracts, Events API fetch helper', () => {
     const bytesBefore = readFileSync(committedDocPath);
 
     // A unique temp destination in the OS temp directory, never the committed path.
-    const tempOut = join(
-      tmpdir(),
-      `events-api-success-${process.pid}-${Date.now()}.json`,
-    );
+    const tempOut = join(tmpdir(), `events-api-success-${process.pid}-${Date.now()}.json`);
     const payload = '{"ok":true}';
 
     const mockFetch = vi.fn(() =>

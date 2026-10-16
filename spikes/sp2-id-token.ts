@@ -21,11 +21,7 @@
 // This file contains no em dash or en dash.
 
 import { JwtVerifier } from 'aws-jwt-verify';
-import {
-  decodeJwtParts,
-  redactDecodedToken,
-  formatRedactedReport,
-} from './src/id-token-redact.ts';
+import { decodeJwtParts, redactDecodedToken, formatRedactedReport } from './src/id-token-redact.ts';
 
 // The public, shared Builder ID client id (tech.md). It is not a secret.
 const EXPECTED_AUD = '7vmom55m1qstvq8i71ph127bfq';

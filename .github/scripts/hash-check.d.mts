@@ -13,6 +13,4 @@ export interface HashCheckResult {
   hashes: HashEntry[];
 }
 
-export declare function hashCheck(options?: {
-  files?: string[];
-}): Promise<HashCheckResult>;
+export declare function hashCheck(options?: { files?: string[] }): Promise<HashCheckResult>;

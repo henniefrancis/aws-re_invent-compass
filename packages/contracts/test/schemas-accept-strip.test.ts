@@ -63,12 +63,10 @@ const PassFieldsSchema = createPassFieldsSchema(PASS_WINDOW) as unknown as Objec
 
 // A plain non-empty string. Used for the many free-form string fields that the wire and
 // domain schemas accept without constraint.
-const plainString = (): fc.Arbitrary<string> =>
-  fc.string({ minLength: 1, maxLength: 16 });
+const plainString = (): fc.Arbitrary<string> => fc.string({ minLength: 1, maxLength: 16 });
 
 // An array of plain strings, zero to a few entries.
-const stringArray = (): fc.Arbitrary<string[]> =>
-  fc.array(plainString(), { maxLength: 3 });
+const stringArray = (): fc.Arbitrary<string[]> => fc.array(plainString(), { maxLength: 3 });
 
 // Safe free text for PassFields: letters, digits and single spaces only, so it never
 // trips the URL, domain, control-character or bidirectional-override checks and never
@@ -481,7 +479,14 @@ const schemaCases: SchemaCase[] = [
     name: 'PersonalTimeSchema',
     schema: PersonalTimeSchema,
     arb: personalTimeArb(),
-    knownKeys: ['personalTimeId', 'startDateTime', 'endDateTime', 'title', 'description', 'location'],
+    knownKeys: [
+      'personalTimeId',
+      'startDateTime',
+      'endDateTime',
+      'title',
+      'description',
+      'location',
+    ],
   },
   {
     name: 'PersonalTimeInputSchema',
@@ -625,7 +630,10 @@ const personalTimeInputSample = {
   description: 'Layover',
 };
 
-const toolSamples: Record<string, { input: Record<string, unknown>; output: Record<string, unknown> }> = {
+const toolSamples: Record<
+  string,
+  { input: Record<string, unknown>; output: Record<string, unknown> }
+> = {
   sign_in: { input: { force: true }, output: { signedIn: true } },
   sign_out: { input: {}, output: { signedOut: true } },
   refresh_catalog: {

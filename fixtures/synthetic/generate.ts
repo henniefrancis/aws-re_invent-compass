@@ -163,13 +163,7 @@ const RESERVABLE_SEAT_BANDS = ['available', 'limited', 'veryLimited', 'unavailab
 
 // The five event days (re:Invent 2026 window, local dates, no hard-coded use in
 // the contract: these are catalog content only).
-const EVENT_DAYS = [
-  '2026-11-30',
-  '2026-12-01',
-  '2026-12-02',
-  '2026-12-03',
-  '2026-12-04',
-] as const;
+const EVENT_DAYS = ['2026-11-30', '2026-12-01', '2026-12-02', '2026-12-03', '2026-12-04'] as const;
 
 const START_TIMES = ['08:30', '10:00', '11:30', '13:00', '14:30', '16:00'] as const;
 const LENGTHS = ['60', '90', '120'] as const;
@@ -214,9 +208,10 @@ function pick<T>(rng: () => number, list: readonly T[]): T {
  * @param options optional overrides for the seed and count
  * @returns the generated sessions, sorted by sessionId
  */
-export function generateCatalog(
-  { seed = SEED, count = SESSION_COUNT }: { seed?: number; count?: number } = {},
-): GeneratedSession[] {
+export function generateCatalog({
+  seed = SEED,
+  count = SESSION_COUNT,
+}: { seed?: number; count?: number } = {}): GeneratedSession[] {
   const rng = mulberry32(seed);
   const sessions: GeneratedSession[] = [];
 
@@ -384,10 +379,7 @@ export interface CatalogIndex {
 /**
  * Build the index manifest from a generated catalog.
  */
-export function buildIndex(
-  sessions: GeneratedSession[],
-  seed: number = SEED,
-): CatalogIndex {
+export function buildIndex(sessions: GeneratedSession[], seed: number = SEED): CatalogIndex {
   return {
     seed,
     count: sessions.length,

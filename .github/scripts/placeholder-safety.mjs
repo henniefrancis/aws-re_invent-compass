@@ -37,10 +37,7 @@ const PATTERNS = [
 // The only dollar-brace template markers allowed anywhere in a copy (comments
 // included), because Terraform templatefile() evaluates every dollar-brace
 // marker in the file. Any other dollar-brace occurrence is a deploy-time hazard.
-const ALLOWED_DOLLAR_BRACE = new Set([
-  '${api_lambda_invoke_arn}',
-  '${passkit_lambda_invoke_arn}',
-]);
+const ALLOWED_DOLLAR_BRACE = new Set(['${api_lambda_invoke_arn}', '${passkit_lambda_invoke_arn}']);
 
 // Match a dollar-brace marker: ${ up to the next } (no nested braces needed here
 // because the contract never nests them). Global so every occurrence on a line
@@ -113,8 +110,7 @@ export async function placeholderSafety({ files = FILES } = {}) {
 }
 
 const invokedDirectly =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (invokedDirectly) {
   placeholderSafety()

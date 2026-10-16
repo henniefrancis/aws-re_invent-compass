@@ -8,6 +8,4 @@ export interface GenTypesTarget {
 
 export declare const TARGETS: GenTypesTarget[];
 
-export declare function genTypes(options?: {
-  targets?: GenTypesTarget[];
-}): Promise<string[]>;
+export declare function genTypes(options?: { targets?: GenTypesTarget[] }): Promise<string[]>;

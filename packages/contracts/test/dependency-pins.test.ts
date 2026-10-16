@@ -82,10 +82,7 @@ function collectManifestPaths(repoRoot: string): string[] {
 
 // Read one manifest and flatten every dependency scope into a list of entries.
 function readEntries(manifestPath: string): DependencyEntry[] {
-  const parsed = JSON.parse(readFileSync(manifestPath, 'utf8')) as Record<
-    string,
-    unknown
-  >;
+  const parsed = JSON.parse(readFileSync(manifestPath, 'utf8')) as Record<string, unknown>;
   const entries: DependencyEntry[] = [];
   for (const scope of DEPENDENCY_SCOPES) {
     const map = parsed[scope];

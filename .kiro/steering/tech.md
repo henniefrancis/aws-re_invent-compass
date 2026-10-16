@@ -8,22 +8,22 @@ The approved build plan is the source of truth: #[[file:docs/architecture/build-
 
 ## Stack (ADR-006)
 
-| Area | Choice | Notes |
-|---|---|---|
-| Language | TypeScript 6, `strict` everywhere | One language across client, MCP server, Lambdas and site |
-| Runtime | Node.js 24 LTS | Lambda `nodejs24.x` on arm64 (supported until 30 April 2028) |
-| Package manager | **npm workspaces** | `npm ci` in CI and scripts. Only the integrator changes `package-lock.json`. |
-| Lint and format | **ESLint** (flat config, typescript-eslint, angular-eslint for the site) plus **Prettier** | No Biome |
-| Unit tests | **vitest 4**, v8 coverage, **100%** lines, branches, functions and statements | Named exclusions only (build plan section 11.2) |
-| Browser tests | Playwright, site only, 7 device profiles, on demand | No retries; tests wait on app state, never on URLs or sleeps |
-| Showcase site | **Angular 22**, zoneless, prerendered static output | Hosted on S3 behind CloudFront |
-| MCP server | `@modelcontextprotocol/sdk`, stdio | Published to npm as `reinvent-compass` (trusted publishing) |
-| Validation | `zod` | Every API response, tool input and Compass API request is parsed |
-| ID token verification | `aws-jwt-verify` | Compass API only |
-| Token storage | OS keychain via `@napi-rs/keyring`; memory-only fallback | Never write tokens to files |
-| Apple passes | `passkit-generator` | Compass API Lambdas only |
-| Calendar | `ical-generator` | Local |
-| Infrastructure | **Terraform only**, HCP Terraform (personal org), `>= 1.15, < 2.0`, AWS provider `~> 6.0` | No CDK, CloudFormation, SAM, console or CLI-made resources |
+| Area                  | Choice                                                                                     | Notes                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| Language              | TypeScript 6, `strict` everywhere                                                          | One language across client, MCP server, Lambdas and site                     |
+| Runtime               | Node.js 24 LTS                                                                             | Lambda `nodejs24.x` on arm64 (supported until 30 April 2028)                 |
+| Package manager       | **npm workspaces**                                                                         | `npm ci` in CI and scripts. Only the integrator changes `package-lock.json`. |
+| Lint and format       | **ESLint** (flat config, typescript-eslint, angular-eslint for the site) plus **Prettier** | No Biome                                                                     |
+| Unit tests            | **vitest 4**, v8 coverage, **100%** lines, branches, functions and statements              | Named exclusions only (build plan section 11.2)                              |
+| Browser tests         | Playwright, site only, 7 device profiles, on demand                                        | No retries; tests wait on app state, never on URLs or sleeps                 |
+| Showcase site         | **Angular 22**, zoneless, prerendered static output                                        | Hosted on S3 behind CloudFront                                               |
+| MCP server            | `@modelcontextprotocol/sdk`, stdio                                                         | Published to npm as `reinvent-compass` (trusted publishing)                  |
+| Validation            | `zod`                                                                                      | Every API response, tool input and Compass API request is parsed             |
+| ID token verification | `aws-jwt-verify`                                                                           | Compass API only                                                             |
+| Token storage         | OS keychain via `@napi-rs/keyring`; memory-only fallback                                   | Never write tokens to files                                                  |
+| Apple passes          | `passkit-generator`                                                                        | Compass API Lambdas only                                                     |
+| Calendar              | `ical-generator`                                                                           | Local                                                                        |
+| Infrastructure        | **Terraform only**, HCP Terraform (personal org), `>= 1.15, < 2.0`, AWS provider `~> 6.0`  | No CDK, CloudFormation, SAM, console or CLI-made resources                   |
 
 Pin exact versions. S0 installs every planned dependency; a stream that needs a new one asks the integrator. Prefer official SDKs and docs, and cite them.
 
@@ -36,20 +36,20 @@ Pin exact versions. S0 installs every planned dependency; a stream that needs a 
 
 ### Sign-in (OAuth 2.0 authorization code with PKCE)
 
-| Item | Value |
-|---|---|
-| Authorize | `https://oauth.awsevents.com/oauth2/authorize` |
-| Token | `https://oauth.awsevents.com/oauth2/token` |
-| Revoke | `https://oauth.awsevents.com/oauth2/revoke` |
-| Logout | `https://oauth.awsevents.com/logout` |
-| Builder ID sign-out | `https://idp.awsevents.com/oidc/logout` |
-| Client ID (public, shared) | `7vmom55m1qstvq8i71ph127bfq` |
-| Scope | `openid email events/access` |
-| Identity provider | Always send `identity_provider=AWSBuilderID` |
-| Redirect URI | `http://localhost:{8484..8489}/callback`, matched exactly |
-| Access token | JWT, 60 minutes, sent only to `api.awsevents.com` |
-| ID token | JWT, kept in the keychain, sent only to the Compass API as proof of sign-in (ADR-009). The Events API does not accept it. |
-| Refresh token | Opaque, 30 days, sent only to the token endpoint |
+| Item                       | Value                                                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Authorize                  | `https://oauth.awsevents.com/oauth2/authorize`                                                                            |
+| Token                      | `https://oauth.awsevents.com/oauth2/token`                                                                                |
+| Revoke                     | `https://oauth.awsevents.com/oauth2/revoke`                                                                               |
+| Logout                     | `https://oauth.awsevents.com/logout`                                                                                      |
+| Builder ID sign-out        | `https://idp.awsevents.com/oidc/logout`                                                                                   |
+| Client ID (public, shared) | `7vmom55m1qstvq8i71ph127bfq`                                                                                              |
+| Scope                      | `openid email events/access`                                                                                              |
+| Identity provider          | Always send `identity_provider=AWSBuilderID`                                                                              |
+| Redirect URI               | `http://localhost:{8484..8489}/callback`, matched exactly                                                                 |
+| Access token               | JWT, 60 minutes, sent only to `api.awsevents.com`                                                                         |
+| ID token                   | JWT, kept in the keychain, sent only to the Compass API as proof of sign-in (ADR-009). The Events API does not accept it. |
+| Refresh token              | Opaque, 30 days, sent only to the token endpoint                                                                          |
 
 New PKCE verifier and `state` per attempt; S256 challenge, base64url without padding; `code_challenge_method=S256` sent explicitly.
 
@@ -58,10 +58,18 @@ New PKCE verifier and `state` per attempt; S256 challenge, base64url without pad
 Bundled as `awsevents` for read exploration, with its write tools listed in `disabledTools`, so every write goes through Compass's guardrails. Kiro config from the docs:
 
 ```json
-{ "mcpServers": { "awsevents": {
-  "url": "https://api.awsevents.com/mcp",
-  "oauth": { "clientId": "7vmom55m1qstvq8i71ph127bfq", "redirectUri": "http://127.0.0.1:8976",
-             "oauthScopes": ["openid", "email", "events/access"] } } } }
+{
+  "mcpServers": {
+    "awsevents": {
+      "url": "https://api.awsevents.com/mcp",
+      "oauth": {
+        "clientId": "7vmom55m1qstvq8i71ph127bfq",
+        "redirectUri": "http://127.0.0.1:8976",
+        "oauthScopes": ["openid", "email", "events/access"]
+      }
+    }
+  }
+}
 ```
 
 ### Behaviour rules
@@ -107,13 +115,13 @@ Bundled as `awsevents` for read exploration, with its write tools listed in `dis
 
 The repository is public. Only security-sensitive and account-specific material stays private.
 
-| Public (commit it) | Private (never commit) | Where it lives |
-|---|---|---|
-| All code, tests, steering, specs, hooks, docs, ADRs | Apple Pass Type ID certificate and key, WWDR certificate | AWS Secrets Manager, loaded by the owner with `scripts/load-secrets.sh` |
-| Terraform modules, envs, tests | Google Wallet service account key and issuer ID | AWS Secrets Manager |
-| `*.example` files (`terraform.tfvars.example`, `cloud.auto.tfbackend.example`, `.env.example`) | Real `terraform.tfvars`, `cloud.auto.tfbackend`, `.env`, HCP organisation and workspace settings, AWS account ID, alert email | Local git-ignored files and HCP workspace variables |
-| Synthetic catalog in `fixtures/synthetic/` | Real API recordings | `fixtures/.raw/`, git-ignored |
-| The CloudFront domain (attendees need it) | HMAC pepper, origin-verify value | Generated into Secrets Manager by Terraform, never output |
+| Public (commit it)                                                                             | Private (never commit)                                                                                                        | Where it lives                                                          |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| All code, tests, steering, specs, hooks, docs, ADRs                                            | Apple Pass Type ID certificate and key, WWDR certificate                                                                      | AWS Secrets Manager, loaded by the owner with `scripts/load-secrets.sh` |
+| Terraform modules, envs, tests                                                                 | Google Wallet service account key and issuer ID                                                                               | AWS Secrets Manager                                                     |
+| `*.example` files (`terraform.tfvars.example`, `cloud.auto.tfbackend.example`, `.env.example`) | Real `terraform.tfvars`, `cloud.auto.tfbackend`, `.env`, HCP organisation and workspace settings, AWS account ID, alert email | Local git-ignored files and HCP workspace variables                     |
+| Synthetic catalog in `fixtures/synthetic/`                                                     | Real API recordings                                                                                                           | `fixtures/.raw/`, git-ignored                                           |
+| The CloudFront domain (attendees need it)                                                      | HMAC pepper, origin-verify value                                                                                              | Generated into Secrets Manager by Terraform, never output               |
 
 Never read, print or paste a secret value. Repository protections: secret scanning with push protection, CodeQL default setup, branch protection on `main`, private vulnerability reporting.
 

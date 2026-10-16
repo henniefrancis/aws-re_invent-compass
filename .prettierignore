@@ -1,0 +1,30 @@
+# Prettier ignore list (foundation-contracts, S0).
+#
+# These paths are machine-generated with their own canonical serialization and
+# must not be reformatted by Prettier, or their byte-stable checks would break.
+
+# Build output, dependencies and coverage.
+dist/
+**/dist/
+node_modules/
+coverage/
+
+# Generated OpenAPI TypeScript types (produced by gen:types with a fixed banner).
+**/generated/**
+
+# The deterministic synthetic catalog (produced by fixtures/synthetic/generate.ts
+# with sorted keys and a trailing newline; the catalog check compares it byte for
+# byte to the generator output).
+fixtures/synthetic/catalog.json
+fixtures/synthetic/index.json
+
+# The official Events API OpenAPI document, committed byte-for-byte as fetched.
+# ADR-023 records its SHA-256, so it must never be reformatted.
+packages/contracts/events-api.openapi.json
+
+# The three byte-identical Compass API OpenAPI files (hash-checked). They must
+# only ever change together through gen:copy, never through an independent
+# reformat, so all three are ignored to keep them byte-identical.
+contracts/compass-api.openapi.yaml
+packages/contracts/openapi.yaml
+infra/modules/api/openapi.yaml

@@ -43,8 +43,7 @@ export async function hashCheck({ files = FILES } = {}) {
 }
 
 const invokedDirectly =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (invokedDirectly) {
   hashCheck()
@@ -57,9 +56,7 @@ if (invokedDirectly) {
       }
       process.stderr.write('hash check FAILED: the Compass API copies differ\n');
       for (const h of hashes) {
-        process.stderr.write(
-          `  ${relative(repoRoot, h.file)}: ${h.sha256.slice(0, 12)}\n`,
-        );
+        process.stderr.write(`  ${relative(repoRoot, h.file)}: ${h.sha256.slice(0, 12)}\n`);
       }
       process.exitCode = 1;
     })

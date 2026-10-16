@@ -9,6 +9,7 @@ Scope is scaffolding and contracts only: the npm workspaces monorepo, the toolch
 Owned paths (only these may be edited by this stream): root configs including `.nvmrc`, `package.json` workspaces and `package-lock.json`, `packages/contracts/**`, `contracts/**`, `.github/**` including `.github/scripts/**`, `fixtures/synthetic/**`, `spikes/**`, `.kiro/hooks/**`, the steering files, plus the single S0-owned copy `infra/modules/api/openapi.yaml`, the `docs/decisions/ADR-023-events-api-openapi-source.md` provenance record for the Events API OpenAPI, `CONCEPT.md` dates, and the `.example` files named below.
 
 Non-negotiable project constraints that every requirement in this document inherits:
+
 - No secret, token, certificate, key or account identifier value is ever printed or committed. Only `.example` files are committed for secret-bearing configuration.
 - Tests run with `COMPASS_MODE=simulated` and committed fixtures only. No requirement here causes a call to the live Events API.
 - No em dash or en dash appears anywhere in copy, comments, test names or commit messages.

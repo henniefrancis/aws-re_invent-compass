@@ -8,20 +8,20 @@ This design is grounded in the approved build plan (sections 3, 4.1, 5, 8, 8.1, 
 
 The deliverables, mapped to the twelve requirements:
 
-| Area | Requirement | What S0 produces |
-|---|---|---|
-| Workspace scaffold and toolchain | 1 | npm workspaces root, TS 6 strict, ESLint flat config, Prettier, vitest 4 at 100 percent coverage, pinned dependencies, `.nvmrc`, lockfile |
-| @compass/core subpath exports | 2 | Empty compiling entry points for eight subpaths, no shared barrel, browser-safe `rules` |
-| Events API OpenAPI and types | 3 | Committed official OpenAPI 3.1.0, ADR-023 provenance, generated TypeScript types |
-| Shared zod schemas and MCP tool schemas | 4 | Wire schemas (Session, SessionTime, Schedule, PersonalTime, Event, BulkResult, response wrappers) mirroring the Events API OpenAPI, domain types (NormalisedSession, Commitment, Venue, Verdict, PassFields), Problem, seventeen MCP tool input and output schemas |
-| Compass API OpenAPI, copies, types | 5 | Single source contract, two byte-identical copies, hash check, placeholder safety check, generated types |
-| Synthetic catalog | 6 | Deterministic generator plus about 120 committed sessions in the real shape |
-| CI workflows and Dependabot | 7 | check.yml, e2e.yml, publish.yml, dependabot.yml, scripts under `.github/scripts` |
-| Repo build hooks | 8 | `.kiro/hooks` save hook running lint, owning-package tests and the dash check |
-| SP2 ID token spike | 9 | `spikes/sp2-id-token.ts` with tested redaction modules under `spikes/src`, tests under `spikes/test` |
-| SP5 shape-diff spike | 10 | `spikes/sp5-shape-diff.ts` with tested diff modules under `spikes/src`, tests under `spikes/test` |
-| Doc and example updates | 11 | `.env.example`, terraform tfvars and backend examples, CONCEPT dates |
-| Foundation acceptance gate | 12 | A green run of compile, test, hash, placeholder, dash, actionlint and catalog validation |
+| Area                                    | Requirement | What S0 produces                                                                                                                                                                                                                                                   |
+| --------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Workspace scaffold and toolchain        | 1           | npm workspaces root, TS 6 strict, ESLint flat config, Prettier, vitest 4 at 100 percent coverage, pinned dependencies, `.nvmrc`, lockfile                                                                                                                          |
+| @compass/core subpath exports           | 2           | Empty compiling entry points for eight subpaths, no shared barrel, browser-safe `rules`                                                                                                                                                                            |
+| Events API OpenAPI and types            | 3           | Committed official OpenAPI 3.1.0, ADR-023 provenance, generated TypeScript types                                                                                                                                                                                   |
+| Shared zod schemas and MCP tool schemas | 4           | Wire schemas (Session, SessionTime, Schedule, PersonalTime, Event, BulkResult, response wrappers) mirroring the Events API OpenAPI, domain types (NormalisedSession, Commitment, Venue, Verdict, PassFields), Problem, seventeen MCP tool input and output schemas |
+| Compass API OpenAPI, copies, types      | 5           | Single source contract, two byte-identical copies, hash check, placeholder safety check, generated types                                                                                                                                                           |
+| Synthetic catalog                       | 6           | Deterministic generator plus about 120 committed sessions in the real shape                                                                                                                                                                                        |
+| CI workflows and Dependabot             | 7           | check.yml, e2e.yml, publish.yml, dependabot.yml, scripts under `.github/scripts`                                                                                                                                                                                   |
+| Repo build hooks                        | 8           | `.kiro/hooks` save hook running lint, owning-package tests and the dash check                                                                                                                                                                                      |
+| SP2 ID token spike                      | 9           | `spikes/sp2-id-token.ts` with tested redaction modules under `spikes/src`, tests under `spikes/test`                                                                                                                                                               |
+| SP5 shape-diff spike                    | 10          | `spikes/sp5-shape-diff.ts` with tested diff modules under `spikes/src`, tests under `spikes/test`                                                                                                                                                                  |
+| Doc and example updates                 | 11          | `.env.example`, terraform tfvars and backend examples, CONCEPT dates                                                                                                                                                                                               |
+| Foundation acceptance gate              | 12          | A green run of compile, test, hash, placeholder, dash, actionlint and catalog validation                                                                                                                                                                           |
 
 ### Non-negotiable constraints baked into every component
 
@@ -202,15 +202,47 @@ Each workspace gets a `package.json`, a tsconfig, a compiling placeholder `index
 {
   "name": "@compass/core",
   "exports": {
-    "./auth":      { "@compass/source": "./src/auth/index.ts",      "types": "./dist/auth/index.d.ts",      "default": "./dist/auth/index.js" },
-    "./api":       { "@compass/source": "./src/api/index.ts",       "types": "./dist/api/index.d.ts",       "default": "./dist/api/index.js" },
-    "./catalog":   { "@compass/source": "./src/catalog/index.ts",   "types": "./dist/catalog/index.d.ts",   "default": "./dist/catalog/index.js" },
-    "./simulated": { "@compass/source": "./src/simulated/index.ts", "types": "./dist/simulated/index.d.ts", "default": "./dist/simulated/index.js" },
-    "./rules":     { "@compass/source": "./src/rules/index.ts",     "types": "./dist/rules/index.d.ts",     "default": "./dist/rules/index.js" },
-    "./scanner":   { "@compass/source": "./src/scanner/index.ts",   "types": "./dist/scanner/index.d.ts",   "default": "./dist/scanner/index.js" },
-    "./spec":      { "@compass/source": "./src/spec/index.ts",      "types": "./dist/spec/index.d.ts",      "default": "./dist/spec/index.js" },
-    "./passes":    { "@compass/source": "./src/passes/index.ts",    "types": "./dist/passes/index.d.ts",    "default": "./dist/passes/index.js" }
-  }
+    "./auth": {
+      "@compass/source": "./src/auth/index.ts",
+      "types": "./dist/auth/index.d.ts",
+      "default": "./dist/auth/index.js",
+    },
+    "./api": {
+      "@compass/source": "./src/api/index.ts",
+      "types": "./dist/api/index.d.ts",
+      "default": "./dist/api/index.js",
+    },
+    "./catalog": {
+      "@compass/source": "./src/catalog/index.ts",
+      "types": "./dist/catalog/index.d.ts",
+      "default": "./dist/catalog/index.js",
+    },
+    "./simulated": {
+      "@compass/source": "./src/simulated/index.ts",
+      "types": "./dist/simulated/index.d.ts",
+      "default": "./dist/simulated/index.js",
+    },
+    "./rules": {
+      "@compass/source": "./src/rules/index.ts",
+      "types": "./dist/rules/index.d.ts",
+      "default": "./dist/rules/index.js",
+    },
+    "./scanner": {
+      "@compass/source": "./src/scanner/index.ts",
+      "types": "./dist/scanner/index.d.ts",
+      "default": "./dist/scanner/index.js",
+    },
+    "./spec": {
+      "@compass/source": "./src/spec/index.ts",
+      "types": "./dist/spec/index.d.ts",
+      "default": "./dist/spec/index.js",
+    },
+    "./passes": {
+      "@compass/source": "./src/passes/index.ts",
+      "types": "./dist/passes/index.d.ts",
+      "default": "./dist/passes/index.js",
+    },
+  },
 }
 ```
 
@@ -311,34 +343,34 @@ The official document is fetched once from `https://api.awsevents.com/v1/openapi
 
 Every dependency is pinned to an exact version. The versions below are the exact verified pins. No range, caret or tilde appears in any manifest. At install time the integrator runs `npm view <pkg> version` and `npm view <pkg> peerDependencies` for every package and records the result in `package-lock.json` and in the install notes. TypeScript stays on the 6.0.x line because Angular 22.2 and typescript-eslint both require typescript `>=6.0 <6.1`.
 
-| Package | Exact pin | Scope | Purpose | Source |
-|---|---|---|---|---|
-| typescript | 6.0.3 | dev, root | TS 6 strict compiler across every workspace, kept on the 6.0.x line for Angular 22.2 and typescript-eslint | ADR-006 |
-| @types/node | 24.19.2 | dev, root | Node 24 runtime type definitions | ADR-006, tech.md |
-| vitest | 4.1.12 | dev, root | Unit test runner, v8 coverage at 100 percent | ADR-006 |
-| @vitest/coverage-v8 | 4.1.12 | dev, root | v8 coverage provider, kept in lockstep with vitest (ADR-006; Angular 22 supports vitest 4 and 5) | ADR-006 |
-| eslint | 10.12.0 | dev, root | Linting with flat config | ADR-006 |
-| typescript-eslint | 8.71.2 | dev, root | TypeScript ESLint rules and parser | ADR-006 |
-| @angular-eslint/eslint-plugin | 22.6.0 | dev, root | Angular lint rules scoped to site | ADR-006 |
-| @angular-eslint/template-parser | 22.6.0 | dev, root | Angular template parsing for lint | ADR-006 |
-| prettier | 3.9.10 | dev, root | Code formatting across the monorepo | ADR-006 |
-| zod | 4.6.7 | prod, contracts | Every schema, tool input and API request parsed | ADR-006 |
-| openapi-typescript | 7.13.0 | dev, contracts | Generate TS types from both OpenAPI documents | ADR-008 |
-| aws-jwt-verify | 5.2.1 | dev, root (SP2 spike); prod, pass-service | ID token verification, used by the SP2 spike at the root and by pass-service at runtime (not a contracts dependency) | ADR-006 |
-| passkit-generator | 3.7.0 | prod, pass-service | Apple Wallet pass building | ADR-006 |
-| ical-generator | 11.1.2 | prod, core | Local .ics generation | ADR-006, tech.md |
-| @napi-rs/keyring | 2.1.1 | prod, core | OS keychain token storage with memory fallback | tech.md |
-| @modelcontextprotocol/sdk | 1.32.1 | prod, mcp-server | Local stdio MCP server and CLI | ADR-006 |
-| fast-check | 4.10.2 | dev, root | Property-based testing | Requirements 4.12, 6.1 |
-| esbuild | 0.28.2 | dev, root | Lambda and MCP bundle step in CI build | build plan 11.1 |
-| @aws-sdk/client-dynamodb | 3.1152.0 | prod, pass-service | DynamoDB client | build plan 3, 7.2 |
-| @aws-sdk/lib-dynamodb | 3.1152.0 | prod, pass-service | DynamoDB document client | build plan 3, 7.2 |
-| @aws-sdk/client-secrets-manager | 3.1152.0 | prod, pass-service | Secrets Manager client (pepper, origin verify) | build plan 7.2 |
-| google-auth-library | 11.3.0 | prod, pass-service | Google Wallet JWT and API auth | build plan 3 |
-| qrcode | 1.5.4 | prod, core | QR rendering for the hand-off | build plan 8.1 |
-| ical.js | 2.2.1 | dev, core | iCalendar parsing in tests only | Requirement 1.8 |
-| @playwright/test | 1.64.1 | dev, root | Browser tests, site only, on demand | tech.md, build plan 11.2 |
-| @axe-core/playwright | 4.14.0 | dev, root | Accessibility checks in e2e | build plan 8 (S7), 11.2 |
+| Package                         | Exact pin | Scope                                     | Purpose                                                                                                              | Source                   |
+| ------------------------------- | --------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| typescript                      | 6.0.3     | dev, root                                 | TS 6 strict compiler across every workspace, kept on the 6.0.x line for Angular 22.2 and typescript-eslint           | ADR-006                  |
+| @types/node                     | 24.19.2   | dev, root                                 | Node 24 runtime type definitions                                                                                     | ADR-006, tech.md         |
+| vitest                          | 4.1.12    | dev, root                                 | Unit test runner, v8 coverage at 100 percent                                                                         | ADR-006                  |
+| @vitest/coverage-v8             | 4.1.12    | dev, root                                 | v8 coverage provider, kept in lockstep with vitest (ADR-006; Angular 22 supports vitest 4 and 5)                     | ADR-006                  |
+| eslint                          | 10.12.0   | dev, root                                 | Linting with flat config                                                                                             | ADR-006                  |
+| typescript-eslint               | 8.71.2    | dev, root                                 | TypeScript ESLint rules and parser                                                                                   | ADR-006                  |
+| @angular-eslint/eslint-plugin   | 22.6.0    | dev, root                                 | Angular lint rules scoped to site                                                                                    | ADR-006                  |
+| @angular-eslint/template-parser | 22.6.0    | dev, root                                 | Angular template parsing for lint                                                                                    | ADR-006                  |
+| prettier                        | 3.9.10    | dev, root                                 | Code formatting across the monorepo                                                                                  | ADR-006                  |
+| zod                             | 4.6.7     | prod, contracts                           | Every schema, tool input and API request parsed                                                                      | ADR-006                  |
+| openapi-typescript              | 7.13.0    | dev, contracts                            | Generate TS types from both OpenAPI documents                                                                        | ADR-008                  |
+| aws-jwt-verify                  | 5.2.1     | dev, root (SP2 spike); prod, pass-service | ID token verification, used by the SP2 spike at the root and by pass-service at runtime (not a contracts dependency) | ADR-006                  |
+| passkit-generator               | 3.7.0     | prod, pass-service                        | Apple Wallet pass building                                                                                           | ADR-006                  |
+| ical-generator                  | 11.1.2    | prod, core                                | Local .ics generation                                                                                                | ADR-006, tech.md         |
+| @napi-rs/keyring                | 2.1.1     | prod, core                                | OS keychain token storage with memory fallback                                                                       | tech.md                  |
+| @modelcontextprotocol/sdk       | 1.32.1    | prod, mcp-server                          | Local stdio MCP server and CLI                                                                                       | ADR-006                  |
+| fast-check                      | 4.10.2    | dev, root                                 | Property-based testing                                                                                               | Requirements 4.12, 6.1   |
+| esbuild                         | 0.28.2    | dev, root                                 | Lambda and MCP bundle step in CI build                                                                               | build plan 11.1          |
+| @aws-sdk/client-dynamodb        | 3.1152.0  | prod, pass-service                        | DynamoDB client                                                                                                      | build plan 3, 7.2        |
+| @aws-sdk/lib-dynamodb           | 3.1152.0  | prod, pass-service                        | DynamoDB document client                                                                                             | build plan 3, 7.2        |
+| @aws-sdk/client-secrets-manager | 3.1152.0  | prod, pass-service                        | Secrets Manager client (pepper, origin verify)                                                                       | build plan 7.2           |
+| google-auth-library             | 11.3.0    | prod, pass-service                        | Google Wallet JWT and API auth                                                                                       | build plan 3             |
+| qrcode                          | 1.5.4     | prod, core                                | QR rendering for the hand-off                                                                                        | build plan 8.1           |
+| ical.js                         | 2.2.1     | dev, core                                 | iCalendar parsing in tests only                                                                                      | Requirement 1.8          |
+| @playwright/test                | 1.64.1    | dev, root                                 | Browser tests, site only, on demand                                                                                  | tech.md, build plan 11.2 |
+| @axe-core/playwright            | 4.14.0    | dev, root                                 | Accessibility checks in e2e                                                                                          | build plan 8 (S7), 11.2  |
 
 The cross-package deep-relative-import ban is enforced by the built-in `no-restricted-imports` rule only. There is no `eslint-plugin-import` dependency: it does not support ESLint 10, so it is dropped entirely.
 

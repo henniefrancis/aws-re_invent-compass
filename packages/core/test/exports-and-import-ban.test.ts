@@ -66,10 +66,7 @@ const EXPECTED_SUBPATHS = [
 
 describe('Feature: foundation-contracts, @compass/core exports map', () => {
   const manifest = readJson(join(coreRoot, 'package.json'));
-  const exportsMap = manifest.exports as Record<
-    string,
-    Record<string, unknown>
-  >;
+  const exportsMap = manifest.exports as Record<string, Record<string, unknown>>;
 
   test('exports map has exactly the eight expected subpath keys', () => {
     expect(exportsMap).toBeDefined();
@@ -124,9 +121,7 @@ describe('Feature: foundation-contracts, no eslint-plugin-import dependency', ()
   });
 
   test('eslint-plugin-import is not installed under node_modules', () => {
-    expect(
-      existsSync(join(repoRoot, 'node_modules', 'eslint-plugin-import')),
-    ).toBe(false);
+    expect(existsSync(join(repoRoot, 'node_modules', 'eslint-plugin-import'))).toBe(false);
   });
 });
 

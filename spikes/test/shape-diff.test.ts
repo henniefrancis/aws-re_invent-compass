@@ -24,7 +24,10 @@ const leakNumber = fc.integer({ min: 100000, max: 999999 });
 // field names.
 const recordingArb = fc.dictionary(
   fc.string({ minLength: 1, maxLength: 8 }).filter((s) => /^[a-z]+$/.test(s)),
-  fc.oneof(leakString, leakNumber.map((n) => n)),
+  fc.oneof(
+    leakString,
+    leakNumber.map((n) => n),
+  ),
   { minKeys: 1, maxKeys: 6 },
 );
 

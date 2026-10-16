@@ -35,9 +35,8 @@ type GeneratedSession = components['schemas']['Session'];
 type EnumFields = 'seatAvailability';
 
 /** Compile-time boolean equality for two types. */
-type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
-  ? true
-  : false;
+type Equal<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 
 /** Compile-time assertion: fails to compile unless T is exactly true. */
 type AssertTrue<T extends true> = T;
@@ -64,11 +63,7 @@ type _NonEnumGeneratedAssignableToWire = AssertTrue<
 
 // Reference the type aliases so verbatimModuleSyntax and noUnusedLocals style checks see them
 // as used. These are type-only values; they carry no runtime cost.
-type _Used = [
-  _KeysMatch,
-  _NonEnumWireAssignableToGenerated,
-  _NonEnumGeneratedAssignableToWire,
-];
+type _Used = [_KeysMatch, _NonEnumWireAssignableToGenerated, _NonEnumGeneratedAssignableToWire];
 
 describe('Feature: foundation-contracts, wire Session matches the generated Events API Session type', () => {
   test('compiles: field-name set equality and non-enum field assignability', () => {
