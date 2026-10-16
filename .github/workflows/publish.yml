@@ -1,0 +1,43 @@
+# npm publish workflow (foundation-contracts, S0).
+#
+# Triggered only on a version tag (v*). It is never run on push to a branch, pull
+# request or a schedule. It publishes through npm trusted publishing with
+# provenance, which needs id-token: write; no npm token is stored. Every action is
+# pinned by commit SHA.
+#
+# This file contains no em dash or en dash.
+name: publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: build and publish with provenance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build --if-present
+
+      - name: Publish with provenance
+        run: npm publish --provenance --access public --workspace packages/mcp-server

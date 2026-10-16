@@ -1,0 +1,150 @@
+# Required check workflow (foundation-contracts, S0).
+#
+# One job, triggered only on a pull request into main (build plan 11.1 and the
+# design). There is no push trigger and no schedule trigger anywhere. Every action
+# is pinned by commit SHA. The steps run in the build plan 11.1 order. The
+# Terraform and shellcheck steps are guarded by a presence check so they pass as
+# no-ops while the repository has no Terraform or shell files yet.
+#
+# This file contains no em dash or en dash.
+name: check
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: build, test and scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Contract hash check
+        run: npm run check:hash
+
+      - name: Placeholder safety check
+        run: npm run check:placeholders
+
+      - name: Dash check
+        run: npm run check:dash
+
+      - name: Catalog check
+        run: npm run check:catalog
+
+      - name: Prettier
+        run: npm run format:check
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript build
+        run: npx tsc -b
+
+      - name: Unit tests with coverage
+        run: npm test
+
+      - name: Build
+        run: npm run build --if-present
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm audit
+        run: npm audit --omit=dev --audit-level=high
+
+      # Terraform steps run only when Terraform files exist. While there are none
+      # (S6 adds them later) these steps pass as no-ops.
+      - name: Detect Terraform files
+        id: tf
+        shell: bash
+        run: |
+          if [ -n "$(git ls-files '*.tf')" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Terraform
+        if: steps.tf.outputs.present == 'true'
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+
+      - name: Terraform fmt
+        if: steps.tf.outputs.present == 'true'
+        run: terraform fmt -check -recursive
+
+      - name: Terraform validate
+        if: steps.tf.outputs.present == 'true'
+        run: |
+          for dir in $(git ls-files '*.tf' | xargs -n1 dirname | sort -u); do
+            terraform -chdir="$dir" init -backend=false
+            terraform -chdir="$dir" validate
+          done
+
+      - name: Set up tflint
+        if: steps.tf.outputs.present == 'true'
+        uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6 # v4
+
+      - name: tflint
+        if: steps.tf.outputs.present == 'true'
+        run: tflint --recursive
+
+      - name: Terraform test
+        if: steps.tf.outputs.present == 'true'
+        run: |
+          for dir in $(git ls-files '*.tftest.hcl' | xargs -n1 dirname | sort -u); do
+            terraform -chdir="$dir" test
+          done
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@6abccf398f78b4c337599c0656f933d91efb91a0 # master
+        with:
+          scan-type: fs
+          scan-ref: .
+          exit-code: 1
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Trivy config scan
+        uses: aquasecurity/trivy-action@6abccf398f78b4c337599c0656f933d91efb91a0 # master
+        with:
+          scan-type: config
+          scan-ref: .
+          exit-code: 1
+          severity: HIGH,CRITICAL
+
+      # Shellcheck runs only when shell files exist. While there are none these
+      # steps pass as no-ops.
+      - name: Detect shell files
+        id: sh
+        shell: bash
+        run: |
+          if [ -n "$(git ls-files '*.sh')" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Shellcheck
+        if: steps.sh.outputs.present == 'true'
+        uses: ludeeus/action-shellcheck@00b27aa7cb85167568cb48a3838b75f4265f2bca # master
