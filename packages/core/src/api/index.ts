@@ -41,6 +41,19 @@ export {
   type HttpTransportDeps,
 } from './http-transport.js';
 
+// Response validation and the no-body assertion (Component 2, validation).
+export { validateBody, assertNoBody } from './validate.js';
+
+// Response wrappers built from contract schemas (Component 2, wrappers).
+export {
+  ListEventsResultSchema,
+  GetEventResultSchema,
+  BulkWriteResultSchema,
+  type ListEventsResult,
+  type GetEventResult,
+  type BulkWriteResult,
+} from './response-wrappers.js';
+
 // Typed error taxonomy (Component 4) and the status-to-error mapper.
 export {
   EventsApiError,

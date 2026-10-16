@@ -40,39 +40,39 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 1.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Include `.kiro/specs/events-client/` in this first commit. Verify every edit landed. Never push.
 
-- [ ] 2. Implement the HTTP transport and typed errors
-  - [ ] 2.1 Implement the HTTP transport
+- [x] 2. Implement the HTTP transport and typed errors
+  - [x] 2.1 Implement the HTTP transport
     - In `src/api/transport.ts`, implement `HttpTransport` over global `fetch` targeting `https://api.awsevents.com/v1`, attaching the bearer access token from `EventsApiCredential` and never the ID token
     - _Requirements: 6.2, 4.1, 4.4_
 
-  - [ ] 2.2 Implement the typed error taxonomy and redacting factory
+  - [x] 2.2 Implement the typed error taxonomy and redacting factory
     - Create `src/api/errors.ts` with `EventsApiError` base and `ValidationError`, `BadRequestError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`, `RateLimitedError`, `ServerError`, `UnexpectedResponseError`, `EventWindowError`, `QuotaExceededError`
     - Build errors through a factory that accepts only operation name and status so no token, email or header can be carried
     - Implement the status-to-error mapper (400, 403, 404, 409, 500 to 599, and any other failure status to unexpected-response), each carrying the status
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 20.2_
 
-  - [ ] 2.3 Write property test for error mapping
+  - [x] 2.3 Write property test for error mapping
     - **Property 15: Every failure status maps to its typed error carrying the status**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5, 7.6**
 
-  - [ ] 2.4 Commit
+  - [x] 2.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 3. Implement response validation and wrappers
-  - [ ] 3.1 Implement response validation and response wrappers
+- [x] 3. Implement response validation and wrappers
+  - [x] 3.1 Implement response validation and response wrappers
     - Create `src/api/validate.ts` that parses a 2xx body with the matching `@compass/contracts` schema, returns the parsed value, and returns `ValidationError` (never the raw body) on failure; treats a 204 empty body for the five no-body operations as success with no validation
     - Create `src/api/response-wrappers.ts` using `z.object` composed from `EventSchema`, `BulkResultSchema`, `SessionWireSchema` so ListEvents returns `{items}`, GetEvent returns `{event}`, ReserveSessions and AssociateFavorites return `{result}`
     - _Requirements: 6.3, 6.4, 6.5, 6.6, 6.7, 6.8_
 
-  - [ ] 3.2 Write property test for 2xx validation and wrappers
+  - [x] 3.2 Write property test for 2xx validation and wrappers
     - **Property 13: Valid 2xx bodies are returned parsed; invalid bodies yield a validation error**
     - **Validates: Requirements 6.3, 6.4, 6.5, 6.6**
 
-  - [ ] 3.3 Write property test for 204 no-body success
+  - [x] 3.3 Write property test for 204 no-body success
     - **Property 14: A 204 for no-body operations is success without validation**
     - **Validates: Requirements 6.7**
 
-  - [ ] 3.4 Commit
+  - [x] 3.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 4. Implement the retry policy and Retry-After parser
