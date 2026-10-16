@@ -204,7 +204,7 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
     - After the task 9 tests pass, commit locally with a Conventional Commit scoped `foundation-contracts` (for example `feat(foundation-contracts): add deterministic synthetic catalog`). Do not push, merge, tag or open a PR
     - _Requirements: 6.1, 6.6_
 
-- [ ] 10. Checkpoint - Ensure all tests pass
+- [x] 10. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 11. Implement the spike scripts and their tested modules
@@ -267,16 +267,16 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
     - After the task 13 tests pass, commit locally with a Conventional Commit scoped `foundation-contracts` (for example `docs(foundation-contracts): add example config files and reconcile dates`). Do not push, merge, tag or open a PR
     - _Requirements: 11.1_
 
-- [ ] 14. Wire the acceptance gate and prove the consumer path
-  - [ ] 14.1 Add the consumer-import fixture and verify the full gate
+- [x] 14. Wire the acceptance gate and prove the consumer path
+  - [x] 14.1 Add the consumer-import fixture and verify the full gate
     - Add a small consumer fixture that imports a shared type from `@compass/contracts` and compiles, then run the full gate: `tsc -b` across the monorepo, `vitest --coverage` at 100 percent, hash check, placeholder safety check and dash check over the real committed files, actionlint, and catalog validation against the live schema
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9, 12.10_
 
-  - [ ] 14.2 Commit the acceptance gate and consumer fixture
+  - [x] 14.2 Commit the acceptance gate and consumer fixture
     - After the full gate passes, commit locally with a Conventional Commit scoped `foundation-contracts` (for example `test(foundation-contracts): add consumer fixture and wire acceptance gate`). Do not push, merge, tag or open a PR
     - _Requirements: 12.1_
 
-- [ ] 15. Final checkpoint - Ensure all tests pass
+- [x] 15. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
