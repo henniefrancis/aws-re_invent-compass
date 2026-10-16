@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
+import { dirname, join } from 'node:path';
 import {
   ALLOWLIST,
+  resolveNpmCommand,
   runAudit,
   extractAdvisories,
   evaluate,
@@ -48,6 +50,34 @@ describe('Feature: foundation-contracts, audit-check', () => {
     expect([...ALLOWLIST].sort()).toEqual(
       ['GHSA-6h2x-m376-mqjq', 'GHSA-86w9-cpqp-85rv', 'GHSA-wr44-6hxh-3jwq'].sort(),
     );
+  });
+
+  test('resolveNpmCommand runs node with npm_execpath when it is set', () => {
+    const { command, args } = resolveNpmCommand(
+      { npm_execpath: '/path/to/npm-cli.js' },
+      '/usr/bin/node',
+    );
+    expect(command).toBe('/usr/bin/node');
+    expect(args).toEqual(['/path/to/npm-cli.js', 'audit', '--omit=dev', '--json']);
+  });
+
+  test('resolveNpmCommand falls back to the npm-cli.js next to node when unset or empty', () => {
+    const execPath = '/usr/bin/node';
+    const expectedCli = join(dirname(execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
+
+    const unset = resolveNpmCommand({}, execPath);
+    expect(unset.command).toBe(execPath);
+    expect(unset.args).toEqual([expectedCli, 'audit', '--omit=dev', '--json']);
+
+    // An empty string is treated the same as unset.
+    const empty = resolveNpmCommand({ npm_execpath: '' }, execPath);
+    expect(empty.args).toEqual([expectedCli, 'audit', '--omit=dev', '--json']);
+  });
+
+  test('resolveNpmCommand never requests a shell (no shell metacharacters in command)', () => {
+    const { command } = resolveNpmCommand({ npm_execpath: 'x' }, '/usr/bin/node');
+    // The command is always the node binary path, never "npm" run through a shell.
+    expect(command).toBe('/usr/bin/node');
   });
 
   test('runAudit parses the injected runner output', () => {

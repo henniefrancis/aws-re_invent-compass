@@ -16,6 +16,7 @@
 // This file contains no em dash or en dash.
 
 import { spawnSync } from 'node:child_process';
+import { dirname, join } from 'node:path';
 import { maybeRunCli } from './cli.mjs';
 
 /**
@@ -41,12 +42,37 @@ export function runAudit(runner = defaultAuditRunner) {
   return JSON.parse(stdout ? stdout : '{}');
 }
 
-/** Default audit runner: npm audit over production dependencies as JSON. */
+/** The npm audit arguments, shared by every invocation. */
+const AUDIT_ARGS = ['audit', '--omit=dev', '--json'];
+
+/**
+ * Resolve the command and arguments that run npm audit WITHOUT a shell, so there
+ * is no command-injection surface and no DEP0190 warning. npm is a JavaScript CLI,
+ * so it is run through the Node binary:
+ *   - if npm_execpath is set (npm sets it for scripts), run node with that path;
+ *   - otherwise run node with the npm-cli.js that ships next to the node binary.
+ * Pure and parameterised so both branches are covered by tests.
+ *
+ * @param {NodeJS.ProcessEnv} env
+ * @param {string} execPath the path to the node binary (process.execPath)
+ * @returns {{ command: string, args: string[] }}
+ */
+export function resolveNpmCommand(env, execPath) {
+  const npmExecPath = env.npm_execpath;
+  const cliPath =
+    npmExecPath !== undefined && npmExecPath.length > 0
+      ? npmExecPath
+      : join(dirname(execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
+  return { command: execPath, args: [cliPath, ...AUDIT_ARGS] };
+}
+
+/**
+ * Default audit runner: npm audit over production dependencies as JSON, spawned
+ * without a shell.
+ */
 function defaultAuditRunner() {
-  const r = spawnSync('npm', ['audit', '--omit=dev', '--json'], {
-    encoding: 'utf8',
-    shell: process.platform === 'win32',
-  });
+  const { command, args } = resolveNpmCommand(process.env, process.execPath);
+  const r = spawnSync(command, args, { encoding: 'utf8' });
   // npm audit exits non-zero when advisories exist; the JSON is still on stdout.
   return { stdout: r.stdout };
 }

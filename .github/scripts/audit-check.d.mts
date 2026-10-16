@@ -12,6 +12,11 @@ export interface AuditRunnerResult {
   stdout: string | null | undefined;
 }
 
+export declare function resolveNpmCommand(
+  env: Record<string, string | undefined>,
+  execPath: string,
+): { command: string; args: string[] };
+
 export declare function runAudit(runner?: () => AuditRunnerResult): unknown;
 
 export declare function extractAdvisories(report: unknown): Advisory[];
