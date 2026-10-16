@@ -75,20 +75,20 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 3.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 4. Implement the retry policy and Retry-After parser
-  - [ ] 4.1 Implement the retry policy
+- [x] 4. Implement the retry policy and Retry-After parser
+  - [x] 4.1 Implement the retry policy
     - Create `src/api/retry.ts` with `parseRetryAfter` (whole seconds in `[0,120]`, else undefined) and a `RetryPolicy` that, for non-ReserveSessions, does one refresh plus one retry on 401 and one wait plus one retry on a parseable 429, and special-cases ReserveSessions so it is never automatically re-sent for any status
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 9.1, 9.2, 9.3, 9.4_
 
-  - [ ] 4.2 Write property test for non-reserve 401 and 429 retry
+  - [x] 4.2 Write property test for non-reserve 401 and 429 retry
     - **Property 16: Non-reserve 401 and 429 retry at most once**
     - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6**
 
-  - [ ] 4.3 Write property test for ReserveSessions sent exactly once
+  - [x] 4.3 Write property test for ReserveSessions sent exactly once
     - **Property 17: ReserveSessions is sent exactly once for any status**
     - **Validates: Requirements 9.1, 9.2, 9.3, 9.4**
 
-  - [ ] 4.4 Commit
+  - [x] 4.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 5. Implement the quota tracker

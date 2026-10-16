@@ -41,6 +41,17 @@ export {
   type HttpTransportDeps,
 } from './http-transport.js';
 
+// Retry policy and Retry-After parser (Component 3).
+export {
+  createRetryPolicy,
+  parseRetryAfter,
+  MIN_RETRY_AFTER_SECONDS,
+  MAX_RETRY_AFTER_SECONDS,
+  type RetryPolicy,
+  type UnauthorizedDecision,
+  type RateLimitedDecision,
+} from './retry.js';
+
 // Response validation and the no-body assertion (Component 2, validation).
 export { validateBody, assertNoBody } from './validate.js';
 
