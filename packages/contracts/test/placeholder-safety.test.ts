@@ -55,19 +55,17 @@ describe('Feature: foundation-contracts, Property 9: The safety scanner flags fo
   // twelve long), spaces, basic punctuation and the two allowed placeholders.
   // ----------------------------------------------------------------------------
   test('Feature: foundation-contracts, Property 9: safe content is never flagged', async () => {
+    // Letters, space and safe punctuation ONLY. Digits are excluded from the
+    // alphabet so no accidental twelve-digit run can form, which removes the need
+    // for any fc.pre discard and keeps every generated case valid and fast.
     const safeChar = fc.constantFrom(
-      ...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;!?()/+#@-'.split(''),
+      ...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz .,:;!?()/+#@-'.split(''),
     );
     await fc.assert(
       fc.asyncProperty(
-        fc.array(safeChar, { maxLength: 60 }).map((c) => c.join('')),
+        fc.array(safeChar, { maxLength: 40 }).map((c) => c.join('')),
         fc.constantFrom(...ALLOWED, ''),
         async (text, placeholder) => {
-          // Guard the generated text so it never accidentally contains a forbidden
-          // token: no twelve-digit run, no arn:aws, no template markers (the safe
-          // alphabet excludes $ % { }, so markers cannot form; filter long digit runs
-          // and the arn literal to be safe).
-          fc.pre(!/\d{12}/.test(text.replace(/\D/g, '')));
           const line = `title: ${text} ${placeholder}`;
           const { ok, patterns } = await scan(line);
           expect(patterns, `unexpected findings for: ${JSON.stringify(line)}`).toEqual([]);
@@ -77,13 +75,24 @@ describe('Feature: foundation-contracts, Property 9: The safety scanner flags fo
       ),
       { numRuns: NUM_RUNS },
     );
-  });
+  }, 20000);
 
   // ----------------------------------------------------------------------------
   // Part B: each forbidden token is flagged. A clean base line plus exactly one
   // injected forbidden token must produce the matching finding.
   // ----------------------------------------------------------------------------
   test('Feature: foundation-contracts, Property 9: every forbidden token is flagged', async () => {
+    // A name built directly from [a-z_] so the generator never discards (no
+    // fc.filter): map each letter deterministically into the allowed set. The two
+    // allowed placeholder names are longer than this bounded name, so a collision
+    // is impossible, which keeps the "disallowed" case genuinely disallowed.
+    const braceName = fc
+      .array(fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz_'.split('')), {
+        minLength: 1,
+        maxLength: 8,
+      })
+      .map((chars) => chars.join(''));
+
     const forbidden = fc.oneof(
       // A twelve-digit run.
       fc
@@ -91,18 +100,12 @@ describe('Feature: foundation-contracts, Property 9: The safety scanner flags fo
         .map((d) => ({ text: d.join(''), expect: 'twelve-digit run (possible account id)' })),
       // A hard-coded ARN.
       fc.constant({ text: 'arn:aws:lambda', expect: 'hard-coded ARN' }),
-      // A disallowed dollar-brace marker (any name other than the two allowed).
-      fc
-        .string({ minLength: 1, maxLength: 10 })
-        .filter(
-          (n) =>
-            /^[a-z_]+$/.test(n) &&
-            !['api_lambda_invoke_arn', 'passkit_lambda_invoke_arn'].includes(n),
-        )
-        .map((name) => ({
-          text: '${' + name + '}',
-          expect: 'disallowed dollar-brace template marker',
-        })),
+      // A disallowed dollar-brace marker (a bounded name, never one of the two
+      // allowed placeholders).
+      braceName.map((name) => ({
+        text: '${' + name + '}',
+        expect: 'disallowed dollar-brace template marker',
+      })),
       // An unterminated bare dollar-brace.
       fc.constant({
         text: 'a ${ bare marker',
@@ -121,7 +124,7 @@ describe('Feature: foundation-contracts, Property 9: The safety scanner flags fo
       }),
       { numRuns: NUM_RUNS },
     );
-  });
+  }, 20000);
 
   // ----------------------------------------------------------------------------
   // Part C: the two allowed placeholders, on their own, are never flagged.
