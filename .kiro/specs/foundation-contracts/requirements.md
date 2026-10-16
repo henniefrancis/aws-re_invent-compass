@@ -9,6 +9,7 @@ Scope is scaffolding and contracts only: the npm workspaces monorepo, the toolch
 Owned paths (only these may be edited by this stream): root configs including `.nvmrc`, `package.json` workspaces and `package-lock.json`, `packages/contracts/**`, `contracts/**`, `.github/**` including `.github/scripts/**`, `fixtures/synthetic/**`, `spikes/**`, `.kiro/hooks/**`, the steering files, plus the single S0-owned copy `infra/modules/api/openapi.yaml`, the `docs/decisions/ADR-023-events-api-openapi-source.md` provenance record for the Events API OpenAPI, `CONCEPT.md` dates, and the `.example` files named below.
 
 Non-negotiable project constraints that every requirement in this document inherits:
+
 - No secret, token, certificate, key or account identifier value is ever printed or committed. Only `.example` files are committed for secret-bearing configuration.
 - Tests run with `COMPASS_MODE=simulated` and committed fixtures only. No requirement here causes a call to the live Events API.
 - No em dash or en dash appears anywhere in copy, comments, test names or commit messages.
@@ -205,8 +206,8 @@ Non-negotiable project constraints that every requirement in this document inher
 
 1. IF this spec changes any date referenced in `CONCEPT.md`, THEN THE spec SHALL update the affected date in `CONCEPT.md` in the same change.
 2. THE spec SHALL provide a committed `.env.example` file.
-3. THE spec SHALL provide a committed `infra/envs/*/terraform.tfvars.example` file for each environment.
-4. THE spec SHALL provide a committed `cloud.auto.tfbackend.example` file.
+3. THE `infra/envs/*/terraform.tfvars.example` file for each environment SHALL be provided by the infra stream (S6), per integrator decision, because S6 owns `infra/**` and its approved requirements define these files against its own variables. This spec does not commit them.
+4. THE `cloud.auto.tfbackend.example` file SHALL be provided by the infra stream (S6), per integrator decision, because S6 owns `infra/**` and the backend example uses the KEY=VALUE format read by `release.sh`. This spec does not commit it.
 5. THE example files SHALL contain placeholder values only and SHALL contain no secret, token, certificate, key or account identifier value.
 
 ### Requirement 12: Foundation acceptance gate

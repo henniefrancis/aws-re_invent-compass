@@ -1,0 +1,13 @@
+{
+  "name": "Save TypeScript check",
+  "version": "1.0.0",
+  "description": "On saving a TypeScript file, lint the saved file, run the owning package's tests (resolved by matching the path to a workspace folder) and run the dash check. A convenience for engineers; the CI check is the real gate.",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["**/*.ts", "**/*.tsx"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A TypeScript file was just saved. Do three things for that file and report any failures concisely: 1) run ESLint on the saved file only; 2) resolve the owning workspace package by matching the file path to a workspace folder (packages/contracts, packages/core, packages/mcp-server, packages/pass-service, site, or spikes) and run that package's vitest tests; if the path matches no workspace folder, run the full test suite; 3) run `node .github/scripts/dash-check.mjs`. Do not edit any files; only run the checks and summarise the results."
+  }
+}

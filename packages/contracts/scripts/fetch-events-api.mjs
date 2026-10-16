@@ -15,22 +15,17 @@
 //
 // Dependency free: Node builtins and global fetch only.
 
-import { rename, writeFile, unlink } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { rename, writeFile, unlink } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const EVENTS_API_OPENAPI_URL =
-  "https://api.awsevents.com/v1/openapi.json";
+export const EVENTS_API_OPENAPI_URL = 'https://api.awsevents.com/v1/openapi.json';
 
 // Resolve the committed document path relative to the repository root. This
 // file lives at packages/contracts/scripts/, so the repo root is three levels
 // up, and the committed document is packages/contracts/events-api.openapi.json.
 const thisDir = dirname(fileURLToPath(import.meta.url));
-export const DEFAULT_OUT_PATH = resolve(
-  thisDir,
-  "..",
-  "events-api.openapi.json",
-);
+export const DEFAULT_OUT_PATH = resolve(thisDir, '..', 'events-api.openapi.json');
 
 /**
  * Fetch the Events API OpenAPI document and write it atomically to outPath.
@@ -66,7 +61,7 @@ export async function fetchEventsApiOpenApi({ url, outPath }) {
   // replace is atomic and a failed write never truncates the committed file.
   const tempPath = `${outPath}.tmp-${process.pid}`;
   try {
-    await writeFile(tempPath, body, "utf8");
+    await writeFile(tempPath, body, 'utf8');
     await rename(tempPath, outPath);
   } catch (cause) {
     // Best effort cleanup of the temp file so a partial write leaves no trace.
@@ -74,14 +69,13 @@ export async function fetchEventsApiOpenApi({ url, outPath }) {
     throw cause;
   }
 
-  return { url, outPath, bytes: Buffer.byteLength(body, "utf8") };
+  return { url, outPath, bytes: Buffer.byteLength(body, 'utf8') };
 }
 
 // CLI entry: run directly to fetch the official document into the committed
 // location. Example: node packages/contracts/scripts/fetch-events-api.mjs
 const invokedDirectly =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (invokedDirectly) {
   fetchEventsApiOpenApi({
@@ -89,9 +83,7 @@ if (invokedDirectly) {
     outPath: DEFAULT_OUT_PATH,
   })
     .then((result) => {
-      process.stdout.write(
-        `Wrote ${result.bytes} bytes from ${result.url} to ${result.outPath}\n`,
-      );
+      process.stdout.write(`Wrote ${result.bytes} bytes from ${result.url} to ${result.outPath}\n`);
     })
     .catch((error) => {
       process.stderr.write(`${error.message}\n`);

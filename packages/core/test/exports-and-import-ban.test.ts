@@ -66,10 +66,7 @@ const EXPECTED_SUBPATHS = [
 
 describe('Feature: foundation-contracts, @compass/core exports map', () => {
   const manifest = readJson(join(coreRoot, 'package.json'));
-  const exportsMap = manifest.exports as Record<
-    string,
-    Record<string, unknown>
-  >;
+  const exportsMap = manifest.exports as Record<string, Record<string, unknown>>;
 
   test('exports map has exactly the eight expected subpath keys', () => {
     expect(exportsMap).toBeDefined();
@@ -113,7 +110,7 @@ describe('Feature: foundation-contracts, no eslint-plugin-import dependency', ()
     for (const section of sections) {
       const block = manifest[section];
       if (block && typeof block === 'object') {
-        names.push(...Object.keys(block as Record<string, unknown>));
+        names.push(...Object.keys(block));
       }
     }
     return names;
@@ -124,9 +121,7 @@ describe('Feature: foundation-contracts, no eslint-plugin-import dependency', ()
   });
 
   test('eslint-plugin-import is not installed under node_modules', () => {
-    expect(
-      existsSync(join(repoRoot, 'node_modules', 'eslint-plugin-import')),
-    ).toBe(false);
+    expect(existsSync(join(repoRoot, 'node_modules', 'eslint-plugin-import'))).toBe(false);
   });
 });
 
@@ -202,7 +197,7 @@ describe('Feature: foundation-contracts, no-restricted-imports cross-package ban
           // Match the flat config's TypeScript block so no-restricted-imports applies.
           files: ['**/*.ts', '**/*.mts', '**/*.cts'],
           languageOptions: {
-            parser: tseslintParser as Linter.Parser,
+            parser: tseslintParser,
           },
           rules: {
             'no-restricted-imports': noRestrictedImports,

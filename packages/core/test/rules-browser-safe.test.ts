@@ -98,10 +98,7 @@ function extractSpecifiers(source: string): string[] {
 // exists, which also covers specifiers that point at compiled .js that is not present.
 function resolveLocalTs(fromFile: string, specifier: string): string | null {
   const base = resolve(dirname(fromFile), specifier);
-  const candidates = [
-    base.endsWith('.ts') ? base : `${base}.ts`,
-    join(base, 'index.ts'),
-  ];
+  const candidates = [base.endsWith('.ts') ? base : `${base}.ts`, join(base, 'index.ts')];
   for (const candidate of candidates) {
     if (existsSync(candidate)) {
       return candidate;
@@ -246,15 +243,12 @@ describe('Feature: foundation-contracts, Property 13: The rules subpath is brows
       .stringMatching(/^[a-z][a-z0-9-]{0,19}$/)
       .filter((name) => !BUILTIN_SET.has(name));
     fc.assert(
-      fc.property(
-        fc.oneof(relativeSpecifier, packageSpecifier),
-        (specifier: string) => {
-          expect(
-            isNodeBuiltin(specifier),
-            `non-builtin "${specifier}" was wrongly flagged by the detector`,
-          ).toBe(false);
-        },
-      ),
+      fc.property(fc.oneof(relativeSpecifier, packageSpecifier), (specifier: string) => {
+        expect(
+          isNodeBuiltin(specifier),
+          `non-builtin "${specifier}" was wrongly flagged by the detector`,
+        ).toBe(false);
+      }),
       { numRuns: 100 },
     );
   });

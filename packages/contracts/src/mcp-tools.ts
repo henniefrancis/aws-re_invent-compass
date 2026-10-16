@@ -270,6 +270,4 @@ export type McpToolInput<K extends McpToolName> = z.infer<(typeof mcpTools)[K]['
 /**
  * The inferred output type for a given tool name.
  */
-export type McpToolOutput<K extends McpToolName> = z.infer<
-  (typeof mcpTools)[K]['output']
->;
+export type McpToolOutput<K extends McpToolName> = z.infer<(typeof mcpTools)[K]['output']>;

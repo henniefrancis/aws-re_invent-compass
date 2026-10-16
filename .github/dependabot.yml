@@ -1,0 +1,20 @@
+# Dependabot configuration (foundation-contracts, S0).
+#
+# Monthly schedule, with open-pull-requests-limit set to 0 so Dependabot raises no
+# pull requests until after the 1 November submission (build plan 11.1). It still
+# tracks the ecosystems so it can be enabled later by raising the limit.
+#
+# This file contains no em dash or en dash.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0

@@ -15,18 +15,22 @@
 //      the sentinel "unknown".
 import { z } from 'zod';
 
-// The nine known bulk failure codes from the Events API BulkFailureCode enum.
-const KNOWN_BULK_FAILURE_CODES = [
-  'sessionNotReservable',
-  'scheduleConflict',
-  'alreadyScheduled',
-  'sessionFull',
-  'insufficientAccess',
-  'timePassed',
-  'alreadyFavorited',
-  'notFavorited',
-  'other',
-] as const;
+/**
+ * The nine known bulk failure codes from the Events API BulkFailureCode enum, as a
+ * type-only union. There is no runtime array: the known codes are documentation and
+ * editor hints, and the schema below accepts any string, so no value is needed at
+ * runtime.
+ */
+export type KnownBulkFailureCode =
+  | 'sessionNotReservable'
+  | 'scheduleConflict'
+  | 'alreadyScheduled'
+  | 'sessionFull'
+  | 'insufficientAccess'
+  | 'timePassed'
+  | 'alreadyFavorited'
+  | 'notFavorited'
+  | 'other';
 
 /**
  * Why one session in a bulk request was refused. One of the nine known codes, or any
@@ -34,7 +38,7 @@ const KNOWN_BULK_FAILURE_CODES = [
  * as a generic refusal. The (string & {}) member keeps the schema open while editors
  * still surface the known literals.
  */
-export type BulkFailureCode = (typeof KNOWN_BULK_FAILURE_CODES)[number] | (string & {});
+export type BulkFailureCode = KnownBulkFailureCode | (string & {});
 
 /**
  * Forward-compatible BulkFailureCode schema.

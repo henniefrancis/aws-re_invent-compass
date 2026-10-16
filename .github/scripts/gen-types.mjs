@@ -13,8 +13,9 @@
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import openapiTS, { astToString } from 'openapi-typescript';
+import { maybeRunCli } from './cli.mjs';
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(thisDir, '..', '..');
@@ -54,17 +55,21 @@ export async function genTypes({ targets = TARGETS } = {}) {
   return written;
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (invokedDirectly) {
-  genTypes()
-    .then((written) => {
-      process.stdout.write(`Generated ${written.length} type files\n`);
-    })
-    .catch((error) => {
-      process.stderr.write(`${error.message}\n`);
-      process.exitCode = 1;
-    });
+/**
+ * Pure CLI driver: returns the exit code and the lines to print without touching
+ * the process. Covers the success and error branches in-process.
+ *
+ * @param {object} [options]
+ * @param {Array<{input: string, output: string}>} [options.targets]
+ * @returns {Promise<{ code: number, stdout: string, stderr: string }>}
+ */
+export async function runCli({ targets = TARGETS } = {}) {
+  try {
+    const written = await genTypes({ targets });
+    return { code: 0, stdout: `Generated ${written.length} type files\n`, stderr: '' };
+  } catch (error) {
+    return { code: 1, stdout: '', stderr: `${error.message}\n` };
+  }
 }
+
+await maybeRunCli({ runCli, argv1: process.argv[1], metaUrl: import.meta.url });

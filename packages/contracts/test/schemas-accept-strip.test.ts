@@ -63,12 +63,10 @@ const PassFieldsSchema = createPassFieldsSchema(PASS_WINDOW) as unknown as Objec
 
 // A plain non-empty string. Used for the many free-form string fields that the wire and
 // domain schemas accept without constraint.
-const plainString = (): fc.Arbitrary<string> =>
-  fc.string({ minLength: 1, maxLength: 16 });
+const plainString = (): fc.Arbitrary<string> => fc.string({ minLength: 1, maxLength: 16 });
 
 // An array of plain strings, zero to a few entries.
-const stringArray = (): fc.Arbitrary<string[]> =>
-  fc.array(plainString(), { maxLength: 3 });
+const stringArray = (): fc.Arbitrary<string[]> => fc.array(plainString(), { maxLength: 3 });
 
 // Safe free text for PassFields: letters, digits and single spaces only, so it never
 // trips the URL, domain, control-character or bidirectional-override checks and never
@@ -417,13 +415,13 @@ interface SchemaCase {
 const schemaCases: SchemaCase[] = [
   {
     name: 'SessionTimeSchema',
-    schema: SessionTimeSchema as ObjectSchema,
+    schema: SessionTimeSchema,
     arb: sessionTimeArb(),
     knownKeys: ['date', 'time', 'length', 'timezone'],
   },
   {
     name: 'SessionWireSchema',
-    schema: SessionWireSchema as ObjectSchema,
+    schema: SessionWireSchema,
     arb: sessionWireArb(),
     knownKeys: [
       'sessionId',
@@ -455,43 +453,50 @@ const schemaCases: SchemaCase[] = [
   },
   {
     name: 'ScheduleWireSchema',
-    schema: ScheduleWireSchema as ObjectSchema,
+    schema: ScheduleWireSchema,
     arb: scheduleWireArb(),
     knownKeys: ['reserved', 'favorites', 'personalTime'],
   },
   {
     name: 'ListSessionsSchema',
-    schema: ListSessionsSchema as ObjectSchema,
+    schema: ListSessionsSchema,
     arb: listSessionsArb(),
     knownKeys: ['items', 'totalCount', 'nextToken'],
   },
   {
     name: 'GetSessionSchema',
-    schema: GetSessionSchema as ObjectSchema,
+    schema: GetSessionSchema,
     arb: getSessionArb(),
     knownKeys: ['session'],
   },
   {
     name: 'GetScheduleSchema',
-    schema: GetScheduleSchema as ObjectSchema,
+    schema: GetScheduleSchema,
     arb: getScheduleArb(),
     knownKeys: ['schedule'],
   },
   {
     name: 'PersonalTimeSchema',
-    schema: PersonalTimeSchema as ObjectSchema,
+    schema: PersonalTimeSchema,
     arb: personalTimeArb(),
-    knownKeys: ['personalTimeId', 'startDateTime', 'endDateTime', 'title', 'description', 'location'],
+    knownKeys: [
+      'personalTimeId',
+      'startDateTime',
+      'endDateTime',
+      'title',
+      'description',
+      'location',
+    ],
   },
   {
     name: 'PersonalTimeInputSchema',
-    schema: PersonalTimeInputSchema as ObjectSchema,
+    schema: PersonalTimeInputSchema,
     arb: personalTimeInputArb(),
     knownKeys: ['startDateTime', 'endDateTime', 'title', 'description', 'location'],
   },
   {
     name: 'EventSchema',
-    schema: EventSchema as ObjectSchema,
+    schema: EventSchema,
     arb: eventArb(),
     knownKeys: [
       'eventId',
@@ -510,19 +515,19 @@ const schemaCases: SchemaCase[] = [
   },
   {
     name: 'BulkResultSchema',
-    schema: BulkResultSchema as ObjectSchema,
+    schema: BulkResultSchema,
     arb: bulkResultArb(),
     knownKeys: ['successful', 'failed'],
   },
   {
     name: 'BulkFailureSchema',
-    schema: BulkFailureSchema as ObjectSchema,
+    schema: BulkFailureSchema,
     arb: bulkFailureArb(),
     knownKeys: ['sessionId', 'code', 'conflictsWith'],
   },
   {
     name: 'NormalisedSessionSchema',
-    schema: NormalisedSessionSchema as ObjectSchema,
+    schema: NormalisedSessionSchema,
     arb: normalisedSessionArb(),
     knownKeys: [
       'sessionId',
@@ -543,7 +548,7 @@ const schemaCases: SchemaCase[] = [
   },
   {
     name: 'CommitmentSchema',
-    schema: CommitmentSchema as ObjectSchema,
+    schema: CommitmentSchema,
     arb: commitmentArb(),
     // Both variants together: the discriminant plus every field of either variant.
     knownKeys: [
@@ -559,19 +564,19 @@ const schemaCases: SchemaCase[] = [
   },
   {
     name: 'VenueSchema',
-    schema: VenueSchema as ObjectSchema,
+    schema: VenueSchema,
     arb: venueArb(),
     knownKeys: ['name', 'coordinates'],
   },
   {
     name: 'VerdictSchema',
-    schema: VerdictSchema as ObjectSchema,
+    schema: VerdictSchema,
     arb: verdictArb(),
     knownKeys: ['decision', 'reasons'],
   },
   {
     name: 'ProblemSchema',
-    schema: ProblemSchema as ObjectSchema,
+    schema: ProblemSchema,
     arb: problemArb(),
     knownKeys: ['type', 'title', 'status', 'code'],
   },
@@ -625,7 +630,10 @@ const personalTimeInputSample = {
   description: 'Layover',
 };
 
-const toolSamples: Record<string, { input: Record<string, unknown>; output: Record<string, unknown> }> = {
+const toolSamples: Record<
+  string,
+  { input: Record<string, unknown>; output: Record<string, unknown> }
+> = {
   sign_in: { input: { force: true }, output: { signedIn: true } },
   sign_out: { input: {}, output: { signedOut: true } },
   refresh_catalog: {
@@ -727,7 +735,7 @@ function assertStrips(
         return;
       }
 
-      const parsed = augmentedResult.data as Record<string, unknown>;
+      const parsed = augmentedResult.data;
       // 3. None of the injected unknown keys survive: they are stripped.
       for (const key of injectedKeys) {
         expect(Object.prototype.hasOwnProperty.call(parsed, key)).toBe(false);
@@ -762,13 +770,13 @@ describe('Feature: foundation-contracts, Property 2: Schemas accept valid inputs
       expect(sample, `missing sample for tool ${toolName}`).toBeDefined();
 
       assertStrips(
-        tool.input as unknown as ObjectSchema,
+        tool.input,
         fc.constant(sample.input),
         shapeKeys(tool.input),
         `${toolName}.input`,
       );
       assertStrips(
-        tool.output as unknown as ObjectSchema,
+        tool.output,
         fc.constant(sample.output),
         shapeKeys(tool.output),
         `${toolName}.output`,

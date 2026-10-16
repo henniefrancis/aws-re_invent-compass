@@ -47,8 +47,7 @@ const SESSION_CODE_PATTERN = /^[A-Z0-9]{2,12}(-R[0-9]?)?$/;
  * A matching string is additionally parsed with Date.parse to confirm it is a
  * real instant (NaN is rejected). No coercion is performed.
  */
-const ISO_OFFSET_PATTERN =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+const ISO_OFFSET_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 /**
  * The character ALLOWLIST for free text. A value passes only when every
@@ -105,25 +104,324 @@ const TECH_TOKEN_PATTERN = new RegExp(
 );
 
 /**
- * A bare domain token: one or more dot-separated labels ending in a two-or-more
- * letter alphabetic top-level label, treated as a whole token with boundaries so
- * for example "example.com", "evil.co.za" and "foo.bar.io" match. Case-insensitive.
+ * Known top-level domains used to decide whether a dotted token is a real domain.
+ * A curated set of common gTLDs plus every two-letter country code. Only when the
+ * final label is one of these is a dotted token treated as a domain, so technical
+ * phrases like "AWS.Lambda deep dive" or "S3.Express One Zone" pass while
+ * "example.com" and "evil.co.za" are rejected. Lower-case; matching is
+ * case-insensitive.
  */
-const BARE_DOMAIN_PATTERN = /(?<![\w.])[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}(?![\w.])/i;
+const KNOWN_GTLDS = [
+  'com',
+  'net',
+  'org',
+  'io',
+  'co',
+  'ai',
+  'app',
+  'dev',
+  'me',
+  'info',
+  'biz',
+  'xyz',
+  'online',
+  'site',
+  'cloud',
+];
+
+// Every ISO 3166-1 alpha-2 country code (two-letter ccTLDs).
+const COUNTRY_CODE_TLDS = [
+  'ac',
+  'ad',
+  'ae',
+  'af',
+  'ag',
+  'ai',
+  'al',
+  'am',
+  'ao',
+  'aq',
+  'ar',
+  'as',
+  'at',
+  'au',
+  'aw',
+  'ax',
+  'az',
+  'ba',
+  'bb',
+  'bd',
+  'be',
+  'bf',
+  'bg',
+  'bh',
+  'bi',
+  'bj',
+  'bm',
+  'bn',
+  'bo',
+  'br',
+  'bs',
+  'bt',
+  'bw',
+  'by',
+  'bz',
+  'ca',
+  'cc',
+  'cd',
+  'cf',
+  'cg',
+  'ch',
+  'ci',
+  'ck',
+  'cl',
+  'cm',
+  'cn',
+  'co',
+  'cr',
+  'cu',
+  'cv',
+  'cw',
+  'cx',
+  'cy',
+  'cz',
+  'de',
+  'dj',
+  'dk',
+  'dm',
+  'do',
+  'dz',
+  'ec',
+  'ee',
+  'eg',
+  'er',
+  'es',
+  'et',
+  'eu',
+  'fi',
+  'fj',
+  'fk',
+  'fm',
+  'fo',
+  'fr',
+  'ga',
+  'gb',
+  'gd',
+  'ge',
+  'gf',
+  'gg',
+  'gh',
+  'gi',
+  'gl',
+  'gm',
+  'gn',
+  'gp',
+  'gq',
+  'gr',
+  'gt',
+  'gu',
+  'gw',
+  'gy',
+  'hk',
+  'hm',
+  'hn',
+  'hr',
+  'ht',
+  'hu',
+  'id',
+  'ie',
+  'il',
+  'im',
+  'in',
+  'io',
+  'iq',
+  'ir',
+  'is',
+  'it',
+  'je',
+  'jm',
+  'jo',
+  'jp',
+  'ke',
+  'kg',
+  'kh',
+  'ki',
+  'km',
+  'kn',
+  'kp',
+  'kr',
+  'kw',
+  'ky',
+  'kz',
+  'la',
+  'lb',
+  'lc',
+  'li',
+  'lk',
+  'lr',
+  'ls',
+  'lt',
+  'lu',
+  'lv',
+  'ly',
+  'ma',
+  'mc',
+  'md',
+  'me',
+  'mg',
+  'mh',
+  'mk',
+  'ml',
+  'mm',
+  'mn',
+  'mo',
+  'mp',
+  'mq',
+  'mr',
+  'ms',
+  'mt',
+  'mu',
+  'mv',
+  'mw',
+  'mx',
+  'my',
+  'mz',
+  'na',
+  'nc',
+  'ne',
+  'nf',
+  'ng',
+  'ni',
+  'nl',
+  'no',
+  'np',
+  'nr',
+  'nu',
+  'nz',
+  'om',
+  'pa',
+  'pe',
+  'pf',
+  'pg',
+  'ph',
+  'pk',
+  'pl',
+  'pm',
+  'pn',
+  'pr',
+  'ps',
+  'pt',
+  'pw',
+  'py',
+  'qa',
+  're',
+  'ro',
+  'rs',
+  'ru',
+  'rw',
+  'sa',
+  'sb',
+  'sc',
+  'sd',
+  'se',
+  'sg',
+  'sh',
+  'si',
+  'sk',
+  'sl',
+  'sm',
+  'sn',
+  'so',
+  'sr',
+  'ss',
+  'st',
+  'sv',
+  'sx',
+  'sy',
+  'sz',
+  'tc',
+  'td',
+  'tf',
+  'tg',
+  'th',
+  'tj',
+  'tk',
+  'tl',
+  'tm',
+  'tn',
+  'to',
+  'tr',
+  'tt',
+  'tv',
+  'tw',
+  'tz',
+  'ua',
+  'ug',
+  'uk',
+  'us',
+  'uy',
+  'uz',
+  'va',
+  'vc',
+  've',
+  'vg',
+  'vi',
+  'vn',
+  'vu',
+  'wf',
+  'ws',
+  'ye',
+  'yt',
+  'za',
+  'zm',
+  'zw',
+];
+
+const KNOWN_TLDS = new Set<string>([...KNOWN_GTLDS, ...COUNTRY_CODE_TLDS]);
+
+/**
+ * A dotted token: two or more dot-separated labels, each a run of Unicode letters,
+ * digits or hyphens, with an optional trailing dot (a fully qualified name such as
+ * "example.com."). Unicode labels are matched with the u flag so a non-ASCII host
+ * like "пример.com" is caught. Tokens are bounded so a label is not captured mid
+ * word. Case-insensitive, Unicode.
+ */
+const DOTTED_TOKEN_PATTERN =
+  /(?<![\p{L}\p{N}.-])[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)+\.?(?![\p{L}\p{N}-])/giu;
+
+/**
+ * An IPv4 address, optionally with a port, as a whole token. Four 1-to-3 digit
+ * groups separated by dots, for example "192.168.0.1" or "10.0.0.1:8080".
+ */
+const IPV4_PATTERN = /(?<![\w.])\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?(?![\w.])/;
+
+/**
+ * True when a dotted token is a real domain: its last label (ignoring a trailing
+ * dot) is a known TLD. The token arrives with Unicode letters preserved; the TLD
+ * comparison is lower-cased.
+ */
+function isDomainToken(token: string): boolean {
+  const withoutTrailingDot = token.endsWith('.') ? token.slice(0, -1) : token;
+  // The dotted-token pattern guarantees at least one dot, so there is always a
+  // final label after the last dot. slice gives it without an index fallback.
+  const lastLabel = withoutTrailingDot.slice(withoutTrailingDot.lastIndexOf('.') + 1);
+  return KNOWN_TLDS.has(lastLabel.toLowerCase());
+}
 
 /**
  * True when value is safe free text. The checks run in order: (a) every character
  * is in the allowlist; (b) the allowed tech tokens are neutralised in a working
  * copy; (c) the working copy contains no "://" scheme; (d) it contains no "www."
- * host; (e) it contains no bare domain token. Does not echo the offending value.
+ * host; (e) it contains no IPv4 address; (f) it contains no dotted token whose last
+ * label is a known TLD. Does not echo the offending value.
  */
 function isSafeText(value: string): boolean {
   if (!ALLOWED_TEXT.test(value)) {
     return false;
   }
-  // Neutralise allowed tech tokens so they cannot trip the bare-domain rule. The
-  // "://" and "www." checks are independent (a tech token never contains either),
-  // so they are applied to the neutralised copy as well with no loss.
+  // Neutralise allowed tech tokens so they cannot trip the domain rule. The "://"
+  // and "www." checks are independent (a tech token never contains either), so
+  // they are applied to the neutralised copy as well with no loss.
   const neutralised = value.replace(TECH_TOKEN_PATTERN, ' ');
   if (neutralised.includes('://')) {
     return false;
@@ -131,8 +429,16 @@ function isSafeText(value: string): boolean {
   if (/www\./i.test(neutralised)) {
     return false;
   }
-  if (BARE_DOMAIN_PATTERN.test(neutralised)) {
+  if (IPV4_PATTERN.test(neutralised)) {
     return false;
+  }
+  // A dotted token is a domain only when its last label is a known TLD, so
+  // technical phrases like "AWS.Lambda" or "S3.Express One Zone" are not domains.
+  DOTTED_TOKEN_PATTERN.lastIndex = 0;
+  for (const match of neutralised.matchAll(DOTTED_TOKEN_PATTERN)) {
+    if (isDomainToken(match[0])) {
+      return false;
+    }
   }
   return true;
 }
@@ -172,10 +478,7 @@ export function normalisePassText(value: string): string {
  * safety checks. The message references the field by name and never echoes the
  * offending value.
  */
-function safeText(
-  maxLen: number,
-  opts: { minLen: number; fieldName: string },
-): z.ZodString {
+function safeText(maxLen: number, opts: { minLen: number; fieldName: string }): z.ZodString {
   return z
     .string()
     .min(opts.minLen)
@@ -226,6 +529,18 @@ const MAX_SESSION_MS = 10 * 60 * 60 * 1000;
 export function createPassFieldsSchema(opts: CreatePassFieldsSchemaOptions) {
   const windowStartMs = Date.parse(opts.start);
   const windowEndMs = Date.parse(opts.end);
+
+  // Fail fast on a malformed window: an unparseable bound, or an end that is not
+  // after the start, is a programming error in the caller, not client input.
+  if (Number.isNaN(windowStartMs)) {
+    throw new Error('createPassFieldsSchema: start is not a valid date');
+  }
+  if (Number.isNaN(windowEndMs)) {
+    throw new Error('createPassFieldsSchema: end is not a valid date');
+  }
+  if (windowEndMs <= windowStartMs) {
+    throw new Error('createPassFieldsSchema: end must be after start');
+  }
 
   const sessionCode = z.string().regex(SESSION_CODE_PATTERN, {
     message: 'sessionCode must match the session code pattern',

@@ -15,14 +15,14 @@ re:Invent Compass is built as **eight Kiro specs (S0 to S7)** by up to six Kiro 
 
 ## Engineers and dates (plan section 9.3)
 
-| Engineer | Specs | Starts | Spec freeze | Review gate | In `develop` |
-|---|---|---|---|---|---|
-| 1 | **S0** foundation-contracts, then **S1** events-client | 16 Oct | S0 16 Oct, S1 21 Oct | 16 Oct, 22 Oct | 16 Oct, 22 Oct |
-| 2 | **S2** itinerary-rules, then **S7** showcase-site | 17 Oct | S2 20 Oct, S7 29 Oct | 21 Oct, 29 Oct | 21 Oct, 29 Oct |
-| 3 | **S3** compass-power | 17 Oct | 26 Oct | 27 Oct | 27 Oct |
-| 4 | **S4** boarding-passes | 17 Oct | 23 Oct | 24 Oct | 24 Oct |
-| 5 | **S5** pass-service | 17 Oct | 24 Oct | 25 Oct | 25 Oct |
-| 6 | **S6** infra | 17 Oct | 24 Oct (dev up 21 Oct) | 25 Oct | 25 Oct |
+| Engineer | Specs                                                  | Starts | Spec freeze            | Review gate    | In `develop`   |
+| -------- | ------------------------------------------------------ | ------ | ---------------------- | -------------- | -------------- |
+| 1        | **S0** foundation-contracts, then **S1** events-client | 16 Oct | S0 16 Oct, S1 21 Oct   | 16 Oct, 22 Oct | 16 Oct, 22 Oct |
+| 2        | **S2** itinerary-rules, then **S7** showcase-site      | 17 Oct | S2 20 Oct, S7 29 Oct   | 21 Oct, 29 Oct | 21 Oct, 29 Oct |
+| 3        | **S3** compass-power                                   | 17 Oct | 26 Oct                 | 27 Oct         | 27 Oct         |
+| 4        | **S4** boarding-passes                                 | 17 Oct | 23 Oct                 | 24 Oct         | 24 Oct         |
+| 5        | **S5** pass-service                                    | 17 Oct | 24 Oct                 | 25 Oct         | 25 Oct         |
+| 6        | **S6** infra                                           | 17 Oct | 24 Oct (dev up 21 Oct) | 25 Oct         | 25 Oct         |
 
 **Only four sessions?** Engineer 2 also takes S4 after S2, and Engineer 5 takes S6 after S5. The site then starts on 24 Oct, and cut-list items 1 to 3 (plan section 12) are cut up front.
 
@@ -234,14 +234,14 @@ Tests: unit 100%; Playwright on the 7 device profiles with axe and forced colors
 
 ## Day-1 spikes (16 Oct, plan section 10)
 
-| Spike | Who | How |
-|---|---|---|
-| SP1 Kiro hook input and blocking | Engineer 3, in a scratch Kiro workspace | Prompt: "Build a throwaway Kiro Power with one stdio MCP tool and PreToolUse and PostToolUse command hooks. Record exactly how the hook receives the tool name and input, which exit code or output blocks the call and shows a reason, whether a Power can ship hooks, and whether disabledTools works for a Power's remote server. Write the findings as docs/decisions/ADR-024 (ADR-023 is the Events API OpenAPI source record from S0)." |
-| SP2 ID token verification | Owner runs `spikes/sp2-id-token.mjs` from S0 | Prints claim names only, never values |
-| SP3 PassKit on a real iPhone | Engineer 5 with the owner's iPhone | Local Node server on the LAN, a pass signed with the new certificate: register, push, fetch, void, check it moves to Expired. Record a short video for the post. |
-| SP4 Google Wallet demo mode | Owner with Engineer 5 | Issuer and class, owner's Android account as test user, save and patch to INACTIVE. Request publishing access the same day. |
-| SP5 Real data shape | Owner runs `spikes/sp5-shape-diff.mjs` from S0 | Field differences only, never values |
-| SP6 Account and cost checks | Owner | Lambda concurrency, account plan, CloudFront flat-rate subscription in Terraform |
+| Spike                            | Who                                            | How                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SP1 Kiro hook input and blocking | Engineer 3, in a scratch Kiro workspace        | Prompt: "Build a throwaway Kiro Power with one stdio MCP tool and PreToolUse and PostToolUse command hooks. Record exactly how the hook receives the tool name and input, which exit code or output blocks the call and shows a reason, whether a Power can ship hooks, and whether disabledTools works for a Power's remote server. Write the findings as docs/decisions/ADR-024 (ADR-023 is the Events API OpenAPI source record from S0)." |
+| SP2 ID token verification        | Owner runs `spikes/sp2-id-token.mjs` from S0   | Prints claim names only, never values                                                                                                                                                                                                                                                                                                                                                                                                         |
+| SP3 PassKit on a real iPhone     | Engineer 5 with the owner's iPhone             | Local Node server on the LAN, a pass signed with the new certificate: register, push, fetch, void, check it moves to Expired. Record a short video for the post.                                                                                                                                                                                                                                                                              |
+| SP4 Google Wallet demo mode      | Owner with Engineer 5                          | Issuer and class, owner's Android account as test user, save and patch to INACTIVE. Request publishing access the same day.                                                                                                                                                                                                                                                                                                                   |
+| SP5 Real data shape              | Owner runs `spikes/sp5-shape-diff.mjs` from S0 | Field differences only, never values                                                                                                                                                                                                                                                                                                                                                                                                          |
+| SP6 Account and cost checks      | Owner                                          | Lambda concurrency, account plan, CloudFront flat-rate subscription in Terraform                                                                                                                                                                                                                                                                                                                                                              |
 
 Spike results change the specs that depend on them. Record each result before S1, S3 and S5 write their designs.
 

@@ -11,7 +11,8 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { maybeRunCli } from './cli.mjs';
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(thisDir, '..', '..');
@@ -42,29 +43,33 @@ export async function hashCheck({ files = FILES } = {}) {
   return { ok, hashes };
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (invokedDirectly) {
-  hashCheck()
-    .then(({ ok, hashes }) => {
-      if (ok) {
-        process.stdout.write(
-          `hash check ok: ${hashes.length} files share sha256 ${hashes[0].sha256.slice(0, 12)}\n`,
-        );
-        return;
-      }
-      process.stderr.write('hash check FAILED: the Compass API copies differ\n');
-      for (const h of hashes) {
-        process.stderr.write(
-          `  ${relative(repoRoot, h.file)}: ${h.sha256.slice(0, 12)}\n`,
-        );
-      }
-      process.exitCode = 1;
-    })
-    .catch((error) => {
-      process.stderr.write(`${error.message}\n`);
-      process.exitCode = 1;
-    });
+/**
+ * Pure CLI driver: compute the result and return the exit code and the lines to
+ * print, without touching process. Testable in-process so every branch (ok,
+ * mismatch, error) is covered without a subprocess.
+ *
+ * @param {object} [options]
+ * @param {string[]} [options.files]
+ * @returns {Promise<{ code: number, stdout: string, stderr: string }>}
+ */
+export async function runCli({ files = FILES } = {}) {
+  try {
+    const { ok, hashes } = await hashCheck({ files });
+    if (ok) {
+      return {
+        code: 0,
+        stdout: `hash check ok: ${hashes.length} files share sha256 ${hashes[0].sha256.slice(0, 12)}\n`,
+        stderr: '',
+      };
+    }
+    let stderr = 'hash check FAILED: the Compass API copies differ\n';
+    for (const h of hashes) {
+      stderr += `  ${relative(repoRoot, h.file)}: ${h.sha256.slice(0, 12)}\n`;
+    }
+    return { code: 1, stdout: '', stderr };
+  } catch (error) {
+    return { code: 1, stdout: '', stderr: `${error.message}\n` };
+  }
 }
+
+await maybeRunCli({ runCli, argv1: process.argv[1], metaUrl: import.meta.url });

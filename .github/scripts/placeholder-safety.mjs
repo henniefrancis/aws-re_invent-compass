@@ -12,7 +12,8 @@
 
 import { readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { maybeRunCli } from './cli.mjs';
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(thisDir, '..', '..');
@@ -26,7 +27,16 @@ export const FILES = [
 // Forbidden patterns. Each is scanned per line so a hit can be reported by line
 // and column without echoing the match.
 const PATTERNS = [
-  { name: 'twelve-digit run (possible account id)', re: /\b\d{12}\b/ },
+  // A bare twelve-digit run, bounded by non-digits rather than word boundaries so
+  // a run embedded in an identifier like "acct_123456789012" is still caught (an
+  // underscore is a word character, so \b would miss it).
+  { name: 'twelve-digit run (possible account id)', re: /(?<!\d)\d{12}(?!\d)/ },
+  // A twelve-digit account id split into dash- or space-separated groups, for
+  // example "1234-5678-9012" or "1234 5678 9012".
+  {
+    name: 'grouped twelve-digit run (possible account id)',
+    re: /(?<!\d)\d{4}[-\s]\d{4}[-\s]\d{4}(?!\d)/,
+  },
   { name: 'hard-coded ARN', re: /arn:aws/i },
   // Terraform percent-brace template markers (for loops and conditionals) must
   // never appear: these three copies are template inputs and must evaluate to
@@ -37,10 +47,7 @@ const PATTERNS = [
 // The only dollar-brace template markers allowed anywhere in a copy (comments
 // included), because Terraform templatefile() evaluates every dollar-brace
 // marker in the file. Any other dollar-brace occurrence is a deploy-time hazard.
-const ALLOWED_DOLLAR_BRACE = new Set([
-  '${api_lambda_invoke_arn}',
-  '${passkit_lambda_invoke_arn}',
-]);
+const ALLOWED_DOLLAR_BRACE = new Set(['${api_lambda_invoke_arn}', '${passkit_lambda_invoke_arn}']);
 
 // Match a dollar-brace marker: ${ up to the next } (no nested braces needed here
 // because the contract never nests them). Global so every occurrence on a line
@@ -112,29 +119,32 @@ export async function placeholderSafety({ files = FILES } = {}) {
   return { ok: findings.length === 0, findings };
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (invokedDirectly) {
-  placeholderSafety()
-    .then(({ ok, findings }) => {
-      if (ok) {
-        process.stdout.write(
-          `placeholder safety ok: no forbidden tokens in ${FILES.length} files\n`,
-        );
-        return;
-      }
-      process.stderr.write('placeholder safety FAILED: forbidden tokens found\n');
-      for (const f of findings) {
-        process.stderr.write(
-          `  ${relative(repoRoot, f.file)}:${f.line}:${f.column} (${f.pattern})\n`,
-        );
-      }
-      process.exitCode = 1;
-    })
-    .catch((error) => {
-      process.stderr.write(`${error.message}\n`);
-      process.exitCode = 1;
-    });
+/**
+ * Pure CLI driver: returns the exit code and the lines to print without touching
+ * the process. Covers the ok, findings and error branches in-process.
+ *
+ * @param {object} [options]
+ * @param {string[]} [options.files]
+ * @returns {Promise<{ code: number, stdout: string, stderr: string }>}
+ */
+export async function runCli({ files = FILES } = {}) {
+  try {
+    const { ok, findings } = await placeholderSafety({ files });
+    if (ok) {
+      return {
+        code: 0,
+        stdout: `placeholder safety ok: no forbidden tokens in ${files.length} files\n`,
+        stderr: '',
+      };
+    }
+    let stderr = 'placeholder safety FAILED: forbidden tokens found\n';
+    for (const f of findings) {
+      stderr += `  ${relative(repoRoot, f.file)}:${f.line}:${f.column} (${f.pattern})\n`;
+    }
+    return { code: 1, stdout: '', stderr };
+  } catch (error) {
+    return { code: 1, stdout: '', stderr: `${error.message}\n` };
+  }
 }
+
+await maybeRunCli({ runCli, argv1: process.argv[1], metaUrl: import.meta.url });

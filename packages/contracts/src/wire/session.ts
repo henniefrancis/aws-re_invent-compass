@@ -39,9 +39,11 @@ export type SeatAvailability = (typeof SEAT_AVAILABILITY_VALUES)[number] | 'unkn
  * to its own literal; any other string maps to the sentinel "unknown", so a value
  * the Events API adds later never fails the whole response.
  */
-export const SeatAvailabilitySchema = z.string().transform((value): SeatAvailability =>
-  KNOWN_SEAT_AVAILABILITY.has(value) ? (value as SeatAvailability) : 'unknown',
-);
+export const SeatAvailabilitySchema = z
+  .string()
+  .transform((value): SeatAvailability =>
+    KNOWN_SEAT_AVAILABILITY.has(value) ? (value as SeatAvailability) : 'unknown',
+  );
 
 /**
  * When and for how long a session runs. Every field is optional on the wire: the
