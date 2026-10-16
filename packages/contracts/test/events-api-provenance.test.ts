@@ -107,10 +107,12 @@ describe('Feature: foundation-contracts, Events API fetch helper', () => {
     // Mock fetch to resolve to a Response-shaped object with a 500 status. The
     // helper must throw before writing anything, so pointing outPath at the real
     // committed document is safe: a failed fetch never touches it.
-    const mockFetch = vi.fn(async () => ({
-      status: 500,
-      text: async () => 'internal server error',
-    }));
+    const mockFetch = vi.fn(() =>
+      Promise.resolve({
+        status: 500,
+        text: () => Promise.resolve('internal server error'),
+      }),
+    );
     vi.stubGlobal('fetch', mockFetch);
 
     await expect(
@@ -142,9 +144,7 @@ describe('Feature: foundation-contracts, Events API fetch helper', () => {
     // Mock fetch to reject with a network error. The helper must throw before any
     // write, so the real committed document is provably untouched.
     const cause = new Error('boom');
-    const mockFetch = vi.fn(async () => {
-      throw cause;
-    });
+    const mockFetch = vi.fn(() => Promise.reject(cause));
     vi.stubGlobal('fetch', mockFetch);
 
     const call = fetchEventsApiOpenApi({
@@ -181,10 +181,12 @@ describe('Feature: foundation-contracts, Events API fetch helper', () => {
     );
     const payload = '{"ok":true}';
 
-    const mockFetch = vi.fn(async () => ({
-      status: 200,
-      text: async () => payload,
-    }));
+    const mockFetch = vi.fn(() =>
+      Promise.resolve({
+        status: 200,
+        text: () => Promise.resolve(payload),
+      }),
+    );
     vi.stubGlobal('fetch', mockFetch);
 
     try {

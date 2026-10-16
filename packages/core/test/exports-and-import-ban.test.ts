@@ -113,7 +113,7 @@ describe('Feature: foundation-contracts, no eslint-plugin-import dependency', ()
     for (const section of sections) {
       const block = manifest[section];
       if (block && typeof block === 'object') {
-        names.push(...Object.keys(block as Record<string, unknown>));
+        names.push(...Object.keys(block));
       }
     }
     return names;
@@ -202,7 +202,7 @@ describe('Feature: foundation-contracts, no-restricted-imports cross-package ban
           // Match the flat config's TypeScript block so no-restricted-imports applies.
           files: ['**/*.ts', '**/*.mts', '**/*.cts'],
           languageOptions: {
-            parser: tseslintParser as Linter.Parser,
+            parser: tseslintParser,
           },
           rules: {
             'no-restricted-imports': noRestrictedImports,

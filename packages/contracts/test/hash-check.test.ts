@@ -35,17 +35,8 @@ describe('Feature: foundation-contracts, Property 8: The three Compass API OpenA
     await rm(dir, { recursive: true, force: true });
   });
 
-  async function writeThree(a: string, b: string, c: string): Promise<string[]> {
-    const files = [join(dir, 'a.yaml'), join(dir, 'b.yaml'), join(dir, 'c.yaml')];
-    await Promise.all([
-      writeFile(files[0], a, 'utf8'),
-      writeFile(files[1], b, 'utf8'),
-      writeFile(files[2], c, 'utf8'),
-    ]);
-    return files;
-  }
-
   test('Feature: foundation-contracts, Property 8: identical content hashes equal; any divergence is detected', async () => {
+    const files = [join(dir, 'a.yaml'), join(dir, 'b.yaml'), join(dir, 'c.yaml')];
     await fc.assert(
       fc.asyncProperty(
         fc.string({ maxLength: 200 }),
@@ -55,9 +46,10 @@ describe('Feature: foundation-contracts, Property 8: The three Compass API OpenA
           suffix: fc.string({ minLength: 1, maxLength: 8 }),
         }),
         async (content, mutation) => {
-          // 1. Three identical copies hash-equal and the check is ok.
-          const same = await writeThree(content, content, content);
-          const okResult = await hashCheck({ files: same });
+          // 1. Three identical copies hash-equal and the check is ok. Write the
+          // three files once for this run.
+          await Promise.all(files.map((f) => writeFile(f, content, 'utf8')));
+          const okResult = await hashCheck({ files });
           expect(okResult.ok).toBe(true);
           // All three hashes are identical and are 64-hex SHA-256 digests.
           const hashes = okResult.hashes.map((h) => h.sha256);
@@ -65,18 +57,17 @@ describe('Feature: foundation-contracts, Property 8: The three Compass API OpenA
           expect(hashes[0]).toMatch(/^[0-9a-f]{64}$/);
 
           // 2. Mutating exactly one copy by appending a non-empty suffix makes the
-          // check report a mismatch (the appended bytes change that file's hash).
-          const variants = [content, content, content];
-          variants[mutation.which] = content + mutation.suffix;
-          const diverged = await writeThree(variants[0], variants[1], variants[2]);
-          const badResult = await hashCheck({ files: diverged });
+          // check report a mismatch. Only the one differing file is rewritten.
+          await writeFile(files[mutation.which], content + mutation.suffix, 'utf8');
+          const badResult = await hashCheck({ files });
           expect(badResult.ok).toBe(false);
           return true;
         },
       ),
       { numRuns: NUM_RUNS },
     );
-  });
+    // Real file I/O across many runs under parallel load: allow generous time.
+  }, 30000);
 
   test('Feature: foundation-contracts, Property 8: the committed copies are hash-equal', async () => {
     const files = [

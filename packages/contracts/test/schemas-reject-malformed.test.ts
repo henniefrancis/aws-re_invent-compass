@@ -382,37 +382,37 @@ interface RejectCase {
 const rejectCases: RejectCase[] = [
   {
     name: 'SessionWireSchema',
-    schema: SessionWireSchema as AnySchema,
+    schema: SessionWireSchema,
     arb: sessionWireArb(),
     requiredFields: { sessionId: 'string', title: 'string' },
   },
   {
     name: 'ScheduleWireSchema',
-    schema: ScheduleWireSchema as AnySchema,
+    schema: ScheduleWireSchema,
     arb: scheduleWireArb(),
     requiredFields: { reserved: 'array', favorites: 'array', personalTime: 'array' },
   },
   {
     name: 'ListSessionsSchema',
-    schema: ListSessionsSchema as AnySchema,
+    schema: ListSessionsSchema,
     arb: listSessionsArb(),
     requiredFields: { items: 'array', totalCount: 'number' },
   },
   {
     name: 'GetSessionSchema',
-    schema: GetSessionSchema as AnySchema,
+    schema: GetSessionSchema,
     arb: getSessionArb(),
     requiredFields: { session: 'object' },
   },
   {
     name: 'GetScheduleSchema',
-    schema: GetScheduleSchema as AnySchema,
+    schema: GetScheduleSchema,
     arb: getScheduleArb(),
     requiredFields: { schedule: 'object' },
   },
   {
     name: 'PersonalTimeSchema',
-    schema: PersonalTimeSchema as AnySchema,
+    schema: PersonalTimeSchema,
     arb: personalTimeArb(),
     requiredFields: {
       personalTimeId: 'string',
@@ -424,7 +424,7 @@ const rejectCases: RejectCase[] = [
   },
   {
     name: 'PersonalTimeInputSchema',
-    schema: PersonalTimeInputSchema as AnySchema,
+    schema: PersonalTimeInputSchema,
     arb: personalTimeInputArb(),
     requiredFields: {
       startDateTime: 'string',
@@ -435,7 +435,7 @@ const rejectCases: RejectCase[] = [
   },
   {
     name: 'EventSchema',
-    schema: EventSchema as AnySchema,
+    schema: EventSchema,
     arb: eventArb(),
     requiredFields: {
       eventId: 'string',
@@ -449,19 +449,19 @@ const rejectCases: RejectCase[] = [
   },
   {
     name: 'BulkResultSchema',
-    schema: BulkResultSchema as AnySchema,
+    schema: BulkResultSchema,
     arb: bulkResultArb(),
     requiredFields: { successful: 'array', failed: 'array' },
   },
   {
     name: 'BulkFailureSchema',
-    schema: BulkFailureSchema as AnySchema,
+    schema: BulkFailureSchema,
     arb: bulkFailureArb(),
     requiredFields: { sessionId: 'string', code: 'string' },
   },
   {
     name: 'NormalisedSessionSchema',
-    schema: NormalisedSessionSchema as AnySchema,
+    schema: NormalisedSessionSchema,
     arb: normalisedSessionArb(),
     requiredFields: {
       sessionId: 'string',
@@ -475,7 +475,7 @@ const rejectCases: RejectCase[] = [
   },
   {
     name: 'CommitmentSchema',
-    schema: CommitmentSchema as AnySchema,
+    schema: CommitmentSchema,
     arb: commitmentArb(),
     // kind is the discriminant literal; corrupting the other required fields to a wrong
     // type must fail. kind is corrupted to a non-matching value by the discriminant case.
@@ -483,19 +483,19 @@ const rejectCases: RejectCase[] = [
   },
   {
     name: 'VenueSchema',
-    schema: VenueSchema as AnySchema,
+    schema: VenueSchema,
     arb: venueArb(),
     requiredFields: { name: 'string' },
   },
   {
     name: 'VerdictSchema',
-    schema: VerdictSchema as AnySchema,
+    schema: VerdictSchema,
     arb: verdictArb(),
     requiredFields: { reasons: 'array' },
   },
   {
     name: 'ProblemSchema',
-    schema: ProblemSchema as AnySchema,
+    schema: ProblemSchema,
     arb: problemArb(),
     requiredFields: { type: 'string', title: 'string', status: 'number', code: 'string' },
   },
@@ -594,23 +594,29 @@ describe('Feature: foundation-contracts, Property 3: Schemas reject malformed in
     };
     expect(SessionWireSchema.safeParse(validSession).success).toBe(true);
 
+    // Drop a single key from a copy without binding an unused variable.
+    const withoutKey = <T extends Record<string, unknown>>(obj: T, key: keyof T) => {
+      const copy: Record<string, unknown> = { ...obj };
+      delete copy[key as string];
+      return copy;
+    };
+
     {
-      const { sessionId: _omitted, ...withoutSessionId } = validSession;
-      expect(SessionWireSchema.safeParse(withoutSessionId).success).toBe(false);
+      expect(SessionWireSchema.safeParse(withoutKey(validSession, 'sessionId')).success).toBe(
+        false,
+      );
     }
 
     // A wire Session missing title is rejected.
     {
-      const { title: _omitted, ...withoutTitle } = validSession;
-      expect(SessionWireSchema.safeParse(withoutTitle).success).toBe(false);
+      expect(SessionWireSchema.safeParse(withoutKey(validSession, 'title')).success).toBe(false);
     }
 
     // Problem missing status is rejected.
     {
       const validProblem = { type: 'about:blank', title: 'Bad request', status: 400, code: 'bad' };
       expect(ProblemSchema.safeParse(validProblem).success).toBe(true);
-      const { status: _omitted, ...withoutStatus } = validProblem;
-      expect(ProblemSchema.safeParse(withoutStatus).success).toBe(false);
+      expect(ProblemSchema.safeParse(withoutKey(validProblem, 'status')).success).toBe(false);
     }
 
     // NormalisedSession missing missingFields is rejected.
@@ -625,8 +631,9 @@ describe('Feature: foundation-contracts, Property 3: Schemas reject malformed in
         missingFields: [],
       };
       expect(NormalisedSessionSchema.safeParse(validNormalised).success).toBe(true);
-      const { missingFields: _omitted, ...withoutMissingFields } = validNormalised;
-      expect(NormalisedSessionSchema.safeParse(withoutMissingFields).success).toBe(false);
+      expect(
+        NormalisedSessionSchema.safeParse(withoutKey(validNormalised, 'missingFields')).success,
+      ).toBe(false);
     }
 
     // Property-drive the deletion across every required field of a wire Session: for each,

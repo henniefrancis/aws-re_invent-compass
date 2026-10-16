@@ -46,7 +46,13 @@ export default tseslint.config(
     files: ['**/*.ts', '**/*.mts', '**/*.cts'],
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        projectService: {
+          // Root-level TypeScript config files (for example vitest.config.ts) are
+          // not part of any workspace tsconfig. Allow the project service to type
+          // them with the default inferred project so they are still linted with
+          // type-aware rules rather than failing to parse.
+          allowDefaultProject: ['*.config.ts'],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },

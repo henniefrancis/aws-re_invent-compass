@@ -311,7 +311,6 @@ export function generateCatalog(
 
   for (let k = 0; k < KEYNOTE_COUNT; k += 1) {
     const seq = String(generatedCount + k + 1).padStart(3, '0');
-    const prefix = pick(rng, CODE_PREFIXES);
     const codeNumber = 100 + Math.floor(rng() * 400);
     const speaker = `${pick(rng, FIRST_NAMES)} ${pick(rng, LAST_NAMES)}`;
     sessions.push({

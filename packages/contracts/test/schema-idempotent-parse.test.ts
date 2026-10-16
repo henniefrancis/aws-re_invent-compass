@@ -424,30 +424,30 @@ interface SchemaCase {
 }
 
 const schemaCases: SchemaCase[] = [
-  { name: 'SessionTimeSchema', schema: SessionTimeSchema as ObjectSchema, arb: sessionTimeArb() },
-  { name: 'SessionWireSchema', schema: SessionWireSchema as ObjectSchema, arb: sessionWireArb() },
-  { name: 'ScheduleWireSchema', schema: ScheduleWireSchema as ObjectSchema, arb: scheduleWireArb() },
-  { name: 'ListSessionsSchema', schema: ListSessionsSchema as ObjectSchema, arb: listSessionsArb() },
-  { name: 'GetSessionSchema', schema: GetSessionSchema as ObjectSchema, arb: getSessionArb() },
-  { name: 'GetScheduleSchema', schema: GetScheduleSchema as ObjectSchema, arb: getScheduleArb() },
-  { name: 'PersonalTimeSchema', schema: PersonalTimeSchema as ObjectSchema, arb: personalTimeArb() },
+  { name: 'SessionTimeSchema', schema: SessionTimeSchema, arb: sessionTimeArb() },
+  { name: 'SessionWireSchema', schema: SessionWireSchema, arb: sessionWireArb() },
+  { name: 'ScheduleWireSchema', schema: ScheduleWireSchema, arb: scheduleWireArb() },
+  { name: 'ListSessionsSchema', schema: ListSessionsSchema, arb: listSessionsArb() },
+  { name: 'GetSessionSchema', schema: GetSessionSchema, arb: getSessionArb() },
+  { name: 'GetScheduleSchema', schema: GetScheduleSchema, arb: getScheduleArb() },
+  { name: 'PersonalTimeSchema', schema: PersonalTimeSchema, arb: personalTimeArb() },
   {
     name: 'PersonalTimeInputSchema',
-    schema: PersonalTimeInputSchema as ObjectSchema,
+    schema: PersonalTimeInputSchema,
     arb: personalTimeInputArb(),
   },
-  { name: 'EventSchema', schema: EventSchema as ObjectSchema, arb: eventArb() },
-  { name: 'BulkResultSchema', schema: BulkResultSchema as ObjectSchema, arb: bulkResultArb() },
-  { name: 'BulkFailureSchema', schema: BulkFailureSchema as ObjectSchema, arb: bulkFailureArb() },
+  { name: 'EventSchema', schema: EventSchema, arb: eventArb() },
+  { name: 'BulkResultSchema', schema: BulkResultSchema, arb: bulkResultArb() },
+  { name: 'BulkFailureSchema', schema: BulkFailureSchema, arb: bulkFailureArb() },
   {
     name: 'NormalisedSessionSchema',
-    schema: NormalisedSessionSchema as ObjectSchema,
+    schema: NormalisedSessionSchema,
     arb: normalisedSessionArb(),
   },
-  { name: 'CommitmentSchema', schema: CommitmentSchema as ObjectSchema, arb: commitmentArb() },
-  { name: 'VenueSchema', schema: VenueSchema as ObjectSchema, arb: venueArb() },
-  { name: 'VerdictSchema', schema: VerdictSchema as ObjectSchema, arb: verdictArb() },
-  { name: 'ProblemSchema', schema: ProblemSchema as ObjectSchema, arb: problemArb() },
+  { name: 'CommitmentSchema', schema: CommitmentSchema, arb: commitmentArb() },
+  { name: 'VenueSchema', schema: VenueSchema, arb: venueArb() },
+  { name: 'VerdictSchema', schema: VerdictSchema, arb: verdictArb() },
+  { name: 'ProblemSchema', schema: ProblemSchema, arb: problemArb() },
   { name: 'PassFieldsSchema', schema: PassFieldsSchema, arb: passFieldsArb() },
 ];
 
@@ -504,7 +504,7 @@ function assertScalarIdempotent(
       const once = first.data;
       // The parsed output must itself be a string the schema accepts (both transforms
       // produce strings), so re-parsing it is valid input.
-      const second = schema.safeParse(once as string);
+      const second = schema.safeParse(once);
       expect(second.success, `${schemaName} rejected its own parsed output`).toBe(true);
       if (!second.success) {
         return;
@@ -530,7 +530,7 @@ describe('Feature: foundation-contracts, Property 5: Schema parsing is idempoten
     // "unknown" is not one of the five known bands, so parsing it again yields "unknown":
     // the transform is stable on its own output. Both branches are generated.
     assertScalarIdempotent(
-      SeatAvailabilitySchema as unknown as z.ZodType<unknown, string>,
+      SeatAvailabilitySchema,
       anySeatString(),
       'SeatAvailabilitySchema',
     );
@@ -540,7 +540,7 @@ describe('Feature: foundation-contracts, Property 5: Schema parsing is idempoten
     // Known and unknown codes both map to themselves (an identity transform), so
     // parse(parse(x)) equals parse(x) over any generated string.
     assertScalarIdempotent(
-      BulkFailureCodeSchema as unknown as z.ZodType<unknown, string>,
+      BulkFailureCodeSchema,
       anyBulkCodeString(),
       'BulkFailureCodeSchema',
     );

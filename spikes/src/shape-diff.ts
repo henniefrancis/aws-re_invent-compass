@@ -50,7 +50,7 @@ export interface FieldDiff {
 // Collect the set of object keys for a value, or an empty list for a non-object.
 function keysOf(value: unknown): string[] {
   if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-    return Object.keys(value as Record<string, unknown>).sort();
+    return Object.keys(value).sort();
   }
   return [];
 }
@@ -189,7 +189,11 @@ export async function runShapeDiff({
   const lines: string[] = [];
   for (const file of recordings) {
     const recording = await readJson(file);
-    const sample = Array.isArray(recording) ? recording[0] : recording;
+    // Array.isArray narrows recording to any[]; keep the element typed as unknown
+    // so no any flows into diffShape (which accepts unknown).
+    const sample: unknown = Array.isArray(recording)
+      ? (recording as unknown[])[0]
+      : recording;
     const diffs = diffShape(reference, sample);
     lines.push(`Recording ${file}:`);
     lines.push(...formatDiffReport(diffs));

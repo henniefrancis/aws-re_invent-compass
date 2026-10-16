@@ -3181,15 +3181,15 @@
     "venue": "Wynn"
   },
   {
-    "abbreviation": "KEY389",
+    "abbreviation": "KEY482",
     "abstract": "A made-up abstract for Opening Keynote: The year ahead. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": false,
-    "level": "200",
+    "level": "400",
     "room": "Main hall",
     "seatAvailability": "walkUp",
     "services": [
-      "networking"
+      "database"
     ],
     "sessionId": "syn-119",
     "sessionTime": {
@@ -3200,7 +3200,7 @@
     },
     "speakers": [
       {
-        "name": "Casey Haddad"
+        "name": "Finley Chen"
       }
     ],
     "title": "Opening Keynote: The year ahead",
@@ -3208,7 +3208,7 @@
     "venue": "The Venetian"
   },
   {
-    "abbreviation": "KEY313",
+    "abbreviation": "KEY259",
     "abstract": "A made-up abstract for Innovation Keynote: Builders at scale. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": false,
@@ -3216,7 +3216,7 @@
     "room": "Main hall",
     "seatAvailability": "walkUp",
     "services": [
-      "networking"
+      "machine-learning"
     ],
     "sessionId": "syn-120",
     "sessionTime": {
@@ -3227,7 +3227,7 @@
     },
     "speakers": [
       {
-        "name": "Gray Gupta"
+        "name": "Emery Eriksson"
       }
     ],
     "title": "Innovation Keynote: Builders at scale",
