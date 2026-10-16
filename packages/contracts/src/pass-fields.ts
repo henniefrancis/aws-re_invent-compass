@@ -18,9 +18,15 @@
 //      endsAt is at most 10 hours after startsAt. These cross-field rules are
 //      enforced with superRefine over parsed Date values. No coercion is used.
 //   4. All free-text fields (title, venue, room, walkFromPrevious.fromVenue,
-//      nextConnection.venue, attendeeName) are letters, digits, spaces and basic
-//      punctuation only. Any value that looks like a URL or domain, any control
-//      character and any bidirectional override character is rejected.
+//      nextConnection.venue, attendeeName) must pass a character ALLOWLIST:
+//      every character is a Unicode letter, combining mark or digit, a space, or
+//      one of a small set of basic punctuation marks. Anything else (zero-width
+//      characters, C0 and C1 controls, line and paragraph separators,
+//      bidirectional override and formatting characters, emoji and other symbols)
+//      is rejected because it is not in the allowed set. In addition, any value
+//      that looks like a URL (contains "://"), a www host, or a bare domain token
+//      is rejected, with a short allowlist of technology tokens (for example
+//      Node.js, ASP.NET) that contain a dot but are not domains.
 //   5. Server-derived fields (boardingClosesAt, disclaimer, expirationDate,
 //      relevantDates, transitType, sharingProhibited, and there are no barcodes)
 //      are NOT accepted from the client. They are set server-side by S5 and are
@@ -45,42 +51,120 @@ const ISO_OFFSET_PATTERN =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 /**
- * Control characters: the C0 range U+0000 to U+001F and U+007F (DEL).
+ * The character ALLOWLIST for free text. A value passes only when every
+ * character is one of:
+ *   - a Unicode letter (\p{L}), combining mark (\p{M}) or digit (\p{N}), with
+ *     the 'u' flag so astral and accented letters and combining marks count;
+ *   - a plain ASCII space (U+0020);
+ *   - one of the basic punctuation marks . , : ; ' " ! ? ( ) & / + # @ -
+ *     (the hyphen is escaped at the end of the class).
+ * Because the set is an allowlist, every disallowed character is rejected
+ * without being enumerated: zero-width characters (U+200B to U+200D, U+2060,
+ * U+FEFF), C0 controls and DEL (U+0000 to U+001F, U+007F), C1 controls
+ * (U+0080 to U+009F), the line and paragraph separators (U+2028, U+2029) and
+ * all bidirectional override and formatting characters (U+202A to U+202E,
+ * U+2066 to U+2069, U+200E, U+200F) all fall outside it. The empty string
+ * passes the character allowlist (length rules are enforced separately).
  */
-const CONTROL_CHAR_PATTERN = /[\u0000-\u001F\u007F]/;
+const ALLOWED_TEXT = /^[\p{L}\p{M}\p{N} .,:;'"!?()&/+#@\-]*$/u;
 
 /**
- * Bidirectional override and directional formatting characters: the explicit
- * embedding and override controls U+202A to U+202E, the isolates U+2066 to
- * U+2069, and the implicit marks U+200E and U+200F.
+ * Technology tokens that contain a dot but are not domains. They are neutralised
+ * before the bare-domain check so a title like "Node.js on AWS" is not mistaken
+ * for a host. Matched case-insensitively and only as whole tokens (see
+ * TECH_TOKEN_PATTERN), so "mynode.js" or "node.jsx" is not treated as the token.
  */
-const BIDI_PATTERN = /[\u202A-\u202E\u2066-\u2069\u200E\u200F]/;
+const ALLOWED_TECH_TOKENS = [
+  'Node.js',
+  'Vue.js',
+  'Next.js',
+  'Nuxt.js',
+  'Express.js',
+  'Three.js',
+  'D3.js',
+  'ASP.NET',
+  'ADO.NET',
+  'VB.NET',
+] as const;
 
 /**
- * URL-like or domain-like text. Matches an explicit scheme (http:// or
- * https://), a leading www., or a bare host.tld token (a label, a dot and a
- * two-or-more-letter top-level label). This is deliberately broad: ambiguous
- * input is refused, never reinterpreted.
+ * Escape a literal string for use inside a regular expression.
  */
-const URL_OR_DOMAIN_PATTERN =
-  /(https?:\/\/|www\.|\b[a-z0-9-]+\.[a-z]{2,}\b)/i;
+function escapeRegExp(literal: string): string {
+  return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 /**
- * True when value is safe free text: no control character, no bidirectional
- * override, and nothing that looks like a URL or a domain. Does not echo the
- * offending value.
+ * A single case-insensitive, global pattern matching any allowed tech token as a
+ * whole token. The lookbehind and lookahead forbid an adjacent word character or
+ * dot, so only standalone occurrences match (not substrings like "mynode.js").
+ */
+const TECH_TOKEN_PATTERN = new RegExp(
+  `(?<![\\w.])(?:${ALLOWED_TECH_TOKENS.map(escapeRegExp).join('|')})(?![\\w.])`,
+  'gi',
+);
+
+/**
+ * A bare domain token: one or more dot-separated labels ending in a two-or-more
+ * letter alphabetic top-level label, treated as a whole token with boundaries so
+ * for example "example.com", "evil.co.za" and "foo.bar.io" match. Case-insensitive.
+ */
+const BARE_DOMAIN_PATTERN = /(?<![\w.])[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}(?![\w.])/i;
+
+/**
+ * True when value is safe free text. The checks run in order: (a) every character
+ * is in the allowlist; (b) the allowed tech tokens are neutralised in a working
+ * copy; (c) the working copy contains no "://" scheme; (d) it contains no "www."
+ * host; (e) it contains no bare domain token. Does not echo the offending value.
  */
 function isSafeText(value: string): boolean {
-  if (CONTROL_CHAR_PATTERN.test(value)) {
+  if (!ALLOWED_TEXT.test(value)) {
     return false;
   }
-  if (BIDI_PATTERN.test(value)) {
+  // Neutralise allowed tech tokens so they cannot trip the bare-domain rule. The
+  // "://" and "www." checks are independent (a tech token never contains either),
+  // so they are applied to the neutralised copy as well with no loss.
+  const neutralised = value.replace(TECH_TOKEN_PATTERN, ' ');
+  if (neutralised.includes('://')) {
     return false;
   }
-  if (URL_OR_DOMAIN_PATTERN.test(value)) {
+  if (/www\./i.test(neutralised)) {
+    return false;
+  }
+  if (BARE_DOMAIN_PATTERN.test(neutralised)) {
     return false;
   }
   return true;
+}
+
+/**
+ * Normalise raw free text before PassFields validation. This is a pre-pass used
+ * by the S4 pass builder: it maps typographic punctuation to ASCII and collapses
+ * whitespace so a human-friendly title (with curly quotes, a long dash or an
+ * ellipsis) can pass the allowlist. It does NOT validate; a value that still
+ * fails after normalisation is handled by the caller (S4 falls back to a generic
+ * title). Typographic characters are referenced by escape sequence so this source
+ * file contains no raw em or en dash.
+ */
+export function normalisePassText(value: string): string {
+  return (
+    value
+      // En dash (U+2013) and em dash (U+2014) both become an ASCII hyphen.
+      .replace(/[\u2013\u2014]/g, '-')
+      // Curly single quotes (U+2018, U+2019) and the prime (U+2032) become a
+      // straight apostrophe.
+      .replace(/[\u2018\u2019\u2032]/g, "'")
+      // Curly double quotes (U+201C, U+201D) and the double prime (U+2033) become
+      // a straight double quote.
+      .replace(/[\u201C\u201D\u2033]/g, '"')
+      // The horizontal ellipsis (U+2026) becomes three ASCII dots.
+      .replace(/\u2026/g, '...')
+      // Any run of whitespace, including the non-breaking space (U+00A0) and other
+      // Unicode spaces, collapses to a single ASCII space.
+      .replace(/[\s\u00A0]+/g, ' ')
+      // Trim leading and trailing whitespace.
+      .trim()
+  );
 }
 
 /**
@@ -97,7 +181,7 @@ function safeText(
     .min(opts.minLen)
     .max(maxLen)
     .refine(isSafeText, {
-      message: `${opts.fieldName} contains disallowed text (a URL, a domain, a control character or a bidirectional override)`,
+      message: `${opts.fieldName} contains disallowed text (a disallowed character, a URL or a domain)`,
     });
 }
 
@@ -149,7 +233,7 @@ export function createPassFieldsSchema(opts: CreatePassFieldsSchemaOptions) {
 
   const walkFromPrevious = z
     .object({
-      minutes: z.number().min(0).max(90),
+      minutes: z.number().int().min(0).max(90),
       fromVenue: safeText(40, { minLen: 0, fieldName: 'fromVenue' }),
     })
     .optional();
@@ -159,7 +243,7 @@ export function createPassFieldsSchema(opts: CreatePassFieldsSchemaOptions) {
       sessionCode,
       startsAt: isoWithOffset('nextConnection.startsAt'),
       venue: safeText(40, { minLen: 0, fieldName: 'nextConnection.venue' }),
-      walkMinutes: z.number().min(0).max(90),
+      walkMinutes: z.number().int().min(0).max(90),
     })
     .optional();
 

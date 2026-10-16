@@ -17,8 +17,9 @@
 //      NormalisedSession, ScheduleWire and Verdict schemas; write inputs reference
 //      the domain and wire shapes (Commitment, PersonalTimeInput, BulkResult).
 //   5. Reserve, standby and issue take 1 to 10 session ids (the Events API bound),
-//      enforced with .min(1).max(10). Uniqueness of those ids is enforced by the
-//      Events API server (1 to 10 distinct); a refine here would duplicate that.
+//      enforced with .min(1).max(10) and a local duplicate check so a client never
+//      sends the same id twice. send_to_phone and sync_passes take an optional list
+//      of up to 80 session ids to narrow the hand-off or the sync.
 import { z } from 'zod';
 import { NormalisedSessionSchema } from './domain/normalised-session.js';
 import { CommitmentSchema } from './domain/commitment.js';
@@ -27,10 +28,16 @@ import { BulkResultSchema } from './wire/bulk-result.js';
 import { PersonalTimeInputSchema } from './wire/personal-time.js';
 
 /**
- * A session id array bounded to the Events API limit of 1 to 10 ids. Uniqueness is
- * enforced server-side (the Events API requires 1 to 10 distinct ids).
+ * A session id array bounded to the Events API limit of 1 to 10 ids, with
+ * duplicate ids rejected locally so the same session is never sent twice.
  */
-const SessionIdBatch = z.array(z.string()).min(1).max(10);
+const SessionIdBatch = z
+  .array(z.string())
+  .min(1)
+  .max(10)
+  .refine((ids) => new Set(ids).size === ids.length, {
+    message: 'sessionIds must not contain duplicate ids',
+  });
 
 // sign_in: begin or confirm a local PKCE sign-in. No arguments are required; force
 // re-runs the flow even when a valid session exists. The output reports only
@@ -179,7 +186,7 @@ const IssueBoardingPassesOutput = z.object({
 // capability lives in the url fragment, typed here as a plain string) and its
 // expiry.
 const SendToPhoneInput = z.object({
-  sessionIds: z.array(z.string()).optional(),
+  sessionIds: z.array(z.string()).max(80).optional(),
 });
 const SendToPhoneOutput = z.object({
   handoffUrl: z.string(),
@@ -189,7 +196,7 @@ const SendToPhoneOutput = z.object({
 // sync_passes: reconcile issued passes against the live schedule. sessionIds
 // optionally narrows the sync. The output lists what was issued, updated and voided.
 const SyncPassesInput = z.object({
-  sessionIds: z.array(z.string()).optional(),
+  sessionIds: z.array(z.string()).max(80).optional(),
 });
 const SyncPassesOutput = z.object({
   issued: z.array(z.string()),

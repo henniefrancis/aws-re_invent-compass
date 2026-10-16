@@ -48,8 +48,9 @@ export type { Venue } from './domain/venue.js';
 export { VerdictSchema } from './domain/verdict.js';
 export type { Verdict } from './domain/verdict.js';
 
-// PassFields factory (runtime value), its inferred type and the factory options.
-export { createPassFieldsSchema } from './pass-fields.js';
+// PassFields factory (runtime value), the normalise helper, its inferred type and
+// the factory options.
+export { createPassFieldsSchema, normalisePassText } from './pass-fields.js';
 export type { PassFields, CreatePassFieldsSchemaOptions } from './pass-fields.js';
 
 // Problem error schema (runtime value) and its inferred type.
