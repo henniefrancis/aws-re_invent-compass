@@ -28,7 +28,9 @@ re:Invent Compass is built as **eight Kiro specs (S0 to S7)** by up to six Kiro 
 
 Milestones: contract lock and day-1 spikes **16 Oct**; first dev deploy **21 Oct**; real-phone checks **25 Oct**; feature freeze **28 Oct**; site freeze and `release/1.0.0` **29 Oct**; release gate and prod **30 Oct**; video **31 Oct**; **submit 1 Nov**.
 
-**S0 must be merged before any other spec starts.** Everyone builds against its contracts.
+**Contract lock (ADR-025, 16 Oct):** S0 tasks 1 to 7 (scaffold, dependencies, all shared schemas and the Compass API contract) were merged into `develop` early, so the other streams start now. S0 tasks 8 to 15 (scanners, synthetic catalog, spikes, CI, hooks, examples) finish on `feature/foundation-contracts` and merge later. Until the synthetic catalog lands, a stream that needs sample sessions creates a few made-up ones in its own `test/` folder from the `SessionWire` schema, and switches to `fixtures/synthetic/` once it is merged. Because engineer 1 is still finishing S0, **S1 starts in its own Kiro session**.
+
+**Contracts are frozen.** Never edit `packages/contracts/**` or `contracts/**` from a stream. If a contract must change, stop and ask the integrator.
 
 ---
 

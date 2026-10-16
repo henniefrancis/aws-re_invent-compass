@@ -26,3 +26,6 @@ One record per architecture decision for re:Invent Compass, mirrored from the pr
 | [ADR-020](ADR-020-dev-environment-before-prod.md) | Dev environment before prod | Accepted |
 | [ADR-021](ADR-021-cloudfront-flat-rate-free-plan.md) | CloudFront flat-rate Free plan | Proposed |
 | [ADR-022](ADR-022-pass-content-retention.md) | Pass content retention | Accepted |
+| [ADR-023](ADR-023-events-api-openapi-source.md) | Events API OpenAPI source | Accepted |
+| ADR-024 | Kiro hook input and blocking (SP1 result, to come) | Reserved |
+| [ADR-025](ADR-025-early-contract-lock.md) | Early contract lock | Accepted |
