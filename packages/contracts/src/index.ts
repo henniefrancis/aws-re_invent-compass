@@ -68,7 +68,8 @@ export type { McpToolName, McpToolInput, McpToolOutput } from './mcp-tools.js';
 // operations and so on) through one name.
 export type * as EventsApi from './generated/events-api.js';
 
-// The Compass API generated types (components and paths) will be re-exported here
-// in task 7.2 once packages/contracts/src/generated/compass-api.ts is generated
-// from the single-source Compass API OpenAPI document. It is deliberately not
-// referenced yet so this public surface compiles before that file exists.
+// The Compass API generated types (components, paths and operations), generated
+// from the single-source Compass API OpenAPI document by gen:types (task 7.2),
+// re-exported as a single namespace so consumers can reach every generated member
+// through one name.
+export type * as CompassApi from './generated/compass-api.js';
