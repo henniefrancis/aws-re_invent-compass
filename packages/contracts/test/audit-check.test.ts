@@ -87,9 +87,60 @@ describe('Feature: foundation-contracts, audit-check', () => {
     expect(parsed.vulnerabilities.somePackage).toBeDefined();
   });
 
-  test('runAudit treats empty stdout as an empty report', () => {
-    const parsed = runAudit(() => ({ stdout: '' })) as { vulnerabilities?: unknown };
-    expect(parsed).toEqual({});
+  test('runAudit returns a well-formed report unchanged', () => {
+    const parsed = runAudit(runnerFor([{ id: 'GHSA-xxxx', severity: 'low' }])) as {
+      auditReportVersion: number;
+      vulnerabilities: Record<string, unknown>;
+    };
+    expect(parsed.auditReportVersion).toBe(2);
+    expect(parsed.vulnerabilities.somePackage).toBeDefined();
+  });
+
+  // Fail-closed cases: every one of these must throw so runCli turns it into a
+  // non-zero exit (a merge blocker, never a silent pass).
+  test('runAudit fails closed on a spawn error', () => {
+    expect(() => runAudit(() => ({ stdout: '', error: new Error('ENOENT') }))).toThrow(
+      /failed to spawn/,
+    );
+  });
+
+  test('runAudit fails closed on empty stdout', () => {
+    expect(() => runAudit(() => ({ stdout: '', status: 1 }))).toThrow(/no output/);
+    expect(() => runAudit(() => ({ stdout: '   \n' }))).toThrow(/no output/);
+    expect(() => runAudit(() => ({ stdout: null }))).toThrow(/no output/);
+  });
+
+  test('runAudit fails closed on unparseable JSON', () => {
+    expect(() => runAudit(() => ({ stdout: 'not json at all' }))).toThrow(/did not parse as JSON/);
+  });
+
+  test('runAudit fails closed when the JSON has an error key', () => {
+    const payload = JSON.stringify({
+      error: { summary: 'registry unreachable', code: 'ENETDOWN' },
+    });
+    expect(() => runAudit(() => ({ stdout: payload }))).toThrow(/reported an error/);
+    // An error object without a summary still fails closed.
+    const bare = JSON.stringify({ error: 'boom' });
+    expect(() => runAudit(() => ({ stdout: bare }))).toThrow(/reported an error/);
+  });
+
+  test('runAudit fails closed when the report lacks the expected shape', () => {
+    // Missing auditReportVersion.
+    expect(() => runAudit(() => ({ stdout: JSON.stringify({ vulnerabilities: {} }) }))).toThrow(
+      /not a recognised audit report/,
+    );
+    // Missing vulnerabilities.
+    expect(() => runAudit(() => ({ stdout: JSON.stringify({ auditReportVersion: 2 }) }))).toThrow(
+      /not a recognised audit report/,
+    );
+    // vulnerabilities is null.
+    expect(() =>
+      runAudit(() => ({
+        stdout: JSON.stringify({ auditReportVersion: 2, vulnerabilities: null }),
+      })),
+    ).toThrow(/not a recognised audit report/);
+    // A JSON array is not a report object.
+    expect(() => runAudit(() => ({ stdout: '[]' }))).toThrow(/not a recognised audit report/);
   });
 
   test('extractAdvisories defaults a missing severity and title', () => {

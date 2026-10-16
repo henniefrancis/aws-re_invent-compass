@@ -36,10 +36,52 @@ const BLOCKING = new Set(['high', 'critical']);
  * @returns {unknown}
  */
 export function runAudit(runner = defaultAuditRunner) {
-  const { stdout } = runner();
-  // A missing or empty stdout (no report produced, or the process failed to
-  // spawn) parses as an empty report.
-  return JSON.parse(stdout ? stdout : '{}');
+  const result = runner();
+  const { stdout, error, status } = result;
+
+  // Fail closed: a spawn error means npm could not run at all.
+  if (error) {
+    throw new Error(`npm audit failed to spawn: ${error.message}`);
+  }
+  // Fail closed: npm audit writes the report to stdout even on a non-zero exit
+  // (advisories present). Empty stdout means no report was produced.
+  if (typeof stdout !== 'string' || stdout.trim().length === 0) {
+    throw new Error(
+      `npm audit produced no output${typeof status === 'number' ? ` (exit status ${status})` : ''}`,
+    );
+  }
+
+  let report;
+  try {
+    report = JSON.parse(stdout);
+  } catch (cause) {
+    throw new Error(`npm audit output did not parse as JSON: ${cause.message}`);
+  }
+
+  // Fail closed: an "error" key is npm's own failure report (for example a
+  // registry or lockfile error), not an audit result.
+  if (report && typeof report === 'object' && 'error' in report) {
+    const detail =
+      report.error && typeof report.error === 'object' && 'summary' in report.error
+        ? String(report.error.summary)
+        : 'unknown error';
+    throw new Error(`npm audit reported an error: ${detail}`);
+  }
+
+  // Fail closed: a real audit report always carries auditReportVersion and a
+  // vulnerabilities object. Anything else is not a report we can trust.
+  const hasShape =
+    report &&
+    typeof report === 'object' &&
+    'auditReportVersion' in report &&
+    report.vulnerabilities !== undefined &&
+    report.vulnerabilities !== null &&
+    typeof report.vulnerabilities === 'object';
+  if (!hasShape) {
+    throw new Error('npm audit output was not a recognised audit report');
+  }
+
+  return report;
 }
 
 /** The npm audit arguments, shared by every invocation. */
@@ -73,8 +115,10 @@ export function resolveNpmCommand(env, execPath) {
 function defaultAuditRunner() {
   const { command, args } = resolveNpmCommand(process.env, process.execPath);
   const r = spawnSync(command, args, { encoding: 'utf8' });
-  // npm audit exits non-zero when advisories exist; the JSON is still on stdout.
-  return { stdout: r.stdout };
+  // Surface the full result so runAudit can fail closed on a spawn error, a
+  // non-zero exit with no output, or an unrecognised report. npm audit exits
+  // non-zero when advisories exist, but the JSON is still on stdout in that case.
+  return { stdout: r.stdout, error: r.error, status: r.status };
 }
 
 /**

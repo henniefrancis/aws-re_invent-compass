@@ -10,6 +10,8 @@ export interface Advisory {
 
 export interface AuditRunnerResult {
   stdout: string | null | undefined;
+  error?: Error | null;
+  status?: number | null;
 }
 
 export declare function resolveNpmCommand(
