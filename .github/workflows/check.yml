@@ -70,8 +70,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: npm audit
-        run: npm audit --omit=dev --audit-level=high
+      - name: npm audit with a reviewed allowlist
+        run: node .github/scripts/audit-check.mjs
 
       # Terraform steps run only when Terraform files exist. While there are none
       # (S6 adds them later) these steps pass as no-ops.

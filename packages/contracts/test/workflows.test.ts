@@ -88,7 +88,7 @@ describe('Feature: foundation-contracts, CI workflows', () => {
       'npx tsc -b',
       'npm test',
       'gitleaks/gitleaks-action',
-      'npm audit --omit=dev --audit-level=high',
+      'node .github/scripts/audit-check.mjs',
       'terraform fmt -check',
       'tflint',
       'scan-type: fs',
