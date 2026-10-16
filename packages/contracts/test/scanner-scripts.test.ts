@@ -187,6 +187,17 @@ describe('Feature: foundation-contracts, gen-types', () => {
 });
 
 describe('Feature: foundation-contracts, catalog-check', () => {
+  // Every write-mode test emits into this temp directory, never the tracked
+  // fixtures, so parallel readers of fixtures/synthetic/catalog.json are never
+  // raced against a concurrent write.
+  let dir: string;
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'catalog-write-'));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
   test('regenerate yields byte-stable catalog and index strings and the sessions', async () => {
     const { catalog, index, sessions } = await regenerate();
     expect(catalog.endsWith('\n')).toBe(true);
@@ -200,12 +211,15 @@ describe('Feature: foundation-contracts, catalog-check', () => {
     expect(ok).toBe(true);
   });
 
-  test('emit rewrites the committed files and the check still passes', async () => {
-    const r = await emit();
+  test('emit writes to the given paths atomically and the written files round-trip', async () => {
+    const catalogPath = join(dir, 'catalog.json');
+    const indexPath = join(dir, 'index.json');
+    const r = await emit({ catalogPath, indexPath });
     expect(r.count).toBeGreaterThan(0);
     expect(r.catalogBytes).toBeGreaterThan(0);
     expect(r.indexBytes).toBeGreaterThan(0);
-    const after = await check();
+    // The emitted files match the generator output, so a check against them passes.
+    const after = await check({ catalogPath, indexPath });
     expect(after.ok).toBe(true);
   });
 
@@ -215,8 +229,13 @@ describe('Feature: foundation-contracts, catalog-check', () => {
     expect(r.stdout).toContain('catalog check ok');
   });
 
-  test('runCli write mode reports what it wrote', async () => {
-    const r = await catalogRunCli({ mode: '--write' });
+  test('runCli write mode reports what it wrote and writes only to the temp paths', async () => {
+    const catalogPath = join(dir, 'catalog.json');
+    const indexPath = join(dir, 'index.json');
+    const r = await catalogRunCli({
+      mode: '--write',
+      emitFn: () => emit({ catalogPath, indexPath }),
+    });
     expect(r.code).toBe(0);
     expect(r.stdout).toContain('wrote catalog.json');
   });
@@ -244,6 +263,15 @@ describe('Feature: foundation-contracts, catalog-check failure branches', () => 
     });
     expect(ok).toBe(false);
     expect(problems.some((p) => p.includes('cannot read a committed catalog file'))).toBe(true);
+  });
+
+  test('emit cleans up and rethrows when a destination write fails', async () => {
+    // A catalog path whose parent does not exist makes the atomic temp write fail,
+    // driving the cleanup-and-rethrow branch. Nothing tracked is touched.
+    const badCatalog = join(dir, 'no-such-dir', 'catalog.json');
+    await expect(
+      emit({ catalogPath: badCatalog, indexPath: join(dir, 'index.json') }),
+    ).rejects.toThrow();
   });
 
   test('reports a byte mismatch when the committed files differ from the generator', async () => {

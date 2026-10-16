@@ -14,7 +14,7 @@
 // directly via native type stripping, so there is no build step. Dependency free
 // beyond the in-repo generator and the contracts zod schema.
 
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { maybeRunCli } from './cli.mjs';
@@ -60,14 +60,38 @@ export async function regenerate() {
 }
 
 /**
- * Write the committed catalog and index from the generator (the --write path).
+ * Write a file atomically: write to a temp file in the same directory, then rename
+ * it over the destination so a reader never sees a partial file. Best-effort temp
+ * cleanup on failure.
  *
+ * @param {string} destination
+ * @param {string} contents
+ */
+async function writeAtomic(destination, contents) {
+  const tempPath = `${destination}.tmp-${process.pid}`;
+  try {
+    await writeFile(tempPath, contents, 'utf8');
+    await rename(tempPath, destination);
+  } catch (cause) {
+    await unlink(tempPath).catch(() => undefined);
+    throw cause;
+  }
+}
+
+/**
+ * Write the catalog and index from the generator (the --write path), atomically.
+ * The output paths are injectable so tests can write to a temp directory and never
+ * touch the tracked fixtures.
+ *
+ * @param {object} [options]
+ * @param {string} [options.catalogPath]
+ * @param {string} [options.indexPath]
  * @returns {Promise<{ catalogBytes: number, indexBytes: number, count: number }>}
  */
-export async function emit() {
+export async function emit({ catalogPath = CATALOG_PATH, indexPath = INDEX_PATH } = {}) {
   const { catalog, index, sessions } = await regenerate();
-  await writeFile(CATALOG_PATH, catalog, 'utf8');
-  await writeFile(INDEX_PATH, index, 'utf8');
+  await writeAtomic(catalogPath, catalog);
+  await writeAtomic(indexPath, index);
   return {
     catalogBytes: Buffer.byteLength(catalog, 'utf8'),
     indexBytes: Buffer.byteLength(index, 'utf8'),

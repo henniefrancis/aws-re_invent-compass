@@ -12,7 +12,7 @@ export declare function regenerate(): Promise<{
   sessions: unknown[];
 }>;
 
-export declare function emit(): Promise<{
+export declare function emit(options?: { catalogPath?: string; indexPath?: string }): Promise<{
   catalogBytes: number;
   indexBytes: number;
   count: number;
