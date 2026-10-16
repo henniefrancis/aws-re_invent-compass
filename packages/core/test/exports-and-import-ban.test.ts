@@ -226,13 +226,26 @@ describe('Feature: foundation-contracts, no-restricted-imports cross-package ban
     return messages.filter((m) => m.ruleId === 'no-restricted-imports');
   }
 
-  test('a deep relative cross-package import is rejected', async () => {
-    const messages = await noRestrictedImportsMessages('__virtual_ban__.ts', banCode);
-    expect(messages.length).toBeGreaterThan(0);
-  });
+  // Programmatic ESLint linting is slow, and v8 coverage instrumentation slows it
+  // further, so these two tests are given an explicit 30 second timeout. The default
+  // 5 second timeout is not enough under coverage; the assertions themselves are fast.
+  const ESLINT_TEST_TIMEOUT_MS = 30000;
 
-  test('a legitimate subpath package import is not rejected', async () => {
-    const messages = await noRestrictedImportsMessages('__virtual_ok__.ts', okCode);
-    expect(messages.length).toBe(0);
-  });
+  test(
+    'a deep relative cross-package import is rejected',
+    async () => {
+      const messages = await noRestrictedImportsMessages('__virtual_ban__.ts', banCode);
+      expect(messages.length).toBeGreaterThan(0);
+    },
+    ESLINT_TEST_TIMEOUT_MS,
+  );
+
+  test(
+    'a legitimate subpath package import is not rejected',
+    async () => {
+      const messages = await noRestrictedImportsMessages('__virtual_ok__.ts', okCode);
+      expect(messages.length).toBe(0);
+    },
+    ESLINT_TEST_TIMEOUT_MS,
+  );
 });
