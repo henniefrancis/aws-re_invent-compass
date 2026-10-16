@@ -28,7 +28,28 @@ export const FILES = [
 const PATTERNS = [
   { name: 'twelve-digit run (possible account id)', re: /\b\d{12}\b/ },
   { name: 'hard-coded ARN', re: /arn:aws/i },
+  // Terraform percent-brace template markers (for loops and conditionals) must
+  // never appear: these three copies are template inputs and must evaluate to
+  // themselves everywhere except the two allowed dollar-brace placeholders.
+  { name: 'percent-brace template marker', re: /%\{/ },
 ];
+
+// The only dollar-brace template markers allowed anywhere in a copy (comments
+// included), because Terraform templatefile() evaluates every dollar-brace
+// marker in the file. Any other dollar-brace occurrence is a deploy-time hazard.
+const ALLOWED_DOLLAR_BRACE = new Set([
+  '${api_lambda_invoke_arn}',
+  '${passkit_lambda_invoke_arn}',
+]);
+
+// Match a dollar-brace marker: ${ up to the next } (no nested braces needed here
+// because the contract never nests them). Global so every occurrence on a line
+// is checked.
+const DOLLAR_BRACE = /\$\{[^}]*\}/g;
+
+// Match a bare ${ that is not closed on the same line (an unterminated or
+// malformed marker), so it is still caught even without a closing brace.
+const BARE_DOLLAR_BRACE = /\$\{/g;
 
 /**
  * Scan each file for the forbidden patterns.
@@ -51,6 +72,38 @@ export async function placeholderSafety({ files = FILES } = {}) {
             line: index + 1,
             column: match.index + 1,
             pattern: pattern.name,
+          });
+        }
+      }
+
+      // Flag any dollar-brace marker that is not one of the two allowed Lambda
+      // invoke placeholders. Check the well-formed markers first.
+      const seen = new Set();
+      let m;
+      DOLLAR_BRACE.lastIndex = 0;
+      while ((m = DOLLAR_BRACE.exec(line)) !== null) {
+        seen.add(m.index);
+        if (!ALLOWED_DOLLAR_BRACE.has(m[0])) {
+          findings.push({
+            file,
+            line: index + 1,
+            column: m.index + 1,
+            pattern: 'disallowed dollar-brace template marker',
+          });
+        }
+      }
+      // Also flag a bare ${ that did not form a well-formed marker above (for
+      // example an unterminated "${" in text), which templatefile() still treats
+      // as the start of an interpolation.
+      let b;
+      BARE_DOLLAR_BRACE.lastIndex = 0;
+      while ((b = BARE_DOLLAR_BRACE.exec(line)) !== null) {
+        if (!seen.has(b.index)) {
+          findings.push({
+            file,
+            line: index + 1,
+            column: b.index + 1,
+            pattern: 'unterminated dollar-brace template marker',
           });
         }
       }

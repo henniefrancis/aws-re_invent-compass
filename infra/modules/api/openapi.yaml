@@ -7,16 +7,22 @@
 #   - packages/contracts/openapi.yaml (TypeScript types are generated from it)
 #   - infra/modules/api/openapi.yaml  (fed to aws_api_gateway_rest_api.body)
 #
+# This file is read by Terraform templatefile(), which evaluates dollar-brace
+# and percent-brace template markers anywhere in the file, comments included.
+# So this file must contain NO dollar-brace or percent-brace marker except the
+# two real Lambda invoke placeholders on the integration uri lines. These
+# comments deliberately spell out the marker names in words rather than writing
+# the marker characters.
+#
 # API Gateway binding rules (kept in this single source so the copies stay
 # byte-identical):
 #   - Every operation carries an x-amazon-apigateway-integration of type
 #     aws_proxy with httpMethod POST (the Lambda invoke is always POST, even for
-#     a GET route) and an uri that is one of exactly two Terraform placeholders:
-#       ${api_lambda_invoke_arn}     for the attendee and hand-off routes
-#       ${passkit_lambda_invoke_arn} for the /api/passkit/* routes
-#     These two ${...} tokens are the only template placeholders in this file.
-#     If a literal "${" is ever needed in text, it must be written "$${" so
-#     Terraform templatefile() does not treat it as a variable. (None is needed.)
+#     a GET route) and an uri that is one of exactly two Terraform placeholders,
+#     named api lambda invoke arn (for the attendee and hand-off routes) and
+#     passkit lambda invoke arn (for the /api/passkit/* routes), each written as
+#     that name wrapped in a dollar-brace marker on the uri line only. Those two
+#     are the only template placeholders in the file.
 #   - Auth is verified inside the Lambdas, so there is NO
 #     x-amazon-apigateway-authorizer anywhere. The securitySchemes below are
 #     documentation only, for human readers of the contract.
