@@ -13,18 +13,28 @@ on:
     tags:
       - 'v*'
 
+# The workflow grants no elevated permission by default. The OIDC token write
+# permission is scoped to the publish job only (least privilege).
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   publish:
     name: build and publish with provenance
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # id-token: write is granted here, on the job, not the whole workflow.
+    permissions:
+      contents: read
+      id-token: write
+    # The npm-publish environment gates publishing behind any required reviewers
+    # and protection rules configured on the repository.
+    environment: npm-publish
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -35,6 +45,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Test with coverage
+        run: npm test
 
       - name: Build
         run: npm run build --if-present

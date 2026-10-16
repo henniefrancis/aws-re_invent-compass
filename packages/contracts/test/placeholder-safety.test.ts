@@ -150,4 +150,33 @@ describe('Feature: foundation-contracts, Property 9: The safety scanner flags fo
     expect(findings).toEqual([]);
     expect(ok).toBe(true);
   });
+
+  // ----------------------------------------------------------------------------
+  // Part E: twelve-digit account ids are caught even when embedded in an
+  // identifier or split into groups.
+  // ----------------------------------------------------------------------------
+  test('Feature: foundation-contracts, Property 9: a 12-digit run inside an identifier is caught', async () => {
+    const { ok, patterns } = await scan('role_arn = acct_123456789012_role');
+    expect(ok).toBe(false);
+    expect(patterns).toContain('twelve-digit run (possible account id)');
+  });
+
+  test('Feature: foundation-contracts, Property 9: a grouped 12-digit run is caught', async () => {
+    const dashed = await scan('account 1234-5678-9012 here');
+    expect(dashed.ok).toBe(false);
+    expect(dashed.patterns).toContain('grouped twelve-digit run (possible account id)');
+
+    const spaced = await scan('account 1234 5678 9012 here');
+    expect(spaced.ok).toBe(false);
+    expect(spaced.patterns).toContain('grouped twelve-digit run (possible account id)');
+  });
+
+  test('Feature: foundation-contracts, Property 9: an 11 or 13 digit run is not a 12-digit account id', async () => {
+    // Eleven digits: no bare-12 finding.
+    const eleven = await scan('id 12345678901 end');
+    expect(eleven.patterns).not.toContain('twelve-digit run (possible account id)');
+    // Thirteen digits: the bounded matcher does not fire on a longer run.
+    const thirteen = await scan('id 1234567890123 end');
+    expect(thirteen.patterns).not.toContain('twelve-digit run (possible account id)');
+  });
 });

@@ -109,9 +109,10 @@ describe('Feature: foundation-contracts, PassFields text allowlist', () => {
   });
 
   // ------------------------------------------------------------------------------
-  // C. URL and domain REJECTS.
+  // C. URL and domain REJECTS. A dotted token is a domain only when its last label
+  // is a known TLD (a curated gTLD set plus every two-letter country code).
   // ------------------------------------------------------------------------------
-  test('C: rejects URLs and bare domains', () => {
+  test('C: rejects URLs and real domains', () => {
     const rejected = [
       'http://x',
       'https://x/y',
@@ -119,7 +120,16 @@ describe('Feature: foundation-contracts, PassFields text allowlist', () => {
       'example.com',
       'evil.co.za',
       'foo.bar.io',
-      'visit shop.example',
+      // A Unicode (non-ASCII) host is caught because labels are matched with the u
+      // flag. "пример" + ".com" ends in a known TLD.
+      '\u043F\u0440\u0438\u043C\u0435\u0440.com',
+      // A fully qualified name with a trailing dot is still a domain.
+      'example.com.',
+      // IPv4 addresses, with and without a port.
+      '192.168.0.1',
+      'go to 10.0.0.1:8080 now',
+      // A subdomain with a known TLD.
+      'api.service.io',
     ];
     for (const title of rejected) {
       expect(titleAccepted(title), `expected to reject: ${JSON.stringify(title)}`).toBe(false);
@@ -127,17 +137,30 @@ describe('Feature: foundation-contracts, PassFields text allowlist', () => {
   });
 
   // ------------------------------------------------------------------------------
-  // D. Tech tokens pass while lookalikes and real domains still fail.
+  // C2. Dotted technical phrases whose last label is NOT a known TLD are allowed,
+  // reducing false positives.
   // ------------------------------------------------------------------------------
-  test('D: tech tokens pass, lookalikes and domains do not', () => {
+  test('C2: dotted non-domain phrases are allowed', () => {
+    const accepted = [
+      'AWS.Lambda deep dive',
+      'S3.Express One Zone',
+      // "example" and "js" are not known TLDs, so these are not domains.
+      'visit shop.example',
+      'Try mynode.js today',
+    ];
+    for (const title of accepted) {
+      expect(titleAccepted(title), `expected to accept: ${JSON.stringify(title)}`).toBe(true);
+    }
+  });
+
+  // ------------------------------------------------------------------------------
+  // D. Tech tokens pass while real domains still fail.
+  // ------------------------------------------------------------------------------
+  test('D: tech tokens pass, real domains do not', () => {
     // The lone token passes.
     expect(titleAccepted('Node.js')).toBe(true);
-    // A non-token with a dot that forms a bare-domain-like token is rejected. "mynode.js"
-    // is not the Node.js token (the leading "my" breaks the boundary), so after
-    // neutralisation it remains and matches the bare-domain rule.
-    expect(titleAccepted('Try mynode.js today')).toBe(false);
-    // A real domain embedded in otherwise allowed text still fails.
-    expect(titleAccepted('visit shop.example')).toBe(false);
+    // A real domain embedded in otherwise allowed text still fails ("io" is a gTLD).
+    expect(titleAccepted('visit shop.io')).toBe(false);
   });
 });
 
@@ -172,5 +195,34 @@ describe('Feature: foundation-contracts, normalisePassText', () => {
     expect(normalised).toBe("It's a plan - reserve, board, and go");
     const result = PassFieldsSchema.safeParse({ ...BASE, title: normalised });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('Feature: foundation-contracts, createPassFieldsSchema window validation', () => {
+  // The factory fails fast on a malformed event window, which is a caller bug.
+  test('throws when start does not parse', () => {
+    expect(() =>
+      createPassFieldsSchema({ start: 'not a date', end: PASS_WINDOW.end, timezone: 'UTC' }),
+    ).toThrow(/start is not a valid date/);
+  });
+
+  test('throws when end does not parse', () => {
+    expect(() =>
+      createPassFieldsSchema({ start: PASS_WINDOW.start, end: 'not a date', timezone: 'UTC' }),
+    ).toThrow(/end is not a valid date/);
+  });
+
+  test('throws when end is not after start', () => {
+    expect(() =>
+      createPassFieldsSchema({ start: PASS_WINDOW.end, end: PASS_WINDOW.start, timezone: 'UTC' }),
+    ).toThrow(/end must be after start/);
+    // Equal bounds are also rejected.
+    expect(() =>
+      createPassFieldsSchema({ start: PASS_WINDOW.start, end: PASS_WINDOW.start, timezone: 'UTC' }),
+    ).toThrow(/end must be after start/);
+  });
+
+  test('accepts a valid window', () => {
+    expect(() => createPassFieldsSchema(PASS_WINDOW)).not.toThrow();
   });
 });

@@ -27,7 +27,16 @@ export const FILES = [
 // Forbidden patterns. Each is scanned per line so a hit can be reported by line
 // and column without echoing the match.
 const PATTERNS = [
-  { name: 'twelve-digit run (possible account id)', re: /\b\d{12}\b/ },
+  // A bare twelve-digit run, bounded by non-digits rather than word boundaries so
+  // a run embedded in an identifier like "acct_123456789012" is still caught (an
+  // underscore is a word character, so \b would miss it).
+  { name: 'twelve-digit run (possible account id)', re: /(?<!\d)\d{12}(?!\d)/ },
+  // A twelve-digit account id split into dash- or space-separated groups, for
+  // example "1234-5678-9012" or "1234 5678 9012".
+  {
+    name: 'grouped twelve-digit run (possible account id)',
+    re: /(?<!\d)\d{4}[-\s]\d{4}[-\s]\d{4}(?!\d)/,
+  },
   { name: 'hard-coded ARN', re: /arn:aws/i },
   // Terraform percent-brace template markers (for loops and conditionals) must
   // never appear: these three copies are template inputs and must evaluate to

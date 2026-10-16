@@ -63,6 +63,48 @@ describe('Feature: foundation-contracts, CI workflows', () => {
     expect(publishYml).toMatch(/--provenance/);
   });
 
+  // Only the non-comment lines of a workflow, so assertions never match prose in a
+  // leading comment block.
+  function nonCommentLines(text: string): string {
+    return text
+      .split(/\r?\n/)
+      .filter((l) => !l.trimStart().startsWith('#'))
+      .join('\n');
+  }
+
+  test('publish.yml scopes id-token: write to the job, not the workflow', () => {
+    const body = nonCommentLines(publishYml);
+    // The top-level permissions block grants only contents: read (no id-token).
+    const topLevel = body.slice(0, body.indexOf('jobs:'));
+    expect(/id-token:\s*write/.test(topLevel)).toBe(false);
+    expect(topLevel).toMatch(/permissions:\s*\n\s*contents:\s*read/);
+    // The job carries id-token: write and the npm-publish environment.
+    const jobSection = body.slice(body.indexOf('jobs:'));
+    expect(jobSection).toMatch(/id-token:\s*write/);
+    expect(jobSection).toMatch(/environment:\s*npm-publish/);
+  });
+
+  test('publish.yml runs npm ci and the full test suite before publishing', () => {
+    // Search only actual run: step commands, not the comment header.
+    const runCommands = publishYml.split(/\r?\n/).filter((l) => l.trimStart().startsWith('run:'));
+    const joined = runCommands.join('\n');
+    const ciAt = joined.indexOf('npm ci');
+    const testAt = joined.indexOf('npm test');
+    const publishAt = joined.indexOf('npm publish');
+    expect(ciAt).toBeGreaterThan(-1);
+    expect(testAt).toBeGreaterThan(ciAt);
+    expect(publishAt).toBeGreaterThan(testAt);
+  });
+
+  test('check.yml and e2e.yml checkouts do not persist credentials', () => {
+    expect(checkYml).toMatch(/persist-credentials:\s*false/);
+    expect(e2eYml).toMatch(/persist-credentials:\s*false/);
+  });
+
+  test('check.yml checks out full history for gitleaks', () => {
+    expect(checkYml).toMatch(/fetch-depth:\s*0/);
+  });
+
   test('every action is pinned by a 40-hex commit SHA', () => {
     for (const text of [checkYml, e2eYml, publishYml]) {
       const uses = usesLines(text);
