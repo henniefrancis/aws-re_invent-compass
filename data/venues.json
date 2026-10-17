@@ -48,7 +48,31 @@
         "kind": "official",
         "url": "https://aws.amazon.com/events/reinvent/faqs/",
         "retrievedOn": "2026-10-17"
-      }
+      },
+      "aliases": [
+        {
+          "name": "Venetian",
+          "source": {
+            "kind": "official",
+            "url": "https://aws.amazon.com/resources/analyst-summit",
+            "retrievedOn": "2026-10-17"
+          }
+        },
+        {
+          "name": "The Venetian Expo",
+          "source": {
+            "kind": "estimate",
+            "basis": "A spelling variant for the Expo at The Venetian. It is not a venue name that AWS publishes."
+          }
+        },
+        {
+          "name": "Venetian Expo",
+          "source": {
+            "kind": "estimate",
+            "basis": "A spelling variant for the Expo at The Venetian. It is not a venue name that AWS publishes."
+          }
+        }
+      ]
     },
     {
       "venue": {
@@ -58,7 +82,17 @@
         "kind": "official",
         "url": "https://aws.amazon.com/events/reinvent/faqs/",
         "retrievedOn": "2026-10-17"
-      }
+      },
+      "aliases": [
+        {
+          "name": "Wynn Las Vegas",
+          "source": {
+            "kind": "official",
+            "url": "https://aws.amazon.com/resources/analyst-summit",
+            "retrievedOn": "2026-10-17"
+          }
+        }
+      ]
     }
   ],
   "walkingTimes": [

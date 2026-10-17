@@ -25,22 +25,37 @@ export const OFFICIAL_SOURCES: Readonly<Record<string, readonly string[]>> = {
 /** The hosts an official source note may name. */
 export const OFFICIAL_HOSTS: readonly string[] = Object.keys(OFFICIAL_SOURCES);
 
-// https, then a bare host (no user info, no port), then the rest (path, query, fragment).
-const HTTPS_URL_PATTERN = /^https:\/\/([^/?#:@\s]+)(\/[^?#\s]*)?(?:[?#]\S*)?$/i;
+// https, then a bare host (no user info, no port, no percent sign), then an optional path. A
+// query, a fragment and percent encoding are all refused.
+const HTTPS_URL_PATTERN = /^https:\/\/([^/?#:@\s%]+)(\/[^?#\s%]*)?$/i;
 
 function isOfficialUrl(value: string): boolean {
   const match = HTTPS_URL_PATTERN.exec(value);
   if (match === null) {
     return false;
   }
-  const prefixes = Object.hasOwn(OFFICIAL_SOURCES, (match[1] as string).toLowerCase())
-    ? (OFFICIAL_SOURCES[(match[1] as string).toLowerCase()] as readonly string[])
+  const host = (match[1] as string).toLowerCase();
+  const prefixes = Object.hasOwn(OFFICIAL_SOURCES, host)
+    ? (OFFICIAL_SOURCES[host] as readonly string[])
     : [];
   const path = match[2] ?? '/';
-  return prefixes.some(
-    (prefix) => prefix === '/' || path === prefix || path.startsWith(`${prefix}/`),
+  // A path segment of . or .. could point somewhere else, so it is refused.
+  const climbs = path.split('/').some((segment) => segment === '.' || segment === '..');
+  return (
+    !climbs &&
+    prefixes.some((prefix) => prefix === '/' || path === prefix || path.startsWith(`${prefix}/`))
   );
 }
+
+/** The longest text and the most items the venue data accepts, so a huge file cannot be loaded. */
+export const VENUE_LIMITS = {
+  name: 100,
+  url: 300,
+  basis: 2000,
+  aliases: 10,
+  venues: 50,
+  walkingTimes: 2500,
+} as const;
 
 /** The raw walking minutes between two places inside one venue. It is always an estimate. */
 export const SAME_VENUE_WALK_MINUTES = 5;
@@ -70,12 +85,13 @@ const SourceNoteSchema = z.discriminatedUnion('kind', [
     kind: z.literal('official'),
     url: z
       .string()
+      .max(VENUE_LIMITS.url)
       .refine(isOfficialUrl, 'an official source needs an https URL on an official AWS page'),
     retrievedOn: z
       .string()
       .refine(isCalendarDate, 'an official source needs the date it was read, as YYYY-MM-DD'),
   }),
-  z.object({ kind: z.literal('estimate'), basis: z.string().optional() }),
+  z.object({ kind: z.literal('estimate'), basis: z.string().max(VENUE_LIMITS.basis).optional() }),
 ]);
 
 const VenueEntrySchema = z
@@ -83,11 +99,28 @@ const VenueEntrySchema = z
     venue: VenueSchema,
     coordinatesSource: SourceNoteSchema.optional(),
     nameSource: SourceNoteSchema.optional(),
+    // Spelling variants of the venue name, each with its own source note.
+    aliases: z
+      .array(z.object({ name: z.string(), source: SourceNoteSchema }))
+      .max(VENUE_LIMITS.aliases)
+      .optional(),
   })
   .superRefine((entry, ctx) => {
     if (entry.venue.name.trim() === '') {
       ctx.addIssue({ code: 'custom', path: ['venue', 'name'], message: 'the name is empty' });
     }
+    if (entry.venue.name.length > VENUE_LIMITS.name) {
+      ctx.addIssue({ code: 'custom', path: ['venue', 'name'], message: 'the name is too long' });
+    }
+    (entry.aliases ?? []).forEach((alias, index) => {
+      if (alias.name.trim() === '' || alias.name.length > VENUE_LIMITS.name) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['aliases', index, 'name'],
+          message: 'an alias must have a name of 1 to 100 characters',
+        });
+      }
+    });
     const coordinates = entry.venue.coordinates;
     if (coordinates === undefined) {
       return;
@@ -117,8 +150,8 @@ const VenueEntrySchema = z
 
 const WalkingEdgeSchema = z
   .object({
-    from: z.string(),
-    to: z.string(),
+    from: z.string().max(VENUE_LIMITS.name),
+    to: z.string().max(VENUE_LIMITS.name),
     minutes: z.number().int().min(1).max(240),
     source: SourceNoteSchema,
   })
@@ -134,34 +167,51 @@ const WalkingEdgeSchema = z
  */
 export const VenueDataSchema = z
   .object({
-    venues: z.array(VenueEntrySchema),
-    walkingTimes: z.array(WalkingEdgeSchema),
+    venues: z.array(VenueEntrySchema).max(VENUE_LIMITS.venues),
+    walkingTimes: z.array(WalkingEdgeSchema).max(VENUE_LIMITS.walkingTimes),
   })
   .superRefine((data, ctx) => {
-    const listed = new Set<string>();
+    // Every name and alias (trimmed, lower case) maps to its venue's own name.
+    const canon = new Map<string, string>();
     data.venues.forEach((entry, index) => {
       const name = normaliseName(entry.venue.name);
-      if (listed.has(name)) {
+      if (canon.has(name)) {
         ctx.addIssue({
           code: 'custom',
           path: ['venues', index, 'venue', 'name'],
           message: 'the venue is listed twice',
         });
       }
-      listed.add(name);
+      canon.set(name, name);
     });
+    data.venues.forEach((entry, index) => {
+      const name = normaliseName(entry.venue.name);
+      (entry.aliases ?? []).forEach((alias, aliasIndex) => {
+        const spelling = normaliseName(alias.name);
+        if (canon.has(spelling)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['venues', index, 'aliases', aliasIndex, 'name'],
+            message: 'the alias is already used by a venue or another alias',
+          });
+        } else {
+          canon.set(spelling, name);
+        }
+      });
+    });
+    const venues = new Set(canon.values());
     const seen = new Set<string>();
     data.walkingTimes.forEach((edge, index) => {
-      const from = normaliseName(edge.from);
-      const to = normaliseName(edge.to);
-      if (!listed.has(from)) {
+      const from = canon.get(normaliseName(edge.from));
+      const to = canon.get(normaliseName(edge.to));
+      if (from === undefined) {
         ctx.addIssue({
           code: 'custom',
           path: ['walkingTimes', index, 'from'],
           message: 'the venue is not in the venues list',
         });
       }
-      if (!listed.has(to)) {
+      if (to === undefined) {
         ctx.addIssue({
           code: 'custom',
           path: ['walkingTimes', index, 'to'],
@@ -178,8 +228,8 @@ export const VenueDataSchema = z
       }
       seen.add(pair);
     });
-    for (const from of listed) {
-      for (const to of listed) {
+    for (const from of venues) {
+      for (const to of venues) {
         if (from !== to && !seen.has(`${from}\n${to}`)) {
           ctx.addIssue({
             code: 'custom',
@@ -230,13 +280,13 @@ export type WalkLookup =
  * lowercasing are the same venue: zero raw walking minutes, labelled an estimate.
  */
 export function lookupWalk(data: VenueData, from: string, to: string): WalkLookup {
-  const a = normaliseName(from);
-  const b = normaliseName(to);
-  const listed = new Set(data.venues.map((entry) => normaliseName(entry.venue.name)));
-  if (!listed.has(a)) {
+  const canon = canonicalNames(data);
+  const a = canon.get(normaliseName(from));
+  const b = canon.get(normaliseName(to));
+  if (a === undefined) {
     return { found: false, reason: 'venueNotListed', venue: from };
   }
-  if (!listed.has(b)) {
+  if (b === undefined) {
     return { found: false, reason: 'venueNotListed', venue: to };
   }
   if (a === b) {
@@ -247,9 +297,45 @@ export function lookupWalk(data: VenueData, from: string, to: string): WalkLooku
     };
   }
   const edge = data.walkingTimes.find(
-    (candidate) => normaliseName(candidate.from) === a && normaliseName(candidate.to) === b,
+    (candidate) =>
+      canon.get(normaliseName(candidate.from)) === a &&
+      canon.get(normaliseName(candidate.to)) === b,
   );
   return edge
     ? { found: true, minutes: edge.minutes, source: edge.source }
     : { found: false, reason: 'pairMissing' };
+}
+
+/**
+ * Every venue name and alias, trimmed and lower case, mapped to its venue's own name (also trimmed
+ * and lower case). The first venue to claim a spelling keeps it, so odd data cannot reassign one.
+ */
+function canonicalNames(data: VenueData): Map<string, string> {
+  const canon = new Map<string, string>();
+  for (const entry of data.venues) {
+    const name = normaliseName(entry.venue.name);
+    if (!canon.has(name)) {
+      canon.set(name, name);
+    }
+  }
+  for (const entry of data.venues) {
+    for (const alias of entry.aliases ?? []) {
+      const spelling = normaliseName(alias.name);
+      if (!canon.has(spelling)) {
+        canon.set(spelling, normaliseName(entry.venue.name));
+      }
+    }
+  }
+  return canon;
+}
+
+/**
+ * Are two names the same venue, counting aliases? Names that are not in the venue list are only
+ * the same when they match exactly after trimming and lowercasing.
+ */
+export function sameVenue(data: VenueData, a: string, b: string): boolean {
+  const canon = canonicalNames(data);
+  const first = canon.get(normaliseName(a)) ?? normaliseName(a);
+  const second = canon.get(normaliseName(b)) ?? normaliseName(b);
+  return first === second;
 }

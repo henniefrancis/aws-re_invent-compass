@@ -193,6 +193,8 @@ Note: The safe-swap function takes a confirmation schedule as an input parameter
 7. IF any venue entry fails VenueSchema validation, THEN THE Rules_Engine SHALL reject the Venue_Data and SHALL state which entry failed and why.
 8. IF a venue referenced by the Walking_Time_Matrix is absent from the venues list, THEN THE Rules_Engine SHALL treat any Connection using that venue as "unknown" and SHALL state the reason.
 9. IF the Walking_Time_Matrix has no value for an ordered pair of listed venues used by a Connection, THEN THE Rules_Engine SHALL treat that Connection as "unknown" and SHALL state the reason.
+10. THE Venue_Data MAY give each venue an aliases list of spelling variants, each with its own source note. THE Rules_Engine SHALL match a venue name or alias case-insensitively after trimming, SHALL treat two spellings of one venue as the same venue, and SHALL NOT match a name that is only similar. A venue that is not in the list, such as Mandalay Bay, SHALL stay unknown.
+11. THE Venue_Data SHALL refuse an official URL with a query, a fragment, percent encoding or a . or .. path segment, SHALL compare its host in lower case, and SHALL cap the length of names, URLs, notes and lists. A test SHALL pin the SHA-256 of data/venues.json, and changing the data SHALL update the pin in the same commit.
 
 ### Requirement 10: Purity and browser safety
 

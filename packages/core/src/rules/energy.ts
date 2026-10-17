@@ -21,7 +21,7 @@ import type { Context } from './context.js';
 import * as reason from './reasons.js';
 import type { ResolvedCommitment } from './resolve.js';
 import { parseInstant } from './time.js';
-import { extraBufferMinutes, lookupWalk, normaliseName } from './venue-data.js';
+import { extraBufferMinutes, lookupWalk, sameVenue } from './venue-data.js';
 
 const COMMITMENT_WEIGHT = 10;
 const VENUE_CHANGE_WEIGHT = 15;
@@ -78,7 +78,7 @@ export function scoreEnergy(
     const to = sequence[i] as ResolvedCommitment;
     const fromVenue = from.venue as string;
     const toVenue = to.venue as string;
-    if (normaliseName(fromVenue) !== normaliseName(toVenue)) {
+    if (!sameVenue(context.venueData, fromVenue, toVenue)) {
       venueChangeCount += 1;
     }
     const walk = lookupWalk(context.venueData, fromVenue, toVenue);

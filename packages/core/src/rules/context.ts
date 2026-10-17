@@ -49,6 +49,14 @@ export interface VenueEntry {
   coordinatesSource?: SourceNote;
   /** Where the venue name was found, for example an official AWS re:Invent page. */
   nameSource?: SourceNote;
+  /** Spelling variants of the venue name, each with its own source note. */
+  aliases?: VenueAlias[];
+}
+
+/** A spelling variant of a venue name, such as "Venetian" for "The Venetian". */
+export interface VenueAlias {
+  name: string;
+  source: SourceNote;
 }
 
 /** The wrapper object held by data/venues.json. */

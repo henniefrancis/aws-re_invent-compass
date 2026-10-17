@@ -163,6 +163,19 @@ describe('scoreEnergy examples', () => {
     });
   });
 
+  test('two spellings of one venue (an alias) are not a venue change', () => {
+    const venueData = testVenueData();
+    venueData.venues[1] = {
+      ...venueData.venues[1],
+      aliases: [{ name: 'Beta', source: { kind: 'estimate' } }],
+    };
+    const day = [item('B1', 'Beta Tower', 9 * 60, 10 * 60), item('B2', 'beta', 11 * 60, 12 * 60)];
+    expect(scoreEnergy(day, testContext({ venueData }))).toMatchObject({
+      venueChangeCount: 0,
+      totalWalkingMinutes: 5,
+    });
+  });
+
   test('a walk with no known time adds no minutes and is named', () => {
     const day = [
       item('A1', 'Alpha Hall', 9 * 60, 10 * 60),
