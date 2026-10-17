@@ -11,7 +11,7 @@ import { createPassStore } from '../../src/passes/pass-store.js';
 import { PassError } from '../../src/passes/redaction.js';
 import { memoryFs } from './memory-fs.js';
 import { createContractMock, jsonResponse, problem } from './openapi-mock.js';
-import { fakeClock, fakeIdToken } from './support.js';
+import { fakeClock, fakeIdToken, TEST_HOSTS } from './support.js';
 
 // Tests for the forgetMe orchestrator (boarding-passes, S4, Requirement 2.7). It runs the
 // real client over the contract mock, the real store and an in-memory filesystem.
@@ -40,6 +40,7 @@ function rig() {
   const store = createPassStore({ appData, fs, clock: fakeClock() });
   const client = createCompassClient({
     baseUrl: 'https://d111111abcdef8.cloudfront.net',
+    allowedHosts: TEST_HOSTS,
     transport: mock,
     clock: fakeClock(),
     idToken: { getIdToken: () => Promise.resolve(fakeIdToken('attendee')) },

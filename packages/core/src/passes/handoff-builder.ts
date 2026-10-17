@@ -58,9 +58,8 @@ export interface HandoffBuilder {
 
 /** What the builder needs from the client. */
 export interface HandoffBuilderDeps {
-  client: Pick<CompassClient, 'createHandoff'>;
-  /** The same base URL the client was built with: the board link must be on its origin. */
-  baseUrl: string;
+  /** The client; the board link must be on the origin the client is pinned to. */
+  client: Pick<CompassClient, 'createHandoff' | 'origin'>;
   /** Supplies now, for the expiry check. */
   clock: Clock;
 }
@@ -135,15 +134,8 @@ export function renderChatText(modules: BitMatrix): string {
 
 /** Build the Handoff_Builder over the client. */
 export function createHandoffBuilder(deps: HandoffBuilderDeps): HandoffBuilder {
-  let expectedOrigin: string;
-  try {
-    expectedOrigin = new URL(deps.baseUrl).origin;
-  } catch {
-    throw passError(
-      'handoff.invalid_config',
-      'The base URL for the hand-off builder is not valid.',
-    );
-  }
+  // The client's origin was pinned to an allowed host when the client was built.
+  const expectedOrigin = new URL(deps.client.origin).origin;
   return {
     async handoff(serialNumbers, include) {
       const created = await deps.client.createHandoff({ serialNumbers, include });

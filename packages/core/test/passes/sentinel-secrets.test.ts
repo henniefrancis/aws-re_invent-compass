@@ -12,7 +12,14 @@ import { createPassStore } from '../../src/passes/pass-store.js';
 import { syncPasses } from '../../src/passes/pass-sync.js';
 import { memoryFs } from './memory-fs.js';
 import { createContractMock, jsonResponse, problem } from './openapi-mock.js';
-import { WINDOW, fakeClock, fakeConnections, fakeIdToken, makeSession } from './support.js';
+import {
+  WINDOW,
+  fakeClock,
+  fakeConnections,
+  fakeIdToken,
+  makeSession,
+  TEST_HOSTS,
+} from './support.js';
 
 // Property 26: no secret reaches logs or errors on the named failure paths (Requirements 8.1,
 // 8.2, 8.3 and 9.5). The harness injects a known ID token, attendee email, Board_URL and
@@ -77,6 +84,7 @@ async function failing(run: () => unknown): Promise<string> {
 function clientFor(s: Sentinels, mock = createContractMock()) {
   const client = createCompassClient({
     baseUrl: 'https://d111111abcdef8.cloudfront.net',
+    allowedHosts: TEST_HOSTS,
     transport: mock,
     clock: fakeClock(),
     idToken: { getIdToken: () => Promise.resolve(s.token) },
@@ -149,6 +157,7 @@ async function driveAllFailurePaths(
   {
     const client = createCompassClient({
       baseUrl: 'https://d111111abcdef8.cloudfront.net',
+      allowedHosts: TEST_HOSTS,
       transport: createContractMock(),
       clock: fakeClock(),
       idToken: { getIdToken: () => Promise.reject(new Error(leakyBody)) },
@@ -217,10 +226,12 @@ async function driveAllFailurePaths(
 
   // Handoff_Builder: an insecure board URL and a link too long for a QR code.
   {
-    const handoffDeps = { baseUrl: new URL(s.boardUrl).origin, clock: fakeClock() };
+    const handoffDeps = { clock: fakeClock() };
+    const origin = new URL(s.boardUrl).origin;
     const bad = {
       ...handoffDeps,
       client: {
+        origin,
         createHandoff: () =>
           Promise.resolve({
             handoffId: s.handoffId,
@@ -241,6 +252,7 @@ async function driveAllFailurePaths(
     const long = {
       ...handoffDeps,
       client: {
+        origin,
         createHandoff: () =>
           Promise.resolve({
             handoffId: s.handoffId,

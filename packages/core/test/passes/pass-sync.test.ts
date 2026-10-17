@@ -31,6 +31,7 @@ import {
   fakeConnections,
   fakeIdToken,
   makeSession,
+  TEST_HOSTS,
 } from './support.js';
 
 // Tests for Pass_Sync (boarding-passes, S4, Requirement 4). Properties 15, 16 and 17 run
@@ -95,6 +96,7 @@ function fakeClient(options: FakeClientOptions = {}): { client: CompassClient; c
   const omit = options.omit ?? new Set<string>();
   const unused = (): Promise<never> => Promise.reject(new Error('not used by sync'));
   const client: CompassClient = {
+    origin: 'https://d111111abcdef8.cloudfront.net',
     issuePasses(request) {
       calls.push({
         kind: 'issue',
@@ -463,6 +465,7 @@ describe('Feature: boarding-passes, sync end to end over the real builder, clien
     });
     const client = createCompassClient({
       baseUrl: 'https://d111111abcdef8.cloudfront.net',
+      allowedHosts: TEST_HOSTS,
       transport: mock,
       clock: fakeClock(),
       idToken: { getIdToken: () => Promise.resolve(fakeIdToken('attendee')) },

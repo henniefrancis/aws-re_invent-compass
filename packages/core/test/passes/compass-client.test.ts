@@ -19,6 +19,7 @@ import {
   fakeConnections,
   fakeIdToken,
   makeSession,
+  TEST_HOSTS,
 } from './support.js';
 
 // Tests for Compass_Client (boarding-passes, S4, Requirement 2). Every test runs against
@@ -52,6 +53,7 @@ function rig(
   const clock = fakeClock();
   const client = createCompassClient({
     baseUrl,
+    allowedHosts: TEST_HOSTS,
     transport: mock,
     clock,
     idToken: { getIdToken: typeof token === 'string' ? () => Promise.resolve(token) : token },
@@ -727,6 +729,7 @@ describe('Feature: boarding-passes, Compass_Client example tests', () => {
     const make = (baseUrl: string, extra: { allowedHosts?: string[]; simulated?: boolean }) =>
       createCompassClient({
         baseUrl,
+        allowedHosts: TEST_HOSTS,
         transport: createContractMock(),
         clock: fakeClock(),
         idToken: { getIdToken: () => Promise.resolve(TOKEN) },
@@ -743,6 +746,26 @@ describe('Feature: boarding-passes, Compass_Client example tests', () => {
     expect(() => make('http://d111111abcdef8.cloudfront.net', { simulated: true })).toThrow(
       PassError,
     );
+  });
+
+  test('only exact allowed hosts pass: another distribution host is refused, case and :443 are normalised', () => {
+    const make = (baseUrl: string, allowedHosts: string[]) =>
+      createCompassClient({
+        baseUrl,
+        allowedHosts,
+        transport: createContractMock(),
+        clock: fakeClock(),
+        idToken: { getIdToken: () => Promise.resolve(TOKEN) },
+      });
+    // A real-looking but different CloudFront host is not on the list.
+    expect(() => make('https://d222222abcdef8.cloudfront.net', TEST_HOSTS)).toThrow(PassError);
+    expect(() => make(BASE_URL, [])).toThrow(PassError);
+    // The comparison is in lower case on both sides, and an explicit :443 is the default port.
+    expect(
+      make('https://D111111ABCDEF8.CloudFront.net:443', ['D111111abcdef8.cloudfront.NET']).origin,
+    ).toBe(BASE_URL);
+    expect(() => make('https://d111111abcdef8.cloudfront.net:8443', TEST_HOSTS)).toThrow(PassError);
+    expect(make(BASE_URL, TEST_HOSTS).origin).toBe(BASE_URL);
   });
 
   test('a trailing slash and a path prefix on the base URL are handled', async () => {

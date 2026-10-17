@@ -13,7 +13,7 @@ import {
 import type { HandoffBuilderDeps } from '../../src/passes/handoff-builder.js';
 import { PassError } from '../../src/passes/redaction.js';
 import { createContractMock, jsonResponse } from './openapi-mock.js';
-import { NUM_RUNS, fakeClock, fakeIdToken } from './support.js';
+import { NUM_RUNS, fakeClock, fakeIdToken, TEST_HOSTS } from './support.js';
 
 // Tests for Handoff_Builder (boarding-passes, S4, Requirement 5). Property 18 compares the
 // three renders with one QRCode.create of the same Board_URL. No QR decoder is used: each
@@ -153,9 +153,9 @@ function depsAnswering(
   const requests: unknown[] = [];
   return {
     requests,
-    baseUrl: options.baseUrl ?? BASE_URL,
     clock: fakeClock(),
     client: {
+      origin: options.baseUrl ?? BASE_URL,
       createHandoff(request) {
         requests.push(request);
         return Promise.resolve({
@@ -230,14 +230,12 @@ describe('Feature: boarding-passes, Handoff_Builder example tests', () => {
     const clock = fakeClock();
     const client = createCompassClient({
       baseUrl: BASE_URL,
+      allowedHosts: TEST_HOSTS,
       transport: mock,
       clock,
       idToken: { getIdToken: () => Promise.resolve(fakeIdToken('attendee')) },
     });
-    const renders = await createHandoffBuilder({ client, baseUrl: BASE_URL, clock }).handoff(
-      [SERIAL],
-      INCLUDE,
-    );
+    const renders = await createHandoffBuilder({ client, clock }).handoff([SERIAL], INCLUDE);
     expect(mock.requests[0]?.body).toEqual({ serialNumbers: [SERIAL], include: INCLUDE });
     expect(mock.requests[0]?.violations).toEqual([]);
     expect(renders.terminalQr.length).toBeGreaterThan(0);
@@ -318,22 +316,6 @@ describe('Feature: boarding-passes, Handoff_Builder example tests', () => {
     await expect(
       createHandoffBuilder(deps('2026-12-02T08:00:00Z')).handoff([SERIAL], INCLUDE),
     ).resolves.toBeDefined();
-  });
-
-  test('a base URL that cannot be parsed is a fixed PassError that echoes nothing', () => {
-    expect(() =>
-      createHandoffBuilder(
-        depsAnswering(SENTINEL_HANDOFF_ID, SENTINEL_BOARD_URL, { baseUrl: 'secret nonsense' }),
-      ),
-    ).toThrow(PassError);
-    try {
-      createHandoffBuilder(
-        depsAnswering(SENTINEL_HANDOFF_ID, SENTINEL_BOARD_URL, { baseUrl: 'secret nonsense' }),
-      );
-    } catch (error) {
-      expect((error as PassError).code).toBe('handoff.invalid_config');
-      expect((error as PassError).message).not.toContain('secret');
-    }
   });
 
   test('a QR library failure is a fixed PassError that names nothing', async () => {

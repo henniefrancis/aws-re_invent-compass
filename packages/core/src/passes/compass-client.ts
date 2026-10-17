@@ -36,8 +36,6 @@ import { PassError } from './redaction.js';
 
 /** The longest Retry-After wait the client sits out itself, in milliseconds. A longer wait is surfaced. */
 const MAX_RETRY_WAIT_MS = 60_000;
-/** The only host shape a Compass distribution has. */
-const CLOUDFRONT_HOST = /^[a-z0-9]{8,20}\.cloudfront\.net$/;
 /** Hosts a simulated run may use over plain http. */
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 /** The characters kept in a server-supplied problem title, and the caps on its fields. */
@@ -105,14 +103,19 @@ export interface ForgetMeResult {
 /** The options for createCompassClient. */
 export interface CompassClientOptions {
   /**
-   * https://<distribution>.cloudfront.net, with an optional path prefix. The host must look
-   * like a CloudFront distribution, be listed in allowedHosts, or (with simulated) be local.
+   * https://<host>, with an optional path prefix. The host must be one of allowedHosts, or
+   * (with simulated) a local host; there is no pattern match, so a look-alike host never passes.
    * The client never sends x-api-key: CloudFront adds it. The transport must be built to
    * refuse redirects (fetch with redirect 'error'), so the bearer token never follows one.
    */
   baseUrl: string;
-  /** Exact extra hosts the caller trusts, for example a custom domain in front of the API. */
-  allowedHosts?: readonly string[];
+  /**
+   * The exact hosts that may receive the bearer token, compared in lower case; the port must be
+   * 443 or absent. The caller MUST take this list from a build-time constant, never from the
+   * same environment variable or configuration file that supplies baseUrl, otherwise whoever
+   * can change the URL can change the allowlist with it.
+   */
+  allowedHosts: readonly string[];
   /** True only for a simulated run: allows localhost over http. */
   simulated?: boolean;
   transport: HttpTransport;
@@ -123,6 +126,8 @@ export interface CompassClientOptions {
 
 /** The six Compass API operations S4 uses. */
 export interface CompassClient {
+  /** The origin (scheme, host and port) every request goes to, as pinned at construction. */
+  readonly origin: string;
   issuePasses(request: IssuePassesRequest): Promise<IssuePassesResponse>;
   getApplePass(serialNumber: string): Promise<Uint8Array>;
   updatePass(serialNumber: string, fields: PassFields): Promise<UpdatePassResult>;
@@ -187,15 +192,15 @@ function invalidConfig(): CompassError {
 }
 
 /**
- * Normalise the base URL to an origin and path with no trailing slash, and pin the host:
- * a CloudFront distribution host, an exact allowed host, or (simulated only) a local host.
- * Credentials, a query and a fragment are refused. Plain http and a port are local-only.
+ * Normalise the base URL to an origin and path with no trailing slash, and pin the host to an
+ * exact allowed host (compared in lower case) or, when simulated, a local host. Credentials, a
+ * query and a fragment are refused. Plain http and a port other than 443 are local-only.
  */
 function normaliseBaseUrl(
   baseUrl: string,
   allowedHosts: readonly string[],
   simulated: boolean,
-): string {
+): { base: string; origin: string } {
   let parsed: URL;
   try {
     parsed = new URL(baseUrl);
@@ -203,8 +208,7 @@ function normaliseBaseUrl(
     throw invalidConfig();
   }
   const local = simulated && LOCAL_HOSTS.has(parsed.hostname);
-  const hostOk =
-    CLOUDFRONT_HOST.test(parsed.hostname) || allowedHosts.includes(parsed.hostname) || local;
+  const hostOk = allowedHosts.some((allowed) => allowed.toLowerCase() === parsed.hostname) || local;
   const schemeOk = parsed.protocol === 'https:' || (local && parsed.protocol === 'http:');
   const clean =
     parsed.username === '' &&
@@ -215,7 +219,7 @@ function normaliseBaseUrl(
   if (!hostOk || !schemeOk || !clean) {
     throw invalidConfig();
   }
-  return `${parsed.origin}${parsed.pathname.replace(/\/+$/, '')}`;
+  return { base: `${parsed.origin}${parsed.pathname.replace(/\/+$/, '')}`, origin: parsed.origin };
 }
 
 /** True when the token's payload (decoded, not trusted) says it is an ID token. */
@@ -273,9 +277,9 @@ function checkSerial(serialNumber: string): string {
 /** Build the Compass_Client over the injected seams. */
 export function createCompassClient(options: CompassClientOptions): CompassClient {
   const { transport, idToken, clock } = options;
-  const baseUrl = normaliseBaseUrl(
+  const { base: baseUrl, origin } = normaliseBaseUrl(
     options.baseUrl,
-    options.allowedHosts ?? [],
+    options.allowedHosts,
     options.simulated ?? false,
   );
 
@@ -397,6 +401,8 @@ export function createCompassClient(options: CompassClientOptions): CompassClien
   const SERIAL_ROUTE = '/api/v1/passes/{serialNumber}';
 
   return {
+    origin,
+
     async issuePasses(request) {
       if (!platformsSchema.safeParse(request.platforms).success) {
         invalidInput('platform list');

@@ -72,7 +72,7 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 11. THE Compass_Client SHALL perform no automatic retry of a write request that would bypass human approval.
 12. IF a response body fails validation against its contract schema, THEN THE Compass_Client SHALL report a validation failure and SHALL NOT return unvalidated data.
 13. THE Compass_Client SHALL treat a 404 on update or void as the serial being gone only WHEN the response is `application/problem+json` and its body parses as the contract Problem; any other 404 SHALL be reported as an error.
-14. THE Compass_Client SHALL accept a base URL only when its host is a CloudFront distribution host (`^[a-z0-9]{8,20}\.cloudfront.net$`), an exact host in a caller-supplied allowlist, or a local host with an explicit simulated flag, and SHALL refuse credentials, a query, a fragment and (outside simulated runs) a port or plain http. The client SHALL NOT send an `x-api-key` header, because CloudFront adds it.
+14. THE Compass_Client SHALL accept a base URL only when its host is an exact entry (compared in lower case) of a required caller-supplied allowlist, or a local host with an explicit simulated flag, with no pattern matching of any kind, and SHALL refuse credentials, a query, a fragment and (outside simulated runs) a port other than 443 or plain http. The client SHALL NOT send an `x-api-key` header, because CloudFront adds it.
 15. THE Compass_Client SHALL refuse to send an ID token whose unverified payload does not carry `token_use` equal to `id`, and SHALL reduce the title, code and type of a server-supplied Problem to a safe character set and length before surfacing them.
 
 ### Requirement 3: Store the issued-pass record locally
@@ -121,7 +121,7 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 2. WHEN the Handoff_Builder has the Board_URL, THE Handoff_Builder SHALL render the Board_URL as a QR code for the terminal using ASCII or Unicode block characters.
 3. WHEN the Handoff_Builder has the Board_URL, THE Handoff_Builder SHALL render the Board_URL as a QR code for chat both as text and as a PNG image.
 4. THE Handoff_Builder SHALL carry the hand-off id in the URL fragment of the Board_URL that is encoded in each QR code.
-5. THE Handoff_Builder SHALL refuse a Board_URL unless its origin equals the origin of the client base URL, its path is exactly `/board`, its query is empty, it carries no credentials, its fragment is exactly `#h=<id>` where the id matches `^[A-Za-z0-9_-]{22}$` and equals the hand-off id of the same response, and the expiry is at most 24 hours ahead; and SHALL encode the parsed href in each QR code.
+5. THE Handoff_Builder SHALL refuse a Board_URL unless its origin equals the origin the client is pinned to (read from the client itself), its path is exactly `/board`, its query is empty, it carries no credentials, its fragment is exactly `#h=<id>` where the id matches `^[A-Za-z0-9_-]{22}$` and equals the hand-off id of the same response, and the expiry is at most 24 hours ahead; and SHALL encode the parsed href in each QR code.
 
 ### Requirement 6: Export the itinerary as an .ics calendar
 

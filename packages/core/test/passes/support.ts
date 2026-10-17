@@ -13,6 +13,9 @@ export const WINDOW: EventWindow = {
   timezone: 'America/Los_Angeles',
 };
 
+/** The one host the tests allow the client to talk to. */
+export const TEST_HOSTS = ['d111111abcdef8.cloudfront.net'];
+
 /** Every property test runs at least this many iterations (design, Testing Strategy). */
 export const NUM_RUNS = 100;
 
