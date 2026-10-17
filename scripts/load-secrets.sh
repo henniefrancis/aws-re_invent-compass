@@ -5,8 +5,8 @@
 #   scripts/load-secrets.sh <dev|prod> apple --p12 FILE --wwdr FILE --pass-type-id ID --team-id ID
 #   scripts/load-secrets.sh <dev|prod> google --service-account FILE --issuer-id ID
 #   scripts/load-secrets.sh <dev|prod> edge-values --origin-verify-out FILE --api-key-out FILE
-#   scripts/load-secrets.sh <dev|prod> origin-verify --origin-verify-file FILE [--rotate]
-#   scripts/load-secrets.sh <dev|prod> app [--rotate-pepper]
+#   scripts/load-secrets.sh <dev|prod> origin-verify --origin-verify-file FILE [--rotate [--keep-previous --previous-file FILE]]
+#   scripts/load-secrets.sh <dev|prod> app [--rotate-pepper --pepper-id pN]
 #
 # OWNER-RUN ONLY, on your own machine, under your own AWS SSO session.
 #
@@ -28,10 +28,19 @@
 #         rotating this value never touches or reads the pepper. A secret that
 #         already holds a value is replaced only with --rotate, and rotating breaks
 #         the edge until the HCP variable and the secret agree again.
-# app     generates the pepper locally and writes compass/<env>/app with the key
-#         pepper. The pepper is the root of every subHash: replacing it changes all
-#         of them, so a secret that already holds a value is refused unless you
-#         pass --rotate-pepper, which also asks you to type the environment name.
+#         --keep-previous (with --rotate) also writes originVerifyPrevious, the
+#         value being retired, so the edge accepts both while CloudFront rolls
+#         over. The old value comes from --previous-file, the local file the owner
+#         still holds from the last load; the secret is never read back. See
+#         docs/runbooks/secrets.md for the rotation order.
+# app     generates the pepper locally (32 random bytes, base64url) and writes
+#         compass/<env>/app with the keys pepper and pepperId (the pass-service
+#         rejects a secret without both). The first load uses pepperId p1. The
+#         pepper is the root of every subHash: replacing it changes all of them,
+#         so a secret that already holds a value is refused unless you pass
+#         --rotate-pepper --pepper-id pN (the next id, p2, p3 and so on; the old
+#         one cannot be read back), which also asks you to type the environment
+#         name.
 #
 # Every aws call pins --region us-east-1. An existing value is detected with
 # list-secret-version-ids (the AWSCURRENT stage) and any AWS error stops the
@@ -53,8 +62,8 @@ usage() {
   echo "usage: scripts/load-secrets.sh <dev|prod> apple --p12 FILE --wwdr FILE --pass-type-id ID --team-id ID" >&2
   echo "       scripts/load-secrets.sh <dev|prod> google --service-account FILE --issuer-id ID" >&2
   echo "       scripts/load-secrets.sh <dev|prod> edge-values --origin-verify-out FILE --api-key-out FILE" >&2
-  echo "       scripts/load-secrets.sh <dev|prod> origin-verify --origin-verify-file FILE [--rotate]" >&2
-  echo "       scripts/load-secrets.sh <dev|prod> app [--rotate-pepper]" >&2
+  echo "       scripts/load-secrets.sh <dev|prod> origin-verify --origin-verify-file FILE [--rotate [--keep-previous --previous-file FILE]]" >&2
+  echo "       scripts/load-secrets.sh <dev|prod> app [--rotate-pepper --pepper-id pN]" >&2
 }
 
 fail() {
@@ -282,12 +291,40 @@ load_edge_values() {
   echo "wrote ${origin_out} and ${api_key_out}: set the HCP variables origin_verify_value and api_key_value from them"
 }
 
+# Reads a secret value from a file, strips carriage returns and newlines so it
+# matches the HCP variable byte for byte on any platform, and checks the length.
+clean_origin_value() {
+  local source_file="$1"
+  local clean_file="$2"
+  tr -d '\r\n' <"${source_file}" >"${clean_file}"
+  local length
+  length="$(wc -c <"${clean_file}")"
+  if [ "${length}" -lt 32 ]; then
+    fail "the origin-verify value in ${source_file} is shorter than 32 characters"
+  fi
+}
+
+# Builds the origin-verify secret JSON. With a previous-value file it adds
+# originVerifyPrevious (shape: packages/pass-service/src/secrets/secret-shapes.ts).
+build_origin_verify_json() {
+  local current_file="$1"
+  local previous_file="${2:-}"
+  if [ -n "${previous_file}" ]; then
+    jq -n --rawfile originVerify "${current_file}" --rawfile originVerifyPrevious "${previous_file}" \
+      '{originVerify: $originVerify, originVerifyPrevious: $originVerifyPrevious}'
+  else
+    jq -n --rawfile originVerify "${current_file}" '{originVerify: $originVerify}'
+  fi
+}
+
 load_origin_verify() {
-  local origin_file="" rotate="no"
+  local origin_file="" rotate="no" keep_previous="no" previous_file=""
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --origin-verify-file) origin_file="${2:-}"; shift 2 ;;
       --rotate) rotate="yes"; shift ;;
+      --keep-previous) keep_previous="yes"; shift ;;
+      --previous-file) previous_file="${2:-}"; shift 2 ;;
       *) usage; exit 2 ;;
     esac
   done
@@ -295,16 +332,28 @@ load_origin_verify() {
     usage
     exit 2
   fi
+  if [ "${keep_previous}" = "yes" ]; then
+    if [ "${rotate}" != "yes" ] || [ -z "${previous_file}" ]; then
+      echo "error: --keep-previous needs --rotate and --previous-file FILE (the file holding the value being retired)" >&2
+      exit 2
+    fi
+  elif [ -n "${previous_file}" ]; then
+    echo "error: --previous-file is only used with --keep-previous" >&2
+    exit 2
+  fi
   require_readable_file "${origin_file}"
 
-  # Carriage returns and newlines are stripped so the stored value matches the
-  # HCP variable byte for byte on any platform.
   local clean_file="${work_dir}/origin-verify"
-  tr -d '\r\n' <"${origin_file}" >"${clean_file}"
-  local length
-  length="$(wc -c <"${clean_file}")"
-  if [ "${length}" -lt 32 ]; then
-    fail "the origin-verify value in ${origin_file} is shorter than 32 characters"
+  clean_origin_value "${origin_file}" "${clean_file}"
+
+  local previous_clean=""
+  if [ "${keep_previous}" = "yes" ]; then
+    require_readable_file "${previous_file}"
+    previous_clean="${work_dir}/origin-verify-previous"
+    clean_origin_value "${previous_file}" "${previous_clean}"
+    if cmp -s "${clean_file}" "${previous_clean}"; then
+      fail "the previous value equals the new value; supply the old file with --previous-file"
+    fi
   fi
 
   local secret_name="compass/${env_name}/origin-verify"
@@ -313,25 +362,63 @@ load_origin_verify() {
   fi
 
   local json_file="${work_dir}/origin-verify.json"
-  jq -n --rawfile originVerify "${clean_file}" '{originVerify: $originVerify}' >"${json_file}" ||
+  build_origin_verify_json "${clean_file}" "${previous_clean}" >"${json_file}" ||
     fail "could not assemble the origin-verify secret"
 
   write_secret "${secret_name}" "${json_file}"
 }
 
+# Rule copied from packages/pass-service/src/secrets/secret-shapes.ts.
+PEPPER_ID_PATTERN='^[A-Za-z0-9._-]{1,64}$'
+
+# Prints the app secret JSON for a pepper file and a pepper id. Both are checked
+# against the pass-service rules first, so the values are restricted to
+# JSON-safe characters and printf can build the document without jq.
+build_app_json() {
+  local pepper_file="$1"
+  local pepper_id="$2"
+  local material
+  material="$(tr -d '\r\n' <"${pepper_file}")"
+  if [ "${#material}" -lt 16 ]; then
+    echo "error: the pepper is shorter than 16 characters" >&2
+    return 1
+  fi
+  case "${material}" in
+    *[!A-Za-z0-9_-]*)
+      echo "error: the pepper is not base64url" >&2
+      return 1
+      ;;
+    *) ;;
+  esac
+  if ! printf '%s' "${pepper_id}" | grep -Eq "${PEPPER_ID_PATTERN}"; then
+    echo "error: the pepper id must match ${PEPPER_ID_PATTERN}" >&2
+    return 1
+  fi
+  # Stdout goes to the private json file in the caller, never to the terminal.
+  printf '{"pepper":"%s","pepperId":"%s"}\n' "${material}" "${pepper_id}"
+}
+
 load_app() {
-  local rotate_pepper="no"
+  local rotate_pepper="no" pepper_id=""
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --rotate-pepper) rotate_pepper="yes"; shift ;;
+      --pepper-id) pepper_id="${2:-}"; shift 2 ;;
       *) usage; exit 2 ;;
     esac
   done
+  if [ -n "${pepper_id}" ] && [ "${rotate_pepper}" != "yes" ]; then
+    echo "error: --pepper-id is only used with --rotate-pepper" >&2
+    exit 2
+  fi
 
   local secret_name="compass/${env_name}/app"
   if secret_has_value "${secret_name}"; then
     if [ "${rotate_pepper}" != "yes" ]; then
-      fail "${secret_name} already holds a pepper; pass --rotate-pepper to replace it"
+      fail "${secret_name} already holds a pepper; pass --rotate-pepper --pepper-id pN to replace it"
+    fi
+    if [ -z "${pepper_id}" ]; then
+      fail "--rotate-pepper needs --pepper-id pN, the next id (p2, p3 and so on); the current id cannot be read back"
     fi
     echo "WARNING: replacing the pepper changes EVERY subHash. All issued passes lose their owner match and every attendee must reissue." >&2
     if [ ! -t 0 ]; then
@@ -343,13 +430,16 @@ load_app() {
     if [ "${answer}" != "${env_name}" ]; then
       fail "aborted: the pepper was not replaced"
     fi
+  else
+    pepper_id="p1"
   fi
 
   local pepper_file="${work_dir}/pepper"
-  openssl rand -hex 32 >"${pepper_file}" || fail "could not generate the pepper"
+  openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\r\n' >"${pepper_file}" ||
+    fail "could not generate the pepper"
 
   local json_file="${work_dir}/app.json"
-  jq -n --rawfile pepper "${pepper_file}" '{pepper: ($pepper | rtrimstr("\n"))}' >"${json_file}" ||
+  build_app_json "${pepper_file}" "${pepper_id}" >"${json_file}" ||
     fail "could not assemble the app secret"
 
   write_secret "${secret_name}" "${json_file}"

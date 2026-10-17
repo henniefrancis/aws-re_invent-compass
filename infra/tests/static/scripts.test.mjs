@@ -273,7 +273,7 @@ test('load-secrets.sh generates edge values locally and the pepper locally', () 
   const source = readOwned('scripts/load-secrets.sh');
   assert.match(source, /openssl rand -hex 32 >"\$\{origin_out\}"/);
   assert.match(source, /openssl rand -hex 32 >"\$\{api_key_out\}"/);
-  assert.match(source, /openssl rand -hex 32 >"\$\{pepper_file\}"/);
+  assert.match(source, /openssl rand -base64 32 \| tr '\+\/' '-_'/);
   assert.match(source, /an output file already exists/);
 });
 
@@ -292,7 +292,7 @@ test('load-secrets.sh needs a separate flag, a warning and a typed name to repla
   assert.match(source, /--rotate-pepper\) rotate_pepper="yes"/);
   assert.match(source, /WARNING: replacing the pepper changes EVERY subHash/);
   assert.match(source, /Type the environment name \(%s\) to replace the pepper/);
-  assert.match(source, /already holds a pepper; pass --rotate-pepper to replace it/);
+  assert.match(source, /already holds a pepper; pass --rotate-pepper --pepper-id pN to replace it/);
   // A plain origin-verify rotation writes its own secret and never touches the pepper.
   assert.match(source, /secret_name="compass\/\$\{env_name\}\/origin-verify"/);
   assert.match(source, /secret_name="compass\/\$\{env_name\}\/app"/);
@@ -304,7 +304,7 @@ test('load-secrets.sh pins the region on every aws call and strips carriage retu
     source.match(/aws secretsmanager [a-z-]+ \\\n\s+--region "\$\{AWS_REGION\}"/g) ?? [];
   assert.equal(calls.length, 2);
   assert.match(source, /AWS_REGION="us-east-1"/);
-  assert.match(source, /tr -d '\\r\\n' <"\$\{origin_file\}"/);
+  assert.match(source, /tr -d '\\r\\n' <"\$\{source_file\}"/);
 });
 
 test('load-secrets.sh refuses to write an edge value inside the repository', () => {

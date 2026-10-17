@@ -439,3 +439,29 @@ run "source_scan" {
     error_message = "The module must never write the contract copy."
   }
 }
+
+# S5 review N9: the pass and PassKit route keys (braces included) are valid keys.
+run "pass_route_throttle_keys_are_valid" {
+  command = plan
+
+  variables {
+    route_throttles = {
+      "api/v1/passes/{serialNumber}/apple/GET"                                                                    = { rate = 5, burst = 10 }
+      "api/v1/passes/{serialNumber}/PUT"                                                                          = { rate = 5, burst = 10 }
+      "api/v1/passes/{serialNumber}/void/POST"                                                                    = { rate = 5, burst = 10 }
+      "api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}/POST"   = { rate = 10, burst = 20 }
+      "api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}/DELETE" = { rate = 10, burst = 20 }
+      "api/passkit/v1/passes/{passTypeIdentifier}/{serialNumber}/GET"                                             = { rate = 10, burst = 20 }
+    }
+  }
+
+  assert {
+    condition     = length(aws_api_gateway_method_settings.route) == 6
+    error_message = "Each of the six pass and PassKit routes must get its own method setting."
+  }
+
+  assert {
+    condition     = one(aws_api_gateway_method_settings.route["api/passkit/v1/passes/{passTypeIdentifier}/{serialNumber}/GET"].settings).throttling_rate_limit == 10
+    error_message = "The PassKit latest-pass route must carry its own rate."
+  }
+}
