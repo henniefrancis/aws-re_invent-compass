@@ -200,27 +200,27 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - [x] 10. Checkpoint: ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Build the server core
-  - [ ] 11.1 Implement labelled data and identifier checks
+- [x] 11. Build the server core
+  - [x] 11.1 Implement labelled data and identifier checks
     - Create `src/safety/labelled-data.ts` (`DATA_PREAMBLE`, `labelUntrusted`), `src/safety/identifiers.ts` (`checkIdentifier`, `checkIdentifiers` whose message never echoes a value) and `src/safety/targets.ts` (`describeTargets` using `CatalogView` only)
     - _Requirements: 10.1, 11.1, 11.2, 11.3, 11.4_
-  - [ ] 11.2 Write property test for labelled data
+  - [x] 11.2 Write property test for labelled data
     - **Property 27: Labelled data round-trips and never carries an abstract**
     - **Validates: Requirements 10.1, 10.2, 14.6**
-  - [ ] 11.3 Write property test for identifier checks
+  - [x] 11.3 Write property test for identifier checks
     - **Property 28: Identifier checks run before any S1 call**
     - **Validates: Requirements 11.1, 11.2**
-  - [ ] 11.4 Implement the registry, descriptions, results and error messages
+  - [x] 11.4 Implement the registry, descriptions, results and error messages
     - Create `src/server/tool-registry.ts` (`TOOL_SPECS` exhaustive over `McpToolName`, classes and annotations from design Component 5), `descriptions.ts` (the "real change" sentences), `results.ts` (parse success output with `mcpTools[k].output`; failures as `isError: true`, text only), `error-messages.ts` (the fixed table from design Error Handling) and `create-server.ts` (`createCompassServer` registering every `mcpTools` key with its contract schemas; `runStdioServer` with `StdioServerTransport`; nothing loaded at initialisation; `elicit` only when the client declares Elicitation)
     - Register handlers as "not built yet" stubs that return a fixed `isError` result; later tasks replace each stub
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 17.1, 17.3_
-  - [ ] 11.5 Implement session state and the schedule snapshot store
+  - [x] 11.5 Implement session state and the schedule snapshot store
     - Create `src/state/session-state.ts` and `src/state/schedule-snapshot.ts` (atomic temp then rename, file `0o600`, directory `0o700`, `simulated/` subfolder in simulated mode, no token or email field)
     - _Requirements: 12.8, 16.4, 16.5_
-  - [ ] 11.6 Write unit tests for the registry and the server
+  - [x] 11.6 Write unit tests for the registry and the server
     - Registered names equal `Object.keys(mcpTools)`; annotations and description sentences per class; initialisation touches no port; snapshot write, read, remove and mode (mode asserted on POSIX only)
     - _Requirements: 8.2, 8.3, 8.4, 8.8, 16.4_
-  - [ ] 11.7 Commit
+  - [x] 11.7 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 12. Build the in-process pass service and the simulated runtime shell
