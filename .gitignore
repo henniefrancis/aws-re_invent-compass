@@ -71,3 +71,6 @@ desktop.ini
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Angular CLI cache
+.angular/

@@ -39,6 +39,7 @@ export default tseslint.config(
       '**/coverage/**',
       '**/generated/**',
       '**/*.generated.ts',
+      'fixtures/sample-repo/**',
     ],
   },
   ...tseslint.configs.recommendedTypeChecked,
@@ -58,6 +59,26 @@ export default tseslint.config(
     },
     rules: {
       'no-restricted-imports': ['error', { patterns: crossPackageRelativeImportPatterns }],
+    },
+  },
+  {
+    // ADR-026: pass-service production code never imports node-forge directly. Its only
+    // use stays the transitive signing path inside passkit-generator; tests may use it
+    // to generate throwaway certificates.
+    files: ['packages/pass-service/src/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: crossPackageRelativeImportPatterns,
+          paths: [
+            {
+              name: 'node-forge',
+              message: 'node-forge is test-only in pass-service (ADR-026).',
+            },
+          ],
+        },
+      ],
     },
   },
   {
