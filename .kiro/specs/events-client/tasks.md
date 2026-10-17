@@ -328,28 +328,28 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 13.20 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 14. Implement the simulated transport
-  - [ ] 14.1 Implement the in-memory schedule and simulated transport
+- [x] 14. Implement the simulated transport
+  - [x] 14.1 Implement the in-memory schedule and simulated transport
     - Create `src/simulated/in-memory-schedule.ts`, `src/simulated/fixtures.ts` and `src/simulated/simulated-transport.ts` with `createSimulatedTransport(cfg, fixtures)` serving `fixtures/api/**` (valid against `SessionWireSchema`), sourcing its session data from the S0 synthetic catalog at `fixtures/synthetic/catalog.json` (read-only), presenting a signed-in attendee with no OAuth call, updating an in-memory schedule so a later `GetSchedule` reflects a write, deriving bulk results (`sessionFull`, `scheduleConflict` with `conflictsWith`, `alreadyScheduled`), returning a configured 429 with `Retry-After` of 1 to 60 seconds and a configured 401 expired-token response, and never calling the live API
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7_
 
-  - [ ] 14.2 Write property test for simulated conformance and no live call
+  - [x] 14.2 Write property test for simulated conformance and no live call
     - **Property 36: Simulated responses conform to configuration and never reach the live API**
     - **Validates: Requirements 18.1, 18.5, 18.7**
 
-  - [ ] 14.3 Write property test for simulated writes reflected by GetSchedule
+  - [x] 14.3 Write property test for simulated writes reflected by GetSchedule
     - **Property 37: Simulated writes are reflected by a later GetSchedule**
     - **Validates: Requirements 18.3**
 
-  - [ ] 14.4 Write property test for simulated bulk results
+  - [x] 14.4 Write property test for simulated bulk results
     - **Property 38: Simulated bulk results are derived from in-memory state**
     - **Validates: Requirements 18.4**
 
-  - [ ] 14.5 Write unit tests for simulated signed-in presentation and expired-token 401
+  - [x] 14.5 Write unit tests for simulated signed-in presentation and expired-token 401
     - Zero OAuth calls when presenting a signed-in attendee; configured expired-token 401 scenario
     - _Requirements: 18.2, 18.6_
 
-  - [ ] 14.6 Commit
+  - [x] 14.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 15. Create fixtures for every operation and error path

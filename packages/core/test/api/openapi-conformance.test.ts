@@ -8,6 +8,8 @@ import {
   type ClientRequest,
   type OperationName,
 } from '../../src/api/transport.js';
+import { createSimulatedTransport } from '../../src/simulated/simulated-transport.js';
+import { testFixtures } from '../simulated/sim-harness.js';
 import { listEvents } from '../../src/api/list-events.js';
 import { getEvent } from '../../src/api/get-event.js';
 import { listSessions } from '../../src/api/list-sessions.js';
@@ -220,4 +222,55 @@ describe('events-client: the client matches the official Events API document', (
       expect(Object.keys(sent?.query ?? {}).sort()).toEqual(spec?.queryNames);
     });
   }
+});
+
+describe('events-client: the simulated transport serves exactly the documented routes', () => {
+  const fillers: Record<string, string> = {
+    eventId: 'reinvent2026',
+    sessionId: 'syn-001',
+    personalTimeId: 'pt-1',
+  };
+
+  for (const [operation, spec] of documented) {
+    test(`${operation}: ${spec.method} ${spec.template} is a route the simulated API knows`, async () => {
+      const path = spec.template.replace(
+        /\{([^}]+)\}/g,
+        (_m, name: string) => fillers[name] ?? 'x',
+      );
+      const body =
+        spec.method === 'POST' || spec.method === 'PUT'
+          ? { sessionIds: ['syn-001'], ...personalTime }
+          : undefined;
+      const transport = createSimulatedTransport({}, testFixtures());
+      const res = await transport.send({
+        operation: operation as OperationName,
+        method: spec.method as ClientRequest['method'],
+        path,
+        ...(body === undefined ? {} : { body }),
+      });
+      expect(res.body).not.toEqual({ message: 'Unknown route' });
+      expect(res.body).not.toEqual({ message: 'Event not found' });
+    });
+  }
+
+  test('a method the document does not list for a path is not served', async () => {
+    const transport = createSimulatedTransport({}, testFixtures());
+    for (const [operation, spec] of documented) {
+      const other = spec.method === 'GET' ? 'DELETE' : 'GET';
+      const clash = [...documented.values()].some(
+        (s) => s.template === spec.template && s.method === other,
+      );
+      if (clash) continue;
+      const path = spec.template.replace(
+        /\{([^}]+)\}/g,
+        (_m, name: string) => fillers[name] ?? 'x',
+      );
+      const res = await transport.send({
+        operation: operation as OperationName,
+        method: other,
+        path,
+      });
+      expect(res.status).toBe(404);
+    }
+  });
 });
