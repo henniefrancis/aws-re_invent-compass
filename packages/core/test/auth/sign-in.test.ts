@@ -352,3 +352,36 @@ describe('events-client, L3: an oversize token response is a sign-in failure', (
     expect(r.store.saves).toHaveLength(0);
   });
 });
+
+describe('events-client, M4: the authorization code and verifier are scrubbed during the exchange', () => {
+  test('a logger line written while the exchange runs hides the code and the verifier', async () => {
+    const r = rig({});
+    const originalFetch = r.deps.fetch;
+    r.deps.fetch = (url, init) => {
+      const form = Object.fromEntries(new URLSearchParams(init.body));
+      r.deps.logger.info(`exchanging ${form.code ?? ''} with ${form.code_verifier ?? ''}`);
+      return originalFetch(url, init);
+    };
+    await signIn(r.deps);
+    const line = r.logLines.find((l) => l.startsWith('exchanging')) ?? '';
+    expect(line).not.toContain(GOOD_CODE);
+    expect(line).not.toContain(r.oauth.calls[0]?.form.code_verifier ?? 'missing');
+    // After the exchange the needles are removed again.
+    r.deps.logger.info(`late ${GOOD_CODE}`);
+    expect(r.logLines.at(-1)).toContain(GOOD_CODE);
+  });
+});
+
+describe('events-client, L5: only bearer token responses are accepted', () => {
+  test('token_type must be Bearer, in any letter case', async () => {
+    for (const type of ['Bearer', 'bearer', 'BEARER']) {
+      const r = rig({ script: [{ status: 200, body: tokenBody({ token_type: type }) }] });
+      await expect(signIn(r.deps)).resolves.toMatchObject({ storage: 'keychain' });
+    }
+    for (const type of ['MAC', '', undefined, 7]) {
+      const r = rig({ script: [{ status: 200, body: tokenBody({ token_type: type }) }] });
+      await expect(signIn(r.deps)).rejects.toBeInstanceOf(SignInFailedError);
+      expect(r.store.saves).toHaveLength(0);
+    }
+  });
+});

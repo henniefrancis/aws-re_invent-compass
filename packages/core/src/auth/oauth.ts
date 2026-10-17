@@ -98,6 +98,8 @@ const TokenResponseSchema = z.object({
   id_token: z.string().min(1),
   refresh_token: z.string().min(1).optional(),
   expires_in: z.number().positive(),
+  // Only bearer tokens are accepted, as the Events API expects (finding L5).
+  token_type: z.string().refine((value) => value.toLowerCase() === 'bearer'),
 });
 
 /** A validated token response, or undefined when the body is not a usable one. */

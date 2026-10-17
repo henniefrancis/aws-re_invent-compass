@@ -161,6 +161,10 @@ async function exchangeCode(
   idToken: string;
   accessTokenExpiresAt: number;
 }> {
+  // The code and the verifier are one-time secrets: scrub them from any log line while
+  // the exchange runs (finding M4).
+  deps.logger.addSecret(code);
+  deps.logger.addSecret(verifier);
   let result;
   try {
     result = await postForm(deps.fetch, TOKEN_ENDPOINT, {
@@ -172,6 +176,9 @@ async function exchangeCode(
     });
   } catch {
     throw new SignInFailedError();
+  } finally {
+    deps.logger.removeSecret(code);
+    deps.logger.removeSecret(verifier);
   }
   const parsed = isOk(result.status) ? parseTokenResponse(result.json) : undefined;
   if (parsed?.refreshToken === undefined) {

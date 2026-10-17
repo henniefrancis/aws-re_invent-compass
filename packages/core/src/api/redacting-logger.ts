@@ -33,7 +33,21 @@ const JWT_PATTERN = /[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g;
 // the optional scheme inside the prefix means "Authorization: Bearer <token>"
 // removes the token, not the scheme word.
 const AUTHORIZATION_PATTERN =
-  /\b(authorization\s*[:=]\s*(?:bearer\s+|applepass\s+)?|bearer\s+|applepass\s+)([^\s"',]+)/gi;
+  /\b((?:proxy-)?authorization\s*[:=]\s*(?:bearer\s+|applepass\s+|basic\s+)?|bearer\s+|applepass\s+)([^\s"',]+)/gi;
+
+// A bare Basic credential (base64 of user:password). To avoid redacting ordinary
+// words after "basic", the value must look like base64 data: it must contain a digit
+// or one of + / =.
+const BASIC_PATTERN = /\b(basic\s+)(?=[A-Za-z0-9+/_-]*[0-9+/=])([A-Za-z0-9+/_-]{8,}={0,2})/gi;
+
+// Form and query keys that carry a secret: refresh_token=, code_verifier=, code=,
+// access_token=, id_token=. The key is kept, the value removed.
+const FORM_KEY_PATTERN =
+  /\b(refresh_token|code_verifier|access_token|id_token|code)=([^&\s"',]+)/gi;
+
+// The same keys in a JSON body: "refresh_token":"...". The key is kept, the value removed.
+const JSON_KEY_PATTERN =
+  /("(?:refresh_token|code_verifier|access_token|id_token)"\s*:\s*")([^"]*)(")/gi;
 
 // An email address. The refresh token is opaque and registered as a needle; email
 // addresses are removed structurally so an address in a response body or error can
@@ -48,12 +62,26 @@ function escapeRegExp(value: string): string {
 }
 
 /**
+ * Every form a secret can take in a log line: as given, percent-encoded as in a URL
+ * query, and encoded as in a form body (where a space becomes +). Registering or
+ * removing a secret always covers all of them (finding M4).
+ */
+function variantsOf(secret: string): Set<string> {
+  return new Set([
+    secret,
+    encodeURIComponent(secret),
+    new URLSearchParams({ k: secret }).toString().slice(2),
+  ]);
+}
+
+/**
  * A logger whose output is guaranteed to contain no registered secret, no JWT-like
  * token, no Authorization credential and no email address.
  */
 export interface RedactingLogger {
   /**
-   * Register an exact secret value to scrub from every subsequent logged line.
+   * Register an exact secret value (and its URL-encoded and form-encoded forms) to
+   * scrub from every subsequent logged line.
    * Empty strings are ignored so an unset token never turns into a match-all.
    */
   addSecret(secret: string | undefined): void;
@@ -127,6 +155,12 @@ export function createRedactingLogger(sink: LogSink = consoleSink): RedactingLog
     // Structural patterns. Authorization first so its credential is replaced as a
     // unit (scheme kept, credential removed), then standalone JWTs and emails.
     out = out.replace(AUTHORIZATION_PATTERN, (_match, prefix: string) => `${prefix}${REDACTED}`);
+    out = out.replace(BASIC_PATTERN, (_match, prefix: string) => `${prefix}${REDACTED}`);
+    out = out.replace(FORM_KEY_PATTERN, (_match, key: string) => `${key}=${REDACTED}`);
+    out = out.replace(
+      JSON_KEY_PATTERN,
+      (_match, open: string, _value: string, close: string) => `${open}${REDACTED}${close}`,
+    );
     out = out.replace(JWT_PATTERN, REDACTED);
     out = out.replace(EMAIL_PATTERN, REDACTED);
     return out;
@@ -135,12 +169,16 @@ export function createRedactingLogger(sink: LogSink = consoleSink): RedactingLog
   return {
     addSecret(secret) {
       if (secret !== undefined && secret.length > 0) {
-        secrets.add(secret);
+        for (const form of variantsOf(secret)) {
+          secrets.add(form);
+        }
       }
     },
     removeSecret(secret) {
       if (secret !== undefined && secret.length > 0) {
-        secrets.delete(secret);
+        for (const form of variantsOf(secret)) {
+          secrets.delete(form);
+        }
       }
     },
     redact,
