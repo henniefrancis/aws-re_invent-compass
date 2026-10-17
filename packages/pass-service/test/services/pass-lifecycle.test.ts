@@ -402,3 +402,101 @@ describe('Feature: pass-service, fan-out without persistence', () => {
     );
   });
 });
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const issueBatch = (fixture: ApiFixture, count: number, sub = SUB) =>
+  fixture.call({
+    method: 'POST',
+    resource: '/api/v1/passes',
+    token: sub,
+    body: {
+      platforms: ['apple', 'google'],
+      passes: Array.from({ length: count }, (_, i) =>
+        samplePassFields({ sessionCode: `SLW${100 + i}` }),
+      ),
+    },
+  });
+
+describe('Feature: pass-service, Google inserts when passes are issued', () => {
+  test('25 passes with a slow Google stub finish well inside the 15 second timeout, five at a time', async () => {
+    const fixture = createApiFixture();
+    const insert = fixture.google.insert.bind(fixture.google);
+    let inFlight = 0;
+    let peak = 0;
+    fixture.google.insert = async (obj) => {
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      await sleep(600);
+      inFlight -= 1;
+      return insert(obj);
+    };
+    const started = Date.now();
+    const reply = await issueBatch(fixture, 25);
+    const elapsed = Date.now() - started;
+    expect(reply.result.statusCode).toBe(201);
+    const listed = (reply.json as { passes: { platforms: string[] }[] }).passes;
+    expect(listed.every((pass) => pass.platforms.join() === 'apple,google')).toBe(true);
+    expect(peak).toBe(5);
+    expect(elapsed).toBeLessThan(8000);
+    expect(fixture.google.inserts).toHaveLength(25);
+    expect(items(fixture, 'PASS#').every((item) => item.googleState === 'active')).toBe(true);
+  });
+
+  test('passes not inserted inside the budget are returned as Apple only, and counted', async () => {
+    const fixture = createApiFixture({ env: { GOOGLE_INSERT_BUDGET_MS: '150' } });
+    const insert = fixture.google.insert.bind(fixture.google);
+    fixture.google.insert = async (obj) => {
+      await sleep(250);
+      return insert(obj);
+    };
+    const reply = await issueBatch(fixture, 25);
+    expect(reply.result.statusCode).toBe(201);
+    const listed = (reply.json as { passes: { platforms: string[] }[] }).passes;
+    expect(listed.every((pass) => pass.platforms.join() === 'apple')).toBe(true);
+    expect(lastLog(fixture.capture).GoogleWalletFailure).toBe(25);
+    expect(items(fixture, 'PASS#')).toHaveLength(25);
+    // Only the five inserts that were already running finish, and they still mark their passes.
+    await sleep(400);
+    expect(fixture.google.inserts).toHaveLength(5);
+    expect(items(fixture, 'PASS#').filter((item) => item.googleState === 'active')).toHaveLength(5);
+  });
+
+  test('a failure part way through creating records leaves nothing behind, so a retry is safe', async () => {
+    let creates = 0;
+    const fixture = createApiFixture({
+      tweak: (deps) => {
+        const real = deps.passes.create.bind(deps.passes);
+        deps.passes = {
+          ...deps.passes,
+          create: (rec) => {
+            creates += 1;
+            return creates === 3 ? Promise.reject(new Error('table unavailable')) : real(rec);
+          },
+        };
+      },
+    });
+    const first = await issueBatch(fixture, 5);
+    expect(first.result.statusCode).toBe(500);
+    expect(items(fixture, 'PASS#')).toEqual([]);
+    const retry = await issueBatch(fixture, 5);
+    expect(retry.result.statusCode).toBe(201);
+    expect(items(fixture, 'PASS#')).toHaveLength(5);
+  });
+
+  test('an insert whose state cannot be saved is reported as not inserted', async () => {
+    const fixture = createApiFixture({
+      tweak: (deps) => {
+        deps.passes = {
+          ...deps.passes,
+          setGoogleState: () => Promise.reject(new Error('table unavailable')),
+        };
+      },
+    });
+    const reply = await issueBatch(fixture, 2);
+    expect(reply.result.statusCode).toBe(201);
+    const listed = (reply.json as { passes: { platforms: string[] }[] }).passes;
+    expect(listed.every((pass) => pass.platforms.join() === 'apple')).toBe(true);
+    expect(lastLog(fixture.capture).GoogleWalletFailure).toBe(2);
+  });
+});

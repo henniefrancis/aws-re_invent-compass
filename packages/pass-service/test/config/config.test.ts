@@ -47,6 +47,7 @@ const invalidValues: Record<string, (n: string, mode: Mode) => (string | undefin
   GOOGLE_WALLET_ENABLED: (n) => [`yes${n}`, 'TRUE'],
   GOOGLE_SECRET_ID: (n) => [undefined, `bad name ${n}`],
   GOOGLE_WALLET_CLASS_SUFFIX: (n) => [undefined, `bad suffix ${n}`],
+  GOOGLE_INSERT_BUDGET_MS: (n) => [`12x${n}`, '99', '12001'],
   PUBLIC_BASE_URL: (n) => [
     undefined,
     'http://host.example',
@@ -120,7 +121,11 @@ describe('Feature: pass-service, configuration parsing', () => {
       timeoutMs: 2000,
       budgetMs: 4000,
     });
-    expect(cfg.google).toEqual({ enabled: true, classSuffix: 'compass-boarding' });
+    expect(cfg.google).toEqual({
+      enabled: true,
+      classSuffix: 'compass-boarding',
+      insertBudgetMs: 8000,
+    });
     expect(cfg.googleSecretId).toBe('compass/dev/google-wallet');
     expect(cfg.handoffCalendarEnabled).toBe(true);
     expect(cfg.secretsCacheSeconds).toBe(300);
@@ -161,6 +166,7 @@ describe('Feature: pass-service, configuration parsing', () => {
       APNS_BUDGET_MS: '3000',
       HANDOFF_CALENDAR_ENABLED: 'false',
       SECRETS_CACHE_TTL_SECONDS: '60',
+      GOOGLE_INSERT_BUDGET_MS: '2500',
       PUBLIC_BASE_URL: 'https://host.example:8443/',
     });
     expect(cfg.passkitPath).toBe('/pk/v2');
@@ -174,6 +180,7 @@ describe('Feature: pass-service, configuration parsing', () => {
     });
     expect(cfg.handoffCalendarEnabled).toBe(false);
     expect(cfg.secretsCacheSeconds).toBe(60);
+    expect(cfg.google).toMatchObject({ insertBudgetMs: 2500 });
     expect(cfg.publicBaseUrl).toBe('https://host.example:8443');
   });
 

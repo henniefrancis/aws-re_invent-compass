@@ -408,3 +408,4 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 #### Acceptance Criteria
 
 1. forget_me and the table adapter SHALL send each key at most once in a BatchWriteItem request, because DynamoDB rejects a batch that names a key twice (C: a registration comes back from both GSI2 and GSI1); the in-memory table rejects such a batch (H1).
+2. WHEN issuePasses creates passes, THE Api_Lambda SHALL create every Pass_Record first, delete the records already created if a later write fails (so a retry is safe), and then run the Google inserts at most five at a time under the overall budget GOOGLE_INSERT_BUDGET_MS (default 8000); a pass whose insert did not finish in time is returned as Apple only and counted as a GoogleWalletFailure, and a late insert still marks its pass active (H2).

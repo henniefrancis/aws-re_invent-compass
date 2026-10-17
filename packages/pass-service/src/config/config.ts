@@ -35,7 +35,7 @@ export interface ApiConfig {
     timeoutMs: number;
     budgetMs: number;
   };
-  google: { enabled: false } | { enabled: true; classSuffix: string };
+  google: { enabled: false } | { enabled: true; classSuffix: string; insertBudgetMs: number };
   handoffCalendarEnabled: boolean;
   secretsCacheSeconds: number;
   serviceVersion: string;
@@ -70,6 +70,7 @@ export const API_VARIABLES = [
   'GOOGLE_WALLET_ENABLED',
   'GOOGLE_SECRET_ID',
   'GOOGLE_WALLET_CLASS_SUFFIX',
+  'GOOGLE_INSERT_BUDGET_MS',
   'PUBLIC_BASE_URL',
   'PASSKIT_WEB_SERVICE_PATH',
   'EVENT_TIMEZONE',
@@ -310,6 +311,9 @@ export function parseApiConfig(env: Env, opts: ParseOptions = {}): ApiConfig {
   const classSuffix = googleEnabled
     ? matching(env, 'GOOGLE_WALLET_CLASS_SUFFIX', SUFFIX_PATTERN)
     : undefined;
+  const insertBudgetMs = googleEnabled
+    ? integer(env, 'GOOGLE_INSERT_BUDGET_MS', 8000, 100, 12000)
+    : 0;
   const publicBaseUrl = baseUrl(env, opts.allowHttpBaseUrl === true);
   const path = passkitPath(env);
   const zone = timezone(env);
@@ -330,7 +334,10 @@ export function parseApiConfig(env: Env, opts: ParseOptions = {}): ApiConfig {
     idToken: token,
     eventWindow: window,
     apns: push,
-    google: classSuffix === undefined ? { enabled: false } : { enabled: true, classSuffix },
+    google:
+      classSuffix === undefined
+        ? { enabled: false }
+        : { enabled: true, classSuffix, insertBudgetMs },
     handoffCalendarEnabled,
     secretsCacheSeconds,
     serviceVersion,

@@ -23,6 +23,9 @@ import { UUID_V4_PATTERN } from '../security/handoff-id.js';
 import type { IssuePassesRequest } from '../validation/request-schemas.js';
 import type { OpContext } from './op-context.js';
 
+/** How many Google inserts run at once when passes are issued. */
+export const GOOGLE_INSERT_CONCURRENCY = 5;
+
 export type LifecycleDeps = Pick<
   ApiDeps,
   'config' | 'random' | 'secrets' | 'limiter' | 'passes' | 'registrations' | 'apns' | 'google'
@@ -143,8 +146,8 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
     op.metrics.add('GoogleWalletFailure', ok ? 0 : 1);
   }
 
-  async function insertGoogle(rec: PassRecord, op: OpContext): Promise<boolean> {
-    const ok = await googleCall((issuerId, classSuffix) =>
+  function insertGoogle(rec: PassRecord): Promise<boolean> {
+    return googleCall((issuerId, classSuffix) =>
       deps.google.insert(
         buildGenericObject(
           {
@@ -157,8 +160,6 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
         ),
       ),
     );
-    op.metrics.add('GoogleWalletFailure', ok ? 0 : 1);
-    return ok;
   }
 
   /**
@@ -203,6 +204,51 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
     }
   }
 
+  /**
+   * Google inserts for new passes: at most GOOGLE_INSERT_CONCURRENCY at a time and under an
+   * overall budget. A pass that was not inserted in time is returned as Apple only; an insert
+   * that finishes after the budget still marks its pass active, so a later read is honest.
+   * Every pass that did not make it counts as one GoogleWalletFailure.
+   */
+  async function insertAllGoogle(records: PassRecord[], op: OpContext): Promise<Set<string>> {
+    const done = new Set<string>();
+    const queue = [...records];
+    let expired = false;
+    const worker = async (): Promise<void> => {
+      for (let rec = queue.shift(); rec !== undefined && !expired; rec = queue.shift()) {
+        if (await insertGoogle(rec)) {
+          try {
+            await passes.setGoogleState(rec.serialNumber, 'active');
+            done.add(rec.serialNumber);
+          } catch {
+            // The object exists but the record could not say so: it is reported as not inserted.
+          }
+        }
+      }
+    };
+    const budgetMs = (config.google as Extract<ApiConfig['google'], { enabled: true }>)
+      .insertBudgetMs;
+    let timer: NodeJS.Timeout | undefined;
+    const budget = new Promise<void>((resolve) => {
+      timer = setTimeout(() => {
+        expired = true;
+        resolve();
+      }, budgetMs);
+    });
+    try {
+      const workers = Array.from(
+        { length: Math.min(GOOGLE_INSERT_CONCURRENCY, records.length) },
+        worker,
+      );
+      await Promise.race([Promise.all(workers), budget]);
+    } finally {
+      clearTimeout(timer);
+    }
+    const reported = new Set(done);
+    op.metrics.add('GoogleWalletFailure', records.length - reported.size);
+    return reported;
+  }
+
   const lifecycle: PassLifecycle = {
     async issue(caller, request, op) {
       const count = request.passes.length;
@@ -219,41 +265,48 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
       }
       const app = await deps.secrets.app();
       const wantsGoogle = request.platforms.includes('google') && config.google.enabled;
-      const issued: IssuedPass[] = [];
-      for (const fields of request.passes) {
-        const serialNumber = deps.random.uuid();
-        const tokenSalt = newTokenSalt(deps.random);
-        const token = deriveAuthToken(app.pepper, serialNumber, tokenSalt);
-        const expiresAtMs = Date.parse(fields.endsAt) + EXPIRY_GRACE_MS;
-        const rec: PassRecord = {
-          serialNumber,
-          subHash: caller.subHash,
-          pepperId: app.pepperId,
-          sessionCode: fields.sessionCode,
-          fields,
-          platforms: request.platforms,
-          authTokenHash: sha256Hex(token),
-          tokenSalt,
-          status: 'active',
-          version: 1,
-          lastUpdatedMs: Math.floor(op.now / 1000) * 1000,
-          googleState: 'none',
-          createdAtMs: op.now,
-          expiresAtMs,
-          ttl: ttlOf(expiresAtMs),
-        };
-        await passes.create(rec);
-        const googleOk = wantsGoogle && (await insertGoogle(rec, op));
-        if (googleOk) {
-          await passes.setGoogleState(serialNumber, 'active');
+      const created: PassRecord[] = [];
+      try {
+        for (const fields of request.passes) {
+          const serialNumber = deps.random.uuid();
+          const tokenSalt = newTokenSalt(deps.random);
+          const token = deriveAuthToken(app.pepper, serialNumber, tokenSalt);
+          const expiresAtMs = Date.parse(fields.endsAt) + EXPIRY_GRACE_MS;
+          const rec: PassRecord = {
+            serialNumber,
+            subHash: caller.subHash,
+            pepperId: app.pepperId,
+            sessionCode: fields.sessionCode,
+            fields,
+            platforms: request.platforms,
+            authTokenHash: sha256Hex(token),
+            tokenSalt,
+            status: 'active',
+            version: 1,
+            lastUpdatedMs: Math.floor(op.now / 1000) * 1000,
+            googleState: 'none',
+            createdAtMs: op.now,
+            expiresAtMs,
+            ttl: ttlOf(expiresAtMs),
+          };
+          await passes.create(rec);
+          created.push(rec);
         }
-        issued.push({
-          serialNumber,
-          sessionCode: fields.sessionCode,
-          platforms: request.platforms.filter((platform) => platform === 'apple' || googleOk),
-        });
+      } catch (error) {
+        // Retry-safe: a failure part way leaves nothing behind, so the client can send it again.
+        await Promise.allSettled(created.map((rec) => passes.delete(rec.serialNumber)));
+        throw error;
       }
-      return { passes: issued };
+      const inserted = wantsGoogle ? await insertAllGoogle(created, op) : new Set<string>();
+      return {
+        passes: created.map((rec) => ({
+          serialNumber: rec.serialNumber,
+          sessionCode: rec.sessionCode,
+          platforms: request.platforms.filter(
+            (platform) => platform === 'apple' || inserted.has(rec.serialNumber),
+          ),
+        })),
+      };
     },
 
     async find(caller, serial, now) {
