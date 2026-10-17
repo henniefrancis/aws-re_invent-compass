@@ -1,3 +1,4 @@
+import { get } from 'node:http';
 import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
 import { createRedactingLogger } from '../../src/api/redacting-logger.js';
@@ -18,7 +19,13 @@ import {
   type KeyringEntryLike,
   type KeyringLike,
 } from '../../src/auth/token-store.js';
-import type { LoopbackServer } from '../../src/auth/loopback-server.js';
+import {
+  bindLoopback,
+  defaultLoopbackDeps,
+  type LoopbackDeps,
+  type LoopbackServer,
+  type ServerLike,
+} from '../../src/auth/loopback-server.js';
 import type { OAuthFetch } from '../../src/auth/oauth.js';
 import type { ClientContext } from '../../src/api/transport.js';
 import { fakeOAuth, type Scripted } from './auth-harness.js';
@@ -58,17 +65,62 @@ interface Observed {
   errors: unknown[];
 }
 
-function serialise(error: unknown): string {
+/**
+ * Everything an observer could read from an error: its text, stack and every own field,
+ * and recursively its cause and, for an AggregateError, each member.
+ */
+function serialise(error: unknown, depth = 0): string {
+  if (depth > 6) {
+    return '';
+  }
   if (!(error instanceof Error)) {
     return String(error);
   }
+  const record = error as unknown as Record<string, unknown>;
   const own = Object.fromEntries(
     Object.getOwnPropertyNames(error).map((k) => [
       k,
-      (error as unknown as Record<string, unknown>)[k],
+      record[k] instanceof Error ? serialise(record[k], depth + 1) : record[k],
     ]),
   );
-  return `${String(error)} ${JSON.stringify(own)} ${error.stack ?? ''}`;
+  const nested = [
+    record.cause,
+    ...(error instanceof AggregateError ? (error.errors as unknown[]) : []),
+  ].map((inner: unknown) => serialise(inner, depth + 1));
+  return `${String(error)} ${JSON.stringify(own)} ${error.stack ?? ''} ${nested.join(' ')}`;
+}
+
+/** A real HTTP GET to 127.0.0.1:port, resolving with the response body. */
+function httpGet(port: number, path: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    get({ host: '127.0.0.1', port, path, agent: false }, (res) => {
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', (chunk: string) => {
+        body += chunk;
+      });
+      res.on('end', () => {
+        resolve(body);
+      });
+    }).on('error', reject);
+  });
+}
+
+/** A listener standing in for [::1] on a machine without IPv6. */
+function noIpv6Server(): ServerLike {
+  let onError: ((error: { code?: string }) => void) | undefined;
+  return {
+    once: (_event, listener) => {
+      onError = listener;
+    },
+    on: () => undefined,
+    listen: () => {
+      queueMicrotask(() => onError?.({ code: 'EAFNOSUPPORT' }));
+    },
+    close: () => undefined,
+    closeAllConnections: () => undefined,
+    address: () => null,
+  };
 }
 
 function memoryKeyring(): KeyringLike {
@@ -245,6 +297,166 @@ async function runScenario(n: Needles): Promise<Observed> {
   await attempt(() => cancelReservation(contextFor([{ status: 429, body: n.refresh }]), 'S1'));
   await attempt(() => getSchedule(contextFor([{ status: 200, body: `not a schedule ${n.id}` }])));
 
+  // 3b. More ways for the network to fail, with secrets in every message, cause and
+  // aggregate member.
+  const leaky = (label: string): Error =>
+    new Error(`${label} ${n.access} ${n.refresh} ${n.email} authorization: Bearer ${n.access}`, {
+      cause: new AggregateError(
+        [new Error(`inner ${n.id} ${n.email}`), new TypeError(`inner ${n.refresh}`)],
+        `aggregate ${n.access}`,
+      ),
+    });
+  const throwingContext = (error: Error): ClientContext => {
+    const base = contextFor([]);
+    return {
+      ...base,
+      transport: createHttpTransport({
+        credential: base.accessToken,
+        fetch: () => Promise.reject(error),
+      }),
+    };
+  };
+  await attempt(() => getSchedule(throwingContext(leaky('connect failed'))));
+  const aborted = new Error(`aborted ${n.access}`);
+  aborted.name = 'TimeoutError';
+  await attempt(() => getSchedule(throwingContext(aborted)));
+  await attempt(() => reserveSessions(throwingContext(leaky('socket reset')), ['S1']));
+
+  // An oversize response body that is full of secrets.
+  const oversize = (declared: string): ClientContext => {
+    const base = contextFor([]);
+    return {
+      ...base,
+      transport: createHttpTransport({
+        credential: base.accessToken,
+        fetch: () =>
+          Promise.resolve({
+            status: 200,
+            headers: { get: (name: string) => (name === 'content-length' ? declared : null) },
+            text: () => Promise.resolve(`${n.access} ${n.refresh} ${n.email} ${n.id}`),
+          }),
+      }),
+    };
+  };
+  await attempt(() => getSchedule(oversize('6000000')));
+
+  // A 401 whose refresh then fails: through a 500 with secrets, a thrown aggregate and an
+  // oversize answer from the token endpoint.
+  for (const step of [
+    { status: 500, body: `${n.refresh} ${n.email}` },
+    { throws: leaky('refresh unreachable') },
+    { status: 200, body: tokenBody(n), headers: { 'content-length': '999999' } },
+  ] satisfies Scripted[]) {
+    const base = contextFor([{ status: 401, body: n.access }]);
+    const sources = createCredentialSources(store, refreshDeps(fakeOAuth([step]).fetch));
+    const credential = createEventsApiCredential(sources);
+    await attempt(() =>
+      getSchedule({
+        ...base,
+        accessToken: credential,
+      }),
+    );
+  }
+
+  // OAuth calls that throw or return too much: sign-in, refresh and revoke.
+  await attempt(() =>
+    signInWith(
+      [{ throws: leaky('token endpoint down') }],
+      registerStoreSecrets(createTokenStore(memoryKeyring()), logger),
+    ),
+  );
+  await attempt(() =>
+    signInWith(
+      [{ status: 200, body: tokenBody(n), headers: { 'content-length': '999999' } }],
+      registerStoreSecrets(createTokenStore(memoryKeyring()), logger),
+    ),
+  );
+  const victim = registerStoreSecrets(createTokenStore(memoryKeyring()), logger);
+  victim.save({
+    accessToken: n.access,
+    refreshToken: n.refresh,
+    idToken: n.id,
+    accessTokenExpiresAt: 0,
+  });
+  await attempt(() =>
+    refreshNow(victim, refreshDeps(fakeOAuth([{ throws: leaky('refresh down') }]).fetch)),
+  );
+  await attempt(() =>
+    signOut(victim, { fetch: fakeOAuth([{ throws: leaky('revoke down') }]).fetch, logger }),
+  );
+
+  // 3c. A sign-in through the REAL loopback server, with needles in the callback itself:
+  // a wrong-state request that carries the access token as its state, an error callback
+  // that carries an email and the refresh token, and three wrong-state requests. What the
+  // browser sees (the response bodies) is observable too.
+  const loopbackDeps = (): LoopbackDeps => {
+    let created = 0;
+    return {
+      createServer: (handler) => {
+        created += 1;
+        return created === 1 ? defaultLoopbackDeps.createServer(handler) : noIpv6Server();
+      },
+    };
+  };
+  const realSignIn = async (
+    drive: (port: number, state: string) => Promise<string[]>,
+    script: Scripted[],
+  ): Promise<void> => {
+    const oauth = fakeOAuth(script);
+    await attempt(() =>
+      signIn({
+        store: registerStoreSecrets(createTokenStore(memoryKeyring()), logger),
+        logger,
+        fetch: oauth.fetch,
+        now,
+        openBrowser: (url) => {
+          const authorize = new URL(url);
+          const state = authorize.searchParams.get('state') ?? '';
+          const redirect = new URL(
+            authorize.searchParams.get('redirect_uri') ?? 'http://localhost',
+          );
+          void drive(Number(redirect.port), state).then(
+            (bodies) => {
+              lines.push(...bodies);
+            },
+            (error: unknown) => {
+              errors.push(error);
+            },
+          );
+        },
+        bind: (state, timeoutMs) =>
+          bindLoopback([0], loopbackDeps(), { expectedState: state, timeoutMs }),
+      }),
+    );
+  };
+  const enc = encodeURIComponent;
+  await realSignIn(
+    async (port, state) => [
+      await httpGet(port, `/callback?code=${enc(n.code)}&state=${enc(n.access)}`),
+      await httpGet(port, `/callback?code=${enc(n.code)}&state=${enc(state)}`),
+    ],
+    [{ status: 200, body: tokenBody(n) }],
+  );
+  await realSignIn(
+    async (port, state) => [
+      await httpGet(
+        port,
+        `/callback?error=access_denied&error_description=${enc(`${n.email} ${n.refresh}`)}&state=${enc(state)}`,
+      ),
+    ],
+    [{ status: 200, body: tokenBody(n) }],
+  );
+  await realSignIn(
+    async (port) => {
+      const bodies: string[] = [];
+      for (const secret of [n.access, n.refresh, n.email]) {
+        bodies.push(await httpGet(port, `/callback?code=${enc(n.code)}&state=${enc(secret)}`));
+      }
+      return bodies;
+    },
+    [{ status: 200, body: tokenBody(n) }],
+  );
+
   // A positive control, while the tokens are registered: the logger scrubs every
   // needle written to it.
   logger.info(
@@ -278,6 +490,19 @@ function assertClean(n: Needles, observed: Observed): void {
 
 const part = fc.stringMatching(/^[A-Za-z0-9]{16,28}$/);
 
+/** A token alphabet heavy in punctuation (no quote, backslash or whitespace). */
+const PUNCTUATION = '!#$%&()*+,-./:;<=>?@[]^_{|}~'.split('');
+const punctuated = fc.string({
+  unit: fc.constantFrom(...PUNCTUATION, ...'abcXYZ019'.split('')),
+  minLength: 16,
+  maxLength: 28,
+});
+const emailLocal = fc.string({
+  unit: fc.constantFrom(...'+._-abcxyz019'.split('')),
+  minLength: 6,
+  maxLength: 14,
+});
+
 describe('Feature: events-client, Property 7: No secret ever appears in logs or errors', () => {
   // Validates: Requirements 20.1, 20.2, 20.3 (the required security test)
   test('across sign-in, refresh and failing operations no needle appears in any log line or error', async () => {
@@ -290,13 +515,27 @@ describe('Feature: events-client, Property 7: No secret ever appears in logs or 
     );
   }, 60_000);
 
+  test('the same holds with punctuation-heavy token and email alphabets', async () => {
+    await fc.assert(
+      fc.asyncProperty(punctuated, punctuated, punctuated, emailLocal, async (a, r, i, e) => {
+        const n = makeNeedles(a, r, i, e);
+        const needles = [n.access, n.refresh, n.email, n.code];
+        fc.pre(needles.every((x, ix) => needles.every((y, iy) => ix === iy || !x.includes(y))));
+        assertClean(n, await runScenario(n));
+      }),
+      { numRuns: 100 },
+    );
+  }, 120_000);
+
   test('every failure the scenario produced is one of the typed errors', async () => {
     const observed = await runScenario(
       makeNeedles('a'.repeat(20), 'r'.repeat(20), 'i'.repeat(20), 'person'),
     );
-    expect(observed.errors.length).toBeGreaterThan(15);
+    expect(observed.errors.length).toBeGreaterThan(30);
     for (const error of observed.errors) {
       expect(error instanceof AuthError || error instanceof EventsApiError).toBe(true);
+      expect((error as Error).cause).toBeUndefined();
+      expect(error instanceof AggregateError).toBe(false);
     }
   });
 
