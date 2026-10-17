@@ -26,6 +26,8 @@ export type BoardEvent =
       readonly type: 'outcome';
       readonly outcome: HandoffOutcome;
       readonly validated: ValidatedHandoff | null;
+      /** The device clock when the answer arrived. */
+      readonly nowMs: number;
     }
   | { readonly type: 'clock'; readonly nowMs: number };
 
@@ -53,6 +55,9 @@ export interface BoardViewModel {
   readonly deviceHint: string | null;
   readonly announcement: string;
 }
+
+/** How long a hand-off lasts, in minutes. */
+export const MAX_LINK_MINUTES = 15;
 
 export const INITIAL_BOARD_STATE: BoardState = { kind: 'reading' };
 
@@ -91,9 +96,19 @@ export function msUntilExpiry(handoff: ValidatedHandoff, nowMs: number): number 
   return handoff.expiresAtMs - nowMs;
 }
 
-function settle(outcome: HandoffOutcome, validated: ValidatedHandoff | null): BoardState {
+function settle(
+  outcome: HandoffOutcome,
+  validated: ValidatedHandoff | null,
+  nowMs: number,
+): BoardState {
   if (outcome.kind === 'ok') {
-    return validated === null ? { kind: 'unavailable' } : { kind: 'ready', handoff: validated };
+    if (validated === null) {
+      return { kind: 'unavailable' };
+    }
+    // A link that is already past its expiry when the answer arrives is never shown as Ready.
+    return nowMs >= validated.expiresAtMs
+      ? { kind: 'expired' }
+      : { kind: 'ready', handoff: validated };
   }
   if (outcome.kind === 'status' && outcome.status === 404) {
     return { kind: 'expired' };
@@ -113,7 +128,7 @@ export function reduceBoard(state: BoardState, event: BoardEvent): BoardState {
     return state.kind === 'reading' || canRetry(state) ? { kind: 'loading' } : state;
   }
   if (event.type === 'outcome') {
-    return state.kind === 'loading' ? settle(event.outcome, event.validated) : state;
+    return state.kind === 'loading' ? settle(event.outcome, event.validated, event.nowMs) : state;
   }
   return state.kind === 'ready' && event.nowMs >= state.handoff.expiresAtMs
     ? { kind: 'expired' }
@@ -128,7 +143,11 @@ export function bundleLabel(bundle: AppleBundle): string {
 }
 
 function expiryText(handoff: ValidatedHandoff, nowMs: number): string {
-  const minutes = Math.max(1, Math.ceil(msUntilExpiry(handoff, nowMs) / 60_000));
+  // A hand-off lasts 15 minutes, so the text never says more, whatever the device clock thinks.
+  const minutes = Math.min(
+    MAX_LINK_MINUTES,
+    Math.max(1, Math.ceil(msUntilExpiry(handoff, nowMs) / 60_000)),
+  );
   return minutes === 1
     ? 'This link works for about 1 more minute.'
     : `This link works for about ${String(minutes)} more minutes.`;

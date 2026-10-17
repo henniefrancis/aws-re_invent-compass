@@ -190,6 +190,22 @@ test.describe('local expiry', () => {
   });
 });
 
+test.describe('waking up', () => {
+  test('a page that slept past expiresAt is expired when it is shown again', async ({ page }) => {
+    await installClock(page, '2026-11-30T08:00:00-08:00');
+    await mockHandoff(page, 'ready-one-bundle');
+    await openBoard(page);
+    await expect(heading(page)).toHaveText('Your boarding passes are ready');
+    // The clock jumps past expiresAt without any timer firing, as when a phone sleeps.
+    await page.clock.setSystemTime(new Date('2026-11-30T08:20:00-08:00'));
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event('pageshow'));
+    });
+    await expect(heading(page)).toHaveText('This link has expired');
+    await expect(page.getByRole('link', { name: /Wallet|calendar/ })).toHaveCount(0);
+  });
+});
+
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
   test('the page says it needs JavaScript to open the link', async ({ page }) => {

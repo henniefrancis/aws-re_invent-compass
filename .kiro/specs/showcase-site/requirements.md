@@ -301,6 +301,8 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 8. WHEN the Board_Page changes state after a request, THE Board_Page SHALL move focus to the heading of the new state and announce it through a polite live region.
 9. WHILE the request is in flight, THE Board_Page SHALL mark its content region busy and show a loading message.
 10. WHERE JavaScript is not available, THE Board_Page SHALL show a message that it needs JavaScript to open the hand-off link.
+11. WHEN a response arrives after the hand-off `expiresAt` by the device clock, THE Board_Page SHALL show the Expired state and never the Ready state.
+12. WHEN the page becomes visible again or is shown from the back-forward cache, THE Board_Page SHALL check the expiry again, switch to Expired when it has passed, and refresh the remaining time text, which SHALL never say more than 15 minutes.
 
 ### Requirement 19: Accessibility (WCAG 2.2 AA)
 

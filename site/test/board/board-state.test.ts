@@ -59,6 +59,7 @@ describe('reduceBoard examples', () => {
       type: 'outcome',
       outcome: { kind: 'status', status: 404 },
       validated: null,
+      nowMs: NOW,
     };
     expect(reduceBoard(LOADING, event)).toEqual({ kind: 'expired' });
     expect(reduceBoard(READY, event)).toBe(READY);
@@ -83,6 +84,45 @@ describe('reduceBoard examples', () => {
     const handoff = validated(exampleBody());
     expect(msUntilExpiry(handoff, handoff.expiresAtMs - 5000)).toBe(5000);
     expect(msUntilExpiry(handoff, handoff.expiresAtMs + 1)).toBe(-1);
+  });
+});
+
+describe('expiry when the answer arrives (QA M4)', () => {
+  const handoff = validated(exampleBody());
+  const ok = { kind: 'ok', body: {} } as const;
+
+  test('an answer that arrives after expiresAt is Expired, never Ready', () => {
+    for (const late of [
+      handoff.expiresAtMs,
+      handoff.expiresAtMs + 1,
+      handoff.expiresAtMs + 86_400_000,
+    ]) {
+      const state = reduceBoard(LOADING, {
+        type: 'outcome',
+        outcome: ok,
+        validated: handoff,
+        nowMs: late,
+      });
+      expect(state).toEqual({ kind: 'expired' });
+    }
+    const early = reduceBoard(LOADING, {
+      type: 'outcome',
+      outcome: ok,
+      validated: handoff,
+      nowMs: handoff.expiresAtMs - 1,
+    });
+    expect(early.kind).toBe('ready');
+  });
+
+  test('the minutes shown never exceed 15, even when expiresAt is far away', () => {
+    const far = { ...handoff, expiresAtMs: NOW + 3 * 3_600_000 };
+    expect(toBoardViewModel({ kind: 'ready', handoff: far }, NOW).expiresText).toBe(
+      'This link works for about 15 more minutes.',
+    );
+    const fourteen = { ...handoff, expiresAtMs: NOW + 14 * 60_000 };
+    expect(toBoardViewModel({ kind: 'ready', handoff: fourteen }, NOW).expiresText).toBe(
+      'This link works for about 14 more minutes.',
+    );
   });
 });
 
@@ -175,7 +215,12 @@ describe('Property 5: Every request outcome maps to exactly one board state', ()
     fc.assert(
       fc.property(outcomeArb, fc.boolean(), (outcome, hasValidated) => {
         const handoff = hasValidated ? validated(exampleBody()) : null;
-        const state = reduceBoard(LOADING, { type: 'outcome', outcome, validated: handoff });
+        const state = reduceBoard(LOADING, {
+          type: 'outcome',
+          outcome,
+          validated: handoff,
+          nowMs: NOW,
+        });
         const isOk = outcome.kind === 'ok' && handoff !== null;
         const is404 = outcome.kind === 'status' && outcome.status === 404;
         const is429 = outcome.kind === 'status' && outcome.status === 429;
@@ -200,6 +245,7 @@ describe('Property 6: The hand-off id never reaches visible text, the title or t
         type: 'outcome',
         outcome,
         validated: outcome.kind === 'ok' ? id : null,
+        nowMs: NOW,
       })),
       fc
         .integer({ min: 0, max: 4_000_000_000_000 })

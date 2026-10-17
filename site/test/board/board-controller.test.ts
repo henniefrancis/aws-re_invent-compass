@@ -24,6 +24,9 @@ interface Rig {
   readonly timers: ReturnType<typeof makeTimers>;
   readonly controller: ReturnType<typeof createBoardController>;
   readonly setNow: (ms: number) => void;
+  readonly refreshes: () => number;
+  readonly fireVisible: () => void;
+  readonly listeners: () => number;
   readonly fetchCalls: () => number;
 }
 
@@ -33,6 +36,8 @@ function rig(options: { hash: string; fetch?: FetchLike; now?: number }): Rig {
   const timers = makeTimers();
   let now = options.now ?? Date.parse('2026-11-30T10:00:00-08:00');
   let fetchCalls = 0;
+  let refreshCount = 0;
+  const visibleListeners = new Set<() => void>();
   const defaultFetch: FetchLike = () =>
     Promise.resolve(response(200, JSON.stringify(exampleBody())));
   const inner = options.fetch ?? defaultFetch;
@@ -52,6 +57,15 @@ function rig(options: { hash: string; fetch?: FetchLike; now?: number }): Rig {
     setTimer: timers.setTimer,
     clearTimer: timers.clearTimer,
     now: () => now,
+    onRefresh: () => {
+      refreshCount += 1;
+    },
+    subscribeVisible: (listener) => {
+      visibleListeners.add(listener);
+      return () => {
+        visibleListeners.delete(listener);
+      };
+    },
     onChange: (state) => {
       states.push(state);
     },
@@ -65,6 +79,13 @@ function rig(options: { hash: string; fetch?: FetchLike; now?: number }): Rig {
       now = ms;
     },
     fetchCalls: () => fetchCalls,
+    refreshes: () => refreshCount,
+    fireVisible: () => {
+      for (const listener of [...visibleListeners]) {
+        listener();
+      }
+    },
+    listeners: () => visibleListeners.size,
   };
 }
 
@@ -148,10 +169,11 @@ describe('board controller flow', () => {
     expect(expiryTimers(r)[0]?.ms).toBe(5 * 60_000);
   });
 
-  test('a past expiry fires at once and a far future expiry waits in steps', async () => {
+  test('an answer that arrives after expiry is Expired at once, with no timer, and a far future expiry waits in steps', async () => {
     const past = rig({ hash: `#h=${FIXED_ID}`, now: Date.parse('2026-11-30T11:00:00-08:00') });
     await past.controller.start();
-    expect(expiryTimers(past)[0]?.ms).toBe(0);
+    expect(past.controller.state().kind).toBe('expired');
+    expect(expiryTimers(past)).toHaveLength(0);
     const far = rig({
       hash: `#h=${FIXED_ID}`,
       fetch: () =>
@@ -161,6 +183,33 @@ describe('board controller flow', () => {
     });
     await far.controller.start();
     expect(expiryTimers(far)[0]?.ms).toBe(MAX_TIMER_MS);
+  });
+
+  test('coming back to the page re-checks the expiry and refreshes the text (visibilitychange, pageshow)', async () => {
+    const r = rig({ hash: `#h=${FIXED_ID}` });
+    await r.controller.start();
+    expect(r.listeners()).toBe(1);
+    r.fireVisible();
+    expect(r.controller.state().kind).toBe('ready');
+    expect(r.refreshes()).toBe(1);
+    // The phone was asleep past expiresAt, and the timer never fired.
+    r.setNow(Date.parse('2026-11-30T10:20:00-08:00'));
+    r.fireVisible();
+    expect(r.controller.state().kind).toBe('expired');
+    expect(r.refreshes()).toBe(2);
+    expect(r.states.at(-1)?.kind).toBe('expired');
+  });
+
+  test('the visibility listener is removed on dispose and not added for an invalid link', async () => {
+    const bad = rig({ hash: '#h=short' });
+    await bad.controller.start();
+    expect(bad.listeners()).toBe(0);
+    const good = rig({ hash: `#h=${FIXED_ID}` });
+    await good.controller.start();
+    good.controller.dispose();
+    expect(good.listeners()).toBe(0);
+    good.fireVisible();
+    expect(good.refreshes()).toBe(0);
   });
 
   test('dispose clears the timer and ignores a late answer', async () => {
@@ -224,7 +273,10 @@ describe('Property 2: An invalid link never sends a request', () => {
           let status = 500;
           const r = rig({
             hash: `#h=${id}`,
-            fetch: () => Promise.resolve(response(status, JSON.stringify(body))),
+            fetch: () =>
+              Promise.resolve(
+                response(status, JSON.stringify({ ...body, expiresAt: '2099-01-01T00:00:00Z' })),
+              ),
           });
           await r.controller.start();
           expect(r.events.slice(0, 3)).toEqual(['readHash', 'replaceState:/board', 'fetch']);

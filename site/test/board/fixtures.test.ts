@@ -93,7 +93,10 @@ describe('hand-off fixtures', () => {
         clearTimer: timers.clearTimer,
       });
       const validated = outcome.kind === 'ok' ? validateHandoffView(outcome.body, FIXED_ID) : null;
-      const state = reduceBoard({ kind: 'loading' }, { type: 'outcome', outcome, validated });
+      const state = reduceBoard(
+        { kind: 'loading' },
+        { type: 'outcome', outcome, validated, nowMs: 0 },
+      );
       expect(state.kind, name).toBe(kind);
     }
   });

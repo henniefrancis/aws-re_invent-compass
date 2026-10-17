@@ -18,6 +18,7 @@ import {
   type BoardState,
 } from '../../../lib/board/board-state';
 import { createBoardController, type BoardController } from '../../../lib/board/board-controller';
+import { watchVisibility } from '../../../lib/board/visibility';
 
 /**
  * The hand-off page. It holds no flow logic: the Board_Controller does the work and this
@@ -63,6 +64,11 @@ export class BoardPage implements OnDestroy {
         onChange: (state) => {
           this.show(state);
         },
+        // A sleeping phone can pass expiresAt without a timer firing: look again on waking.
+        onRefresh: () => {
+          this.nowMs.set(Date.now());
+        },
+        subscribeVisible: (listener) => watchVisibility(document, window, listener),
       });
       void this.controller.start();
     });

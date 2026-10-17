@@ -47,6 +47,10 @@ export interface BoardControllerDeps {
   readonly now: () => number;
   /** Called after every state change. */
   readonly onChange: (state: BoardState) => void;
+  /** Called when the page wakes up, so the text that depends on the time can be refreshed. */
+  readonly onRefresh: () => void;
+  /** Tell the listener whenever the page becomes visible or is shown again; returns the stop function. */
+  readonly subscribeVisible: (listener: () => void) => () => void;
 }
 
 export interface BoardController {
@@ -63,6 +67,7 @@ export function createBoardController(deps: BoardControllerDeps): BoardControlle
   let hasTimer = false;
   let started = false;
   let disposed = false;
+  let stopWatching: (() => void) | null = null;
 
   const clearExpiry = (): void => {
     if (hasTimer) {
@@ -108,7 +113,7 @@ export function createBoardController(deps: BoardControllerDeps): BoardControlle
     });
     const validated =
       outcome.kind === 'ok' ? validateHandoffView(outcome.body, id as HandoffId) : null;
-    dispatch({ type: 'outcome', outcome, validated });
+    dispatch({ type: 'outcome', outcome, validated, nowMs: deps.now() });
   };
 
   return {
@@ -122,6 +127,11 @@ export function createBoardController(deps: BoardControllerDeps): BoardControlle
       dispatch({ type: 'fragmentRead', result });
       if (result.ok) {
         id = result.id;
+        // Check the expiry again whenever the page wakes up.
+        stopWatching = deps.subscribeVisible(() => {
+          dispatch({ type: 'clock', nowMs: deps.now() });
+          deps.onRefresh();
+        });
         await request();
       }
     },
@@ -132,6 +142,7 @@ export function createBoardController(deps: BoardControllerDeps): BoardControlle
     },
     dispose() {
       disposed = true;
+      stopWatching?.();
       clearExpiry();
     },
     state() {
