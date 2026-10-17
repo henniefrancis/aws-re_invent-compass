@@ -5,6 +5,7 @@ import {
   createNodeScanFs,
   DEFAULT_DETECTORS,
   depthToNumber,
+  ScanTimeoutError,
   scanRepo,
 } from '@compass/core/scanner';
 import { CompassError } from '../../src/ports/errors.js';
@@ -189,5 +190,17 @@ describe('Property 14: scan_repo output encodes depth as the contract expects', 
       ),
       { numRuns: 100 },
     );
+  });
+});
+
+describe('scan_repo with a scan runner', () => {
+  test('the runner is used instead of the in-thread scan, and its timeout becomes the fixed message', async () => {
+    const { fake, fs } = runtimeFor({ 'a.tf': TF('aws_s3_bucket') });
+    fake.runtime.scanRunner = () => Promise.reject(new ScanTimeoutError());
+    const connection = await connect(fake.runtime);
+    const result = await connection.call('scan_repo', { path: fs.root });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toBe('The scan took too long and was stopped. Try a smaller folder.');
+    await connection.close();
   });
 });

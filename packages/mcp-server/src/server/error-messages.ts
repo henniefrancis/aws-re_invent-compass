@@ -3,7 +3,7 @@
 // text is never used; the only variable parts are a wait in seconds and a pass-side summary
 // that S4 already redacted (it passes through local redaction again).
 
-import { FolderNotFoundError } from '@compass/core/scanner';
+import { FolderNotFoundError, ScanTimeoutError } from '@compass/core/scanner';
 import { SpecWriteRefusedError } from '@compass/core/spec';
 import { redactText } from '../logging/redact.js';
 import { CompassError } from '../ports/errors.js';
@@ -38,6 +38,7 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
   BulkVoidRefused:
     'This sync would void every pass or more than five passes. Compass needs your explicit confirmation for that, and this client cannot ask. Name fewer sessions in sessionIds, or use a client that supports confirmation.',
   Network: 'Compass could not reach the service. Check your connection, then try again.',
+  ScanTimeout: 'The scan took too long and was stopped. Try a smaller folder.',
   UnsafePath: 'Compass will not write through a symbolic link, so it wrote nothing.',
   Internal: INTERNAL_MESSAGE,
 };
@@ -46,6 +47,9 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
 export function messageFor(error: unknown): string {
   if (error instanceof FolderNotFoundError) {
     return FIXED.FolderNotFound;
+  }
+  if (error instanceof ScanTimeoutError) {
+    return FIXED.ScanTimeout;
   }
   if (error instanceof SpecWriteRefusedError) {
     return FIXED.SpecWriteRefused;

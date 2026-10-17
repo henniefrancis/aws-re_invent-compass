@@ -200,3 +200,57 @@ describe('hook dependencies', () => {
     expect(await deps.snapshot.read()).toBeUndefined();
   });
 });
+
+import { build } from 'esbuild';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { findOptionalResource, SCAN_WORKER_LOCATION } from '../../src/runtime/resources.js';
+import { repoRoot } from '../support/fake-catalog.js';
+import { textOf } from '../support/connect.js';
+
+describe('the scan worker in the runtime', () => {
+  test('an optional resource is found when it exists and is undefined when it does not', async () => {
+    const base = 'file:///pkg/dist/cli/main.js';
+    expect(
+      (await findOptionalResource(base, SCAN_WORKER_LOCATION, () => Promise.resolve(true)))?.href,
+    ).toBe('file:///pkg/dist/scan-worker.js');
+    expect(
+      await findOptionalResource(base, SCAN_WORKER_LOCATION, () => Promise.resolve(false)),
+    ).toBeUndefined();
+  });
+
+  test('with a worker path the scan tool runs the scan in a worker thread, in both runtimes', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'compass-scanworker-'));
+    try {
+      const scanWorkerPath = join(dir, 'scan-worker.mjs');
+      await build({
+        entryPoints: [join(repoRoot(), 'packages', 'core', 'src', 'scanner', 'scan-worker.ts')],
+        bundle: true,
+        platform: 'node',
+        format: 'esm',
+        outfile: scanWorkerPath,
+        logLevel: 'silent',
+      });
+      for (const env of [{ COMPASS_MODE: 'simulated' }, {}]) {
+        const t = await testEnvironment({ scanWorkerPath });
+        const runtime = await createRuntime(t.environment, env);
+        expect(runtime.scanRunner).toBeDefined();
+        const conn = await connect(runtime);
+        const result = await conn.call('scan_repo', {
+          path: join(repoRoot(), 'fixtures', 'sample-repo'),
+        });
+        expect(textOf(result)).toContain('Amazon SNS');
+        const missing = await conn.call('scan_repo', { path: join(dir, 'missing') });
+        expect(textOf(missing)).toBe('That folder could not be found.');
+        await conn.close();
+      }
+      const plain = await createRuntime((await testEnvironment()).environment, {
+        COMPASS_MODE: 'simulated',
+      });
+      expect(plain.scanRunner).toBeUndefined();
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});

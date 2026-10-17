@@ -30,6 +30,7 @@ export type CompassErrorCode =
   | 'NoPassesIssued'
   | 'BulkVoidRefused'
   | 'Network'
+  | 'ScanTimeout'
   | 'UnsafePath'
   | 'Internal';
 

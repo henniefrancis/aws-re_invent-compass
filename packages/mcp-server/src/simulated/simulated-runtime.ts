@@ -37,6 +37,7 @@ export interface SimulatedRuntimeDeps {
   specFs: SpecFs;
   appDataDir: string;
   fsLike: FsLike;
+  scanRunner?: Runtime['scanRunner'];
   random?: (bytes: number) => Uint8Array;
   uuid?: () => string;
 }
@@ -77,6 +78,7 @@ export async function createSimulatedRuntime(
       clock,
       logger: deps.logger,
       cwd: deps.cwd,
+      ...(deps.scanRunner === undefined ? {} : { scanRunner: deps.scanRunner }),
     },
   };
 }

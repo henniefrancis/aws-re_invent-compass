@@ -19,10 +19,35 @@ export interface GitignoreRule {
 /** What the rules say about one path on its own. */
 export type RuleDecision = 'ignore' | 'include' | 'none';
 
+/** The most rules read from one `.gitignore` file; later rules are not read. */
+export const MAX_RULES_PER_FILE = 2000;
+/** The longest rule read, in characters. A longer rule is dropped (it matches nothing). */
+export const MAX_RULE_LENGTH = 256;
+/** The most `*` characters, after runs are collapsed, that one rule may hold. */
+export const MAX_STARS_PER_RULE = 8;
+/** The most compiled patterns kept; the cache is emptied when it grows past this. */
+export const MAX_REGEX_CACHE = 1000;
+
+/** Collapses every run of unescaped `*` to one, because `**` and `*` match the same text in a segment. */
+function collapseStars(pattern: string): string {
+  return pattern.replace(/(?<!\\)\*{2,}/g, '*');
+}
+
+/** True when the rule is small enough to match safely. */
+function withinLimits(pattern: string): boolean {
+  return (
+    pattern.length <= MAX_RULE_LENGTH &&
+    collapseStars(pattern).split('*').length - 1 <= MAX_STARS_PER_RULE
+  );
+}
+
 /** Parses the text of one `.gitignore` file that lives in `base` (relative to the scan root). */
 export function parseGitignore(text: string, base: string): GitignoreRule[] {
   const rules: GitignoreRule[] = [];
   for (const raw of text.split(/\r?\n/)) {
+    if (rules.length >= MAX_RULES_PER_FILE) {
+      break;
+    }
     let line = raw.replace(/(?<!\\) +$/, '');
     if (line === '' || line.startsWith('#')) {
       continue;
@@ -39,7 +64,7 @@ export function parseGitignore(text: string, base: string): GitignoreRule[] {
     }
     const anchored = line.includes('/');
     line = line.replace(/^\/+/, '');
-    if (line === '') {
+    if (line === '' || !withinLimits(line)) {
       continue;
     }
     rules.push({ pattern: line, negated, directoryOnly, anchored, base });
@@ -126,6 +151,9 @@ function globToRegExp(glob: string): RegExp {
     compiled = new RegExp(source);
   } catch {
     compiled = NEVER_MATCHES;
+  }
+  if (regexCache.size >= MAX_REGEX_CACHE) {
+    regexCache.clear();
   }
   regexCache.set(glob, compiled);
   return compiled;

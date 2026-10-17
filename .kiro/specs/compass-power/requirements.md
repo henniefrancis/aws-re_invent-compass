@@ -409,3 +409,9 @@ These amendments came from the CTO review and take precedence over the criteria 
 14. **L2.** `find_sessions.limit` and `plan_week.maxPerDay` refuse negative and non-integer values.
 15. **L3.** The npx local-copy risk is recorded in the threat model (README), and SP1 records the stdio server's working directory.
 16. **L5.** The platform is injected; `process.platform` branches stay out of `src`.
+
+## Review round 2 amendments
+
+These came from the S3 code reviews (QA and security) after the first build. They take precedence over the criteria above where they differ.
+
+R2.1. **Scan limits.** A scan SHALL finish inside 20 seconds in a worker thread that is terminated when the budget is spent, SHALL visit at most 200,000 entries and 40 directory levels, and SHALL use a linear import parser and bounded gitignore patterns (at most 256 characters, 8 stars, 2000 rules per file), so crafted repository content cannot make the server slow.

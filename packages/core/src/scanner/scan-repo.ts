@@ -55,6 +55,8 @@ export interface ScanDeps {
   fs: ScanFs;
   limits?: Partial<WalkLimits>;
   detectors?: readonly Detector[];
+  /** The clock for the walk's time budget (default `Date.now`). */
+  now?: () => number;
 }
 
 /** Scans `root` read-only. Throws FolderNotFoundError when it is not a directory. */
@@ -62,7 +64,7 @@ export async function scanRepo(root: string, deps: ScanDeps): Promise<ScanResult
   const detectors = deps.detectors ?? DEFAULT_DETECTORS;
   const limits: WalkLimits = { ...DEFAULT_WALK_LIMITS, ...deps.limits };
   const hits: DetectorHit[] = [];
-  const generator = walk(root, deps.fs, limits);
+  const generator = walk(root, deps.fs, limits, deps.now);
   let summary: WalkSummary;
   for (;;) {
     const next = await generator.next();

@@ -25,13 +25,22 @@ export interface WalkLimits {
   maxFiles: number;
   maxFileBytes: number;
   binaryProbeBytes: number;
+  /** The most directory entries looked at, including skipped ones (security review M6). */
+  maxEntries: number;
+  /** The deepest directory level descended into; deeper folders are not read and the scan is truncated. */
+  maxDepth: number;
+  /** The wall-clock budget of the walk in milliseconds; the scan is truncated when it is spent. */
+  maxMillis: number;
 }
 
-/** The default limits: 20,000 files, 1 MiB per file, an 8 KiB binary probe. */
+/** The default limits: 20,000 files, 1 MiB per file, an 8 KiB binary probe, 200,000 entries, 40 levels, 15 seconds. */
 export const DEFAULT_WALK_LIMITS: WalkLimits = {
   maxFiles: 20000,
   maxFileBytes: 1048576,
   binaryProbeBytes: 8192,
+  maxEntries: 200000,
+  maxDepth: 40,
+  maxMillis: 15000,
 };
 
 /** One readable file. Internal to the scanner: never returned by `scanRepo`. */
@@ -76,6 +85,7 @@ export async function* walk(
   root: string,
   fs: ScanFs,
   limits: WalkLimits = DEFAULT_WALK_LIMITS,
+  now: () => number = Date.now,
 ): AsyncGenerator<WalkedFile, WalkSummary> {
   let resolved: string | undefined;
   try {
@@ -104,6 +114,8 @@ export async function* walk(
     productionMarker: false,
   };
   const decoder = new TextDecoder('utf-8');
+  const started = now();
+  let entries = 0;
 
   async function readGitignore(
     absDir: string,
@@ -125,10 +137,19 @@ export async function* walk(
     absDir: string,
     relDir: string,
     parentRules: readonly GitignoreRule[],
+    depth: number,
   ): AsyncGenerator<WalkedFile, void> {
+    if (depth > limits.maxDepth) {
+      summary.truncated = true;
+      return;
+    }
     const names = (await fs.readdir(absDir)).sort(byName);
     const rules = [...parentRules, ...(await readGitignore(absDir, relDir, names))];
     for (const name of names) {
+      entries += 1;
+      if (entries > limits.maxEntries || now() - started > limits.maxMillis) {
+        summary.truncated = true;
+      }
       if (summary.truncated) {
         return;
       }
@@ -147,7 +168,7 @@ export async function* walk(
           if (PRODUCTION_DIRECTORIES.has(name) && ENVIRONMENT_PARENTS.has(parentName)) {
             summary.productionMarker = true;
           }
-          yield* visit(absPath, relPath, rules);
+          yield* visit(absPath, relPath, rules, depth + 1);
         }
       } else if (name === '.gitignore') {
         continue;
@@ -177,6 +198,6 @@ export async function* walk(
     }
   }
 
-  yield* visit(resolved, '', []);
+  yield* visit(resolved, '', [], 0);
   return summary;
 }

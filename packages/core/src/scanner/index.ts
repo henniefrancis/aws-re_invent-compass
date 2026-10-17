@@ -24,3 +24,10 @@ export { mapToTaxonomy } from './taxonomy.js';
 export type { TaxonomyMatch } from './taxonomy.js';
 export { DEFAULT_DETECTORS, scanRepo } from './scan-repo.js';
 export type { ScanDeps, ScanResult, ServiceFinding } from './scan-repo.js';
+export {
+  DEFAULT_SCAN_BUDGET_MS,
+  scanInWorker,
+  ScanTimeoutError,
+  ScanWorkerError,
+} from './scan-in-worker.js';
+export type { ScanInWorkerOptions, WorkerLike } from './scan-in-worker.js';

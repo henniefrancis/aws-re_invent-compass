@@ -21,11 +21,14 @@ export async function scanRepoTool(
   } catch {
     throw new CompassError('FolderNotFound');
   }
-  const { scanDetectors } = ctx.runtime;
-  const result = await scan(root, {
-    fs: scanFs,
-    ...(scanDetectors === undefined ? {} : { detectors: scanDetectors }),
-  });
+  const { scanDetectors, scanRunner } = ctx.runtime;
+  const result =
+    scanRunner === undefined
+      ? await scan(root, {
+          fs: scanFs,
+          ...(scanDetectors === undefined ? {} : { detectors: scanDetectors }),
+        })
+      : await scanRunner(root);
 
   let labels: readonly string[] = [];
   let catalogKnown = true;

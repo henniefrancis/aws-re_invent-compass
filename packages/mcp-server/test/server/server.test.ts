@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { mcpTools } from '@compass/contracts';
 import type { McpToolName } from '@compass/contracts';
-import { FolderNotFoundError } from '@compass/core/scanner';
+import { FolderNotFoundError, ScanTimeoutError } from '@compass/core/scanner';
 import { SpecWriteRefusedError } from '@compass/core/spec';
 import { Writable } from 'node:stream';
 import { CompassError } from '../../src/ports/errors.js';
@@ -278,6 +278,10 @@ describe('error messages', () => {
 
   test('core errors and unknown errors map to fixed text', () => {
     expect(messageFor(new FolderNotFoundError())).toBe('That folder could not be found.');
+    expect(messageFor(new ScanTimeoutError())).toBe(
+      'The scan took too long and was stopped. Try a smaller folder.',
+    );
+    expect(messageFor(new CompassError('ScanTimeout'))).toBe(messageFor(new ScanTimeoutError()));
     expect(messageFor(new SpecWriteRefusedError())).toContain('wrote nothing');
     expect(messageFor(new Error('boom'))).toBe(INTERNAL_MESSAGE);
     expect(messageFor('string')).toBe(INTERNAL_MESSAGE);

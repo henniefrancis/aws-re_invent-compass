@@ -23,6 +23,12 @@ export const SAMPLE_REPO_LOCATION: ResourceLocation = {
   repository: '../../../../fixtures/sample-repo',
 };
 
+/** The scan worker. It exists only in a built package, so a checkout scans in its own thread. */
+export const SCAN_WORKER_LOCATION: ResourceLocation = {
+  bundled: '../scan-worker.js',
+  repository: '../../dist/scan-worker.js',
+};
+
 /** The first candidate that exists, as a file URL string, or an Internal error when none does. */
 export async function findResource(
   moduleUrl: string,
@@ -36,4 +42,17 @@ export async function findResource(
     }
   }
   throw new CompassError('Internal');
+}
+
+/** Like `findResource`, but returns undefined when nothing exists. */
+export async function findOptionalResource(
+  moduleUrl: string,
+  location: ResourceLocation,
+  exists: (url: URL) => Promise<boolean>,
+): Promise<URL | undefined> {
+  try {
+    return await findResource(moduleUrl, location, exists);
+  } catch {
+    return undefined;
+  }
 }

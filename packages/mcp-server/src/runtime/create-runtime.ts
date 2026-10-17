@@ -26,7 +26,7 @@ import { realFs, resolveAppDataDir } from '@compass/core/catalog';
 import { APP_FOLDER_NAME, createAppDataResolver, joinInFolder } from '@compass/core/passes';
 import type { HttpTransport } from '@compass/core/passes';
 import { VenueDataSchema } from '@compass/core/rules';
-import { createNodeScanFs } from '@compass/core/scanner';
+import { createNodeScanFs, scanInWorker } from '@compass/core/scanner';
 import { createNodeSpecFs } from '@compass/core/spec';
 import { readFile } from 'node:fs/promises';
 import { createFetchTransport } from '../adapters/fetch-transport.js';
@@ -70,6 +70,8 @@ export interface RuntimeEnvironment {
   execFile: ExecFileLike;
   /** The venue list file (data/venues.json). */
   venuesPath: string;
+  /** The bundled scan worker. When it is left out the scan runs in the server's own thread. */
+  scanWorkerPath?: string;
   /** Test seams. Production leaves them out and the real ones are used. */
   store?: TokenStore;
   fetch?: FetchLike;
@@ -117,6 +119,11 @@ export async function createRuntime(
   const systemClock: Clock = { now: () => new Date() };
   const clock: Clock = simulated ? pinnedClock() : systemClock;
   const nowMs = (): number => clock.now().getTime();
+  const { scanWorkerPath } = environment;
+  const scanRunner =
+    scanWorkerPath === undefined
+      ? {}
+      : { scanRunner: (root: string) => scanInWorker(root, { workerPath: scanWorkerPath }) };
   const venues = await readVenues(environment.venuesPath);
 
   const root = createAppDataResolver({
@@ -217,6 +224,7 @@ export async function createRuntime(
         specFs: createNodeSpecFs(),
         appDataDir: root,
         fsLike: createNodeFsLike(),
+        ...scanRunner,
       })
     ).runtime;
   }
@@ -235,5 +243,6 @@ export async function createRuntime(
     clock,
     logger,
     cwd,
+    ...scanRunner,
   };
 }

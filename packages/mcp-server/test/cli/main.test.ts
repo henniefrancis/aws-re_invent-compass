@@ -179,3 +179,32 @@ describe('startStdioServer and the package surface', () => {
     expect(result).toBeNull();
   });
 });
+
+describe('main with a built package layout', () => {
+  test('finds the bundled scan worker, venue list and sample repo next to the compiled code', async () => {
+    const { build } = await import('esbuild');
+    const { cp, mkdir, writeFile } = await import('node:fs/promises');
+    const pkg = join(temp, 'pkg');
+    await mkdir(join(pkg, 'dist', 'cli'), { recursive: true });
+    await writeFile(join(pkg, 'package.json'), JSON.stringify({ version: '4.5.6' }));
+    await build({
+      entryPoints: [join(repoRoot(), 'packages', 'core', 'src', 'scanner', 'scan-worker.ts')],
+      bundle: true,
+      platform: 'node',
+      format: 'esm',
+      outfile: join(pkg, 'dist', 'scan-worker.js'),
+      logLevel: 'silent',
+    });
+    await cp(join(repoRoot(), 'data'), join(pkg, 'dist', 'data'), { recursive: true });
+    await cp(join(repoRoot(), 'fixtures', 'sample-repo'), join(pkg, 'dist', 'sample-repo'), {
+      recursive: true,
+    });
+    const moduleUrl = pathToFileURL(join(pkg, 'dist', 'cli', 'main.js')).href;
+    const version = io(['--version']);
+    expect(await main(version, { ...host(), moduleUrl })).toBe(0);
+    expect(version.out.join('')).toBe('4.5.6\n');
+    const t = io(['demo']);
+    expect(await main(t, { ...host(), moduleUrl })).toBe(0);
+    expect(t.out.join('')).toContain('The demo finished.');
+  });
+});

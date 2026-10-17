@@ -11,7 +11,13 @@ import { prepareWorkspace } from '../demo/workspace-copy.js';
 import { createHookDeps } from '../runtime/hook-deps.js';
 import { createRuntime } from '../runtime/create-runtime.js';
 import type { RuntimeEnvironment } from '../runtime/create-runtime.js';
-import { findResource, SAMPLE_REPO_LOCATION, VENUES_LOCATION } from '../runtime/resources.js';
+import {
+  findOptionalResource,
+  findResource,
+  SAMPLE_REPO_LOCATION,
+  SCAN_WORKER_LOCATION,
+  VENUES_LOCATION,
+} from '../runtime/resources.js';
 import type { ExecFileLike } from '../runtime/browser-opener.js';
 import { runCli } from './run-cli.js';
 import { startStdioServer } from './stdio.js';
@@ -65,15 +71,19 @@ export async function readVersion(moduleUrl: string): Promise<string> {
 export async function main(io: MainIo, host: Host = {}): Promise<number> {
   const moduleUrl = host.moduleUrl ?? import.meta.url;
   const version = await readVersion(moduleUrl);
-  const environment = async (): Promise<RuntimeEnvironment> => ({
-    homeDir: host.homeDir ?? homedir(),
-    platform: host.platform ?? process.platform,
-    cwd: host.cwd ?? process.cwd(),
-    version,
-    stderr: io.stderr,
-    execFile: host.execFile ?? defaultExecFile,
-    venuesPath: fileURLToPath(await findResource(moduleUrl, VENUES_LOCATION, exists)),
-  });
+  const environment = async (): Promise<RuntimeEnvironment> => {
+    const worker = await findOptionalResource(moduleUrl, SCAN_WORKER_LOCATION, exists);
+    return {
+      homeDir: host.homeDir ?? homedir(),
+      platform: host.platform ?? process.platform,
+      cwd: host.cwd ?? process.cwd(),
+      version,
+      stderr: io.stderr,
+      execFile: host.execFile ?? defaultExecFile,
+      venuesPath: fileURLToPath(await findResource(moduleUrl, VENUES_LOCATION, exists)),
+      ...(worker === undefined ? {} : { scanWorkerPath: fileURLToPath(worker) }),
+    };
+  };
   return runCli(
     { argv: io.argv, env: io.env, stdin: io.stdin, stdout: io.stdout, stderr: io.stderr },
     {
