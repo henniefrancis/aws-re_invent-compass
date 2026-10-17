@@ -322,25 +322,25 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 17.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 18. Build the boarding pass tools
-  - [ ] 18.1 Implement issue_boarding_passes and send_to_phone
+- [x] 18. Build the boarding pass tools
+  - [x] 18.1 Implement issue_boarding_passes and send_to_phone
     - `src/tools/issue-boarding-passes.ts`: identifier checks, catalog lookup, fresh schedule, non-reserved ids refused with no pass call, `events.getSession` per id, `passes.issue`, disclaimer text, no claim of deletion from a phone
     - `src/tools/send-to-phone.ts`: ids to codes through the catalog, codes to serials through `passes.issuedRecord()` (all issued when none given), error when none issued, `passes.handoff`, text QR and expiry in text, PNG as an image content item, the URL never logged
     - _Requirements: 11.4, 15.1, 15.2, 15.3, 15.4, 15.5_
-  - [ ] 18.2 Implement sync_passes and export_calendar
+  - [x] 18.2 Implement sync_passes and export_calendar
     - `src/tools/sync-passes.ts`: fresh schedule, reserved ids resolved through the catalog, narrowing applied to both sides before `passes.sync`, void text says the pass moves to expired passes
     - `src/tools/export-calendar.ts`: given commitments or the confirmed schedule, `passes.exportCalendar`, `ics` returned
     - _Requirements: 15.3, 15.6, 15.7, 15.8_
-  - [ ] 18.3 Write property test for issue
+  - [x] 18.3 Write property test for issue
     - **Property 35: Passes are issued only for confirmed reservations**
     - **Validates: Requirements 15.1**
-  - [ ] 18.4 Write property test for narrowed sync
+  - [x] 18.4 Write property test for narrowed sync
     - **Property 36: A narrowed sync never touches other passes**
     - **Validates: Requirements 15.7**
-  - [ ] 18.5 Write property test for catalog-sourced targets
+  - [x] 18.5 Write property test for catalog-sourced targets
     - **Property 29: Write tools show catalog titles, never model text**
     - **Validates: Requirements 11.3, 11.4**
-  - [ ] 18.6 Commit
+  - [x] 18.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 19. Build forget_me

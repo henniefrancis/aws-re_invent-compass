@@ -243,6 +243,7 @@ describe('error messages', () => {
       'LayoverInvalid',
       'LimitInvalid',
       'NoPassesIssued',
+      'BulkVoidRefused',
       'Internal',
     ] as const;
     for (const code of codes) {

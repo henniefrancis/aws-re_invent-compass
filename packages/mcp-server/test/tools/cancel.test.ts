@@ -70,11 +70,11 @@ describe('cancel_reservation without a swap', () => {
 
   test('tells the attendee to sync when a pass was issued for the session', async () => {
     const { fake, ctx } = setup();
-    fake.passes.record.push({ sessionCode: 'ANT163', serialNumber: 's-1' });
+    fake.passes.seed(TRIPLE.a, 'ANT163');
     const outcome = await cancelReservation({ sessionId: TRIPLE.a }, ctx);
     expect(outcome.ok && outcome.text).toContain('Run sync_passes to void it.');
     const other = setup();
-    other.fake.passes.record.push({ sessionCode: 'OTHER1', serialNumber: 's-2' });
+    other.fake.passes.seed('other-id', 'OTHER1');
     const second = await cancelReservation({ sessionId: TRIPLE.a }, other.ctx);
     expect(second.ok && second.text).not.toContain('sync_passes');
   });

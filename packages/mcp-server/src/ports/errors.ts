@@ -28,6 +28,7 @@ export type CompassErrorCode =
   | 'LayoverInvalid'
   | 'LimitInvalid'
   | 'NoPassesIssued'
+  | 'BulkVoidRefused'
   | 'Network'
   | 'UnsafePath'
   | 'Internal';

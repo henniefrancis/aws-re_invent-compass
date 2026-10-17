@@ -35,6 +35,8 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
     'The layover times are not valid. Give a start and an end with time zone offsets, inside the event dates, with the end after the start.',
   LimitInvalid: 'limit must be a whole number from 0 to 50.',
   NoPassesIssued: 'No boarding passes have been issued yet. Run issue_boarding_passes first.',
+  BulkVoidRefused:
+    'This sync would void every pass or more than five passes. Compass needs your explicit confirmation for that, and this client cannot ask. Name fewer sessions in sessionIds, or use a client that supports confirmation.',
   Network: 'Compass could not reach the service. Check your connection, then try again.',
   UnsafePath: 'Compass will not write through a symbolic link, so it wrote nothing.',
   Internal: INTERNAL_MESSAGE,

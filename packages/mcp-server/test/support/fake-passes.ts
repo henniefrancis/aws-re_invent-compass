@@ -1,21 +1,27 @@
 import type { Commitment, NormalisedSession } from '@compass/contracts';
-import type { PassesPort } from '../../src/ports/passes-port.js';
+import { CompassError } from '../../src/ports/errors.js';
+import type { PassesPort, SyncPlan } from '../../src/ports/passes-port.js';
 import type { RecordedCall } from './fake-events.js';
 
 /** Calls that create, change or void a pass, or delete data. */
 export const PASSES_WRITE_METHODS: readonly string[] = ['issue', 'handoff', 'sync', 'forgetMe'];
 
-/** A recording PassesPort with an in-memory issued-pass record. */
+interface Entry {
+  sessionId: string;
+  sessionCode: string;
+  serialNumber: string;
+}
+
+/**
+ * A recording PassesPort with an in-memory issued-pass record. `sync` behaves like the real
+ * S4 sync for the cases tests care about: it only touches passes inside `narrowTo`, and it
+ * refuses to void every pass or more than five without the explicit flags.
+ */
 export class FakePasses implements PassesPort {
   readonly calls: RecordedCall[] = [];
   readonly failWith = new Map<string, Error>();
-  record: { sessionCode: string; serialNumber: string }[] = [];
+  entries: Entry[] = [];
   forgetResult: { ok: true } | { ok: false; summary: string } = { ok: true };
-  syncResult: { issued: string[]; updated: string[]; voided: string[] } = {
-    issued: [],
-    updated: [],
-    voided: [],
-  };
   handoffResult = {
     boardUrl: 'https://compass.invalid/board#h=AAAAAAAAAAAAAAAAAAAAAA',
     expiresAt: '2026-11-30T16:15:00.000Z',
@@ -23,7 +29,21 @@ export class FakePasses implements PassesPort {
     chatText: 'QR-TEXT',
     chatPng: new Uint8Array([137, 80, 78, 71]),
   };
+  /** Sessions that stay voided after a sync, for tests that read the result. */
+  voidedSerials: string[] = [];
   private counter = 0;
+
+  get record(): { sessionCode: string; serialNumber: string }[] {
+    return this.entries.map(({ sessionCode, serialNumber }) => ({ sessionCode, serialNumber }));
+  }
+
+  /** Adds an already issued pass without a call. */
+  seed(sessionId: string, sessionCode: string): string {
+    this.counter += 1;
+    const serialNumber = `serial-${this.counter}`;
+    this.entries.push({ sessionId, sessionCode, serialNumber });
+    return serialNumber;
+  }
 
   get writeCalls(): RecordedCall[] {
     return this.calls.filter((call) => PASSES_WRITE_METHODS.includes(call.method));
@@ -35,7 +55,11 @@ export class FakePasses implements PassesPort {
     if (error !== undefined) {
       return Promise.reject(error);
     }
-    return Promise.resolve(fn());
+    try {
+      return Promise.resolve(fn());
+    } catch (thrown) {
+      return Promise.reject(thrown instanceof Error ? thrown : new Error('failed'));
+    }
   }
 
   issue(
@@ -43,31 +67,77 @@ export class FakePasses implements PassesPort {
     itinerary: readonly Commitment[],
   ): Promise<{ sessionId: string; serialNumber: string }[]> {
     return this.run('issue', [sessions.map((s) => s.sessionId), itinerary.length], () =>
-      sessions.map((session) => {
-        this.counter += 1;
-        const serialNumber = `serial-${this.counter}`;
-        this.record.push({ sessionCode: session.code, serialNumber });
-        return { sessionId: session.sessionId, serialNumber };
-      }),
+      sessions.map((session) => ({
+        sessionId: session.sessionId,
+        serialNumber: this.seed(session.sessionId, session.code),
+      })),
     );
   }
 
   issuedRecord(): Promise<{ sessionCode: string; serialNumber: string }[]> {
-    return this.run('issuedRecord', [], () => this.record.map((entry) => ({ ...entry })));
+    return this.run('issuedRecord', [], () => this.record);
   }
 
   handoff(serials: string[]): ReturnType<PassesPort['handoff']> {
     return this.run('handoff', [serials], () => this.handoffResult);
   }
 
-  sync(
+  private plan(resolved: readonly NormalisedSession[], narrowTo?: ReadonlySet<string>): SyncPlan {
+    const scope = this.entries.filter((e) => narrowTo === undefined || narrowTo.has(e.sessionId));
+    const resolvedIds = new Set(resolved.map((s) => s.sessionId));
+    const issuedIds = new Set(scope.map((e) => e.sessionId));
+    return {
+      toIssue: resolved.filter((s) => !issuedIds.has(s.sessionId)).map((s) => s.sessionId),
+      toUpdate: resolved.filter((s) => issuedIds.has(s.sessionId)).map((s) => s.sessionId),
+      toVoid: scope
+        .filter((e) => !resolvedIds.has(e.sessionId))
+        .map(({ sessionCode, serialNumber }) => ({ sessionCode, serialNumber })),
+    };
+  }
+
+  previewSync(
     resolved: readonly NormalisedSession[],
     narrowTo?: ReadonlySet<string>,
+  ): Promise<SyncPlan> {
+    return this.run(
+      'previewSync',
+      [resolved.map((s) => s.sessionId), narrowTo === undefined ? undefined : [...narrowTo]],
+      () => this.plan(resolved, narrowTo),
+    );
+  }
+
+  sync(
+    resolved: readonly NormalisedSession[],
+    options: { narrowTo?: ReadonlySet<string>; confirmEmpty: boolean; allowBulkVoid: boolean },
   ): Promise<{ issued: string[]; updated: string[]; voided: string[] }> {
     return this.run(
       'sync',
-      [resolved.map((s) => s.sessionId), narrowTo === undefined ? undefined : [...narrowTo]],
-      () => this.syncResult,
+      [
+        resolved.map((s) => s.sessionId),
+        options.narrowTo === undefined ? undefined : [...options.narrowTo],
+        options.confirmEmpty,
+        options.allowBulkVoid,
+      ],
+      () => {
+        const plan = this.plan(resolved, options.narrowTo);
+        if (resolved.length === 0 && plan.toVoid.length > 0 && !options.confirmEmpty) {
+          throw new CompassError('PassError', { summary: 'confirmEmpty is required' });
+        }
+        if (plan.toVoid.length > 5 && !options.allowBulkVoid) {
+          throw new CompassError('PassError', { summary: 'allowBulkVoid is required' });
+        }
+        const voidedSerials = new Set(plan.toVoid.map((v) => v.serialNumber));
+        const voidedIds = this.entries
+          .filter((e) => voidedSerials.has(e.serialNumber))
+          .map((e) => e.sessionId);
+        this.voidedSerials.push(...voidedSerials);
+        this.entries = this.entries.filter((e) => !voidedSerials.has(e.serialNumber));
+        for (const id of plan.toIssue) {
+          const session = resolved.find((s) => s.sessionId === id);
+          if (session !== undefined) this.seed(id, session.code);
+        }
+        return { issued: plan.toIssue, updated: plan.toUpdate, voided: voidedIds };
+      },
     );
   }
 
