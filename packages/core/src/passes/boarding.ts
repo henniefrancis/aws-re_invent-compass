@@ -28,3 +28,17 @@ export function parseInstant(iso: string): Date {
 export function boardingClosesAt(startsAt: string): Date {
   return new Date(parseInstant(startsAt).getTime() - BOARDING_CLOSES_MINUTES * 60_000);
 }
+
+/** The most minutes a walk can be, as in the PassFields schema. */
+export const MAX_WALK_MINUTES = 90;
+
+/**
+ * A carried walk as whole minutes, or undefined when it is not a finite number from 0 to 90.
+ * The calendar refuses an invalid walk; the itinerary page leaves it out.
+ */
+export function validWalkMinutes(minutes: number): number | undefined {
+  if (!Number.isFinite(minutes) || minutes < 0 || minutes > MAX_WALK_MINUTES) {
+    return undefined;
+  }
+  return Math.round(minutes);
+}

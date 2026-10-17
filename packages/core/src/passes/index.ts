@@ -109,3 +109,14 @@ export type { HandoffBuilder, HandoffBuilderDeps, HandoffRenders } from './hando
 export { BOARDING_CLOSES_MINUTES, boardingClosesAt, parseInstant } from './boarding.js';
 export { createIcsExporter, CALENDAR_FILE_MODE } from './ics-exporter.js';
 export type { IcsExporter, IcsExporterDeps } from './ics-exporter.js';
+
+// Itinerary_Page: the offline HTML itinerary.
+export {
+  createItineraryPage,
+  ITINERARY_FILE_MODE,
+  VENUE_NOT_PUBLISHED,
+  PAGE_TITLE,
+  PALETTE,
+} from './itinerary-page.js';
+export type { ItineraryPage, ItineraryPageDeps } from './itinerary-page.js';
+export { validWalkMinutes, MAX_WALK_MINUTES } from './boarding.js';

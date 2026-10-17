@@ -1,0 +1,60 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Feature: boarding-passes, itinerary page snapshot and content (Requirement 9.1) > the rendered HTML matches its snapshot 1`] = `
+"<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<title>re:Invent Compass itinerary</title>
+<style>*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;padding:1rem;background:#ffffff;color:#1a1a1a;font:1rem/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-wrap:anywhere}
+main{max-width:40rem;margin:0 auto}
+h1{font-size:1.5rem;margin:0 0 .5rem}
+h2{font-size:1.25rem;margin:1.5rem 0 .5rem;padding-bottom:.25rem;border-bottom:2px solid #767676}
+h3{font-size:1rem;margin:0}
+ol{list-style:none;margin:0;padding:0}
+li{margin:0 0 .75rem;padding:.75rem;border:1px solid #767676;border-radius:.5rem}
+.when{margin:0 0 .25rem;color:#4a4a4a}
+.note{color:#4a4a4a}
+dl{display:grid;grid-template-columns:auto 1fr;gap:.25rem .75rem;margin:.5rem 0 0}
+dt{font-weight:600}
+dd{margin:0}</style>
+</head>
+<body>
+<main>
+<h1>Your re:Invent itinerary</h1>
+<p class="note">All times are in event local time, <strong>America/Los_Angeles</strong>.</p>
+<h2>Tuesday 1 December 2026</h2>
+<ol>
+<li>
+<p class="when"><time datetime="2026-12-01T10:30:00-08:00">10:30</time> to <time datetime="2026-12-01T11:30:00-08:00">11:30</time></p>
+<h3>Build on AWS, the boarding pass pattern</h3>
+<dl><dt>Gate</dt><dd>Venetian</dd><dt>Boarding closes</dt><dd>10:20 (10 minutes before the start)</dd></dl>
+</li>
+<li>
+<p class="when"><time datetime="2026-12-01T12:00:00-08:00">12:00</time> to <time datetime="2026-12-01T13:00:00-08:00">13:00</time> (layover)</p>
+<h3>Lunch and a walk</h3>
+<dl><dt>Location</dt><dd>Lounge</dd></dl>
+</li>
+<li>
+<p class="when"><time datetime="2026-12-01T22:00:00Z">14:00</time> to <time datetime="2026-12-01T23:00:00Z">15:00</time></p>
+<h3>Networking deep dive</h3>
+<dl><dt>Gate</dt><dd>Venue not published</dd><dt>Boarding closes</dt><dd>13:50 (10 minutes before the start)</dd><dt>Connection</dt><dd>12 minutes' walk from your previous stop</dd></dl>
+</li>
+</ol>
+<h2>Wednesday 2 December 2026</h2>
+<ol>
+<li>
+<p class="when"><time datetime="2026-12-02T09:00:00-08:00">09:00</time> to <time datetime="2026-12-02T10:00:00-08:00">10:00</time></p>
+<h3>Day two keynote overflow</h3>
+<dl><dt>Gate</dt><dd>MGM Grand</dd><dt>Boarding closes</dt><dd>08:50 (10 minutes before the start)</dd></dl>
+</li>
+</ol>
+</main>
+</body>
+</html>
+"
+`;

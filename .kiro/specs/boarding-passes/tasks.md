@@ -166,23 +166,23 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Ics_Exporter with UTC times and boarding alarms" -m "Builds RFC 5545 with one VEVENT per commitment, boarding-closes and leave-now alarms, stable UIDs and output written only to the app-data output folder."`
 
-- [ ] 9. Implement Itinerary_Page (built last, cut-list item 1)
+- [x] 9. Implement Itinerary_Page (built last, cut-list item 1)
   - Implement `render(itinerary, window)` producing one self-contained offline HTML document with all CSS inlined, no script content and no inline event-handler attributes, and no external resource references or network requests.
   - State the event timezone once for the view and show all times in event local time; render an empty venue as exactly `Venue not published`.
   - Build accessible structure: a document language, a non-empty page title, a single top-level heading, a heading outline in document order, table or list markup whose structure is programmatically determinable, and a viewport meta tag; build device-width with no fixed widths above 320 CSS pixels and a palette whose body text contrast is at least 4.5 to 1.
   - Implement `write(itinerary, window)` to write only inside the app-data `output/` folder.
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 7.10_
-  - [ ] 9.1 Write snapshot and structural example tests for the itinerary page
+  - [x] 9.1 Write snapshot and structural example tests for the itinerary page
     - Snapshot the rendered HTML (Requirement 9.1); assert no script element and no inline event-handler attribute (7.2, former Property 22); no external resource reference (7.3, former Property 23); empty venue renders exactly `Venue not published` (7.5, former Property 24); a document language, a non-empty page title, exactly one top-level heading, a heading outline that skips no level, a viewport meta tag and table or list markup (7.6, 7.7, 7.8, former Property 25); the timezone is stated once and times are in event local time (7.4); no fixed widths above 320 pixels are present in the inlined CSS (7.9).
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9_
-  - [ ] 9.2 Write an example test asserting the palette contrast
+  - [x] 9.2 Write an example test asserting the palette contrast
     - Compute the chosen palette's body text contrast once and assert it is at or above 4.5 to 1 (7.10).
     - _Requirements: 7.10_
-  - [ ] 9.3 Write the sentinel-secret harness property test across all components
+  - [x] 9.3 Write the sentinel-secret harness property test across all components
     - **Property 26: No secret reaches logs or errors on the named failure paths**
     - Inject a known ID token, attendee email, Board_URL and hand-off id, drive each component's named failure paths (problem bodies, response validation failures, transport failures, store write failures and builder text fallbacks), and assert no sentinel value and no request input appears in any captured log or thrown error (Requirement 9.5).
     - **Validates: Requirements 8.1, 8.2, 8.3, 9.5**
-  - [ ] 9.4 Run this task's tests and the full suite with coverage, then commit locally
+  - [x] 9.4 Run this task's tests and the full suite with coverage, then commit locally
     - Run `npm test` for `packages/core` with v8 coverage and confirm one hundred percent lines, branches, functions and statements for the owned code with named exclusions only (Requirement 9.6); only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add offline Itinerary_Page and close coverage" -m "Self-contained accessible HTML with inlined CSS, no script and no network; adds the sentinel-secret harness and reaches full owned-code coverage."`
 

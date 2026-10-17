@@ -14,6 +14,8 @@ export interface MemoryFs extends FileSystem {
   ops: string[];
   /** Operations listed here reject. */
   failing: Set<FsOperation>;
+  /** Text added to the error a failing operation throws, so a test can plant a secret in it. */
+  failureText: string;
 }
 
 export function memoryFs(initial: Record<string, string> = {}): MemoryFs {
@@ -22,11 +24,12 @@ export function memoryFs(initial: Record<string, string> = {}): MemoryFs {
   const dirs: string[] = [];
   const ops: string[] = [];
   const failing = new Set<FsOperation>();
+  const state = { failureText: 'secret.user@example.com' };
 
   function check(op: FsOperation, path: string): void {
     ops.push(`${op} ${path}`);
     if (failing.has(op)) {
-      throw new Error(`disk failure at ${path} for secret.user@example.com`);
+      throw new Error(`disk failure at ${path} for ${state.failureText}`);
     }
   }
 
@@ -36,6 +39,12 @@ export function memoryFs(initial: Record<string, string> = {}): MemoryFs {
     dirs,
     ops,
     failing,
+    get failureText() {
+      return state.failureText;
+    },
+    set failureText(value: string) {
+      state.failureText = value;
+    },
     readFile(path) {
       check('readFile', path);
       return Promise.resolve(files.get(path));

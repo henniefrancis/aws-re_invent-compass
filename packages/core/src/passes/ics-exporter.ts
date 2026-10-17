@@ -13,7 +13,7 @@
 import { createHash } from 'node:crypto';
 import ical, { ICalAlarmType } from 'ical-generator';
 import { CALENDAR_FILE_NAME, joinInFolder, OUTPUT_FOLDER_NAME } from './app-data.js';
-import { BOARDING_CLOSES_MINUTES, parseInstant } from './boarding.js';
+import { BOARDING_CLOSES_MINUTES, parseInstant, validWalkMinutes } from './boarding.js';
 import type { AppDataResolver, Clock, FileSystem } from './interfaces.js';
 import type { EventWindow, Itinerary, ItineraryCommitment } from './models.js';
 import { passError } from './redaction.js';
@@ -23,8 +23,6 @@ export const CALENDAR_FILE_MODE = 0o600;
 
 /** The domain part of every UID. */
 const UID_DOMAIN = 'reinvent-compass';
-/** The most minutes a walk can be, as in the PassFields schema. */
-const MAX_WALK_MINUTES = 90;
 
 /** What the exporter needs. */
 export interface IcsExporterDeps {
@@ -70,16 +68,16 @@ function cleanText(text: string, fallback: string): string {
   return cleaned === '' ? fallback : cleaned;
 }
 
-/** Check a carried walk: absent, or a finite number of minutes from 0 to 90. */
+/** Check a carried walk: absent, or whole minutes from 0 to 90. */
 function checkedWalk(entry: ItineraryCommitment): number | undefined {
-  const { walkMinutes } = entry;
-  if (walkMinutes === undefined) {
+  if (entry.walkMinutes === undefined) {
     return undefined;
   }
-  if (!Number.isFinite(walkMinutes) || walkMinutes < 0 || walkMinutes > MAX_WALK_MINUTES) {
+  const walk = validWalkMinutes(entry.walkMinutes);
+  if (walk === undefined) {
     throw passError('ics.invalid_commitment', 'A walk time in the itinerary is not valid.');
   }
-  return Math.round(walkMinutes);
+  return walk;
 }
 
 /** Build the Ics_Exporter over its seams. */
