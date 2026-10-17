@@ -77,7 +77,7 @@ describe('block rules', () => {
     ]);
     expect(verdict.decision).toBe('block');
     expect(verdict.reasons).toEqual([
-      'NEW1 and OLD1 overlap from 2026-12-01 10:30 to 2026-12-01 11:00.',
+      '"NEW1" and "OLD1" overlap from 2026-12-01 10:30 to 2026-12-01 11:00.',
     ]);
   });
 
@@ -86,7 +86,7 @@ describe('block rules', () => {
     const verdict = check(slot('NEW1', clock(10, 25), clock(11, 25)), [earlier]);
     expect(verdict.decision).toBe('block');
     expect(verdict.reasons).toEqual([
-      'Impossible connection. The walk from Beta Tower to Alpha Hall is 20 minutes, an estimate. You would arrive 5 minutes late.',
+      'Impossible connection. The walk from "Beta Tower" to "Alpha Hall" is 20 minutes, an estimate. You would arrive 5 minutes late.',
     ]);
   });
 
@@ -113,7 +113,7 @@ describe('warn rules', () => {
     expect(verdict).toEqual({
       decision: 'warn',
       reasons: [
-        'Tight connection. The walk from Beta Tower to Alpha Hall is 20 minutes, an estimate. That leaves only 3 minutes to spare.',
+        'Tight connection. The walk from "Beta Tower" to "Alpha Hall" is 20 minutes, an estimate. That leaves only 3 minutes to spare.',
       ],
     });
   });
@@ -182,7 +182,7 @@ describe('missing data', () => {
         ),
       ).toBe(true);
     }
-    expect(verdict.reasons[0]).toContain('The end time of NEW1 is missing.');
+    expect(verdict.reasons[0]).toContain('The end time of "NEW1" is missing.');
   });
 
   test('a missing or unrecognised timezone skips every rule', () => {
@@ -208,7 +208,7 @@ describe('missing data', () => {
     expect(verdict.decision).toBe('warn');
     expect(verdict.reasons).toHaveLength(1);
     expect(verdict.reasons[0]).toContain('The connection check could not be judged');
-    expect(verdict.reasons[0]).toContain('The venue for NEW1 is missing.');
+    expect(verdict.reasons[0]).toContain('The venue for "NEW1" is missing.');
   });
 
   test('a commitment with a missing end time skips the clash and meal checks, not the rest', () => {
@@ -217,7 +217,7 @@ describe('missing data', () => {
     expect(verdict.decision).toBe('warn');
     expect(verdict.reasons).toHaveLength(2);
     expect(verdict.reasons[0]).toContain('The clash check could not be judged');
-    expect(verdict.reasons[0]).toContain('end time of OLD1');
+    expect(verdict.reasons[0]).toContain('end time of "OLD1"');
     expect(verdict.reasons[1]).toContain('The meal break check could not be judged');
   });
 
@@ -244,7 +244,7 @@ describe('all-day candidate', () => {
     const verdict = check(expo, [timed]);
     expect(verdict.decision).toBe('block');
     expect(verdict.reasons).toHaveLength(1);
-    expect(verdict.reasons[0]).toContain('EXPO and OLD1 overlap');
+    expect(verdict.reasons[0]).toContain('"EXPO" and "OLD1" overlap');
   });
 });
 
@@ -437,7 +437,7 @@ describe('hardening: invalid context, bad data, size and failure', () => {
       const verdict = check(slot('NEW1', clock(10), endMin), [slot('OLD1', clock(9), clock(11))]);
       expect(verdict.decision).toBe('warn');
       expect(verdict.reasons).toHaveLength(4);
-      expect(verdict.reasons[0]).toContain('The end time of NEW1 is not after its start time.');
+      expect(verdict.reasons[0]).toContain('The end time of "NEW1" is not after its start time.');
     }
   });
 
@@ -446,7 +446,7 @@ describe('hardening: invalid context, bad data, size and failure', () => {
     const verdict = check(slot('NEW1', clock(10), clock(11)), [bad]);
     expect(verdict.decision).toBe('warn');
     expect(verdict.reasons[0]).toContain('The clash check could not be judged');
-    expect(verdict.reasons[0]).toContain('end time of BAD1 is not after its start time');
+    expect(verdict.reasons[0]).toContain('end time of "BAD1" is not after its start time');
   });
 
   test('a schedule of more than 200 commitments gives warn: schedule too large', () => {

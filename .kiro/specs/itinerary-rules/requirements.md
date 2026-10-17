@@ -159,6 +159,7 @@ Note: The safe-swap function takes a confirmation schedule as an input parameter
 5. IF the confirmation schedule input does not show the Repeat as held, THEN THE Rules_Engine SHALL report that the swap cannot be completed, SHALL mark the swap outcome as failed, and SHALL leave the original reservation unchanged.
 6. THE Rules_Engine SHALL attach a plain-English reason to each of the three steps and to the overall swap outcome.
 7. WHEN evaluating whether the Repeat clashes, THE Rules_Engine SHALL interpret all commitment times in the Event_Timezone supplied in Context.
+8. IF any other commitment cannot be checked for a clash (its times are missing or bad), THEN THE Rules_Engine SHALL mark the swap outcome as "unknown" with a reason naming that commitment, and SHALL NOT mark the swap safe. A known clash is still reported as unsafe first.
 
 ### Requirement 8: checkReservation guardrail
 
@@ -218,6 +219,7 @@ Note: The safe-swap function takes a confirmation schedule as an input parameter
 4. IF the Event_Timezone in Context is not a recognised IANA timezone name, THEN THE Rules_Engine SHALL return "unknown" for any time-dependent result and SHALL state that the event timezone is unrecognised, and SHALL NOT substitute a default timezone.
 5. WHERE a required field is missing, such as a venue, a start time, or an end time, THE Rules_Engine SHALL return "unknown" for the affected result and SHALL state the reason, and SHALL NOT substitute a default value.
 6. THE Rules_Engine SHALL phrase every reason and warning in plain English, with each sentence no longer than 20 words and with no em dash or en dash.
+7. THE Rules_Engine SHALL show every name that came from outside (a session code, a title, a venue name) in double quotes, capped at four words and 30 characters counted by code point, with control characters, format characters and line or paragraph separators removed, and any double quote inside a name replaced by a single quote. A value that is not text SHALL be treated as missing and SHALL NOT cause an error. Consumers SHALL show reasons as plain text only.
 
 ### Requirement 12: Testing and coverage
 

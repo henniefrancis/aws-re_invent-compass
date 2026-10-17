@@ -37,7 +37,7 @@ describe('safe swap examples', () => {
       [2, 'confirmHeld', false],
       [3, 'cancelOriginal', false],
     ]);
-    expect(result.steps[0].reason).toBe('Reserve the repeat DAT302-R first.');
+    expect(result.steps[0].reason).toBe('Reserve the repeat "DAT302-R" first.');
     expect(result.steps[2].reason).toContain('You can cancel the original now');
     expect(result.reason).toBe('The repeat is held and clashes with nothing. The swap is safe.');
   });
@@ -62,7 +62,7 @@ describe('safe swap examples', () => {
     expect(result.clashesWith).toEqual(['OTHER1', 'Lunch']);
     expect(result.steps[2].blockedUntilConfirmed).toBe(true);
     expect(result.reason).toBe(
-      'The repeat clashes with OTHER1. The repeat clashes with Lunch. The swap cannot be made safely. The original stays unchanged.',
+      'The repeat clashes with "OTHER1". The repeat clashes with "Lunch". The swap cannot be made safely. The original stays unchanged.',
     );
   });
 
@@ -93,6 +93,26 @@ describe('safe swap examples', () => {
     const confirmation = { commitments: [reserved(repeat), resting], sessions: { rep: repeat } };
     const result = planSafeSwap(resting, repeat, confirmation, testContext());
     expect(result.outcome).toBe('safe');
+  });
+
+  test('unknown: another commitment that cannot be checked means a clash cannot be ruled out', () => {
+    const noEnd = session({ sessionId: 'n1', code: 'NOEND', endsAt: undefined });
+    const confirmation = scheduleOf([original, repeat, noEnd]);
+    const result = planSafeSwap(reserved(original), repeat, confirmation, testContext());
+    expect(result.outcome).toBe('unknown');
+    expect(result.reason).toBe(
+      '"NOEND" could not be checked for clashes. The swap cannot be judged safe. The original stays unchanged.',
+    );
+    expect(result.steps[2].blockedUntilConfirmed).toBe(true);
+    // Not held yet makes no difference: it is still unknown, not failed.
+    const notHeld = scheduleOf([original, noEnd]);
+    expect(planSafeSwap(reserved(original), repeat, notHeld, testContext()).outcome).toBe(
+      'unknown',
+    );
+    // A known clash is still reported as unsafe, ahead of the unknown.
+    const clash = slot('CLASH', 'c1', 10, 60);
+    const both = scheduleOf([original, repeat, noEnd, clash]);
+    expect(planSafeSwap(reserved(original), repeat, both, testContext()).outcome).toBe('unsafe');
   });
 
   test('unknown: a repeat with no usable times cannot be checked', () => {

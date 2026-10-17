@@ -73,7 +73,7 @@ describe('connectionsForDay', () => {
       expect(result.skipped).toEqual([
         {
           ref: 'NOSTART',
-          reason: 'The start time of NOSTART is missing. It is left out of the day view.',
+          reason: 'The start time of "NOSTART" is missing. It is left out of the day view.',
         },
       ]);
     }

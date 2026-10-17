@@ -19,6 +19,7 @@ const freeText = fc.oneof(
     'a b c d e f g h i j k l m n o p q r s t u v w x y z',
     'line one\nline two\tline three',
     'DAT302-R',
+    `bidi ${String.fromCodePoint(0x202e)} line${String.fromCodePoint(0x2028)}break ${String.fromCodePoint(0x1f600)} "quoted"`,
   ),
 );
 const num = fc.integer({ min: -100000, max: 100000 });
@@ -132,6 +133,7 @@ const builders: Array<[string, fc.Arbitrary<string>]> = [
   ['swapUnsafe', fc.array(freeText, { maxLength: 5 }).map((refs) => reasons.swapUnsafe(refs))],
   ['swapFailed', fc.constant(reasons.swapFailed())],
   ['swapZoneProblem', zone.map((z) => reasons.swapZoneProblem(z))],
+  ['swapOthersUnknown', freeText.map((r) => reasons.swapOthersUnknown(r))],
   ['swapUnknown', fc.constant(reasons.swapUnknown())],
   ['guardMealLost', freeText.map((d) => reasons.guardMealLost(d))],
   [
@@ -143,7 +145,7 @@ const builders: Array<[string, fc.Arbitrary<string>]> = [
   [
     'guardMissingData',
     fc
-      .tuple(rule, fc.constant('The end time of DAT302 is missing.'))
+      .tuple(rule, fc.constant('The end time of "DAT302" is missing.'))
       .map(([r, d]) => reasons.guardMissingData(r, d)),
   ],
 ];
@@ -175,13 +177,13 @@ describe('reason builders', () => {
 
   test('representative strings read as plain English', () => {
     expect(reasons.connectionTight('Venetian', 'Wynn', 30, true, 3)).toBe(
-      'The walk from Venetian to Wynn is 30 minutes, an estimate. That leaves only 3 minutes to spare.',
+      'The walk from "Venetian" to "Wynn" is 30 minutes, an estimate. That leaves only 3 minutes to spare.',
     );
     expect(reasons.boardingCloses('2026-12-01 10:20')).toBe(
       'Boarding closes at 2026-12-01 10:20. Your seat is released then.',
     );
     expect(reasons.connectionComfortable('A', 'B', 5, false, 9)).toBe(
-      'The walk from A to B is 5 minutes. You arrive 9 minutes before it is due.',
+      'The walk from "A" to "B" is 5 minutes. You arrive 9 minutes before it is due.',
     );
     expect(reasons.energyCountOnly(7, 6, true)).toBe('7 commitments is more than the limit of 6.');
     expect(reasons.energyCountOnly(3, 6, false)).toBe('3 commitments is within the limit of 6.');

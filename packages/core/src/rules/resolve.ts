@@ -39,17 +39,28 @@ export interface ResolvedCommitment {
   missing: Missing[];
 }
 
-function nonEmpty(value: string | undefined): string | undefined {
-  return value !== undefined && value.trim() !== '' ? value : undefined;
+/** A value that is text with something in it. Anything else (absent, not text, blank) is missing. */
+function nonEmpty(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() !== '' ? value : undefined;
 }
 
-function firstNonEmpty(...values: Array<string | undefined>): string {
-  return values.find((value) => nonEmpty(value) !== undefined) ?? '';
+/** Is a field name listed in missingFields? A missingFields that is not a list lists nothing. */
+function isListed(session: NormalisedSession, field: string): boolean {
+  return Array.isArray(session.missingFields) && session.missingFields.includes(field);
+}
+
+function firstNonEmpty(...values: unknown[]): string {
+  return nonEmpty(values.find((value) => nonEmpty(value) !== undefined)) ?? '';
 }
 
 /** The session for an id, or undefined. Only own keys count, so odd ids never hit a prototype. */
 function sessionFor(sessions: SessionsLookup, sessionId: string): NormalisedSession | undefined {
   return Object.hasOwn(sessions, sessionId) ? sessions[sessionId] : undefined;
+}
+
+/** A time string that is text and a valid ISO 8601 instant, else undefined. */
+function usableText(value: unknown): string | undefined {
+  return typeof value === 'string' && parseInstant(value) !== undefined ? value : undefined;
 }
 
 /**
@@ -60,17 +71,17 @@ export function usableTime(
   session: NormalisedSession,
   field: 'startsAt' | 'endsAt',
 ): string | undefined {
-  const value = session[field];
+  const value: unknown = session[field];
   const usable =
-    value !== undefined &&
-    !session.missingFields.includes(field) &&
-    parseInstant(value) !== undefined;
+    typeof value === 'string' && !isListed(session, field) && parseInstant(value) !== undefined;
   return usable ? value : undefined;
 }
 
 /** Reservability is missing when isReservable is listed in missingFields. */
 export function sessionReservability(session: NormalisedSession): boolean | undefined {
-  return session.missingFields.includes('isReservable') ? undefined : session.isReservable;
+  return isListed(session, 'isReservable') || typeof session.isReservable !== 'boolean'
+    ? undefined
+    : session.isReservable;
 }
 
 /** A short, safe name for a session: its code, else its title, else its id. */
@@ -106,13 +117,13 @@ export function resolveCommitment(
     venue = nonEmpty(session?.venue) ?? nonEmpty(commitment.venue);
     startsAt = session && usableTime(session, 'startsAt');
     endsAt = session && usableTime(session, 'endsAt');
-    isAllDay = session?.isAllDay ?? false;
+    isAllDay = session?.isAllDay === true;
     isReservable = session && sessionReservability(session);
   } else {
     ref = label(commitment.title);
     venue = nonEmpty(commitment.location);
-    startsAt = parseInstant(commitment.startsAt) === undefined ? undefined : commitment.startsAt;
-    endsAt = parseInstant(commitment.endsAt) === undefined ? undefined : commitment.endsAt;
+    startsAt = usableText(commitment.startsAt);
+    endsAt = usableText(commitment.endsAt);
     isReservable = false;
   }
 

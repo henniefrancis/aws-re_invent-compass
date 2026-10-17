@@ -39,7 +39,7 @@ describe('rebooking examples', () => {
       ['repeat', 'a'],
     ]);
     expect(result.message).toBe('Found 2 ways to still attend.');
-    expect(result.options[1].reason).toBe('Repeat DAT302-R starts 2026-12-01 07:00.');
+    expect(result.options[1].reason).toBe('Repeat "DAT302-R" starts 2026-12-01 07:00.');
   });
 
   test('a base code given with its -R suffix finds the same options', () => {
@@ -61,7 +61,7 @@ describe('rebooking examples', () => {
     ]);
     expect(result.message).toBe('Found 2 ways to still attend.');
     expect(result.options[0].reason).toBe(
-      'You favorited DAT302 as a backup. It starts 2026-12-01 08:00.',
+      'You favorited "DAT302" as a backup. It starts 2026-12-01 08:00.',
     );
   });
 

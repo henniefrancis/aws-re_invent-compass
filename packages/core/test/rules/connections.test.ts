@@ -50,7 +50,7 @@ describe('connection examples', () => {
       walkingMinutes: 20,
       spareMinutes: 30,
       reason:
-        'The walk from Alpha Hall to Beta Tower is 20 minutes, an estimate. You arrive 30 minutes before it is due.',
+        'The walk from "Alpha Hall" to "Beta Tower" is 20 minutes, an estimate. You arrive 30 minutes before it is due.',
     });
   });
 
@@ -59,7 +59,7 @@ describe('connection examples', () => {
     expect(result.classification).toBe('tight');
     expect(result.spareMinutes).toBe(3);
     expect(result.reason).toBe(
-      'The walk from Alpha Hall to Beta Tower is 20 minutes, an estimate. That leaves only 3 minutes to spare.',
+      'The walk from "Alpha Hall" to "Beta Tower" is 20 minutes, an estimate. That leaves only 3 minutes to spare.',
     );
   });
 
@@ -74,7 +74,7 @@ describe('connection examples', () => {
     expect(result.classification).toBe('impossible');
     expect(result.spareMinutes).toBe(-5);
     expect(result.reason).toBe(
-      'The walk from Alpha Hall to Beta Tower is 20 minutes, an estimate. You would arrive 5 minutes late.',
+      'The walk from "Alpha Hall" to "Beta Tower" is 20 minutes, an estimate. You would arrive 5 minutes late.',
     );
   });
 
@@ -146,19 +146,19 @@ describe('connection unknowns', () => {
     venueData.walkingTimes = venueData.walkingTimes.slice(1);
     const result = classify(item(), next(60), testContext({ venueData }));
     expect(result.classification).toBe('unknown');
-    expect(result.reason).toContain('No walking time is listed from Alpha Hall to Beta Tower');
+    expect(result.reason).toContain('No walking time is listed from "Alpha Hall" to "Beta Tower"');
   });
 
   test('a missing end time on the first item is unknown and names it', () => {
     const result = classify(item({ ref: 'FROMREF', endsAt: undefined }), next(60));
     expect(result.classification).toBe('unknown');
-    expect(result.reason).toContain('end time of FROMREF is missing');
+    expect(result.reason).toContain('end time of "FROMREF" is missing');
   });
 
   test('a reservable next item with no boarding is unknown and names it', () => {
     const noStart = classify(item(), next(60, { ref: 'TOREF', startsAt: undefined }));
     expect(noStart.classification).toBe('unknown');
-    expect(noStart.reason).toContain('boarding time for TOREF is missing');
+    expect(noStart.reason).toContain('boarding time for "TOREF" is missing');
     const noFlag = classify(item(), next(60, { isReservable: undefined }));
     expect(noFlag.reason).toContain('boarding time');
   });
@@ -169,7 +169,7 @@ describe('connection unknowns', () => {
       next(60, { ref: 'TOREF', isReservable: false, startsAt: undefined }),
     );
     expect(result.classification).toBe('unknown');
-    expect(result.reason).toContain('start time of TOREF is missing');
+    expect(result.reason).toContain('start time of "TOREF" is missing');
   });
 
   test('a missing or unrecognised timezone is unknown', () => {
@@ -196,7 +196,7 @@ describe('connection hardening', () => {
     const from = item({ ref: 'BADFROM', missing: ['order'] });
     const result = classify(from, next(60));
     expect(result.classification).toBe('unknown');
-    expect(result.reason).toContain('end time of BADFROM is not after its start time');
+    expect(result.reason).toContain('end time of "BADFROM" is not after its start time');
   });
 });
 
@@ -231,7 +231,9 @@ describe('connection properties', () => {
           expect(result.walkingMinutes).toBe(walking);
           expect(result.spareMinutes).toBe(spare);
           expect(result.reason).toContain('Alpha Hall');
-          expect(result.reason).toContain(sameVenue ? 'Alpha Hall to Alpha Hall' : 'Beta Tower');
+          expect(result.reason).toContain(
+            sameVenue ? '"Alpha Hall" to "Alpha Hall"' : 'Beta Tower',
+          );
           expect(result.reason).toContain(`${walking === 1 ? '1 minute' : `${walking} minutes`}`);
         },
       ),

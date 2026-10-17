@@ -1,5 +1,8 @@
 // Plain-English reason builders (itinerary-rules, S2). Internal, not exported by index.ts.
 //
+// Reasons are plain text. A consumer must show them as plain text only, never as HTML or markup,
+// because they can contain names that came from outside (session codes, titles, venue names).
+//
 // Every reason and warning string the engine produces is built here, so this is the one
 // place that guarantees the product voice (Req 8.10, 11.6, 12.3):
 //   - no em dash and no en dash ever reach output (clean replaces them with a hyphen),
@@ -16,21 +19,47 @@ const DASHES = new RegExp(
   `[${String.fromCharCode(0x2013)}${String.fromCharCode(0x2014)}${String.fromCharCode(0x2015)}]`,
   'g',
 );
+// Control characters, and the Unicode line and paragraph separators, act as spaces. Format
+// characters (zero width joiners, bidirectional overrides and the like) are removed.
+const BREAKS = /[\p{Cc}\p{Zl}\p{Zp}]/gu;
+const FORMATS = /\p{Cf}/gu;
 
 /** Replace every em dash and en dash with a hyphen. */
 export function clean(text: string): string {
   return text.replace(DASHES, '-');
 }
 
-/** A short, safe name for a commitment, venue or code: at most four words, 30 characters. */
-export function label(text: string): string {
-  const words = clean(text).split(/\s+/).filter(Boolean).slice(0, 4).join(' ').slice(0, 30).trim();
-  return words === '' ? 'unnamed item' : words;
+/**
+ * Make caller text safe to show: not text means empty, dashes become hyphens, control and format
+ * characters are dropped, a double quote becomes a single quote, and whitespace is collapsed.
+ */
+function plain(text: unknown): string {
+  return typeof text === 'string'
+    ? clean(text).replace(BREAKS, ' ').replace(FORMATS, '').replaceAll('"', "'")
+    : '';
+}
+
+/**
+ * A short, safe name for a commitment, venue or code: at most four words and 30 characters (counted
+ * as characters a person sees, not code units). Anything that is not text, or is empty, is called
+ * "unnamed item", so a bad value never throws.
+ */
+export function label(text: unknown): string {
+  const words = plain(text).split(/\s+/).filter(Boolean).slice(0, 4).join(' ');
+  const short = Array.from(words).slice(0, 30).join('').trim();
+  return short === '' ? 'unnamed item' : short;
+}
+
+/** A name in double quotes, ready for a sentence. Reasons are plain text: show them as text only. */
+export function q(text: unknown): string {
+  return `"${label(text)}"`;
 }
 
 /** A short, safe time or day stamp: at most two words, 20 characters. */
-export function stamp(text: string): string {
-  return clean(text).split(/\s+/).filter(Boolean).slice(0, 2).join(' ').slice(0, 20);
+export function stamp(text: unknown): string {
+  return Array.from(plain(text).split(/\s+/).filter(Boolean).slice(0, 2).join(' '))
+    .slice(0, 20)
+    .join('');
 }
 
 /** Whole minutes with the right noun, for example "1 minute" or "20 minutes". */
@@ -66,8 +95,8 @@ export type TimeProblem = 'start' | 'end' | 'order';
 /** A start or end time is missing for a commitment, or its end is not after its start. */
 export function missingTime(ref: string, what: TimeProblem): string {
   return what === 'order'
-    ? `The end time of ${label(ref)} is not after its start time.`
-    : `The ${what} time of ${label(ref)} is missing.`;
+    ? `The end time of ${q(ref)} is not after its start time.`
+    : `The ${what} time of ${q(ref)} is missing.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -96,7 +125,7 @@ export function boardingMissingReservability(): string {
 
 function walkSentence(from: string, to: string, minutes: number, estimate: boolean): string {
   const tail = estimate ? ', an estimate' : '';
-  return `The walk from ${label(from)} to ${label(to)} is ${mins(minutes)}${tail}.`;
+  return `The walk from ${q(from)} to ${q(to)} is ${mins(minutes)}${tail}.`;
 }
 
 export function connectionComfortable(
@@ -130,19 +159,19 @@ export function connectionImpossible(
 }
 
 export function connectionVenueMissing(ref: string): string {
-  return `The venue for ${label(ref)} is missing. The connection is unknown.`;
+  return `The venue for ${q(ref)} is missing. The connection is unknown.`;
 }
 
 export function connectionVenueNotListed(venue: string): string {
-  return `${label(venue)} is not in the venue list. The connection is unknown.`;
+  return `${q(venue)} is not in the venue list. The connection is unknown.`;
 }
 
 export function connectionPairMissing(from: string, to: string): string {
-  return `No walking time is listed from ${label(from)} to ${label(to)}. The connection is unknown.`;
+  return `No walking time is listed from ${q(from)} to ${q(to)}. The connection is unknown.`;
 }
 
 export function connectionBoardingMissing(ref: string): string {
-  return `The boarding time for ${label(ref)} is missing. The connection is unknown.`;
+  return `The boarding time for ${q(ref)} is missing. The connection is unknown.`;
 }
 
 export function connectionTimeMissing(ref: string, what: TimeProblem): string {
@@ -163,7 +192,7 @@ export function connectionAlert(kind: 'tight' | 'impossible', reason: string): s
 // ---------------------------------------------------------------------------
 
 export function clashOverlap(a: string, b: string, from: string, to: string): string {
-  return `${label(a)} and ${label(b)} overlap from ${stamp(from)} to ${stamp(to)}.`;
+  return `${q(a)} and ${q(b)} overlap from ${stamp(from)} to ${stamp(to)}.`;
 }
 
 export function clashTimeMissing(ref: string, what: TimeProblem): string {
@@ -224,11 +253,11 @@ export function energyExplanation(
 }
 
 export function energyDataMissing(ref: string): string {
-  return `Data was missing for ${label(ref)}. It is left out of walking and venue totals.`;
+  return `Data was missing for ${q(ref)}. It is left out of walking and venue totals.`;
 }
 
 export function energyWalkUnknown(from: string, to: string): string {
-  return `The walk from ${label(from)} to ${label(to)} is unknown and is left out.`;
+  return `The walk from ${q(from)} to ${q(to)} is unknown and is left out.`;
 }
 
 export function energyCountOnly(count: number, limit: number, overloaded: boolean): string {
@@ -250,17 +279,17 @@ export function energyOverloadVerdict(overloaded: boolean, threshold: number): s
 // ---------------------------------------------------------------------------
 
 export function rebookRepeat(code: string, startsAt: string): string {
-  return `Repeat ${label(code)} starts ${stamp(startsAt)}.`;
+  return `Repeat ${q(code)} starts ${stamp(startsAt)}.`;
 }
 
 export function rebookStandby(code: string, startsAt: string): string {
-  return `You favorited ${label(code)} as a backup. It starts ${stamp(startsAt)}.`;
+  return `You favorited ${q(code)} as a backup. It starts ${stamp(startsAt)}.`;
 }
 
 export function rebookWalkUp(code: string, startsAt: string, isFull: boolean): string {
   return isFull
-    ? `${label(code)} is full, so join the walk-up line. It starts ${stamp(startsAt)}.`
-    : `${label(code)} needs no reservation, so walk up. It starts ${stamp(startsAt)}.`;
+    ? `${q(code)} is full, so join the walk-up line. It starts ${stamp(startsAt)}.`
+    : `${q(code)} needs no reservation, so walk up. It starts ${stamp(startsAt)}.`;
 }
 
 export function rebookNone(): string {
@@ -286,7 +315,7 @@ export function rebookNowUnusable(): string {
 // ---------------------------------------------------------------------------
 
 export function swapReserveStep(code: string): string {
-  return `Reserve the repeat ${label(code)} first.`;
+  return `Reserve the repeat ${q(code)} first.`;
 }
 
 export function swapConfirmStep(): string {
@@ -304,7 +333,7 @@ export function swapSafe(): string {
 }
 
 export function swapUnsafe(refs: readonly string[]): string {
-  const clashes = refs.map((ref) => `The repeat clashes with ${label(ref)}.`).join(' ');
+  const clashes = refs.map((ref) => `The repeat clashes with ${q(ref)}.`).join(' ');
   return `${clashes} The swap cannot be made safely. The original stays unchanged.`;
 }
 
@@ -316,6 +345,10 @@ export function swapZoneProblem(problem: ZoneProblem): string {
   return `${zoneProblem(problem)} The swap cannot be checked. The original stays unchanged.`;
 }
 
+export function swapOthersUnknown(ref: string): string {
+  return `${q(ref)} could not be checked for clashes. The swap cannot be judged safe. The original stays unchanged.`;
+}
+
 export function swapUnknown(): string {
   return 'The repeat has no usable start or end time. The swap cannot be checked. The original stays unchanged.';
 }
@@ -325,7 +358,7 @@ export function swapUnknown(): string {
 // ---------------------------------------------------------------------------
 
 export function guardContextInvalid(setting: string): string {
-  return `The setting "${label(setting)}" is not valid. The reservation could not be checked.`;
+  return `The setting ${q(setting)} is not valid. The reservation could not be checked.`;
 }
 
 export function guardScheduleTooLarge(limit: number): string {

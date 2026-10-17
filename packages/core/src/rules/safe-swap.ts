@@ -13,7 +13,8 @@
 //   unsafe   the repeat clashes with the original or another commitment; each is named
 //   failed   the confirmation schedule does not show the repeat held
 //   safe     no clash and the repeat is held
-//   unknown  the timezone or the repeat's times are unusable, so it cannot be checked
+//   unknown  the timezone or the repeat's times are unusable, or another commitment has times
+//            that cannot be checked, so a clash cannot be ruled out
 import type { Commitment, NormalisedSession } from '@compass/contracts';
 import { findClashes, intervalOf, type ClashReport } from './clashes.js';
 import type { Context } from './context.js';
@@ -123,11 +124,17 @@ export function planSafeSwap(
 
   // The timezone was checked above, so the report is always an "ok" report.
   const report = findClashes({ commitments: [repeatCommitment, ...others], sessions }, context);
-  const { clashes } = report as Extract<ClashReport, { status: 'ok' }>;
+  const { clashes, unknown } = report as Extract<ClashReport, { status: 'ok' }>;
   const clashesWith = clashes.filter((clash) => clash.aIndex === 0).map((clash) => clash.b);
 
   if (clashesWith.length > 0) {
     return plan('unsafe', repeat, clashesWith, reason.swapUnsafe(clashesWith));
+  }
+  // A commitment that could not be checked might clash, so the swap cannot be called safe.
+  // Position 0 is the repeat itself, whose times were checked above.
+  const unchecked = unknown.find((entry) => entry.index !== 0);
+  if (unchecked !== undefined) {
+    return plan('unknown', repeat, [], reason.swapOthersUnknown(unchecked.ref));
   }
   if (!held) {
     return plan('failed', repeat, [], reason.swapFailed());

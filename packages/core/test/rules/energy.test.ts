@@ -106,9 +106,9 @@ describe('scoreEnergy examples', () => {
       score: 5 * 10 + 20 + 15,
     });
     expect(result.missingDataNotes).toEqual([
-      'Data was missing for NOVENUE. It is left out of walking and venue totals.',
-      'Data was missing for NOEND. It is left out of walking and venue totals.',
-      'Data was missing for NOSTART. It is left out of walking and venue totals.',
+      'Data was missing for "NOVENUE". It is left out of walking and venue totals.',
+      'Data was missing for "NOEND". It is left out of walking and venue totals.',
+      'Data was missing for "NOSTART". It is left out of walking and venue totals.',
     ]);
     for (const note of result.missingDataNotes) {
       expect(result.explanation).toContain(note);
@@ -144,7 +144,7 @@ describe('scoreEnergy examples', () => {
       venueChangeCount: 0,
     });
     expect(result.missingDataNotes).toEqual([
-      'Data was missing for BAD. It is left out of walking and venue totals.',
+      'Data was missing for "BAD". It is left out of walking and venue totals.',
     ]);
   });
 
@@ -156,7 +156,7 @@ describe('scoreEnergy examples', () => {
     const result = scoreEnergy(day, testContext());
     expect(result).toMatchObject({ totalWalkingMinutes: 0, venueChangeCount: 1 });
     expect(result.missingDataNotes).toEqual([
-      'The walk from Alpha Hall to Ghost Hall is unknown and is left out.',
+      'The walk from "Alpha Hall" to "Ghost Hall" is unknown and is left out.',
     ]);
   });
 
@@ -286,7 +286,7 @@ describe('energy properties', () => {
           );
           raw.forEach((r, i) => {
             if (!placeable(r)) {
-              expect(result.explanation).toContain(`Data was missing for ITEM${i}.`);
+              expect(result.explanation).toContain(`Data was missing for "ITEM${i}".`);
             }
           });
           // The count-only fallback flags exactly when the count is strictly over its threshold.

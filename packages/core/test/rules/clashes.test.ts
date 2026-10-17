@@ -30,7 +30,7 @@ describe('clash examples', () => {
         a: 'Late party',
         b: 'Night owl',
         overlap: '2026-12-02 00:00 to 2026-12-02 01:00',
-        reason: 'Late party and Night owl overlap from 2026-12-02 00:00 to 2026-12-02 01:00.',
+        reason: '"Late party" and "Night owl" overlap from 2026-12-02 00:00 to 2026-12-02 01:00.',
       });
     }
   });
@@ -62,7 +62,7 @@ describe('clash examples', () => {
           ref: 'BAD',
           index: 0,
           reason:
-            'The end time of BAD is not after its start time. It cannot be checked for clashes.',
+            'The end time of "BAD" is not after its start time. It cannot be checked for clashes.',
         },
       ]);
     }
@@ -164,7 +164,7 @@ describe('clash examples', () => {
         {
           ref: 'NOEND',
           index: 0,
-          reason: 'The end time of NOEND is missing. It cannot be checked for clashes.',
+          reason: 'The end time of "NOEND" is missing. It cannot be checked for clashes.',
         },
       ],
     });

@@ -7,6 +7,7 @@ import {
   sessionToCommitment,
   usableTime,
 } from '../../src/rules/resolve.js';
+import type { NormalisedSession } from '@compass/contracts';
 import { personal, reserved, session } from './helpers.js';
 
 // Tests for commitment resolution (itinerary-rules, S2).
@@ -111,6 +112,42 @@ describe('resolveCommitment, personal time', () => {
     expect(resolved.missing).toEqual(['venue', 'startsAt', 'endsAt']);
     expect(resolved.startsAt).toBeUndefined();
     expect(resolved.endsAt).toBeUndefined();
+  });
+});
+
+describe('values that are not what the types promise', () => {
+  test('non-text values are treated as missing, and nothing throws', () => {
+    const odd = {
+      ...session(),
+      code: 5,
+      title: { a: 1 },
+      venue: 123,
+      startsAt: 99,
+      endsAt: ['x'],
+      isAllDay: 'yes',
+      isReservable: 'true',
+      missingFields: null,
+    } as unknown as NormalisedSession;
+    const resolved = resolveCommitment(reserved(session()), { s1: odd });
+    expect(resolved).toEqual({
+      ref: 's1',
+      venue: undefined,
+      startsAt: undefined,
+      endsAt: undefined,
+      isAllDay: false,
+      isReservable: undefined,
+      missing: ['venue', 'startsAt', 'endsAt', 'reservability'],
+    });
+    expect(sessionRef(odd)).toBe('s1');
+    expect(usableTime(odd, 'startsAt')).toBeUndefined();
+    expect(sessionReservability(odd)).toBeUndefined();
+  });
+
+  test('a personal-time commitment with non-text fields is missing, not a throw', () => {
+    const odd = { kind: 'personalTime', title: 7, startsAt: 1, endsAt: null, location: 3 } as never;
+    const resolved = resolveCommitment(odd, {});
+    expect(resolved.missing).toEqual(['venue', 'startsAt', 'endsAt']);
+    expect(resolved.ref).toBe('unnamed item');
   });
 });
 

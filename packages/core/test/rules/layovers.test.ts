@@ -271,9 +271,9 @@ describe('layover scope and unknowns', () => {
       expect(report.days).toHaveLength(1);
       expect(report.skipped.map((s) => s.ref)).toEqual(['NOEND', 'NOSTART']);
       expect(report.skipped[0].reason).toBe(
-        'The end time of NOEND is missing. It is left out of the break checks.',
+        'The end time of "NOEND" is missing. It is left out of the break checks.',
       );
-      expect(report.skipped[1].reason).toContain('start time of NOSTART');
+      expect(report.skipped[1].reason).toContain('start time of "NOSTART"');
     }
   });
 
@@ -289,7 +289,7 @@ describe('layover scope and unknowns', () => {
         {
           ref: 'BAD',
           reason:
-            'The end time of BAD is not after its start time. It is left out of the break checks.',
+            'The end time of "BAD" is not after its start time. It is left out of the break checks.',
         },
       ]);
     }
