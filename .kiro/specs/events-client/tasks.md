@@ -184,20 +184,20 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 9.8 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 10. Implement the token store
-  - [ ] 10.1 Implement the token store with keychain and memory fallback
+- [x] 10. Implement the token store
+  - [x] 10.1 Implement the token store with keychain and memory fallback
     - Create `src/auth/token-store.ts` with `createTokenStore(keyring?)` using one `@napi-rs/keyring` `Entry` per token (service `reinvent-compass`, accounts `access`/`refresh`/`id`, each `{ linux: { store: 'secret-service' } }`), `setSecret`/`getSecret`, memory fallback plus best-effort delete on any throw, never writing a token to a file, and `kind`/`load`/`save`/`clear`
     - _Requirements: 2.1, 2.2, 2.4, 2.6_
 
-  - [ ] 10.2 Write property test for keychain round-trip
+  - [x] 10.2 Write property test for keychain round-trip
     - **Property 5: Token storage round-trips through the keychain**
     - **Validates: Requirements 2.1, 3.3**
 
-  - [ ] 10.3 Write property test for memory fallback and no file write
+  - [x] 10.3 Write property test for memory fallback and no file write
     - **Property 6: Keychain absence or failure falls back to memory and never writes a file**
     - **Validates: Requirements 2.2, 2.4, 2.6**
 
-  - [ ] 10.4 Commit
+  - [x] 10.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 11. Implement sign-in, refresh and sign-out
