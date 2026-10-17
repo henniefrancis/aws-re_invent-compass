@@ -17,6 +17,7 @@ import { BOARDING_CLOSES_MINUTES, parseInstant, validWalkMinutes } from './board
 import type { AppDataResolver, Clock, FileSystem } from './interfaces.js';
 import type { EventWindow, Itinerary, ItineraryCommitment } from './models.js';
 import { passError } from './redaction.js';
+import { cleanDisplayText } from './text-safety.js';
 
 /** The calendar file is personal data: owner read and write only. */
 export const CALENDAR_FILE_MODE = 0o600;
@@ -45,26 +46,35 @@ function shortHash(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 24);
 }
 
-/** The UID local part for a commitment, before any duplicate suffix. */
-function uidKey(entry: ItineraryCommitment): string {
-  const { commitment } = entry;
-  if (commitment.kind === 'reservedSession') {
-    return `session-${commitment.sessionId}`;
-  }
-  return `layover-${commitment.personalTimeId ?? shortHash(`${commitment.title}|${commitment.startsAt}`)}`;
+/** An identifier safe to put in a UID as it is. Anything else is replaced by a hash of itself. */
+const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
+function safeId(id: string): string {
+  return SAFE_ID.test(id) ? id : shortHash(id);
+}
+
+/** An instant as compact UTC, for example 20261201T183000Z, for the UID. */
+function compactUtc(at: Date): string {
+  return `${at.toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`;
 }
 
 /**
- * Make free text safe for an iCalendar TEXT value: control characters (which the format
- * forbids, and which would let a title break a line) become spaces.
+ * The UID local part for a commitment, before any duplicate suffix. It includes the start time,
+ * so a session that moves gets a new UID rather than silently rewriting an old event.
  */
+function uidKey(entry: ItineraryCommitment, start: Date): string {
+  const { commitment } = entry;
+  const when = compactUtc(start);
+  if (commitment.kind === 'reservedSession') {
+    return `session-${safeId(commitment.sessionId)}-${when}`;
+  }
+  const id = commitment.personalTimeId ?? shortHash(commitment.title);
+  return `layover-${safeId(id)}-${when}`;
+}
+
+/** Display text for an iCalendar TEXT value, with a fallback when nothing is left. */
 function cleanText(text: string, fallback: string): string {
-  const cleaned = Array.from(text, (character) => {
-    const code = character.codePointAt(0) as number;
-    return code < 0x20 || code === 0x7f ? ' ' : character;
-  })
-    .join('')
-    .trim();
+  const cleaned = cleanDisplayText(text);
   return cleaned === '' ? fallback : cleaned;
 }
 
@@ -85,6 +95,12 @@ export function createIcsExporter(deps: IcsExporterDeps): IcsExporter {
   const { fs, appData, clock } = deps;
 
   function buildCalendar(itinerary: Itinerary, window: EventWindow): string {
+    // The timezone goes into the calendar description, so it must be a real zone, not text.
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: window.timezone });
+    } catch {
+      throw passError('ics.invalid_window', 'The event timezone is not valid.');
+    }
     const calendar = ical({
       name: 're:Invent Compass itinerary',
       description: `Event times are written in UTC. The event timezone is ${window.timezone}.`,
@@ -107,7 +123,7 @@ export function createIcsExporter(deps: IcsExporterDeps): IcsExporter {
 
       // Two commitments that would share a UID get a numeric suffix, so every UID in the
       // file is unique and a rebuild gives the same UIDs.
-      const key = uidKey(entry);
+      const key = uidKey(entry, start);
       const count = seen.get(key) ?? 0;
       seen.set(key, count + 1);
       const uid = `${count === 0 ? key : `${key}-${String(count)}`}@${UID_DOMAIN}`;

@@ -348,3 +348,87 @@ describe('Feature: boarding-passes, itinerary page write and failures', () => {
     expect(() => itinerary.render(broken, WINDOW)).toThrow(PassError);
   });
 });
+
+describe('Feature: boarding-passes, itinerary page review fixes (security L4, QA L3, QA L6)', () => {
+  const only = (commitment: Itinerary['commitments'][number]['commitment']): Itinerary => ({
+    commitments: [{ commitment }],
+  });
+
+  test('the content security policy also forbids base elements and form posts', () => {
+    const html = page().page.render(SAMPLE, WINDOW);
+    expect(html).toContain(
+      "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
+    );
+  });
+
+  test('boarding that closes on the day before the start shows that date with the time', () => {
+    const midnight = only({
+      kind: 'reservedSession',
+      sessionId: 's1',
+      title: 'Just after midnight',
+      venue: 'Venetian',
+      startsAt: '2026-12-01T00:05:00-08:00',
+      endsAt: '2026-12-01T01:00:00-08:00',
+    });
+    const html = page().page.render(midnight, WINDOW);
+    expect(html).toContain(
+      '<dt>Boarding closes</dt><dd>Monday 30 November 2026, 23:55 (10 minutes',
+    );
+    // On the same day, only the time is shown, as before.
+    expect(page().page.render(SAMPLE, WINDOW)).toContain(
+      '<dd>10:20 (10 minutes before the start)</dd>',
+    );
+  });
+
+  test('bidirectional and format characters are removed from every shown text', () => {
+    const html = page().page.render(
+      only({
+        kind: 'reservedSession',
+        sessionId: 's1',
+        title: 'A\u{202E}B\u{200B}C\u{2066}D\u{FEFF}',
+        venue: 'Ha\u{200F}ll\u{2028}2',
+        startsAt: '2026-12-01T10:30:00-08:00',
+        endsAt: '2026-12-01T11:30:00-08:00',
+      }),
+      WINDOW,
+    );
+    expect(html).toContain('<h3>ABCD</h3>');
+    expect(html).toContain('<dd>Hall 2</dd>');
+    expect(html).not.toMatch(
+      /[\u{200B}-\u{200F}\u{202A}-\u{202E}\u{2066}-\u{2069}\u{FEFF}\u{2028}\u{2029}]/u,
+    );
+  });
+
+  test('text that is only format characters falls back, for title, gate and layover location', () => {
+    const html = page().page.render(
+      {
+        commitments: [
+          {
+            commitment: {
+              kind: 'reservedSession',
+              sessionId: 's1',
+              title: '\u{200B}',
+              venue: '\u{202E}\u{200B}',
+              startsAt: '2026-12-01T10:30:00-08:00',
+              endsAt: '2026-12-01T11:30:00-08:00',
+            },
+          },
+          {
+            commitment: {
+              kind: 'personalTime',
+              title: '\u{200B}',
+              location: '\u{200B}',
+              startsAt: '2026-12-01T12:30:00-08:00',
+              endsAt: '2026-12-01T13:30:00-08:00',
+            },
+          },
+        ],
+      },
+      WINDOW,
+    );
+    expect(html).toContain('<h3>Reserved session</h3>');
+    expect(html).toContain('<h3>Layover</h3>');
+    expect(html).toContain('<dd>Venue not published</dd>');
+    expect(html).not.toContain('<dt>Location</dt>');
+  });
+});

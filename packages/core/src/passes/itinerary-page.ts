@@ -20,6 +20,7 @@ import { APP_DIR_MODE, ITINERARY_FILE_NAME, joinInFolder, OUTPUT_FOLDER_NAME } f
 import type { AppDataResolver, FileSystem } from './interfaces.js';
 import type { EventWindow, Itinerary, ItineraryCommitment } from './models.js';
 import { passError } from './redaction.js';
+import { cleanDisplayText } from './text-safety.js';
 
 /** The page is personal data: owner read and write only. */
 export const ITINERARY_FILE_MODE = 0o600;
@@ -119,13 +120,17 @@ function detailRows(entry: ItineraryCommitment, read: (at: Date) => LocalTime): 
   const { commitment } = entry;
   const rows: string[] = [];
   if (commitment.kind === 'reservedSession') {
-    const gate =
-      commitment.venue === undefined || commitment.venue.trim() === ''
-        ? VENUE_NOT_PUBLISHED
-        : commitment.venue;
-    rows.push(`<dt>Gate</dt><dd>${escapeHtml(gate)}</dd>`);
+    const venue = cleanDisplayText(commitment.venue ?? '');
+    rows.push(`<dt>Gate</dt><dd>${escapeHtml(venue === '' ? VENUE_NOT_PUBLISHED : venue)}</dd>`);
+    // Boarding closes ten minutes before the start, which can be the day before: then the
+    // date is shown with the time.
+    const closes = read(boardingClosesAt(commitment.startsAt));
+    const closesAt =
+      closes.day === read(parseInstant(commitment.startsAt)).day
+        ? closes.time
+        : `${closes.day}, ${closes.time}`;
     rows.push(
-      `<dt>Boarding closes</dt><dd>${read(boardingClosesAt(commitment.startsAt)).time} (${String(BOARDING_CLOSES_MINUTES)} minutes before the start)</dd>`,
+      `<dt>Boarding closes</dt><dd>${escapeHtml(closesAt)} (${String(BOARDING_CLOSES_MINUTES)} minutes before the start)</dd>`,
     );
     const walk = entry.walkMinutes === undefined ? undefined : validWalkMinutes(entry.walkMinutes);
     if (walk !== undefined) {
@@ -133,8 +138,11 @@ function detailRows(entry: ItineraryCommitment, read: (at: Date) => LocalTime): 
         `<dt>Connection</dt><dd>${String(walk)} minutes' walk from your previous stop</dd>`,
       );
     }
-  } else if (commitment.location !== undefined && commitment.location.trim() !== '') {
-    rows.push(`<dt>Location</dt><dd>${escapeHtml(commitment.location)}</dd>`);
+  } else {
+    const location = cleanDisplayText(commitment.location ?? '');
+    if (location !== '') {
+      rows.push(`<dt>Location</dt><dd>${escapeHtml(location)}</dd>`);
+    }
   }
   return rows;
 }
@@ -175,12 +183,8 @@ export function createItineraryPage(deps: ItineraryPageDeps): ItineraryPage {
         open = true;
       }
       const isSession = commitment.kind === 'reservedSession';
-      const title =
-        commitment.title === undefined || commitment.title.trim() === ''
-          ? isSession
-            ? 'Reserved session'
-            : 'Layover'
-          : commitment.title;
+      const cleanTitle = cleanDisplayText(commitment.title ?? '');
+      const title = cleanTitle === '' ? (isSession ? 'Reserved session' : 'Layover') : cleanTitle;
       const details = detailRows(entry, read);
       body.push(
         '<li>',
@@ -202,7 +206,7 @@ export function createItineraryPage(deps: ItineraryPageDeps): ItineraryPage {
       '<head>',
       '<meta charset="utf-8">',
       '<meta name="viewport" content="width=device-width, initial-scale=1">',
-      `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">`,
+      `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">`,
       `<title>${PAGE_TITLE}</title>`,
       `<style>${STYLES}</style>`,
       '</head>',

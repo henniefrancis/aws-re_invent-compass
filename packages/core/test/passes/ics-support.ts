@@ -95,15 +95,26 @@ export const messyTextArb = fc.oneof(
     'Back\\slash and "quotes"',
     'Line one\nLine two\r\nLine three',
     'Emoji \u{1F680} launch',
+    'x\r\nBEGIN:VEVENT\r\nUID:evil@example.test\r\nX-INJECTED:1',
+    'bidi \u{202E}txt\u{202C} \u{2066}iso\u{2069} \u{200E}',
+    'zero\u{200B}width\u{FEFF}joiner\u{200D}',
+    'sep\u{2028}arator\u{2029}para',
+    'ESC\u{1B}[0m and NUL\u{0} and C1\u{85}',
     'x'.repeat(200),
     '',
   ),
 );
 
+/** Identifiers that try to break out of a UID: line breaks, separators, spaces and long text. */
+const hostileIdArb = fc.oneof(
+  fc.string({ maxLength: 80 }),
+  fc.constantFrom('x\r\nATTENDEE:mailto:a@example.test', 'a;b,c', 'has space', 'a'.repeat(65), ''),
+);
+
 /** A reserved-session commitment with an optional walk. A small id pool forces duplicates. */
 const reservedArb: fc.Arbitrary<ItineraryCommitment> = fc
   .record({
-    sessionId: fc.constantFrom('s1', 's2', 's3', 'sess-0004'),
+    sessionId: fc.oneof(fc.constantFrom('s1', 's2', 's3', 'sess-0004'), hostileIdArb),
     title: fc.option(messyTextArb, { nil: undefined }),
     venue: fc.option(messyTextArb, { nil: undefined }),
     times: timesWithOffsetArb,
@@ -118,7 +129,9 @@ const reservedArb: fc.Arbitrary<ItineraryCommitment> = fc
 const layoverArb: fc.Arbitrary<ItineraryCommitment> = fc
   .record({
     title: fc.oneof(messyTextArb, fc.constantFrom('Lunch', 'Coffee')),
-    personalTimeId: fc.option(fc.constantFrom('p1', 'p2'), { nil: undefined }),
+    personalTimeId: fc.option(fc.oneof(fc.constantFrom('p1', 'p2'), hostileIdArb), {
+      nil: undefined,
+    }),
     location: fc.option(messyTextArb, { nil: undefined }),
     times: timesWithOffsetArb,
   })

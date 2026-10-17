@@ -133,7 +133,8 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 2. THE Ics_Exporter SHALL write one calendar event per Commitment.
 3. WHERE a Commitment is a reserved session with an earlier commitment, THE Ics_Exporter SHALL add a "leave now" alarm triggered at Boarding_Closes minus the Connection walk minutes. WHERE a reserved session has no earlier commitment, THE Ics_Exporter SHALL add only the "boarding closes" alarm.
 4. WHERE a Commitment is a reserved session, THE Ics_Exporter SHALL add a "boarding closes" alarm set to the session start minus ten minutes.
-5. THE Ics_Exporter SHALL write the calendar as a local file only, into the app-data `output/` folder, with a stable UID per session.
+5. THE Ics_Exporter SHALL make every identifier and text it writes injection-safe: control characters become spaces and format and bidirectional characters are removed from all text, identifiers outside `^[A-Za-z0-9_-]{1,64}$` are replaced by a hash, the event timezone must be a real IANA zone, and each UID SHALL include the session start time.
+6. THE Ics_Exporter SHALL write the calendar as a local file only, into the app-data `output/` folder, with a stable UID per session.
 
 ### Requirement 7: Render an offline itinerary page
 
@@ -153,6 +154,7 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 8. THE Itinerary_Page SHALL include a viewport meta tag so that the page scales to the device width.
 9. THE Itinerary_Page SHALL reflow its content without loss of information or horizontal scrolling at a viewport width of 320 CSS pixels, to meet WCAG 2.2 AA reflow.
 10. THE Itinerary_Page SHALL render body text at a contrast ratio of at least 4.5 to 1 against its background, to meet WCAG 2.2 AA text contrast.
+11. THE Itinerary_Page SHALL remove format and bidirectional characters from all shown text, SHALL include `base-uri 'none'` and `form-action 'none'` in its content security policy, and SHALL show the date with the boarding time when boarding closes on a different local day from the session start.
 
 ### Requirement 8: Protect credentials and personal data
 

@@ -35,11 +35,9 @@ function eventsOf(text: string) {
 }
 
 function controlsToSpaces(text: string): string {
-  return Array.from(text, (character) => {
-    const code = character.codePointAt(0) as number;
-    return code < 0x20 || code === 0x7f ? ' ' : character;
-  })
-    .join('')
+  return text
+    .replace(/[\p{Cc}\p{Zl}\p{Zp}]/gu, ' ')
+    .replace(/\p{Cf}/gu, '')
     .trim();
 }
 
@@ -191,10 +189,17 @@ describe('Feature: boarding-passes, calendar snapshot and structure (Requirement
       validateRfc5545(good.split('PRODID:-//reinvent-compass//boarding-passes//EN\r\n').join('')),
     ).toContain('missing PRODID');
     expect(
-      validateRfc5545(good.replace('UID:session-sess-0002', 'UID:session-sess-0001')),
+      validateRfc5545(
+        good.replace(
+          'UID:session-sess-0002-20261201T220000Z@reinvent-compass',
+          'UID:session-sess-0001-20261201T183000Z@reinvent-compass',
+        ),
+      ),
     ).toContain('duplicate UID');
     expect(
-      validateRfc5545(good.replace('UID:session-sess-0002@reinvent-compass', 'UID:')),
+      validateRfc5545(
+        good.replace('UID:session-sess-0002-20261201T220000Z@reinvent-compass', 'UID:'),
+      ),
     ).toContain('event without UID');
     expect(
       validateRfc5545(good.replace('DTSTAMP:20261201T080000Z', 'DTSTAMP;X-A=b:20261201T080000')),
@@ -279,9 +284,9 @@ describe('Feature: boarding-passes, stable UID and output path (Requirement 6.5)
     const first = uidsOf(ics.buildCalendar(itinerary, WINDOW));
     const second = uidsOf(ics.buildCalendar(itinerary, WINDOW));
     expect(second).toEqual(first);
-    expect(first[0]).toBe('session-sess-0001@reinvent-compass');
-    expect(first[1]).toBe('layover-pt-1@reinvent-compass');
-    expect(first[2]).toMatch(/^layover-[0-9a-f]{24}@reinvent-compass$/);
+    expect(first[0]).toBe('session-sess-0001-20261201T183000Z@reinvent-compass');
+    expect(first[1]).toBe('layover-pt-1-20261201T200000Z@reinvent-compass');
+    expect(first[2]).toMatch(/^layover-[0-9a-f]{24}-20261202T000000Z@reinvent-compass$/);
   });
 
   test('a layover with no id keys on its title and start, so a different start is a different UID', () => {
@@ -312,9 +317,9 @@ describe('Feature: boarding-passes, stable UID and output path (Requirement 6.5)
       ),
     );
     expect(uids).toEqual([
-      'session-sess-0001@reinvent-compass',
-      'session-sess-0001-1@reinvent-compass',
-      'session-sess-0001-2@reinvent-compass',
+      'session-sess-0001-20261201T183000Z@reinvent-compass',
+      'session-sess-0001-20261201T183000Z-1@reinvent-compass',
+      'session-sess-0001-20261201T183000Z-2@reinvent-compass',
     ]);
   });
 
@@ -437,5 +442,165 @@ describe('Feature: boarding-passes, calendar text safety and invalid itineraries
       WINDOW,
     );
     expect(text).toContain('TRIGGER:-PT23M');
+  });
+});
+
+describe('Feature: boarding-passes, calendar injection safety (security M1, QA L2, QA L6)', () => {
+  const KNOWN_PROPERTIES = new Set([
+    'BEGIN',
+    'END',
+    'VERSION',
+    'PRODID',
+    'NAME',
+    'X-WR-CALNAME',
+    'X-WR-CALDESC',
+    'UID',
+    'SEQUENCE',
+    'DTSTAMP',
+    'DTSTART',
+    'DTEND',
+    'SUMMARY',
+    'LOCATION',
+    'DESCRIPTION',
+    'ACTION',
+    'TRIGGER',
+  ]);
+
+  test('every emitted line starts with a known property name or is a fold continuation, whatever the text', () => {
+    const { exporter: ics } = exporter();
+    fc.assert(
+      fc.property(itineraryArb, (itinerary) => {
+        const text = ics.buildCalendar(itinerary, WINDOW);
+        const lines = text.split('\r\n');
+        expect(lines.pop()).toBe('');
+        for (const line of lines) {
+          if (line.startsWith(' ')) continue;
+          expect(KNOWN_PROPERTIES.has(line.split(/[:;]/)[0] ?? '')).toBe(true);
+        }
+        expect(lines.filter((line) => line === 'BEGIN:VEVENT')).toHaveLength(
+          itinerary.commitments.length,
+        );
+        const injected = lines.filter((line) => /^(X-INJECTED|ATTENDEE|UID:evil)/.test(line));
+        expect(injected).toEqual([]);
+        expect(validateRfc5545(text)).toEqual([]);
+      }),
+      { numRuns: NUM_RUNS },
+    );
+  });
+
+  test('UIDs only ever hold safe characters, whatever the identifiers were', () => {
+    const { exporter: ics } = exporter();
+    fc.assert(
+      fc.property(itineraryArb, (itinerary) => {
+        const uids = eventsOf(ics.buildCalendar(itinerary, WINDOW)).map(
+          (event) => event.getFirstPropertyValue('uid') as string,
+        );
+        for (const uid of uids) {
+          expect(uid).toMatch(
+            /^(session|layover)-[A-Za-z0-9_-]{1,64}-\d{8}T\d{6}Z(-\d+)?@reinvent-compass$/,
+          );
+        }
+        expect(new Set(uids).size).toBe(uids.length);
+      }),
+      { numRuns: NUM_RUNS },
+    );
+  });
+
+  test('an unsafe identifier is replaced by a hash of itself, a safe one is kept', () => {
+    const { exporter: ics } = exporter();
+    const at = { startsAt: '2026-12-01T10:30:00-08:00', endsAt: '2026-12-01T11:30:00-08:00' };
+    const uids = eventsOf(
+      ics.buildCalendar(
+        {
+          commitments: [
+            { commitment: { kind: 'reservedSession', sessionId: 'ok_id-1', ...at } },
+            { commitment: { kind: 'reservedSession', sessionId: 'bad\r\nid', ...at } },
+            { commitment: { kind: 'reservedSession', sessionId: 'a'.repeat(65), ...at } },
+            { commitment: { kind: 'personalTime', title: 't', personalTimeId: 'x;y', ...at } },
+          ],
+        },
+        WINDOW,
+      ),
+    ).map((event) => event.getFirstPropertyValue('uid') as string);
+    expect(uids[0]).toBe('session-ok_id-1-20261201T183000Z@reinvent-compass');
+    expect(uids[1]).toMatch(/^session-[0-9a-f]{24}-20261201T183000Z@reinvent-compass$/);
+    expect(uids[2]).toMatch(/^session-[0-9a-f]{24}-20261201T183000Z@reinvent-compass$/);
+    expect(uids[3]).toMatch(/^layover-[0-9a-f]{24}-20261201T183000Z@reinvent-compass$/);
+    expect(new Set(uids).size).toBe(4);
+  });
+
+  test('the UID changes when a session moves, and stays when it does not', () => {
+    const { exporter: ics } = exporter();
+    const at = (startsAt: string, endsAt: string) => ({
+      commitments: [
+        { commitment: { kind: 'reservedSession' as const, sessionId: 's1', startsAt, endsAt } },
+      ],
+    });
+    const uid = (itinerary: Itinerary) =>
+      eventsOf(ics.buildCalendar(itinerary, WINDOW))[0]?.getFirstPropertyValue('uid');
+    const original = uid(at('2026-12-01T10:30:00-08:00', '2026-12-01T11:30:00-08:00'));
+    expect(uid(at('2026-12-01T10:30:00-08:00', '2026-12-01T12:00:00-08:00'))).toBe(original);
+    expect(uid(at('2026-12-01T11:30:00-08:00', '2026-12-01T12:30:00-08:00'))).not.toBe(original);
+  });
+
+  test('bidirectional and format characters are removed, separators become spaces', () => {
+    const { exporter: ics } = exporter();
+    const text = ics.buildCalendar(
+      {
+        commitments: [
+          {
+            commitment: {
+              kind: 'reservedSession',
+              sessionId: 's1',
+              title:
+                'A\u{202E}B\u{202C}C\u{200B}D\u{FEFF}E\u{2066}F\u{2069}G\u{200E}H\u{2028}I\u{2029}J',
+              venue: 'Ha\u{200F}ll',
+              startsAt: '2026-12-01T10:30:00-08:00',
+              endsAt: '2026-12-01T11:30:00-08:00',
+            },
+          },
+        ],
+      },
+      WINDOW,
+    );
+    const event = eventsOf(text)[0];
+    expect(event?.getFirstPropertyValue('summary')).toBe('ABCDEFGH I J');
+    expect(event?.getFirstPropertyValue('location')).toBe('Hall');
+    expect(text).not.toMatch(
+      /[\u{200B}-\u{200F}\u{202A}-\u{202E}\u{2066}-\u{2069}\u{FEFF}\u{2028}\u{2029}]/u,
+    );
+    // Text that is only format characters has nothing left and falls back.
+    const empty = ics.buildCalendar(
+      {
+        commitments: [
+          {
+            commitment: {
+              kind: 'reservedSession',
+              sessionId: 's1',
+              title: '\u{200B}\u{202E}',
+              startsAt: '2026-12-01T10:30:00-08:00',
+              endsAt: '2026-12-01T11:30:00-08:00',
+            },
+          },
+        ],
+      },
+      WINDOW,
+    );
+    expect(eventsOf(empty)[0]?.getFirstPropertyValue('summary')).toBe('Reserved session');
+  });
+
+  test('a timezone that is not a real zone is refused and never reaches the calendar text', () => {
+    const { exporter: ics } = exporter();
+    for (const timezone of ['Not/AZone', 'x\r\nBEGIN:VEVENT', '']) {
+      let caught: unknown;
+      try {
+        ics.buildCalendar(SAMPLE, { ...WINDOW, timezone });
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(PassError);
+      expect((caught as PassError).code).toBe('ics.invalid_window');
+      expect((caught as PassError).message).not.toContain('AZone');
+    }
   });
 });
