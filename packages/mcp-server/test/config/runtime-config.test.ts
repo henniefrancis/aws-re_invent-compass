@@ -4,9 +4,15 @@ import { readRuntimeConfig } from '../../src/config/runtime-config.js';
 import { CompassError } from '../../src/ports/errors.js';
 import { systemClock } from '../../src/ports/clock.js';
 
+const BUILT_IN_HOST = new URL(COMPASS_API_BASE_URL).host;
+
 describe('readRuntimeConfig', () => {
-  test('defaults to live mode and the single Compass API constant', () => {
-    expect(readRuntimeConfig({})).toEqual({ mode: 'live', compassApiUrl: COMPASS_API_BASE_URL });
+  test('defaults to live mode and the build-time constant, with its own host allowed', () => {
+    expect(readRuntimeConfig({})).toEqual({
+      mode: 'live',
+      compassApiUrl: COMPASS_API_BASE_URL,
+      allowedHosts: [BUILT_IN_HOST],
+    });
   });
 
   test('reads simulated mode only for the exact value', () => {
@@ -15,21 +21,44 @@ describe('readRuntimeConfig', () => {
     expect(readRuntimeConfig({ COMPASS_MODE: '' }).mode).toBe('live');
   });
 
-  test('COMPASS_API_URL overrides the constant and loses a trailing slash', () => {
-    expect(readRuntimeConfig({ COMPASS_API_URL: 'https://example.test/base/' }).compassApiUrl).toBe(
-      'https://example.test/base',
-    );
+  test('COMPASS_API_URL alone is ignored', () => {
+    const config = readRuntimeConfig({ COMPASS_API_URL: 'https://example.test/base' });
+    expect(config.compassApiUrl).toBe(COMPASS_API_BASE_URL);
+    expect(config.allowedHosts).toEqual([BUILT_IN_HOST]);
+    expect(config.warning).toBeUndefined();
+    const flagOnly = readRuntimeConfig({ COMPASS_ALLOW_API_OVERRIDE: '1' });
+    expect(flagOnly.compassApiUrl).toBe(COMPASS_API_BASE_URL);
+    expect(flagOnly.warning).toBeUndefined();
+    expect(
+      readRuntimeConfig({
+        COMPASS_API_URL: 'https://example.test',
+        COMPASS_ALLOW_API_OVERRIDE: 'yes',
+      }).compassApiUrl,
+    ).toBe(COMPASS_API_BASE_URL);
   });
 
-  test('an empty override falls back to the constant', () => {
-    expect(readRuntimeConfig({ COMPASS_API_URL: '' }).compassApiUrl).toBe(COMPASS_API_BASE_URL);
+  test('with both variables the override applies, loses a trailing slash and a warning names the host', () => {
+    const config = readRuntimeConfig({
+      COMPASS_API_URL: 'https://example.test:8443/base/',
+      COMPASS_ALLOW_API_OVERRIDE: '1',
+    });
+    expect(config.compassApiUrl).toBe('https://example.test:8443/base');
+    expect(config.allowedHosts).toEqual(['example.test:8443']);
+    expect(config.warning).toContain('example.test:8443');
+    expect(config.warning).not.toContain('/base');
   });
 
-  test('rejects a non-https or unparseable override without echoing it', () => {
+  test('an empty override falls back to the constant even when allowed', () => {
+    const config = readRuntimeConfig({ COMPASS_API_URL: '', COMPASS_ALLOW_API_OVERRIDE: '1' });
+    expect(config.compassApiUrl).toBe(COMPASS_API_BASE_URL);
+    expect(config.warning).toBeUndefined();
+  });
+
+  test('rejects a non-https or unparseable allowed override without echoing it', () => {
     for (const bad of ['http://example.test', 'not a url']) {
       let caught: unknown;
       try {
-        readRuntimeConfig({ COMPASS_API_URL: bad });
+        readRuntimeConfig({ COMPASS_API_URL: bad, COMPASS_ALLOW_API_OVERRIDE: '1' });
       } catch (error) {
         caught = error;
       }
