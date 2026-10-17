@@ -10,6 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { createDemoRuntime, type DemoDeps } from '../../../lib/demo/demo-deps';
+import { focusTargetAfter } from '../../../lib/demo/demo-focus';
 import {
   EMPTY_DEMO,
   reduceDemo,
@@ -73,12 +74,20 @@ export class DemoPage {
   protected act(action: DemoAction): void {
     if (this.deps !== null) {
       const deps = this.deps;
+      const before = this.state();
       this.state.update((current) => reduceDemo(current, action, deps));
-      // A verdict or a swap panel can be above the list the user tapped in. Bring it into
-      // view without moving focus; the live region announces the result.
+      const target = focusTargetAfter(action, before, this.state());
+      // When the action removed the control that had focus, focus goes to the element the
+      // function names. Otherwise a verdict or swap panel above the list the user tapped in is
+      // brought into view without moving focus. The live region announces the result.
       afterNextRender(
         () => {
-          this.panels()?.nativeElement.scrollIntoView({ block: 'nearest' });
+          const element = target === null ? null : this.document.getElementById(target);
+          if (element === null) {
+            this.panels()?.nativeElement.scrollIntoView({ block: 'nearest' });
+          } else {
+            element.focus();
+          }
         },
         { injector: this.injector },
       );
@@ -92,8 +101,14 @@ export class DemoPage {
       const link = this.document.createElement('a');
       link.href = url;
       link.download = FILE_NAME;
+      // Some browsers only start the download for an anchor that is in the page, and a revoked
+      // URL can cancel it, so the URL is revoked a tick later.
+      this.document.body.append(link);
       link.click();
-      URL.revokeObjectURL(url);
+      link.remove();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 0);
     }
   }
 }

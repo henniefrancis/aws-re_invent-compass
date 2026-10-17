@@ -19,6 +19,8 @@ export interface WeekItemView {
   readonly kind: 'reservedSession' | 'personalTime';
   readonly code: string | null;
   readonly title: string;
+  /** What names the item to a screen reader: the code, or the title with the start time. */
+  readonly label: string;
   /** "Venue, Room", or "Venue not published". */
   readonly gate: string;
   /** Event local wall clock, such as "10:00 AM to 11:00 AM". */
@@ -110,6 +112,7 @@ function itemView(commitment: Commitment, deps: DemoDeps): WeekItemView {
       kind: 'personalTime',
       code: null,
       title: commitment.title,
+      label: `${commitment.title} at ${formatInZone(commitment.startsAt, zone)}`,
       gate: commitment.location ?? VENUE_NOT_PUBLISHED,
       timeRange: timeRange(commitment.startsAt, commitment.endsAt),
       boarding: 'Personal time. No boarding.',
@@ -122,6 +125,7 @@ function itemView(commitment: Commitment, deps: DemoDeps): WeekItemView {
       kind: 'reservedSession',
       code: null,
       title: commitment.title ?? commitment.sessionId,
+      label: commitment.title ?? commitment.sessionId,
       gate: gateText(commitment.venue, undefined),
       timeRange: timeRange(commitment.startsAt, commitment.endsAt),
       boarding: 'Boarding time not available.',
@@ -132,6 +136,7 @@ function itemView(commitment: Commitment, deps: DemoDeps): WeekItemView {
     kind: 'reservedSession',
     code: session.code,
     title: session.title,
+    label: session.code,
     gate: gateText(session.venue, session.room),
     timeRange: timeRange(commitment.startsAt, commitment.endsAt),
     boarding: boardingText(deps.rules.computeBoarding(session, deps.context)),

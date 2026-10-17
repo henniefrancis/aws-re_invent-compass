@@ -102,6 +102,53 @@ test.describe('the demo', () => {
     expect(text).toContain('.invalid');
   });
 
+  test('focus follows the action when the focused control is removed (QA M1)', async ({ page }) => {
+    await loadSample(page);
+    await addButton(page, 'STG487').click();
+    await expect(page.getByRole('heading', { name: 'STG487 was blocked' })).toBeVisible();
+
+    // Start the safe swap: the verdict panel is replaced by the swap panel.
+    await page.getByRole('button', { name: 'Start the safe swap' }).click();
+    await expect(page.getByRole('heading', { name: 'Safe swap' })).toBeFocused();
+    // Each step button is replaced by the next one, and focus follows.
+    await page.getByRole('button', { name: 'Reserve the repeat' }).click();
+    await expect(page.getByRole('button', { name: 'Confirm the schedule' })).toBeFocused();
+    await page.getByRole('button', { name: 'Confirm the schedule' }).click();
+    await expect(page.getByRole('button', { name: 'Cancel the original' })).toBeFocused();
+    await page.getByRole('button', { name: 'Cancel the original' }).click();
+    await expect(page.getByRole('button', { name: 'Add STG487' }).first()).toBeFocused();
+
+    // Close the finished swap panel: focus goes to "Your week".
+    await page.getByRole('button', { name: 'Close' }).click();
+    await expect(page.getByRole('heading', { name: 'Your week' })).toBeFocused();
+
+    // Remove an item: focus goes to the Remove button of the item that follows it.
+    const removeButtons = page.getByRole('button', { name: /^Remove / });
+    const names = await removeButtons.allTextContents();
+    await removeButtons.first().click();
+    await expect(page.getByRole('button', { name: /^Remove / }).first()).toBeFocused();
+    await expect(page.getByRole('button', { name: /^Remove / })).toHaveCount(names.length - 1);
+  });
+
+  test('Keep my week closes the verdict and focuses the week heading', async ({ page }) => {
+    await loadSample(page);
+    await addButton(page, 'STG487').click();
+    await page.getByRole('button', { name: 'Keep my week' }).click();
+    await expect(page.getByRole('heading', { name: 'Your week' })).toBeFocused();
+  });
+
+  test('repeated items have different accessible names', async ({ page }) => {
+    await loadSample(page);
+    for (let i = 0; i < 2; i += 1) {
+      const buttons = page.getByRole('button', { name: /^Add this layover/ });
+      await buttons.first().click();
+      await expect(page.getByRole('heading', { name: 'Your week' })).toBeFocused();
+    }
+    const names = await page.getByRole('button', { name: /^Remove / }).allTextContents();
+    expect(new Set(names).size).toBe(names.length);
+    expect(names.filter((n) => n.includes('Layover at')).length).toBeGreaterThanOrEqual(1);
+  });
+
   test('Start over empties the week', async ({ page }) => {
     await loadSample(page);
     await page.getByRole('button', { name: 'Start over' }).click();

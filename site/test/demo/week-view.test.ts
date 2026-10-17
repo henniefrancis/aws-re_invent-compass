@@ -160,6 +160,7 @@ describe('week view', () => {
       kind: 'reservedSession',
       code: 'AIM321',
       title: 'Identity and access: Deep dive',
+      label: 'AIM321',
       gate: 'MGM Grand, Room 118',
       timeRange: '11:30 AM to 1:00 PM',
       boarding: 'Seat released at 11:20 AM',
@@ -254,6 +255,54 @@ describe('week view', () => {
       'No meal time.',
       'No gap is long enough.',
     ]);
+  });
+
+  test('items carry a label for their accessible names: the code, or the title with the start time', () => {
+    const state: DemoState = {
+      ...EMPTY_DEMO,
+      commitments: [
+        {
+          kind: 'personalTime',
+          title: 'Layover',
+          startsAt: '2026-12-01T12:00:00-08:00',
+          endsAt: '2026-12-01T12:30:00-08:00',
+        },
+        {
+          kind: 'personalTime',
+          title: 'Layover',
+          startsAt: '2026-12-01T13:00:00-08:00',
+          endsAt: '2026-12-01T13:30:00-08:00',
+        },
+        {
+          kind: 'reservedSession',
+          sessionId: 'syn-002',
+          startsAt: '2026-12-01T14:30:00-08:00',
+          endsAt: '2026-12-01T16:00:00-08:00',
+        },
+        {
+          kind: 'reservedSession',
+          sessionId: 'gone',
+          startsAt: '2026-12-01T17:00:00-08:00',
+          endsAt: '2026-12-01T17:30:00-08:00',
+          title: 'Titled',
+        },
+        {
+          kind: 'reservedSession',
+          sessionId: 'gone2',
+          startsAt: '2026-12-01T18:00:00-08:00',
+          endsAt: '2026-12-01T18:30:00-08:00',
+        },
+      ],
+    };
+    const items = buildWeekView(state, deps)[0]?.items ?? [];
+    expect(items.map((i) => i.label)).toEqual([
+      'Layover at 12:00 PM',
+      'Layover at 1:00 PM',
+      'DAT204',
+      'Titled',
+      'gone2',
+    ]);
+    expect(new Set(items.map((i) => i.label)).size).toBe(items.length);
   });
 
   test('personal time and sessions missing from the catalog are shown without invented fields', () => {

@@ -22,7 +22,7 @@
   <div #panels class="stack">
     @if (verdict(); as v) {
       <section class="card verdict stack" aria-labelledby="verdict-title">
-        <h2 id="verdict-title">{{ v.title }}</h2>
+        <h2 id="verdict-title" tabindex="-1">{{ v.title }}</h2>
         <p>
           <span
             class="badge"
@@ -83,7 +83,7 @@
 
     @if (swap(); as s) {
       <section class="card verdict stack" aria-labelledby="swap-title">
-        <h2 id="swap-title">{{ s.title }}</h2>
+        <h2 id="swap-title" tabindex="-1">{{ s.title }}</h2>
         <p>{{ s.message }}</p>
         @if (s.reasons.length > 0) {
           <ul>
@@ -99,7 +99,7 @@
               @if (step.status === 'done') {
                 done
               } @else if (step.status === 'next' && s.state === 'inProgress') {
-                <button type="button" (click)="act({ type: 'advanceSwap' })">
+                <button id="swap-next" type="button" (click)="act({ type: 'advanceSwap' })">
                   {{ step.buttonLabel }}
                 </button>
               } @else {
@@ -114,7 +114,11 @@
           </button>
         }
         @if (s.invite; as invite) {
-          <button type="button" (click)="act({ type: 'add', sessionId: invite.sessionId })">
+          <button
+            id="swap-add"
+            type="button"
+            (click)="act({ type: 'add', sessionId: invite.sessionId })"
+          >
             {{ invite.text }}
           </button>
         }
@@ -128,7 +132,7 @@
   </div>
 
   <section class="stack" aria-labelledby="demo-week">
-    <h2 id="demo-week">Your week</h2>
+    <h2 id="demo-week" tabindex="-1">Your week</h2>
     @if (week().length === 0) {
       <p>Nothing here yet. Add a session below, or start with a sample week.</p>
     }
@@ -157,11 +161,12 @@
                   </button>
                 }
                 <button
+                  [id]="'remove-' + item.ref"
                   type="button"
                   class="button--secondary"
                   (click)="act({ type: 'remove', ref: item.ref })"
                 >
-                  Remove<span class="visually-hidden"> {{ item.code ?? item.title }}</span>
+                  Remove<span class="visually-hidden"> {{ item.label }}</span>
                 </button>
               </div>
             </li>
@@ -188,6 +193,7 @@
               <button
                 type="button"
                 class="button--secondary"
+                [attr.aria-label]="'Add this layover, ' + suggestion.label"
                 (click)="act({ type: 'addLayover', start: suggestion.start, end: suggestion.end })"
               >
                 Add this layover
@@ -245,7 +251,7 @@
               <p>{{ session.boarding }}</p>
               <button
                 type="button"
-                [disabled]="session.inWeek"
+                [attr.aria-disabled]="session.inWeek ? 'true' : null"
                 [attr.aria-label]="
                   (session.inWeek ? 'In your week: ' : 'Add ') + session.code + ', ' + session.title
                 "

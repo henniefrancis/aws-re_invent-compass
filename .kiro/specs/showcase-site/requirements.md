@@ -319,7 +319,8 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 6. THE Site SHALL make every function operable by keyboard alone, in a logical focus order, with a visible focus indicator, no keyboard trap and no dragging movement.
 7. THE Site SHALL ensure the focused element is never hidden by other content.
 8. THE Site SHALL use one `<h1>` per page, headings in order, landmarks, lists, tables with header cells, and an accessible name for every control.
-9. THE Site SHALL announce dynamic results (verdicts, swap steps, board states and copy confirmations) through live regions, and SHALL NOT move focus except as stated in Requirement 4 criterion 4 and Requirement 18 criterion 8.
+9. THE Site SHALL announce dynamic results (verdicts, swap steps, board states and copy confirmations) through live regions, and SHALL NOT move focus except as stated in Requirement 4 criterion 4 and Requirement 18 criterion 8, and except when a demo action removes the control that had focus (a panel closes, a step button is replaced by the next, or an item leaves the list). Then focus SHALL move to the heading of the panel the action opened, to the control that continues the action, to the Remove button of the item that follows the removed one (or the one before it), or to the heading "Your week".
+   9a. THE Site SHALL give controls that repeat on a page accessible names that differ, for example "Remove Layover at 12:00 PM", and SHALL keep a control that only reports a state (the Add button of a session already in the week) focusable by using aria-disabled instead of disabled.
 10. WHILE the user prefers reduced motion, THE Site SHALL show no animation and no transition.
 11. THE Site SHALL reflow with no horizontal scrolling at a viewport width of 320 CSS pixels.
 12. THE Site SHALL convey no information by colour alone, and SHALL state every connection class and verdict in text.
