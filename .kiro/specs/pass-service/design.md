@@ -1215,4 +1215,7 @@ The security review of this spec added the changes below. Where this section and
 
 ## Implementation deviations (recorded while building)
 
-Each entry names the task that introduced it. Where this section and the text above disagree, this section is the as-built record. None yet.
+Each entry names the task that introduced it. Where this section and the text above disagree, this section is the as-built record. - Task 8: `TableClient.addCounter` returns `{allowed}` only (the count is never used), and adds `batchDelete(keys)` (BatchWrite in chunks of 25, up to 4 attempts for unprocessed keys) for forget_me (review M3). `upsert` and `extendExpiry` of the registration repository take `now`, so an expired item counts as absent. `listByPass` returns at most 10 registrations (review H3). `createDynamoTableClient` takes `Pick<DynamoDBDocumentClient, 'send'>`. Records carry `pepperId` and the pass record carries `tokenSalt` (review M1). `ttl` is always recomputed from `expiresAtMs` by the repositories.
+
+- Task 6: `createTokenVerifier` takes `{newJwksCache, secrets, clock}` instead of a ready `jwksCache`, so it can rebuild the verifier and cache every hour (review L1); `ApiConfig['idToken']` is a discriminated union (`cognito` with `userPoolId`, `oidc` with `jwksUri`).
+- Task 2: `json()` accepts 200, 201 and 202; the hardening headers (review M4) are added by the pipeline through `withHardening`, not by each builder, and not for getHealth.

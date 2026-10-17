@@ -1,0 +1,32 @@
+import fc from 'fast-check';
+import { describe, expect, test } from 'vitest';
+import { nextLastUpdated } from '../../src/data/last-updated.js';
+
+describe('Feature: pass-service, Last_Updated', () => {
+  // Feature: pass-service, Property 16: Last_Updated strictly increases at second precision
+  test('Property 16: whole seconds, at least one second after the previous, never before the current second', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 4_000_000_000 }).map((s) => s * 1000),
+        fc.integer({ min: -10_000_000, max: 10_000_000 }),
+        fc.integer({ min: 0, max: 999 }),
+        (previous, drift, millis) => {
+          const now = previous + drift * 1000 + millis;
+          const next = nextLastUpdated(previous, now);
+          expect(next % 1000).toBe(0);
+          expect(next).toBeGreaterThanOrEqual(previous + 1000);
+          expect(next).toBeGreaterThanOrEqual(Math.floor(now / 1000) * 1000);
+          // A second-precision If-Modified-Since equal to the old value sees the change.
+          expect(Math.floor(next / 1000)).toBeGreaterThan(Math.floor(previous / 1000));
+        },
+      ),
+      { numRuns: 200 },
+    );
+  });
+
+  test('a stalled or backwards clock still moves forward by one second', () => {
+    expect(nextLastUpdated(10_000, 10_400)).toBe(11_000);
+    expect(nextLastUpdated(10_000, 5_000)).toBe(11_000);
+    expect(nextLastUpdated(10_000, 20_900)).toBe(20_000);
+  });
+});

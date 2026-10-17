@@ -129,31 +129,31 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 6.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 7. Checkpoint - Ensure all tests pass
+- [x] 7. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Implement the data layer
-  - [ ] 8.1 Implement the table client and its DynamoDB adapter
+- [x] 8. Implement the data layer
+  - [x] 8.1 Implement the table client and its DynamoDB adapter
     - Create `src/data/keys.ts` (the design's key formats) and `src/data/table-client.ts` (`TableClient`) and `src/data/dynamo-table-client.ts` (`createDynamoTableClient` over `DynamoDBDocumentClient`: `GetCommand`, `PutCommand` with `attribute_not_exists(pk)`, `UpdateCommand` with a version condition, `DeleteCommand` with `ReturnValues: 'ALL_OLD'`, paginated `QueryCommand` on the table, GSI1 and GSI2 with `begins_with`, and the conditional `ADD` counter); map `ConditionalCheckFailedException` to the result values and anything else to `DependencyError('dynamodb')`
     - _Requirements: 6.6, 19.1_
 
-  - [ ] 8.2 Implement the in-memory table
+  - [x] 8.2 Implement the in-memory table
     - Create `src/harness/memory-table.ts`, a `TableClient` over a `Map` with the same conditional and query semantics and an interleaving hook for concurrency tests; it is used by the tests and by the local harness (task 23)
     - _Requirements: 24.7, 25.8_
 
-  - [ ] 8.3 Implement the repositories
+  - [x] 8.3 Implement the repositories
     - Create `src/data/pass-repository.ts`, `src/data/registration-repository.ts` and `src/data/handoff-repository.ts` per design Component 8, with `isLive(item, now)` applied on every read, `ttl` set to the ceiling of `expiresAtMs` in seconds or later, and `nextLastUpdated(previousMs, nowMs)` in `src/data/last-updated.ts`
     - _Requirements: 11.5, 19.1, 19.2, 19.3, 19.4, 19.5_
 
-  - [ ] 8.4 Write property test for Last_Updated
+  - [x] 8.4 Write property test for Last_Updated
     - **Property 16: Last_Updated strictly increases at second precision**
     - **Validates: Requirements 11.5, 18.4, 18.5**
 
-  - [ ] 8.5 Write unit tests for the adapter and repositories
+  - [x] 8.5 Write unit tests for the adapter and repositories
     - Assert each DynamoDB command input (mocked `send` only), each condition failure mapping, query pagination, and that each repository returns undefined for an expired item still present in the table
     - _Requirements: 19.1, 19.2, 19.3_
 
-  - [ ] 8.6 Commit
+  - [x] 8.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 9. Implement the rate limiter
