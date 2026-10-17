@@ -121,33 +121,33 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 4.7 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 5. Build output check and budget check
-  - [ ] 5.1 Implement the Build_Output_Check
+- [x] 5. Build output check and budget check
+  - [x] 5.1 Implement the Build_Output_Check
     - Create `site/scripts/cli.mjs` (a local copy of the S0 `.github/scripts/cli.mjs` pattern: `applyCli`, `isMain`, `maybeRunCli`) and `site/scripts/check-build-output.mjs` with `findOutputIssues`, `expectedRouteFiles` and a pure `runCli`, covering every rule in design Component 17 with a dependency-free tag and attribute scanner
     - Write example tests for each rule, the route list, the Notice and `noindex` placement, and the CLI wiring in-process
     - _Requirements: 3.1, 3.2, 3.5, 3.8, 4.6, 16.7_
 
-  - [ ] 5.2 Write property test for the build output check
+  - [x] 5.2 Write property test for the build output check
     - **Property 18: The build output check finds every CSP-breaking construct**
     - **Validates: Requirements 3.1, 3.2, 3.5, 3.8**
 
-  - [ ] 5.3 Implement the Budget_Check
+  - [x] 5.3 Implement the Budget_Check
     - Create `site/scripts/check-budgets.mjs` with `gzipSize`, `initialFiles`, `closure`, `demoFiles`, `evaluateBudgets` and a pure `runCli` reading `index.html` and `stats.json` (limits 250,000 and 150,000 bytes gzip)
     - Write example tests for a real-shaped `stats.json` and the CLI wiring in-process
     - _Requirements: 21.1, 21.2, 21.4_
 
-  - [ ] 5.4 Write property test for the budget check
+  - [x] 5.4 Write property test for the budget check
     - **Property 17: The budget check measures and classifies chunks correctly**
     - **Validates: Requirements 21.1, 21.2, 21.4**
 
-  - [ ] 5.5 Run both checks on the current build
+  - [x] 5.5 Run both checks on the current build
     - Build, then run both checks from `site/`; fix any finding in the site (never weaken a rule); record the measured sizes in the commit body
     - _Requirements: 3.8, 21.4_
 
-  - [ ] 5.6 Commit
+  - [x] 5.6 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 6. Checkpoint - Ensure all tests pass
+- [x] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, the build prerenders five routes, and both build checks pass; ask the user if questions arise.
 
 - [ ] 7. Board logic: fragment, request, validation and states
