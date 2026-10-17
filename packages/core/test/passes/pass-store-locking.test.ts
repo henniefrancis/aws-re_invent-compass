@@ -499,3 +499,26 @@ describe('Feature: boarding-passes, lock ownership, heartbeat and takeover (QA N
     );
   });
 });
+
+describe('Feature: boarding-passes, the backup is only overwritten from a record that parses (QA N5)', () => {
+  test('a corrupt current record never replaces the last good backup', async () => {
+    const good = JSON.stringify({ passes: [pass('AAA1', 1)] });
+    const fs = memoryFs({ [RECORD]: '{corrupt', [BACKUP]: good });
+    await storeOn(fs).write({ passes: [pass('BBB2', 2)] });
+    expect(fs.files.get(BACKUP)).toBe(good);
+    expect(JSON.parse(fs.files.get(RECORD) ?? '{}')).toEqual({ passes: [pass('BBB2', 2)] });
+  });
+
+  test('a record with an extra field or the wrong shape does not replace it either', async () => {
+    for (const bad of [
+      '{"passes":[],"email":"a@b.test"}',
+      '[]',
+      '{"passes":[{"serialNumber":"x"}]}',
+    ]) {
+      const good = '{"passes":[]}';
+      const fs = memoryFs({ [RECORD]: bad, [BACKUP]: good });
+      await storeOn(fs).write({ passes: [] });
+      expect(fs.files.get(BACKUP)).toBe(good);
+    }
+  });
+});

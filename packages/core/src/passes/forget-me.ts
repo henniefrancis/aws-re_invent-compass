@@ -11,11 +11,21 @@
 // The copy it returns is honest about wallets: passes are voided and will expire, and the
 // copy never claims a pass was deleted from the phone, because no wallet permits remote
 // deletion.
-import { joinInFolder, OUTPUT_FOLDER_NAME } from './app-data.js';
+import { APP_FOLDER_NAME, joinInFolder, OUTPUT_FOLDER_NAME } from './app-data.js';
 import type { CompassClient } from './compass-client.js';
 import type { AppDataResolver, FileSystem } from './interfaces.js';
 import type { PassStore } from './pass-store.js';
 import { passError } from './redaction.js';
+
+/**
+ * True when the path ends in reinvent-compass/output, the only folder forgetMe may remove
+ * recursively. The real FileSystem.remove must unlink a symbolic link rather than follow it, so
+ * a link planted inside the folder cannot send the removal elsewhere.
+ */
+function isOutputFolder(path: string): boolean {
+  const names = path.split(/[\\/]/).filter((name) => name !== '');
+  return names.at(-1) === OUTPUT_FOLDER_NAME && names.at(-2) === APP_FOLDER_NAME;
+}
 
 /** The statuses after which local cleanup is safe. */
 const CLEANUP_STATUSES = new Set([202, 404, 410]);
@@ -78,6 +88,14 @@ export async function forgetMe(deps: ForgetMeDeps): Promise<ForgetMeOutcome> {
     return { status, localDataRemoved: false, copy: notConfirmedCopy(status) };
   }
 
+  const outputFolder = joinInFolder(appData.resolve(), OUTPUT_FOLDER_NAME);
+  if (!isOutputFolder(outputFolder)) {
+    throw passError(
+      'forget.unsafe_path',
+      'The local output folder is not inside the reinvent-compass app-data folder, so nothing was removed. Remove your local files by hand.',
+    );
+  }
+
   let failed = false;
   try {
     await store.deleteRecord();
@@ -85,7 +103,7 @@ export async function forgetMe(deps: ForgetMeDeps): Promise<ForgetMeOutcome> {
     failed = true;
   }
   try {
-    await fs.remove(joinInFolder(appData.resolve(), OUTPUT_FOLDER_NAME));
+    await fs.remove(outputFolder);
   } catch {
     failed = true;
   }

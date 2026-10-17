@@ -333,3 +333,58 @@ describe('Feature: boarding-passes, Handoff_Builder example tests', () => {
     expect(error.message).toBe('The hand-off link could not be turned into a QR code.');
   });
 });
+
+describe('Feature: boarding-passes, expiry in the past and origin normalisation (QA N5, security N5)', () => {
+  test('an expiry that is not in the future is refused', async () => {
+    // The clock is fixed at 08:00:00 UTC.
+    for (const expiresAt of [
+      '2026-12-01T08:00:00Z',
+      '2026-12-01T07:59:59Z',
+      '2020-01-01T00:00:00Z',
+    ]) {
+      const error = await failureOf(
+        createHandoffBuilder(
+          depsAnswering(SENTINEL_HANDOFF_ID, SENTINEL_BOARD_URL, { expiresAt }),
+        ).handoff([SERIAL], INCLUDE),
+      );
+      expect(error.code).toBe('handoff.invalid_expiry');
+    }
+    await expect(
+      createHandoffBuilder(
+        depsAnswering(SENTINEL_HANDOFF_ID, SENTINEL_BOARD_URL, {
+          expiresAt: '2026-12-01T08:00:01Z',
+        }),
+      ).handoff([SERIAL], INCLUDE),
+    ).resolves.toBeDefined();
+  });
+
+  test('the board origin is compared case-insensitively and the default :443 is dropped', async () => {
+    const { matrix, size } = referenceMatrix(SENTINEL_BOARD_URL);
+    for (const boardUrl of [
+      `https://D111111ABCDEF8.CLOUDFRONT.NET/board#h=${SENTINEL_HANDOFF_ID}`,
+      `https://d111111abcdef8.cloudfront.net:443/board#h=${SENTINEL_HANDOFF_ID}`,
+    ]) {
+      const renders = await createHandoffBuilder(
+        depsAnswering(SENTINEL_HANDOFF_ID, boardUrl),
+      ).handoff([SERIAL], INCLUDE);
+      expect(decodeChat(renders.chatText, size)).toEqual(matrix);
+    }
+    // A client origin written with an upper-case host or the default port is normalised too.
+    const renders = await createHandoffBuilder(
+      depsAnswering(SENTINEL_HANDOFF_ID, SENTINEL_BOARD_URL, {
+        baseUrl: 'https://D111111ABCDEF8.cloudfront.net:443',
+      }),
+    ).handoff([SERIAL], INCLUDE);
+    expect(decodeChat(renders.chatText, size)).toEqual(matrix);
+    // A different port is a different origin.
+    const error = await failureOf(
+      createHandoffBuilder(
+        depsAnswering(
+          SENTINEL_HANDOFF_ID,
+          `https://d111111abcdef8.cloudfront.net:8443/board#h=${SENTINEL_HANDOFF_ID}`,
+        ),
+      ).handoff([SERIAL], INCLUDE),
+    );
+    expect(error.code).toBe('handoff.invalid_board_url');
+  });
+});

@@ -140,10 +140,12 @@ export function createHandoffBuilder(deps: HandoffBuilderDeps): HandoffBuilder {
     async handoff(serialNumbers, include) {
       const created = await deps.client.createHandoff({ serialNumbers, include });
       const href = checkedBoardHref(created.boardUrl, created.handoffId, expectedOrigin);
-      if (Date.parse(created.expiresAt) - deps.clock.now().getTime() > MAX_EXPIRY_AHEAD_MS) {
+      // The hand-off must still be live and no further ahead than a hand-off can last.
+      const ahead = Date.parse(created.expiresAt) - deps.clock.now().getTime();
+      if (ahead <= 0 || ahead > MAX_EXPIRY_AHEAD_MS) {
         throw passError(
           'handoff.invalid_expiry',
-          'The hand-off expiry is further ahead than a hand-off can last.',
+          'The hand-off expiry is in the past or further ahead than a hand-off can last.',
         );
       }
       try {

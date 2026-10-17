@@ -58,7 +58,11 @@ export interface FileSystem {
   writeFile(path: string, data: string, mode: number): Promise<void>;
   /** Atomically replace the file at `to` with the file at `from` (same folder). */
   rename(from: string, to: string): Promise<void>;
-  /** Delete a file, or a folder with everything under it. An absent path is not an error. */
+  /**
+   * Delete a file, or a folder with everything under it. An absent path is not an error. A real
+   * implementation must unlink a symbolic link itself and never follow it, so a link inside a
+   * folder being removed cannot lead the removal outside it.
+   */
   remove(path: string): Promise<void>;
   /** Create the folder and any missing parents with the given mode. An existing folder is fine. */
   ensureDir(path: string, mode: number): Promise<void>;

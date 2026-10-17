@@ -60,6 +60,15 @@ const IssuedPassRecordSchema: z.ZodType<IssuedPassRecord> = z.strictObject({
 /** The pending-void file: serials still to be voided. Strict, and each must be a UUID. */
 const PendingVoidSchema = z.strictObject({ serials: z.array(z.uuid()) });
 
+/** True when the text is a record the store would accept. */
+function isValidRecord(text: string): boolean {
+  try {
+    return IssuedPassRecordSchema.safeParse(JSON.parse(text)).success;
+  } catch {
+    return false;
+  }
+}
+
 /** What a read found: the record (one entry per session code) and the older duplicates dropped. */
 export interface ReadResult {
   record: IssuedPassRecord;
@@ -296,7 +305,9 @@ export function createPassStore(deps: PassStoreDeps): PassStore {
             RECORD_FILE_MODE,
           );
           const previous = await fs.readFile(recordPath);
-          if (previous !== undefined) {
+          // The backup is only ever overwritten from a record that parses, so a corrupt record
+          // can never replace the last good copy.
+          if (previous !== undefined && isValidRecord(previous)) {
             await fs.writeFile(joinInFolder(root, BACKUP_FILE_NAME), previous, RECORD_FILE_MODE);
           }
           await fs.rename(tempPath, recordPath);

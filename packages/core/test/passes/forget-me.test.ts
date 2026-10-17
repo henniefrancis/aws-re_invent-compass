@@ -159,3 +159,41 @@ describe('Feature: boarding-passes, forgetMe when a local file cannot be removed
     expect(fs.files.has(CALENDAR_PATH)).toBe(false);
   });
 });
+
+describe('Feature: boarding-passes, forgetMe only removes the output folder under reinvent-compass (security N5)', () => {
+  test('an app-data folder that is not named reinvent-compass is refused before anything is removed', async () => {
+    for (const root of [
+      '/home/ada/Documents',
+      '/',
+      '/home/ada/reinvent-compass-backup',
+      '/output',
+    ]) {
+      const { mock, fs, deps } = rig();
+      mock.enqueue('forgetMe', jsonResponse(202, { voided: 1, deleted: 1 }));
+      const before = new Map(fs.files);
+      let caught: unknown;
+      try {
+        await forgetMe({ ...deps, appData: { resolve: () => root } });
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(PassError);
+      expect((caught as PassError).code).toBe('forget.unsafe_path');
+      expect((caught as PassError).message).not.toContain('Documents');
+      expect(fs.files).toEqual(before);
+      expect(fs.ops.filter((op) => op.startsWith('remove '))).toEqual([]);
+    }
+  });
+
+  test('Windows-style and nested app-data roots that end in reinvent-compass are accepted', async () => {
+    for (const root of [
+      'C:\\Users\\Ada\\AppData\\Local\\reinvent-compass',
+      '/data/x/reinvent-compass/',
+    ]) {
+      const { mock, fs, deps } = rig();
+      mock.enqueue('forgetMe', jsonResponse(202, { voided: 1, deleted: 1 }));
+      await forgetMe({ ...deps, appData: { resolve: () => root } });
+      expect(fs.ops.some((op) => op.startsWith('remove ') && /output$/.test(op))).toBe(true);
+    }
+  });
+});
