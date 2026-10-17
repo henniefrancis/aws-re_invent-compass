@@ -72,3 +72,36 @@ export function confirmedCommitments(schedule: ScheduleWire, lookup: CatalogView
   }
   return commitments;
 }
+
+/** A session as shown to the human before a write: from the catalog, never from model text. */
+export interface ActingOn {
+  sessionId: string;
+  code: string;
+  title: string;
+}
+
+/**
+ * The confirmation question for a write (CTO review M4): the action, the exact ids, codes and
+ * catalog titles it will act on, and every warning.
+ */
+export function confirmMessage(
+  action: string,
+  targets: readonly ActingOn[],
+  warnings: readonly string[] = [],
+): string {
+  const lines = [
+    action,
+    ...targets.map((t) => `- ${t.code} "${t.title}" (id ${t.sessionId})`),
+    ...warnings.map((warning) => `Warning: ${warning}`),
+    'Go ahead?',
+  ];
+  return lines.join('\n');
+}
+
+/**
+ * True when the write may go ahead: the client has no elicitation (the agent's own approval is
+ * the only gate) or the human accepted. A decline or cancel means no write.
+ */
+export async function humanConfirms(ctx: ToolContext, message: string): Promise<boolean> {
+  return ctx.elicit === undefined || (await ctx.elicit({ message })) === 'accept';
+}

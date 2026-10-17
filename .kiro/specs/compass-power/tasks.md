@@ -274,20 +274,20 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 14.8 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 15. Build the guardrail orchestration and reserve_with_guardrails
-  - [ ] 15.1 Implement verdict combination, batch guard and suggestions
+- [x] 15. Build the guardrail orchestration and reserve_with_guardrails
+  - [x] 15.1 Implement verdict combination, batch guard and suggestions
     - `src/guardrail/combine-verdicts.ts`, `reserve-guard.ts` (`guardBatch`, each candidate against the confirmed schedule plus earlier candidates), `suggestions.ts` (`suggestForBlock`: repeats of the blocked session, and a safe swap for a clashing reservation whose repeat passes against "confirmed minus original plus blocked")
     - _Requirements: 12.2, 12.3, 13.1_
-  - [ ] 15.2 Write property test for verdict combination
+  - [x] 15.2 Write property test for verdict combination
     - **Property 30: Verdict combination follows severity precedence**
     - **Validates: Requirements 12.2**
-  - [ ] 15.3 Implement reserve_with_guardrails
+  - [x] 15.3 Implement reserve_with_guardrails
     - `src/tools/reserve-with-guardrails.ts`: identifier checks, catalog lookup (unknown ids refused), fresh schedule, `guardBatch`; block returns the verdict, rebooking options and the swap suggestion (recorded in the ledger) with no write; allow or warn sends `events.reserve` once through the confirmed write, reports per session against the confirmed schedule (refusals and unrecognised codes as not reserved, full sessions with rebooking options, unconfirmed writes as unconfirmed), puts warnings first, updates the snapshot, and lists ids, codes and catalog titles
     - _Requirements: 11.3, 11.4, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 13.1_
-  - [ ] 15.4 Write unit tests for reserve
+  - [x] 15.4 Write unit tests for reserve
     - Batch with an internal clash; full session with a repeat; unknown failure code; unconfirmed write; rate limit reports the wait and does not retry
     - _Requirements: 12.3, 12.5, 12.6, 17.4_
-  - [ ] 15.5 Commit
+  - [x] 15.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 16. Build cancel_reservation and the swap ledger

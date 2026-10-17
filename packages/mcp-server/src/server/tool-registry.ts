@@ -8,6 +8,7 @@ import { checkItinerary } from '../tools/check-itinerary.js';
 import { findSessions } from '../tools/find-sessions.js';
 import { planWeekTool } from '../tools/plan-week.js';
 import { refreshCatalog } from '../tools/refresh-catalog.js';
+import { reserveWithGuardrails } from '../tools/reserve-with-guardrails.js';
 import { scanRepoTool } from '../tools/scan-repo.js';
 import { signIn } from '../tools/sign-in.js';
 import { signOut } from '../tools/sign-out.js';
@@ -46,7 +47,7 @@ export const TOOL_SPECS: { [K in McpToolName]: ToolSpec<K> } = {
   scan_repo: spec('scan_repo', 'read', false, scanRepoTool),
   plan_week: spec('plan_week', 'localAction', false, planWeekTool),
   check_itinerary: spec('check_itinerary', 'read', false, checkItinerary),
-  reserve_with_guardrails: spec('reserve_with_guardrails', 'write', true, notBuilt),
+  reserve_with_guardrails: spec('reserve_with_guardrails', 'write', true, reserveWithGuardrails),
   cancel_reservation: spec('cancel_reservation', 'write', true, notBuilt),
   add_standby: spec('add_standby', 'write', true, notBuilt),
   remove_standby: spec('remove_standby', 'write', true, notBuilt),

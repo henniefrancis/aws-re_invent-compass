@@ -112,7 +112,7 @@ describe('registry', () => {
 
   test('a stub handler returns the fixed not-built error', async () => {
     const connection = await connect(createFakeRuntime().runtime);
-    const result = await connection.call('reserve_with_guardrails', { sessionIds: ['a'] });
+    const result = await connection.call('forget_me', { confirm: true });
     expect(result.isError).toBe(true);
     expect(textOf(result)).toBe(NOT_BUILT_MESSAGE);
     await connection.close();

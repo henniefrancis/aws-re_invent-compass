@@ -10,7 +10,13 @@ import { combineVerdicts } from './combine-verdicts.js';
 /** The combined verdict and each session's own verdict. */
 export interface GuardResult {
   verdict: Verdict;
-  perSession: { sessionId: string; code: string; title: string; verdict: Verdict }[];
+  perSession: {
+    sessionId: string;
+    code: string;
+    title: string;
+    session: NormalisedSession;
+    verdict: Verdict;
+  }[];
 }
 
 /** Runs the guardrail for every candidate. */
@@ -37,6 +43,7 @@ export async function guardBatch(
       sessionId: candidate.sessionId,
       code: candidate.code,
       title: candidate.title,
+      session: candidate,
       verdict,
     });
   }

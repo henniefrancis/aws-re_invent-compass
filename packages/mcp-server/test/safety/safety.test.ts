@@ -124,9 +124,9 @@ describe('describeTargets', () => {
     const view = buildCatalogView([
       wireSession('a1', { title: 'Real title', abbreviation: 'REAL1' }),
     ]);
-    expect(describeTargets(['a1', 'ghost'], view)).toEqual({
-      found: [{ sessionId: 'a1', code: 'REAL1', title: 'Real title' }],
-      missing: 1,
-    });
+    const result = describeTargets(['a1', 'ghost'], view);
+    expect(result.found).toEqual([{ sessionId: 'a1', code: 'REAL1', title: 'Real title' }]);
+    expect(result.sessions.map((s) => s.sessionId)).toEqual(['a1']);
+    expect(result.missing).toBe(1);
   });
 });
