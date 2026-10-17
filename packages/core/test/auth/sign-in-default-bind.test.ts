@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import type { LoopbackServer } from '../../src/auth/loopback-server.js';
+import { defaultLoopbackDeps } from '../../src/auth/loopback-server.js';
 
 // The default binder of the sign-in flow asks for ports 8484 to 8489. The loopback
 // module is replaced here by a fake, so no real port is ever bound by this test.
@@ -30,7 +31,11 @@ describe('events-client, task 11.1: the default loopback binder', () => {
         opened.push(url);
       },
     });
-    expect(bindSpy).toHaveBeenCalledWith([8484, 8485, 8486, 8487, 8488, 8489]);
+    expect(bindSpy).toHaveBeenCalledWith(
+      [8484, 8485, 8486, 8487, 8488, 8489],
+      defaultLoopbackDeps,
+      { expectedState: expect.any(String) as string, timeoutMs: 300_000 },
+    );
     expect(pending.port).toBe(8484);
     expect(opened).toHaveLength(1);
   });

@@ -37,6 +37,7 @@ interface Rig {
   oauth: ReturnType<typeof fakeOAuth>;
   opened: string[];
   timeouts: number[];
+  boundStates: string[];
   logLines: string[];
   closed: () => number;
 }
@@ -58,6 +59,7 @@ function rig(options: {
   const oauth = fakeOAuth(options.script ?? [{ status: 200, body: tokenBody() }]);
   const opened: string[] = [];
   const timeouts: number[] = [];
+  const boundStates: string[] = [];
   let closeCount = 0;
   const { logger, lines } = capturingLogger();
   const deps: SignInDeps = {
@@ -71,11 +73,12 @@ function rig(options: {
         throw new Error('no browser');
       }
     },
-    bind: () => {
+    bind: (expectedState, lifetimeMs) => {
+      timeouts.push(lifetimeMs);
+      boundStates.push(expectedState);
       const server: LoopbackServer = {
         port,
-        awaitCallback: (timeoutMs) => {
-          timeouts.push(timeoutMs);
+        awaitCallback: () => {
           const url = new URL(opened[0] ?? '');
           const state = url.searchParams.get('state') ?? '';
           return (
@@ -92,7 +95,16 @@ function rig(options: {
   if (options.timeoutMs !== undefined) {
     deps.timeoutMs = options.timeoutMs;
   }
-  return { deps, store, oauth, opened, timeouts, logLines: lines, closed: () => closeCount };
+  return {
+    deps,
+    store,
+    oauth,
+    opened,
+    timeouts,
+    boundStates,
+    logLines: lines,
+    closed: () => closeCount,
+  };
 }
 
 describe('Feature: events-client, Property 3: Authorize request is built correctly for any bound port', () => {
@@ -311,5 +323,13 @@ describe('events-client: the default OAuth fetch', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe('events-client, M1: the loopback is bound with this attempt state', () => {
+  test('the state handed to the binder is the state in the authorize URL', async () => {
+    const r = rig({});
+    await signIn(r.deps);
+    expect(r.boundStates).toEqual([new URL(r.opened[0] ?? '').searchParams.get('state')]);
   });
 });

@@ -13,7 +13,12 @@
 // error or log line ever carries a code, a token, a response body or the state.
 
 import { SignInFailedError, StateMismatchError } from './errors.js';
-import { bindLoopback, LOOPBACK_PORTS, type LoopbackServer } from './loopback-server.js';
+import {
+  bindLoopback,
+  defaultLoopbackDeps,
+  LOOPBACK_PORTS,
+  type LoopbackServer,
+} from './loopback-server.js';
 import {
   AUTHORIZE_ENDPOINT,
   CLIENT_ID,
@@ -50,7 +55,7 @@ export interface SignInDeps {
   /** How long to wait for the redirect. Defaults to five minutes. */
   timeoutMs?: number;
   /** Binds the loopback server. Defaults to the real binder over 8484 to 8489. */
-  bind?: () => Promise<LoopbackServer>;
+  bind?: (expectedState: string, timeoutMs: number) => Promise<LoopbackServer>;
   /** Random bytes for the verifier and state. Defaults to node:crypto. */
   random?: RandomBytes;
 }
@@ -102,7 +107,12 @@ export function buildAuthorizeUrl(port: number, challenge: string, state: string
 export async function startSignIn(deps: SignInDeps): Promise<PendingSignIn> {
   const pkce = createPkcePair(deps.random);
   const state = createState(deps.random);
-  const server = await (deps.bind ?? (() => bindLoopback(LOOPBACK_PORTS)))();
+  const timeoutMs = deps.timeoutMs ?? DEFAULT_SIGN_IN_TIMEOUT_MS;
+  const bind =
+    deps.bind ??
+    ((expectedState: string, lifetimeMs: number) =>
+      bindLoopback(LOOPBACK_PORTS, defaultLoopbackDeps, { expectedState, timeoutMs: lifetimeMs }));
+  const server = await bind(state, timeoutMs);
   const authorizeUrl = buildAuthorizeUrl(server.port, pkce.challenge, state);
 
   try {
@@ -116,7 +126,7 @@ export async function startSignIn(deps: SignInDeps): Promise<PendingSignIn> {
     authorizeUrl,
     port: server.port,
     async complete() {
-      const callback = await server.awaitCallback(deps.timeoutMs ?? DEFAULT_SIGN_IN_TIMEOUT_MS);
+      const callback = await server.awaitCallback();
       if (callback.state !== state) {
         throw new StateMismatchError();
       }
