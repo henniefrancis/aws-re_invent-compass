@@ -32,21 +32,21 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 1.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push. This first commit also stages `.kiro/specs/itinerary-rules/`
 
-- [ ] 2. Implement the internal time toolkit
-  - [ ] 2.1 Implement `time.ts` instant arithmetic and `Intl` wall-clock bucketing
+- [x] 2. Implement the internal time toolkit
+  - [x] 2.1 Implement `time.ts` instant arithmetic and `Intl` wall-clock bucketing
     - Parse ISO 8601 strings with offset to absolute instants; compute duration and elapsed minutes on instants
     - Read local wall-clock fields through `Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23" })`, always passing a `Date` to `formatToParts`; bucket by event day and place meal windows on local wall-clock minutes
     - Convert wall-clock to instant with a two-pass offset correction where the earlier offset wins on a fall-back overlap; read offsets from the `longOffset` part
     - Validate the IANA timezone by guarded `Intl.DateTimeFormat` construction, treating a thrown `RangeError` as unrecognised, and reject any value starting with `+` or `-`; do not use `Temporal`
     - Use only the `Intl` global and standard ECMAScript; no Node built-in imports, no `Date.now()`, no `new Date()` for current time, no `Math.random`
     - _Requirements: 1.7, 3.6, 11.1, 11.2, 11.3, 11.4, 10.1, 10.2_
-  - [ ] 2.2 Write property test for offset-change stability
+  - [x] 2.2 Write property test for offset-change stability
     - **Property 17: The same instants give identical results across an offset change**
     - **Validates: Requirements 1.7, 2.10, 3.6, 4.8, 5.8, 6.6, 7.7, 11.1, 11.2**
-  - [ ] 2.3 Write property test for missing or unrecognised timezone handling in time helpers
+  - [x] 2.3 Write property test for missing or unrecognised timezone handling in time helpers
     - **Property 4: Missing or unrecognised timezone yields unknown for every time-dependent result**
     - **Validates: Requirements 1.8, 3.8, 6.7, 11.3, 11.4**
-  - [ ] 2.4 Run the rules tests, confirm they pass, then commit
+  - [x] 2.4 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 3. Implement the plain-English reason builders
