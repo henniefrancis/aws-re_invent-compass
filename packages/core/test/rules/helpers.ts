@@ -1,6 +1,6 @@
 // Shared self-made test helpers for the rules engine tests (itinerary-rules, S2).
-// Everything here is invented sample data. Nothing is read from fixtures/synthetic
-// (Req 12.5, ADR-025).
+// Everything here is invented sample data. Nothing is read from the synthetic
+// catalog fixtures (Req 12.5, ADR-025).
 import type { Commitment, NormalisedSession } from '@compass/contracts';
 import {
   withContextDefaults,

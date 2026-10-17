@@ -202,23 +202,23 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 14.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 15. Wire the public surface and prove purity and browser safety
-  - [ ] 15.1 Populate `index.ts` to re-export the public surface by name
+- [x] 15. Wire the public surface and prove purity and browser safety
+  - [x] 15.1 Populate `index.ts` to re-export the public surface by name
     - Re-export `checkReservation`, `computeBoarding`, `classifyConnection`, `findClashes`, `checkLayovers`, `isOverloaded`, `findRebookingOptions`, `planSafeSwap`, `Context`, and `ContextSchema` through `@compass/core/rules`; keep internal helpers unexported. `scoreEnergy` is added to this surface in the next task when it lands
     - _Requirements: 8.1, 10.3, 10.4_
-  - [ ] 15.2 Write property test for input immutability
+  - [x] 15.2 Write property test for input immutability
     - **Property 16: Inputs are never mutated**
     - **Validates: Requirements 10.6, 6.7, 7.3, 7.5**
-  - [ ] 15.3 Write determinism example test
+  - [x] 15.3 Write determinism example test
     - Call each exported function twice on deeply equal inputs and assert deeply equal results
     - _Requirements: 10.5_
-  - [ ] 15.4 Write Node built-in import scan and impurity static scan tests
+  - [x] 15.4 Write Node built-in import scan and impurity static scan tests
     - Scan owned source and transitive imports for Node built-in imports; scan for `node:`, `fs`, `path`, `process`, `Buffer`, `Date.now(`, `new Date()`, and `Math.random`; fail if any is found
     - _Requirements: 10.1, 10.2, 12.4_
-  - [ ] 15.5 Write browser-safe execution and shared-type structural tests
+  - [x] 15.5 Write browser-safe execution and shared-type structural tests
     - Import through `@compass/core/rules` and invoke every exported function, asserting no reference error and no I/O; assert the four shared types are imported from `@compass/contracts` and not redefined; assert no test under `test/rules` reads `fixtures/synthetic`
     - _Requirements: 10.1, 10.3, 10.4, 12.5_
-  - [ ] 15.6 Run the rules tests, confirm they pass, then commit
+  - [x] 15.6 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 16. Implement the full energy budget formula (last implementation task)

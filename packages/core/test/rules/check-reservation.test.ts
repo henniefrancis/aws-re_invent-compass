@@ -65,6 +65,12 @@ describe('allow', () => {
 });
 
 describe('block rules', () => {
+  test('a clash between two other commitments is not a problem for the candidate', () => {
+    const first = slot('OLD1', clock(9), clock(10));
+    const second = slot('OLD2', clock(9, 30), clock(10, 30));
+    expect(check(slot('NEW1', clock(15), clock(16)), [first, second]).decision).toBe('allow');
+  });
+
   test('a clash blocks and names the clashing commitment', () => {
     const verdict = check(slot('NEW1', clock(10), clock(11)), [
       slot('OLD1', clock(10, 30), clock(11, 30)),
