@@ -24,23 +24,23 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 
 ## Tasks
 
-- [ ] 1. Scaffold the package and the configuration
-  - [ ] 1.1 Prepare the package layout
+- [x] 1. Scaffold the package and the configuration
+  - [x] 1.1 Prepare the package layout
     - Create `src/node-types.d.ts` with a triple-slash reference to the Node types (TypeScript 6 does not load them by default), and the `src/` folders named in the design (`config`, `http`, `observability`, `secrets`, `security`, `auth`, `data`, `validation`, `apple`, `artwork`, `apns`, `google`, `calendar`, `services`, `handlers/api`, `handlers/passkit`, `app`, `wiring`, `harness`, `build`, `lambda-entry`)
     - Adjust `packages/pass-service/tsconfig.json` only if needed for the folders above; keep `src/index.ts` compiling (it will export `createApiApp` and `createPasskitApp` from task 5)
     - Create a `packages/pass-service/README.md` stub with a one-paragraph purpose; it is completed in task 25
     - _Requirements: 1.7, 26.1_
 
-  - [ ] 1.2 Implement configuration parsing
+  - [x] 1.2 Implement configuration parsing
     - Create `src/config/config.ts` with `parseApiConfig`, `parsePasskitConfig`, `webServiceUrl` and `ConfigError` per design Component 1: every variable in the design's environment table, defaults (`/api/passkit`, `cognito`, client id `7vmom55m1qstvq8i71ph127bfq`, `api.push.apple.com`, timeouts 2000 and 4000 ms, cache 300 s, Google and calendar enabled), Cognito user pool id parsed from the issuer, `oidc` requiring an `https` JWKS URI, `https` base URL unless `allowHttpBaseUrl`, IANA timezone and ISO-with-offset window checks, `APNS_PUSH_TYPE` limited to `alert` or `background`
     - `ConfigError` names the variable and never contains a value
     - _Requirements: 4.9, 9.8, 24.1, 24.2, 24.3, 24.4, 24.5_
 
-  - [ ] 1.3 Write property test for configuration parsing
+  - [x] 1.3 Write property test for configuration parsing
     - **Property 36: Configuration parses or fails closed without echo**
     - **Validates: Requirements 9.8, 24.1, 24.2, 24.3, 24.4, 24.5**
 
-  - [ ] 1.4 Commit
+  - [x] 1.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Include `.kiro/specs/pass-service/` in this first commit. Verify every edit landed. Never push.
 
 - [ ] 2. Implement the HTTP primitives and the request logger
@@ -536,6 +536,8 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - Do each task yourself in this chat in numeric order; do not delegate to the spec-task-execution subagent and do not run tasks as parallel waves. Save files after each step.
 - Checkpoints (tasks 7, 11, 15, 20, 29) validate incrementally; the final checkpoint confirms the definition of done for coverage, lint, format, typecheck and the build.
 - Tasks 26, 27 and 28 wait on the owner's spike results. Until each arrives, the configuration defaults are the build plan's expected values and fallbacks, and the rest of the plan does not depend on them.
+
+- **Security review amendments.** The review items (SR-H1 to SR-L5 in design.md, Requirement 27) are built inside the tasks they name; the tasks above are otherwise unchanged. Task 18.1 reads "delete first, then fan out", the counters in 9.1 include `forgetMe`, `updates`, `passUpdate` and the hand-off read counter, and 4.1 uses HKDF sub-keys with `tokenSalt`.
 
 ## Task Dependency Graph
 

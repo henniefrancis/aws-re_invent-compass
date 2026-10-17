@@ -384,3 +384,19 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 1. THE pass-service SHALL include a `packages/pass-service/README.md` that covers Requirement 1.7, the secret JSON layout per secret, how the owner converts the Apple `.p12` into the PEM values the secret holds, the SP2, SP3 and SP4 settings, and the ADR-026 re-check result.
 2. WHEN the spec is complete, THE pass-service stream SHALL save two or three screenshots or terminal captures of the feature working to `docs/article/screenshots/pass-service/`, containing no identifier, token or secret.
 3. IF S5 needs a change to a file it does not own (a dependency, a contract or another stream's file), THEN THE pass-service stream SHALL record it as a request for the integrator in the Notes section of `tasks.md` and SHALL NOT make the change.
+
+### Requirement 27: Security review amendments
+
+**User Story:** As the owner, I want the security review findings built in, so that a crafted request, a hostile device or a deletion call cannot be turned against the service.
+
+#### Acceptance Criteria
+
+1. THE pass-service SHALL pass every date to `passkit-generator` as a Date built with `new Date(Date.parse(x))` or its canonical `toISOString()` form, never as a client string (H1).
+2. WHEN forgetMe runs, THE Api_Lambda SHALL NOT delete any Rate_Counter, SHALL count the call in a `forgetMe` counter limited to 5 per one-hour window, and over the limit SHALL still erase the data but skip pushes and Google patches (H2).
+3. THE pass-service SHALL store at most 10 live Device_Registrations per pass (a registration past the cap answers 200 and is not stored), SHALL limit updates to 20 per hour per pass and 120 per hour per SubHash by skipping APNs and Google fan-out over the limit while still storing the update, and SHALL always fan out a void (H3).
+4. THE pass-service SHALL derive SubHash, DeviceHash and the Auth_Token key with HKDF-SHA256 from the Pepper with the info strings `compass/sub/v1`, `compass/device/v1` and `compass/authtoken/v1`, SHALL derive the Auth_Token as HMAC of the serial and a per-pass random 16-byte `tokenSalt`, and SHALL store `pepperId` on the app secret and on every record (M1).
+5. THE Origin_Guard SHALL accept an optional `originVerifyPrevious` and compare SHA-256 digests with `timingSafeEqual` (M2).
+6. WHEN forgetMe runs, THE Api_Lambda SHALL delete first and then fan out best effort within the time budget, and SHALL return 202 even when the fan-out is partial (M3).
+7. THE pass-service SHALL set `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer` on every response except getHealth, SHALL set no CORS header, and SHALL cap reads of one hand-off at 30 (M4).
+8. THE Token_Verifier SHALL use a grace of 0 seconds, SHALL require a string `aud` in `oidc` mode, and the configuration SHALL require the JWKS URI host to equal the issuer host (L2, L3).
+9. THE APNs_Client SHALL attach an `error` listener to every session and stream (L5).

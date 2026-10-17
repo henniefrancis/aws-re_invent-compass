@@ -1187,6 +1187,32 @@ Each is decided here with the option the build plan prefers; the owner or integr
 11. **APNs topic and push type.** Decision: `apns-topic` is the Pass Type ID and `apns-push-type` is omitted by default; SP3 confirms.
 12. **Insert duplicate status.** Decision: an insert 409 means the object exists and is patched; SP4 step 7 confirms.
 
+## Security review amendments (SR)
+
+The security review of this spec added the changes below. Where this section and the text above disagree, this section wins; each item names the task that implements it. Requirement 27 in requirements.md states them as acceptance criteria.
+
+### High
+
+- **SR-H1, no client date string reaches passkit-generator (tasks 12.3, 12.5).** Every date given to `passkit-generator` (the `pass.json` text, the props, `setExpirationDate`, `setRelevantDates`) is built as `new Date(Date.parse(x))` and passed as a Date or as its 24-character `toISOString()` form. Property 13 therefore states that `expirationDate` is the same instant as `endsAt` in canonical `toISOString()` form. Tests prove that a 60,000-digit fraction is refused by validation and that signing stays fast.
+- **SR-H2, forget_me and the counters (tasks 9.1, 18.1).** forget_me never deletes Rate_Counters; they expire by themselves at window end plus 120 seconds, so deleting data cannot reset a limit. A new counter kind `forgetMe` allows 5 calls per one-hour window per SubHash. Over the limit the call still erases the data, but skips every APNs push and Google patch. The contract is unchanged (202). `deleted` counts every item except counters.
+- **SR-H3, fan-out limits (tasks 8.3, 9.1, 16.7, 19.1).** At most 10 live Device_Registrations per pass: a registration past the cap answers 200 and is not stored, and `listByPass` returns at most 10. Updates are limited to 20 per hour per pass (counter kind `passUpdate`, scoped by serial) and 120 per hour per SubHash (kind `updates`). Over a limit the update is stored and Last_Updated advances, but APNs and Google fan-out is skipped; there is no 429 (the contract is frozen). Void is exempt and always fans out.
+
+### Medium
+
+- **SR-M1, key derivation (tasks 4.1, 8.3, 9.1).** The pepper is an HKDF-SHA256 input key. Sub-keys use the info strings `compass/sub/v1`, `compass/device/v1` and `compass/authtoken/v1`. `subHash` and `deviceHash` are HMAC-SHA256 under their sub-key. Each Pass_Record carries a random 16-byte `tokenSalt` (base64url), and Auth_Token = base64url(HMAC-SHA256(authKey, serial then tokenSalt)), 43 characters; the record stores only the SHA-256 of the token. The app secret gains `pepperId` (a short label, not secret) and every record stores it as `pepperId`. The pepper is never rotated during the event; the runbook for an emergency is "void all and flush" (void every pass, delete the table items, load a new pepper). `deriveAuthToken(pepper, serial, tokenSalt)` and the Pass_Record field `tokenSalt` replace the earlier two-argument form.
+- **SR-M2, origin rotation (task 5.1).** The app secret may hold `originVerifyPrevious`. `checkOrigin` compares the SHA-256 of the header with the SHA-256 of each configured value using `timingSafeEqual`, accepting either.
+- **SR-M3, forget_me order (task 18.1).** forget_me reads the caller's items (GSI2, looping until a query returns nothing twice, at most 3 rounds), deletes first (BatchWrite in chunks of 25), then runs best-effort pushes and Google `INACTIVE` patches from the in-memory copy within the push budget, and returns 202 even when the fan-out is partial. The client copy: Apple passes stay on the phone until they expire and the attendee is told to delete them; Google objects go INACTIVE; Google keeps its own copy of the object. This is recorded in the README.
+- **SR-M4, response headers and hand-off reads (tasks 2.1, 17.4).** Every response except getHealth sets `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`; no CORS header is ever set. Reads of one hand-off (view, bundle, calendar) are capped at 30 with a conditional counter keyed by the hand-off hash; past the cap the same 404 is returned. A hand-off is not single-use within its 15 minutes; this is documented.
+- **SR-M5, least privilege and PEM hygiene (task 25.1).** S6 should limit the passkit role's `PutItem` and `DeleteItem` with `dynamodb:LeadingKeys` to `DEV#*`. When converting the `.p12` the owner uses `-passin env:` and `-passout env:`, adds `-legacy` for Keychain exports, shreds the intermediate files, loads the secret from a file or stdin, and never reads the secret back.
+
+### Low
+
+- **SR-L1.** Production uses the `aws-jwt-verify` default JWKS penalty box (10 seconds) and fetch timeout (3 seconds), and rebuilds the verifier every hour.
+- **SR-L2.** `graceSeconds` is 0, and the `exp` property test does not depend on the fake clock.
+- **SR-L3.** In `oidc` mode `aud` must be a string, and the JWKS URI host must equal the issuer host (checked when the configuration is parsed; done in task 1.2).
+- **SR-L5.** Every `http2` session and stream has an `error` listener, and a top-level handler records only the outcome.
+- **Tests.** No test verifies a signature with node-forge; tests parse the ASN.1 and verify with `node:crypto.verify`.
+
 ## Implementation deviations (recorded while building)
 
 Each entry names the task that introduced it. Where this section and the text above disagree, this section is the as-built record. None yet.
