@@ -20,11 +20,22 @@
 
 const REDACTED = '[REDACTED]';
 
-// A JWT compact serialization: three base64url segments separated by dots. Access
+/**
+ * The longest line the redactor looks at. Anything longer is cut to this length before
+ * any pattern runs (finding N4), so a hostile 100 KB line can never make the patterns
+ * take quadratic time, and every pattern below is bounded to this size as well. Cutting
+ * only removes data, so it cannot expose a secret.
+ */
+export const MAX_REDACT_INPUT_LENGTH = 8192;
+const TRUNCATED_MARK = '[TRUNCATED]';
+
+// A JWT compact serialization: three (or, for an encrypted token, up to six) base64url
+// segments separated by dots. Access
 // and ID tokens are JWTs; this catches any of them even if not registered. The
 // segments are required to be reasonably long so ordinary dotted identifiers (for
 // example a.b.c) are not mistaken for a token.
-const JWT_PATTERN = /[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g;
+const JWT_PATTERN =
+  /(?<![A-Za-z0-9_.-])[A-Za-z0-9_-]{8,8192}(?:\.[A-Za-z0-9_-]{8,8192}){2,5}(?![A-Za-z0-9_-])/g;
 
 // An Authorization header value, including the Bearer and ApplePass schemes and a
 // bare token. The prefix is an "authorization:" (or "=") header name optionally
@@ -33,26 +44,28 @@ const JWT_PATTERN = /[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g;
 // the optional scheme inside the prefix means "Authorization: Bearer <token>"
 // removes the token, not the scheme word.
 const AUTHORIZATION_PATTERN =
-  /\b((?:proxy-)?authorization\s*[:=]\s*(?:bearer\s+|applepass\s+|basic\s+)?|bearer\s+|applepass\s+)([^\s"',]+)/gi;
+  /\b((?:proxy-)?authorization\s{0,16}[:=]\s{0,16}(?:bearer\s{1,16}|applepass\s{1,16}|basic\s{1,16})?|bearer\s{1,16}|applepass\s{1,16})([^\s"',]{1,8192})/gi;
 
 // A bare Basic credential (base64 of user:password). To avoid redacting ordinary
 // words after "basic", the value must look like base64 data: it must contain a digit
 // or one of + / =.
-const BASIC_PATTERN = /\b(basic\s+)(?=[A-Za-z0-9+/_-]*[0-9+/=])([A-Za-z0-9+/_-]{8,}={0,2})/gi;
+const BASIC_PATTERN =
+  /\b(basic\s{1,16})(?=[A-Za-z0-9+/_-]{0,8192}[0-9+/=])([A-Za-z0-9+/_-]{8,8192}={0,2})/gi;
 
 // Form and query keys that carry a secret: refresh_token=, code_verifier=, code=,
 // access_token=, id_token=. The key is kept, the value removed.
 const FORM_KEY_PATTERN =
-  /\b(refresh_token|code_verifier|access_token|id_token|code)=([^&\s"',]+)/gi;
+  /\b(refresh_token|code_verifier|access_token|id_token|code)=([^&\s"',]{1,8192})/gi;
 
 // The same keys in a JSON body: "refresh_token":"...". The key is kept, the value removed.
 const JSON_KEY_PATTERN =
-  /("(?:refresh_token|code_verifier|access_token|id_token)"\s*:\s*")([^"]*)(")/gi;
+  /("(?:refresh_token|code_verifier|access_token|id_token)"\s{0,16}:\s{0,16}")([^"]{0,8192})(")/gi;
 
 // An email address. The refresh token is opaque and registered as a needle; email
 // addresses are removed structurally so an address in a response body or error can
 // never reach a log line.
-const EMAIL_PATTERN = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+const EMAIL_PATTERN =
+  /(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]{1,8192}@[A-Za-z0-9.-]{1,255}\.[A-Za-z]{2,63}/g;
 
 /**
  * Escape a string for safe inclusion in a RegExp source.
@@ -146,7 +159,10 @@ export function createRedactingLogger(sink: LogSink = consoleSink): RedactingLog
   const secrets = new Set<string>();
 
   function redact(line: string): string {
-    let out = line;
+    let out =
+      line.length > MAX_REDACT_INPUT_LENGTH
+        ? `${line.slice(0, MAX_REDACT_INPUT_LENGTH)}${TRUNCATED_MARK}`
+        : line;
     // Registered needles, longest first so overlapping values collapse cleanly.
     const needles = [...secrets].sort((a, b) => b.length - a.length);
     for (const needle of needles) {
