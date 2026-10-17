@@ -13,6 +13,7 @@ import {
   type DemoAction,
   type DemoState,
 } from '../../src/lib/demo/demo-state';
+import { normalisePassText as localNormalise } from '../../src/lib/demo/pass-text';
 import { neighboursOf } from '../../src/lib/demo/neighbours';
 import {
   PASS_DISCLAIMER,
@@ -56,6 +57,27 @@ describe('fitTitle and clampWalk', () => {
     expect(clampWalk(120)).toBe(90);
     expect(clampWalk(12.4)).toBe(12);
     expect(clampWalk(90)).toBe(90);
+  });
+});
+
+describe('pass text normalisation', () => {
+  test('equals normalisePassText of @compass/contracts for any text', () => {
+    const marks = [
+      0x2013, 0x2014, 0x2018, 0x2019, 0x2032, 0x201c, 0x201d, 0x2033, 0x2026, 0xa0, 0x20, 0x9, 0xa,
+    ].map((c) => String.fromCharCode(c));
+    fc.assert(
+      fc.property(
+        fc
+          .array(fc.oneof(fc.constantFrom(...marks), fc.string({ maxLength: 3 })), {
+            maxLength: 30,
+          })
+          .map((p) => p.join('')),
+        (text) => {
+          expect(localNormalise(text)).toBe(normalisePassText(text));
+        },
+      ),
+      { numRuns: 500 },
+    );
   });
 });
 

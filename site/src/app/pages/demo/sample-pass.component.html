@@ -1,0 +1,22 @@
+<svg
+  class="pass"
+  role="img"
+  [attr.aria-label]="pass().accessibleName"
+  [attr.width]="layout().width"
+  [attr.height]="layout().height"
+  [attr.viewBox]="'0 0 ' + layout().width + ' ' + layout().height"
+>
+  <rect
+    class="pass__card"
+    x="1"
+    y="1"
+    rx="10"
+    [attr.width]="layout().width - 2"
+    [attr.height]="layout().height - 2"
+  />
+  @for (line of layout().lines; track $index) {
+    <text [attr.x]="line.x" [attr.y]="line.y" [attr.class]="'pass__text pass__text--' + line.kind">
+      {{ line.text }}
+    </text>
+  }
+</svg>

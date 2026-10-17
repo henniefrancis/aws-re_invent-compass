@@ -1,1 +1,262 @@
 <h1 tabindex="-1">Demo</h1>
+<p class="measure">{{ text.madeUp }}</p>
+
+@if (!available) {
+  <p class="card measure">{{ text.unavailable }}</p>
+} @else {
+  <p class="measure">{{ timezone }}</p>
+  <p class="measure source-note">{{ text.walkNote }}</p>
+
+  <section class="stack" aria-labelledby="demo-start">
+    <h2 id="demo-start">Start</h2>
+    <p class="measure">{{ hint }}</p>
+    <div class="cluster">
+      <button type="button" (click)="act({ type: 'loadStarter' })">{{ text.startSample }}</button>
+      <button type="button" class="button--secondary" (click)="act({ type: 'reset' })">
+        {{ text.startOver }}
+      </button>
+    </div>
+    <p class="live-region" role="status" aria-live="polite">{{ state().announcement }}</p>
+  </section>
+
+  <div #panels class="stack">
+    @if (verdict(); as v) {
+      <section class="card verdict stack" aria-labelledby="verdict-title">
+        <h2 id="verdict-title">{{ v.title }}</h2>
+        <p>
+          <span
+            class="badge"
+            [class.badge--warn]="v.kind === 'warn'"
+            [class.badge--block]="v.kind === 'block'"
+            >{{ v.kind === 'warn' ? 'Warning' : 'Blocked' }}</span
+          >
+        </p>
+        <ul>
+          @for (reason of v.reasons; track $index) {
+            <li>{{ reason }}</li>
+          }
+        </ul>
+        @if (v.kind === 'warn') {
+          <div class="cluster">
+            <button type="button" (click)="act({ type: 'confirmWarn' })">
+              {{ text.addAnyway }}
+            </button>
+            <button type="button" class="button--secondary" (click)="act({ type: 'dismiss' })">
+              {{ text.keepWeek }}
+            </button>
+          </div>
+        }
+        @if (v.rebook; as rebook) {
+          <h3>Other options</h3>
+          <p>{{ rebook.message }}</p>
+          @if (rebook.options.length > 0) {
+            <ul>
+              @for (option of rebook.options; track option.sessionId) {
+                <li>
+                  {{ option.text }}
+                  @if (option.canBook) {
+                    <button
+                      type="button"
+                      class="button--secondary"
+                      (click)="act({ type: 'bookRepeat', sessionId: option.sessionId })"
+                    >
+                      Try this repeat
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        }
+        @if (v.swapOffer; as offer) {
+          <h3>Safe swap</h3>
+          <p>{{ offer.text }}</p>
+          <button type="button" (click)="act({ type: 'startSwap' })">Start the safe swap</button>
+        }
+        @if (v.kind === 'block') {
+          <button type="button" class="button--secondary" (click)="act({ type: 'dismiss' })">
+            {{ text.keepWeek }}
+          </button>
+        }
+      </section>
+    }
+
+    @if (swap(); as s) {
+      <section class="card verdict stack" aria-labelledby="swap-title">
+        <h2 id="swap-title">{{ s.title }}</h2>
+        <p>{{ s.message }}</p>
+        @if (s.reasons.length > 0) {
+          <ul>
+            @for (reason of s.reasons; track $index) {
+              <li>{{ reason }}</li>
+            }
+          </ul>
+        }
+        <ol class="swap-steps">
+          @for (step of s.steps; track step.number) {
+            <li>
+              {{ step.label }}:
+              @if (step.status === 'done') {
+                done
+              } @else if (step.status === 'next' && s.state === 'inProgress') {
+                <button type="button" (click)="act({ type: 'advanceSwap' })">
+                  {{ step.buttonLabel }}
+                </button>
+              } @else {
+                waiting
+              }
+            </li>
+          }
+        </ol>
+        @if (s.state === 'inProgress') {
+          <button type="button" class="button--secondary" (click)="act({ type: 'dismiss' })">
+            Cancel the swap
+          </button>
+        }
+        @if (s.invite; as invite) {
+          <button type="button" (click)="act({ type: 'add', sessionId: invite.sessionId })">
+            {{ invite.text }}
+          </button>
+        }
+        @if (s.state !== 'inProgress') {
+          <button type="button" class="button--secondary" (click)="act({ type: 'dismiss' })">
+            Close
+          </button>
+        }
+      </section>
+    }
+  </div>
+
+  <section class="stack" aria-labelledby="demo-week">
+    <h2 id="demo-week">Your week</h2>
+    @if (week().length === 0) {
+      <p>Nothing here yet. Add a session below, or start with a sample week.</p>
+    }
+    @for (day of week(); track day.date) {
+      <section class="card stack" [attr.aria-labelledby]="'day-' + day.date">
+        <h3 [id]="'day-' + day.date">{{ day.heading }}</h3>
+        <ul class="plain-list">
+          @for (item of day.items; track item.ref) {
+            <li class="week-item">
+              <p>
+                <strong>{{ item.code ?? item.title }}</strong>
+                @if (item.code !== null) {
+                  : {{ item.title }}
+                }
+              </p>
+              <p>{{ item.gate }}. {{ item.timeRange }}.</p>
+              <p>{{ item.boarding }}</p>
+              <div class="cluster">
+                @if (item.kind === 'reservedSession') {
+                  <button
+                    type="button"
+                    class="button--secondary"
+                    (click)="act({ type: 'selectPass', sessionId: item.ref })"
+                  >
+                    Show sample pass<span class="visually-hidden"> for {{ item.code }}</span>
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="button--secondary"
+                  (click)="act({ type: 'remove', ref: item.ref })"
+                >
+                  Remove<span class="visually-hidden"> {{ item.code ?? item.title }}</span>
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+        @if (day.connections.length > 0) {
+          <h4>Connections</h4>
+          <ul class="plain-list">
+            @for (connection of day.connections; track $index) {
+              <li class="connection">{{ connection.text }} {{ connection.walk }}</li>
+            }
+          </ul>
+        }
+        @if (day.layovers.lines.length > 0 || day.layovers.suggestions.length > 0) {
+          <h4>Layovers</h4>
+          <ul class="plain-list">
+            @for (line of day.layovers.lines; track $index) {
+              <li>{{ line }}</li>
+            }
+          </ul>
+          @for (suggestion of day.layovers.suggestions; track suggestion.start) {
+            <p>
+              {{ suggestion.label }}
+              <button
+                type="button"
+                class="button--secondary"
+                (click)="act({ type: 'addLayover', start: suggestion.start, end: suggestion.end })"
+              >
+                Add this layover
+              </button>
+            </p>
+          }
+        }
+      </section>
+    }
+  </section>
+
+  @if (pass(); as shown) {
+    <section class="stack" aria-labelledby="demo-pass">
+      <h2 id="demo-pass">Sample boarding pass</h2>
+      <app-sample-pass [pass]="shown" />
+    </section>
+  }
+
+  <section class="stack" aria-labelledby="demo-calendar">
+    <h2 id="demo-calendar">Sample calendar</h2>
+    <p class="measure">
+      Download a calendar file of your demo week, with alarms for "Boarding closes" and "Leave now".
+    </p>
+    <p>
+      <button type="button" [disabled]="weekIsEmpty()" (click)="download()">
+        {{ text.download }}
+      </button>
+    </p>
+    @if (weekIsEmpty()) {
+      <p class="source-note">{{ text.emptyWeek }}</p>
+    }
+  </section>
+
+  <section class="stack" aria-labelledby="demo-sessions">
+    <h2 id="demo-sessions">Sessions</h2>
+    @for (day of catalog(); track day.date) {
+      <section class="stack" [attr.aria-labelledby]="'cat-' + day.date">
+        <h3 [id]="'cat-' + day.date">{{ day.heading }}</h3>
+        <ul class="plain-list">
+          @for (session of day.sessions; track session.sessionId) {
+            <li class="card catalog-item">
+              <p>
+                <strong>{{ session.code }}</strong
+                >: {{ session.title }}
+              </p>
+              <p>
+                @if (session.type !== null) {
+                  {{ session.type }}.
+                }
+                @if (session.level !== null) {
+                  Level {{ session.level }}.
+                }
+              </p>
+              <p>{{ session.gate }}. {{ session.timeRange }}.</p>
+              <p>{{ session.boarding }}</p>
+              <button
+                type="button"
+                [disabled]="session.inWeek"
+                [attr.aria-label]="
+                  (session.inWeek ? 'In your week: ' : 'Add ') + session.code + ', ' + session.title
+                "
+                (click)="act({ type: 'add', sessionId: session.sessionId })"
+              >
+                {{ session.inWeek ? 'In your week' : 'Add' }}
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  </section>
+}

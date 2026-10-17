@@ -295,20 +295,20 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 12.5 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 13. Demo page components
-  - [ ] 13.1 Implement the Demo_Page
+- [x] 13. Demo page components
+  - [x] 13.1 Implement the Demo_Page
     - `DemoPage` holds one `signal` of `DemoState` and dispatches through `reduceDemo`; sub-components (all standalone, external templates, no styles) for the catalog list, the week view, the verdict panel (reasons as a list, "Add anyway" and "Keep my week"), the rebooking and safe swap panel (three visible steps, one button per step), the sample pass (inline SVG, `role="img"`, accessible name, visible text), and the calendar download (Blob plus temporary anchor, disabled with "Add a session first." when empty)
     - Made-up label and "nothing here touches a real schedule" note; "Start with a sample week", the guided clash hint naming `GUIDED_CLASH.tryAdd`, and "Start over"; one polite live region for announcements; event timezone stated once per view
     - _Requirements: 7.5, 8.1, 8.2, 8.5, 8.6, 8.8, 8.9, 8.10, 9.1, 9.2, 9.3, 9.4, 9.5, 10.1, 10.3, 10.5, 10.8, 11.1, 11.5, 12.1, 12.6, 13.2, 13.3, 13.4, 19.9, 19.12_
 
-  - [ ] 13.2 Verify the build and both checks
+  - [x] 13.2 Verify the build and both checks
     - Build and run both checks; confirm the demo route chunk is within 150 kB gzip and the initial JavaScript within 250 kB gzip, and that `demo/index.html` holds the prerendered session list
     - _Requirements: 21.1, 21.2, 21.4_
 
-  - [ ] 13.3 Commit
+  - [x] 13.3 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 14. Checkpoint - Ensure all tests pass
+- [x] 14. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, coverage of Site_Logic is 100%, both build checks pass and the guided clash works in a local `npx ng serve`; ask the user if questions arise.
 
 - [ ] 15. Static server and browser test suite

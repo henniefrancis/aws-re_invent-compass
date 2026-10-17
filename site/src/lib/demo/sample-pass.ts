@@ -1,7 +1,8 @@
 // Sample boarding pass (showcase-site, Component 8).
 //
 // The data behind the pass image the demo shows for one reserved session. It follows the S4
-// pass rules (CTO M9): text goes through normalisePassText, a title longer than 80 characters
+// pass rules (CTO M9): text goes through normalisePassText (pass-text.ts, the same mapping as
+// the one in @compass/contracts, proven equal by a test), a title longer than 80 characters
 // becomes its first 77 characters plus three ASCII dots (the ellipsis character is not in the
 // PassFields text allowlist), walk minutes are clamped to 0 to 90, and a missing venue is an
 // empty string in passFields. "Venue not published" is display text only.
@@ -9,10 +10,10 @@
 // The seat release time and the walks come from the rules port. The "walk" minutes are the
 // engine's walk plus its buffer, which is also what the sample calendar's "Leave now" alarm uses.
 
-import { normalisePassText } from '@compass/contracts';
 import type { DemoDeps } from './demo-deps';
 import type { DemoState } from './demo-state';
 import { neighboursOf } from './neighbours';
+import { normalisePassText } from './pass-text';
 import { gateText, boardingText } from './week-view';
 import { formatInZone } from '../time/time-format';
 import { DEMO_EVENT } from './demo-catalog';
