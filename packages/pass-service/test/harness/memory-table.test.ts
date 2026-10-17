@@ -83,14 +83,9 @@ describe('Feature: pass-service, in-memory table', () => {
     const base = await table.query({ pk: 'P', skPrefix: 'REG#' });
     expect(base.map((i) => i.sk)).toEqual(['REG#a', 'REG#b']);
     expect((await table.query({ pk: 'P' })).map((i) => i.sk)).toEqual(['PASS', 'REG#a', 'REG#b']);
-    expect((await table.query({ index: 'GSI1', pk: 'G' })).map((i) => i.gsi1sk)).toEqual([
-      'D#1',
-      'D#2',
-      'E#3',
-    ]);
     expect(
-      (await table.query({ index: 'GSI1', pk: 'G', skPrefix: 'D#' })).map((i) => i.gsi1sk),
-    ).toEqual(['D#1', 'D#2']);
+      (await table.query({ index: 'GSI2', pk: 'S', skPrefix: 'x' })).map((i) => i.gsi2sk),
+    ).toEqual(['x#2']);
     expect((await table.query({ index: 'GSI2', pk: 'S' })).map((i) => i.gsi2sk)).toEqual([
       'x#2',
       'y#1',

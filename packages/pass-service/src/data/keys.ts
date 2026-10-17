@@ -43,3 +43,26 @@ export function subIndexKey(subHash: string): string {
 export function rateKey(subHash: string, name: string, windowStartSec: number): Key {
   return { pk: `${RATE_PREFIX}${subHash}`, sk: `${name}#${windowStartSec}` };
 }
+
+/**
+ * Marker items live in the base table, so they can be counted with a strongly consistent
+ * query (an index read is only eventually consistent). They exist to make two caps hold when
+ * requests run at the same time (code review M2 and N7):
+ *   ACTIVE#<subHash> / <serial>      one per live pass, counted against the 80 active pass cap
+ *   PASSREG#<serial> / <deviceHash>  a copy of each registration, counted against the 10 devices cap
+ */
+export const ACTIVE_PREFIX = 'ACTIVE#';
+export const PASSREG_PREFIX = 'PASSREG#';
+
+export function activeMarkerKey(subHash: string, serialNumber: string): Key {
+  return { pk: `${ACTIVE_PREFIX}${subHash}`, sk: serialNumber };
+}
+
+export function passRegistrationKey(serialNumber: string, deviceHash: string): Key {
+  return { pk: `${PASSREG_PREFIX}${serialNumber}`, sk: deviceHash };
+}
+
+/** True for the marker items, which are bookkeeping and never counted as the attendee data. */
+export function isMarker(item: { pk: string }): boolean {
+  return item.pk.startsWith(ACTIVE_PREFIX) || item.pk.startsWith(PASSREG_PREFIX);
+}

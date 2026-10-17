@@ -21,9 +21,9 @@ const route = (method: string, suffix: string, serial: string, token = SUB) => (
 async function register(fixture: ApiFixture, serial: string, count: number): Promise<void> {
   const rec = await fixture.deps.passes.get(serial, fixture.clock.now());
   for (let i = 0; i < count; i += 1) {
-    await fixture.deps.registrations.upsert(
+    await fixture.deps.registrations.register(
       {
-        deviceHash: `device-${i}`,
+        deviceHash: `device-library-${String(i).padStart(4, '0')}`,
         serialNumber: serial,
         passTypeIdentifier: 'pass.test.compass',
         pushToken: `0${i}ab`,

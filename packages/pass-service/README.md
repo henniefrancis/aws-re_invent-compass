@@ -107,15 +107,23 @@ certificate and key authenticate the APNs connection, so there is no separate AP
 ## DynamoDB (S6 builds the table)
 
 Table `compass-<env>`: partition key `pk` (S), sort key `sk` (S), on demand, TTL attribute `ttl`
-(number, epoch seconds), point-in-time recovery and deletion protection. GSI1 (`gsi1pk`, `gsi1sk`) and
-GSI2 (`gsi2pk`, `gsi2sk`), strings, projection ALL.
+(number, epoch seconds), point-in-time recovery and deletion protection. GSI2 (`gsi2pk`, `gsi2sk`), strings, projection ALL. GSI1 is no longer used (the pass-keyed registration
+copies below replaced it); S6 may drop it.
 
-| Item                | pk                 | sk                                  | gsi1pk          | gsi1sk             | gsi2pk          | gsi2sk                                   |
+| Item | pk | sk | gsi2pk | gsi2sk |
 | ------------------- | ------------------ | ----------------------------------- | --------------- | ------------------ | --------------- | ---------------------------------------- |
-| Pass_Record         | `PASS#<serial>`    | `PASS`                              |                 |                    | `SUB#<subHash>` | `PASS#<serial>`                          |
-| Device_Registration | `DEV#<deviceHash>` | `REG#<serial>`                      | `PASS#<serial>` | `DEV#<deviceHash>` | `SUB#<subHash>` | `REG#<deviceHash>#<serial>`              |
-| Handoff_Record      | `HANDOFF#<sha256>` | `HANDOFF`                           |                 |                    | `SUB#<subHash>` | `HANDOFF#<sha256>`                       |
-| Rate_Counter        | `RATE#<subHash>`   | `<kind>[:<scope>]#<windowStartSec>` |                 |                    | `SUB#<subHash>` | `RATE#<kind>[:<scope>]#<windowStartSec>` |
+| Pass_Record | `PASS#<serial>` | `PASS` | `SUB#<subHash>` | `PASS#<serial>` |
+| Device_Registration | `DEV#<deviceHash>` | `REG#<serial>` | `SUB#<subHash>` | `REG#<deviceHash>#<serial>` |
+| Handoff_Record | `HANDOFF#<sha256>` | `HANDOFF` | `SUB#<subHash>` | `HANDOFF#<sha256>` |
+| Rate_Counter | `RATE#<subHash>` | `<kind>[:<scope>]#<windowStartSec>` | `SUB#<subHash>` | `RATE#<kind>[:<scope>]#<windowStartSec>` |
+
+Two bookkeeping items per live record keep the caps exact when requests race, because the base table
+can be read with a strongly consistent query and an index cannot: `ACTIVE#<subHash>` / `<serial>` (one
+per live, non-voided pass, counted against the 80 active pass cap) and `PASSREG#<serial>` /
+`<deviceHash>` (a copy of each registration, counted against the 10 devices cap and used to list a
+pass's devices). Both carry `subHash`, `expiresAtMs`, `ttl` and `gsi2pk` / `gsi2sk`
+(`ACTIVE#<serial>`, `PASSREG#<serial>#<deviceHash>`), so forget_me deletes them; they are not counted in its
+`deleted`. The `api` and `passkit` roles need the same actions on them as on the other items.
 
 Every read treats an item at or past its `expiresAtMs` as absent; TTL only cleans up later. `ttl` is
 `expiresAtMs` (rounded up to seconds) or later: a pass and its registrations at the session end plus 24

@@ -19,9 +19,6 @@ function mapKey(key: Key): string {
 }
 
 function indexAttributes(index: QueryInput['index']): { pk: string; sk: string } {
-  if (index === 'GSI1') {
-    return { pk: 'gsi1pk', sk: 'gsi1sk' };
-  }
   if (index === 'GSI2') {
     return { pk: 'gsi2pk', sk: 'gsi2sk' };
   }

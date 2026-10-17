@@ -22,7 +22,11 @@ const body = (from: number, count: number) => ({
 async function registered(fixture: ApiFixture) {
   const serial = await fixture.issue(SUB, samplePassFields(), ['apple', 'google']);
   const token = await fixture.authToken(serial);
-  const path = { deviceLibraryIdentifier: 'lib-1', passTypeIdentifier: TYPE, serialNumber: serial };
+  const path = {
+    deviceLibraryIdentifier: 'library-0000000001',
+    passTypeIdentifier: TYPE,
+    serialNumber: serial,
+  };
   const headers = { authorization: `ApplePass ${token}` };
   return { serial, token, path, headers };
 }
@@ -259,7 +263,7 @@ describe('Feature: pass-service, named hand-off and limit tests', () => {
     });
     const items = fixture.table.snapshot();
     const kinds = new Set(items.map((item) => item.pk.split('#')[0]));
-    expect([...kinds].sort()).toEqual(['DEV', 'HANDOFF', 'PASS', 'RATE']);
+    expect([...kinds].sort()).toEqual(['ACTIVE', 'DEV', 'HANDOFF', 'PASS', 'PASSREG', 'RATE']);
     for (const item of items) {
       expect(Number(item.ttl)).toBeGreaterThanOrEqual(Number(item.expiresAtMs) / 1000);
     }

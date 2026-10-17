@@ -87,7 +87,7 @@ describe('Feature: pass-service, Property 1', () => {
                   serialNumber: serial,
                   handoffId: 'AAAAAAAAAAAAAAAAAAAAAA',
                   bundleIndex: '0',
-                  deviceLibraryIdentifier: 'lib-1',
+                  deviceLibraryIdentifier: 'library-0000000001',
                   passTypeIdentifier: PASS_TYPE,
                 };
           const headers: Record<string, string> = {};
@@ -167,7 +167,7 @@ describe('Feature: pass-service, Property 6', () => {
       fc.asyncProperty(fc.stringMatching(/^[g-z]{12}$/), async (raw) => {
         const sub = `sub-${raw}`;
         const email = `${raw}@mail.example.test`;
-        const deviceId = `lib-${raw}`;
+        const deviceId = `library-${raw}-0000`;
         const pushToken = 'ab12cd34ef56';
         const { fixture, tokenFor } = createRealAuthFixture();
         const jwt = tokenFor(sub, { email });
@@ -351,7 +351,7 @@ describe('Feature: pass-service, Property 32', () => {
           method: 'POST',
           resource: REG,
           path: {
-            deviceLibraryIdentifier: 'lib-1',
+            deviceLibraryIdentifier: 'library-0000000001',
             passTypeIdentifier: PASS_TYPE,
             serialNumber: serial,
           },
@@ -359,17 +359,20 @@ describe('Feature: pass-service, Property 32', () => {
           body: { pushToken: 'aabb' },
         });
         const registrationExpiry = fixture.clock.now() + 600_000;
-        const item = fixture.table.snapshot().find((i) => i.pk.startsWith('DEV#'));
-        await fixture.table.set(
-          { pk: String(item?.pk), sk: String(item?.sk) },
-          { expiresAtMs: registrationExpiry },
-        );
+        for (const item of fixture.table
+          .snapshot()
+          .filter((i) => i.pk.startsWith('DEV#') || i.pk.startsWith('PASSREG#'))) {
+          await fixture.table.set(
+            { pk: item.pk, sk: item.sk },
+            { expiresAtMs: registrationExpiry },
+          );
+        }
         fixture.clock.set(registrationExpiry + offset);
         const live = offset < 0;
         const listed = await fixture.callPasskit({
           method: 'GET',
           resource: LIST,
-          path: { deviceLibraryIdentifier: 'lib-1', passTypeIdentifier: PASS_TYPE },
+          path: { deviceLibraryIdentifier: 'library-0000000001', passTypeIdentifier: PASS_TYPE },
         });
         expect(listed.result.statusCode).toBe(live ? 200 : 204);
         await fixture.call({
@@ -384,7 +387,7 @@ describe('Feature: pass-service, Property 32', () => {
           method: 'POST',
           resource: REG,
           path: {
-            deviceLibraryIdentifier: 'lib-1',
+            deviceLibraryIdentifier: 'library-0000000001',
             passTypeIdentifier: PASS_TYPE,
             serialNumber: serial,
           },
@@ -448,7 +451,7 @@ describe('Feature: pass-service, Property 35', () => {
         async (raw, number, throwing) => {
           const sub = `sub-${raw}`;
           const email = `${raw}@mail.example.test`;
-          const deviceId = `lib-${raw}`;
+          const deviceId = `library-${raw}-0000`;
           const pushToken = 'ab12cd34ef56ab12';
           const sessionCode = `NDL${number}`;
           const title = `Title ${raw}`;

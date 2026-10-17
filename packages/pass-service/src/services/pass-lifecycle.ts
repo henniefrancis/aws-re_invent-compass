@@ -252,8 +252,7 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
   const lifecycle: PassLifecycle = {
     async issue(caller, request, op) {
       const count = request.passes.length;
-      const live = await passes.listBySub(caller.subHash, op.now);
-      const active = live.filter((rec) => rec.status === 'active').length;
+      const active = await passes.countActive(caller.subHash, op.now);
       if (active + count > ACTIVE_PASS_LIMIT) {
         throw new ProblemError(429, 'active_pass_limit');
       }
@@ -297,6 +296,12 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
         // Retry-safe: a failure part way leaves nothing behind, so the client can send it again.
         await Promise.allSettled(created.map((rec) => passes.delete(rec.serialNumber)));
         throw error;
+      }
+      // The cap is checked again after the records exist, with a strongly consistent count, so
+      // two requests that raced past the first check cannot both stay over the cap (review M2).
+      if ((await passes.countActive(caller.subHash, op.now)) > ACTIVE_PASS_LIMIT) {
+        await Promise.allSettled(created.map((rec) => passes.delete(rec.serialNumber)));
+        throw new ProblemError(429, 'active_pass_limit');
       }
       const inserted = wantsGoogle ? await insertAllGoogle(created, op) : new Set<string>();
       return {

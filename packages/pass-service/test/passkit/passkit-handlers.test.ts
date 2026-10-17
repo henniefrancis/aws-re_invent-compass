@@ -36,7 +36,7 @@ function reg(fixture: ApiFixture, o: RegOptions) {
     method: o.method ?? 'POST',
     resource: REG,
     path: {
-      deviceLibraryIdentifier: o.device ?? 'device-1',
+      deviceLibraryIdentifier: o.device ?? 'device-library-0001',
       passTypeIdentifier: o.type ?? TYPE,
       serialNumber: o.serial,
     },
@@ -116,19 +116,24 @@ describe('Feature: pass-service, PassKit statuses', () => {
   test('204 for an unknown device, another pass type, and nothing updated', async () => {
     const fixture = createApiFixture();
     const serial = await fixture.issue(SUB);
-    expect((await list(fixture, 'device-1')).result.statusCode).toBe(204);
+    expect((await list(fixture, 'device-library-0001')).result.statusCode).toBe(204);
     await reg(fixture, { serial, token: await fixture.authToken(serial) });
-    expect((await list(fixture, 'device-1', undefined, 'pass.other')).result.statusCode).toBe(204);
+    expect(
+      (await list(fixture, 'device-library-0001', undefined, 'pass.other')).result.statusCode,
+    ).toBe(204);
     expect((await list(fixture, 'bad id!')).result.statusCode).toBe(204);
-    const all = await list(fixture, 'device-1');
+    const all = await list(fixture, 'device-library-0001');
     expect(all.result.statusCode).toBe(200);
     const rec = await fixture.deps.passes.get(serial, fixture.clock.now());
     expect(all.json).toEqual({ serialNumbers: [serial], lastUpdated: String(rec?.updateTagMs) });
     // The pass at the tag itself is listed again (its fetch answers 304); one millisecond later
     // nothing has changed.
-    expect((await list(fixture, 'device-1', String(rec?.updateTagMs))).result.statusCode).toBe(200);
     expect(
-      (await list(fixture, 'device-1', String((rec?.updateTagMs ?? 0) + 1))).result.statusCode,
+      (await list(fixture, 'device-library-0001', String(rec?.updateTagMs))).result.statusCode,
+    ).toBe(200);
+    expect(
+      (await list(fixture, 'device-library-0001', String((rec?.updateTagMs ?? 0) + 1))).result
+        .statusCode,
     ).toBe(204);
     expect((await fixture.callPasskit({ method: 'GET', resource: LIST })).result.statusCode).toBe(
       204,
@@ -198,7 +203,7 @@ describe('Feature: pass-service, PassKit statuses', () => {
     const serial = await fixture.issue(SUB);
     const token = await fixture.authToken(serial);
     await reg(fixture, { serial, token });
-    const before = await list(fixture, 'device-1');
+    const before = await list(fixture, 'device-library-0001');
     fixture.clock.advance(5000);
     await fixture.call({
       method: 'POST',
@@ -208,7 +213,7 @@ describe('Feature: pass-service, PassKit statuses', () => {
     });
     const after = await list(
       fixture,
-      'device-1',
+      'device-library-0001',
       (before.json as { lastUpdated: string }).lastUpdated,
     );
     expect(after.result.statusCode).toBe(200);
@@ -223,17 +228,23 @@ describe('Feature: pass-service, PassKit statuses', () => {
     const serial = await fixture.issue(SUB);
     const token = await fixture.authToken(serial);
     for (let i = 0; i < 10; i += 1) {
-      expect((await reg(fixture, { serial, token, device: `device-${i}` })).result.statusCode).toBe(
-        201,
-      );
+      expect(
+        (
+          await reg(fixture, {
+            serial,
+            token,
+            device: `device-library-${String(i).padStart(4, '0')}`,
+          })
+        ).result.statusCode,
+      ).toBe(201);
     }
-    const eleventh = await reg(fixture, { serial, token, device: 'device-10' });
+    const eleventh = await reg(fixture, { serial, token, device: 'device-library-0010' });
     expect(eleventh.result.statusCode).toBe(200);
     expect(devItems(fixture)).toHaveLength(10);
     const refresh = await reg(fixture, {
       serial,
       token,
-      device: 'device-3',
+      device: 'device-library-0003',
       body: { pushToken: 'abab' },
     });
     expect(refresh.result.statusCode).toBe(200);
@@ -317,7 +328,7 @@ describe('Feature: pass-service, PassKit properties', () => {
           const own = op.serial === 's2' ? tokens.s2 : tokens.s1;
           const other = op.serial === 's1' ? tokens.s2 : tokens.s1;
           const token = op.token === 'missing' ? undefined : op.token === 'good' ? own : other;
-          const deviceId = op.deviceId === 'normal' ? `lib-${op.device}` : 'bad id!';
+          const deviceId = op.deviceId === 'normal' ? `library-identifier-${op.device}` : 'bad id!';
           const valid =
             op.token === 'good' &&
             op.serial !== 'ghost' &&
@@ -395,9 +406,12 @@ describe('Feature: pass-service, PassKit properties', () => {
             }),
           );
           if (spec.registered) {
-            await fixture.deps.registrations.upsert(
+            await fixture.deps.registrations.register(
               {
-                deviceHash: deviceHash(pepper, spec.otherDevice ? 'other-lib' : 'lib-1'),
+                deviceHash: deviceHash(
+                  pepper,
+                  spec.otherDevice ? 'other-library-000001' : 'library-0000000001',
+                ),
                 serialNumber: serial,
                 passTypeIdentifier: spec.otherType ? 'pass.other' : TYPE,
                 pushToken: 'aabb',
@@ -421,7 +435,7 @@ describe('Feature: pass-service, PassKit properties', () => {
             expected.push({ serial, last });
           }
         }
-        const reply = await list(fixture, 'lib-1', since);
+        const reply = await list(fixture, 'library-0000000001', since);
         if (expected.length === 0) {
           expect(reply.result.statusCode).toBe(204);
           expect(reply.result.body).toBe('');
@@ -530,10 +544,10 @@ describe('Feature: pass-service, update then list race', () => {
     const { fixture, serials } = await twoRegistered();
     fixture.clock.advance(5000);
     await change(fixture, serials[0] as string, 'AAA101', 'Room 1');
-    const first = await list(fixture, 'device-1', '0');
+    const first = await list(fixture, 'device-library-0001', '0');
     const tag = (first.json as { lastUpdated: string }).lastUpdated;
     await change(fixture, serials[1] as string, 'BBB202', 'Room 2');
-    const second = await list(fixture, 'device-1', tag);
+    const second = await list(fixture, 'device-library-0001', tag);
     expect(second.result.statusCode).toBe(200);
     expect((second.json as { serialNumbers: string[] }).serialNumbers).toContain(serials[1]);
   });
@@ -542,10 +556,10 @@ describe('Feature: pass-service, update then list race', () => {
     const { fixture, serials } = await twoRegistered();
     fixture.clock.advance(5000);
     await change(fixture, serials[0] as string, 'AAA101', 'Room 1');
-    const tag = (await list(fixture, 'device-1', '0')).json as { lastUpdated: string };
+    const tag = (await list(fixture, 'device-library-0001', '0')).json as { lastUpdated: string };
     fixture.clock.advance(1);
     await change(fixture, serials[1] as string, 'BBB202', 'Room 2');
-    const second = await list(fixture, 'device-1', String(Number(tag.lastUpdated) + 1));
+    const second = await list(fixture, 'device-library-0001', String(Number(tag.lastUpdated) + 1));
     expect((second.json as { serialNumbers: string[] }).serialNumbers).toEqual([serials[1]]);
   });
 
@@ -557,5 +571,25 @@ describe('Feature: pass-service, update then list race', () => {
     const reply = await latest(fixture, serials[0] as string, token);
     const modified = reply.result.headers['last-modified'] ?? '';
     expect(Date.parse(modified) % 1000).toBe(0);
+  });
+});
+
+describe('Feature: pass-service, device library identifier length', () => {
+  test('an identifier shorter than 16 characters is refused with the 401', async () => {
+    const fixture = createApiFixture();
+    const serial = await fixture.issue(SUB);
+    const token = await fixture.authToken(serial);
+    for (const device of ['short', 'a'.repeat(15)]) {
+      for (const method of ['POST', 'DELETE'] as const) {
+        const reply = await reg(fixture, { serial, token, device, method });
+        expect(reply.result.statusCode).toBe(401);
+      }
+    }
+    expect((await reg(fixture, { serial, token, device: 'a'.repeat(16) })).result.statusCode).toBe(
+      201,
+    );
+    expect((await reg(fixture, { serial, token, device: 'a'.repeat(129) })).result.statusCode).toBe(
+      401,
+    );
   });
 });

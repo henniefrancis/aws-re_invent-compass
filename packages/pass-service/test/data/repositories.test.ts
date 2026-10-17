@@ -72,7 +72,15 @@ describe('Feature: pass-service, pass repository', () => {
     const repo = createPassRepository(table);
     const rec = passRecord({ ttl: 1 });
     await repo.create(rec);
-    const stored = table.snapshot()[0]!;
+    const stored = table.snapshot().find((i) => i.pk.startsWith('PASS#'))!;
+    const marker = table.snapshot().find((i) => i.pk.startsWith('ACTIVE#'))!;
+    expect(marker).toMatchObject({
+      pk: 'ACTIVE#sub-a',
+      sk: rec.serialNumber,
+      expiresAtMs: rec.expiresAtMs,
+      ttl: ttlOf(rec.expiresAtMs),
+      gsi2pk: 'SUB#sub-a',
+    });
     expect(stored).toMatchObject({
       pk: `PASS#${rec.serialNumber}`,
       sk: 'PASS',
@@ -92,7 +100,9 @@ describe('Feature: pass-service, pass repository', () => {
     expect(await repo.get(rec.serialNumber, rec.expiresAtMs - 1)).toBeDefined();
     expect(await repo.get(rec.serialNumber, rec.expiresAtMs)).toBeUndefined();
     expect(await repo.listBySub('sub-a', rec.expiresAtMs)).toEqual([]);
-    expect(table.snapshot()).toHaveLength(1);
+    expect(table.snapshot()).toHaveLength(2);
+    expect(await repo.countActive('sub-a', rec.expiresAtMs - 1)).toBe(1);
+    expect(await repo.countActive('sub-a', rec.expiresAtMs)).toBe(0);
     expect(await repo.get('00000000-0000-4000-8000-000000000000', NOW)).toBeUndefined();
   });
 
@@ -157,24 +167,29 @@ describe('Feature: pass-service, registration repository', () => {
   test('upsert reports created then updated, and an expired item counts as created', async () => {
     const table = createMemoryTable();
     const repo = createRegistrationRepository(table);
-    expect(await repo.upsert(registration(), NOW)).toBe('created');
-    expect(await repo.upsert(registration({ pushToken: 'ccdd' }), NOW)).toBe('updated');
+    expect(await repo.register(registration(), NOW)).toBe('created');
+    expect(await repo.register(registration({ pushToken: 'ccdd' }), NOW)).toBe('updated');
     expect((await repo.get('dev-1', registration().serialNumber, NOW))?.pushToken).toBe('ccdd');
-    expect(await repo.upsert(registration(), NOW + 5000)).toBe('created');
-    const stored = table.snapshot()[0]!;
+    expect(await repo.register(registration(), NOW + 5000)).toBe('created');
+    const stored = table.snapshot().find((i) => i.pk.startsWith('DEV#'))!;
     expect(stored).toMatchObject({
       pk: 'DEV#dev-1',
       sk: `REG#${registration().serialNumber}`,
-      gsi1pk: `PASS#${registration().serialNumber}`,
-      gsi1sk: 'DEV#dev-1',
       gsi2pk: 'SUB#sub-a',
       gsi2sk: `REG#dev-1#${registration().serialNumber}`,
+    });
+    const copy = table.snapshot().find((i) => i.pk.startsWith('PASSREG#'))!;
+    expect(copy).toMatchObject({
+      pk: `PASSREG#${registration().serialNumber}`,
+      sk: 'dev-1',
+      pushToken: 'aabb',
+      gsi2pk: 'SUB#sub-a',
     });
   });
 
   test('get hides an expired registration and delete removes one', async () => {
     const repo = createRegistrationRepository(createMemoryTable());
-    await repo.upsert(registration(), NOW);
+    await repo.register(registration(), NOW);
     expect(await repo.get('dev-1', registration().serialNumber, NOW + 1000)).toBeUndefined();
     expect(await repo.get('dev-1', registration().serialNumber, NOW)).toBeDefined();
     expect(await repo.delete('dev-1', registration().serialNumber)).toBe(true);
@@ -183,12 +198,12 @@ describe('Feature: pass-service, registration repository', () => {
 
   test('listByDevice filters by pass type and expiry', async () => {
     const repo = createRegistrationRepository(createMemoryTable());
-    await repo.upsert(registration(), NOW);
-    await repo.upsert(
+    await repo.register(registration(), NOW);
+    await repo.register(
       registration({ serialNumber: 'other-serial', passTypeIdentifier: 'pass.other' }),
       NOW,
     );
-    await repo.upsert(registration({ serialNumber: 'old-serial', expiresAtMs: NOW - 1 }), NOW);
+    await repo.register(registration({ serialNumber: 'old-serial', expiresAtMs: NOW - 1 }), NOW);
     const list = await repo.listByDevice('dev-1', 'pass.test.compass', NOW);
     expect(list.map((r) => r.serialNumber)).toEqual([registration().serialNumber]);
     expect(await repo.listByDevice('dev-2', 'pass.test.compass', NOW)).toEqual([]);
@@ -197,9 +212,9 @@ describe('Feature: pass-service, registration repository', () => {
   test('listByPass returns at most ten live registrations through GSI1', async () => {
     const repo = createRegistrationRepository(createMemoryTable());
     for (let i = 0; i < 14; i += 1) {
-      await repo.upsert(registration({ deviceHash: `dev-${String(i).padStart(2, '0')}` }), NOW);
+      await repo.register(registration({ deviceHash: `dev-${String(i).padStart(2, '0')}` }), NOW);
     }
-    await repo.upsert(registration({ deviceHash: 'dev-expired', expiresAtMs: NOW - 1 }), NOW);
+    await repo.register(registration({ deviceHash: 'dev-expired', expiresAtMs: NOW - 1 }), NOW);
     const list = await repo.listByPass(registration().serialNumber, NOW);
     expect(list).toHaveLength(MAX_REGISTRATIONS_PER_PASS);
     expect(list.every((r) => r.expiresAtMs > NOW)).toBe(true);
@@ -208,7 +223,7 @@ describe('Feature: pass-service, registration repository', () => {
   test('extendExpiry moves expiry and ttl on live registrations', async () => {
     const table = createMemoryTable();
     const repo = createRegistrationRepository(table);
-    await repo.upsert(registration(), NOW);
+    await repo.register(registration(), NOW);
     await repo.extendExpiry(registration().serialNumber, NOW + 90_000, NOW);
     const read = await repo.get('dev-1', registration().serialNumber, NOW);
     expect(read?.expiresAtMs).toBe(NOW + 90_000);
@@ -243,5 +258,45 @@ describe('Feature: pass-service, handoff repository', () => {
     });
     expect(await repo.get(rec.handoffHash, NOW + 900_000)).toBeUndefined();
     expect(await repo.get('missing', NOW)).toBeUndefined();
+  });
+});
+
+describe('Feature: pass-service, cap markers', () => {
+  test('the active count follows create, void, expiry change and delete', async () => {
+    const table = createMemoryTable();
+    const repo = createPassRepository(table);
+    const a = passRecord();
+    const b = passRecord({ serialNumber: '22222222-2222-4222-8222-222222222222' });
+    const gone = passRecord({
+      serialNumber: '33333333-3333-4333-8333-333333333333',
+      status: 'voided',
+    });
+    await repo.create(a);
+    await repo.create(b);
+    await repo.create(gone);
+    expect(await repo.countActive('sub-a', NOW)).toBe(2);
+    expect(await repo.countActive('sub-b', NOW)).toBe(0);
+    await repo.save({ ...a, status: 'voided', version: 2 }, 1);
+    expect(await repo.countActive('sub-a', NOW)).toBe(1);
+    await repo.save({ ...b, version: 2, expiresAtMs: NOW + 10, ttl: 0 }, 1);
+    expect(await repo.countActive('sub-a', NOW + 9)).toBe(1);
+    expect(await repo.countActive('sub-a', NOW + 10)).toBe(0);
+    expect(await repo.delete(b.serialNumber)).toBe(true);
+    expect(table.snapshot().some((item) => item.pk.startsWith('ACTIVE#'))).toBe(false);
+  });
+
+  test('a registration past the cap is taken back and reported full', async () => {
+    const table = createMemoryTable();
+    const repo = createRegistrationRepository(table);
+    for (let i = 0; i < MAX_REGISTRATIONS_PER_PASS; i += 1) {
+      expect(await repo.register(registration({ deviceHash: `dev-${i}` }), NOW)).toBe('created');
+    }
+    expect(await repo.register(registration({ deviceHash: 'dev-extra' }), NOW)).toBe('full');
+    expect(await repo.get('dev-extra', registration().serialNumber, NOW)).toBeUndefined();
+    expect(await repo.register(registration({ deviceHash: 'dev-3', pushToken: 'ee' }), NOW)).toBe(
+      'updated',
+    );
+    expect(table.snapshot().filter((i) => i.pk.startsWith('PASSREG#'))).toHaveLength(10);
+    expect((await repo.listByPass(registration().serialNumber, NOW)).length).toBe(10);
   });
 });

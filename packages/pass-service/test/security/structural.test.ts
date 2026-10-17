@@ -52,7 +52,7 @@ describe('Feature: pass-service, structural guards', () => {
     const before = fixture.secrets.reads.google;
     const header = { authorization: `ApplePass ${token}` };
     const path = {
-      deviceLibraryIdentifier: 'lib-1',
+      deviceLibraryIdentifier: 'library-0000000001',
       passTypeIdentifier: 'pass.test.compass',
       serialNumber: serial,
     };

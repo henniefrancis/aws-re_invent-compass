@@ -34,9 +34,9 @@ async function seedAll(fixture: ApiFixture, seeds: Seed[]) {
     });
     await fixture.deps.passes.create(pass);
     for (let i = 0; i < seed.registrations; i += 1) {
-      await fixture.deps.registrations.upsert(
+      await fixture.deps.registrations.register(
         {
-          deviceHash: `device-${counter}-${i}`,
+          deviceHash: `device-library-${counter}-${i}`,
           serialNumber: serial,
           passTypeIdentifier: 'pass.test.compass',
           pushToken: `0${i}ab`,

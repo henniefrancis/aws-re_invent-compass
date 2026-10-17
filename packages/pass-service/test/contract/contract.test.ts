@@ -72,7 +72,11 @@ async function buildWorld(): Promise<World> {
   await fixture.callPasskit({
     method: 'POST',
     resource: REG,
-    path: { deviceLibraryIdentifier: 'lib-1', passTypeIdentifier: PASS_TYPE, serialNumber: serial },
+    path: {
+      deviceLibraryIdentifier: 'library-0000000001',
+      passTypeIdentifier: PASS_TYPE,
+      serialNumber: serial,
+    },
     headers: { authorization: `ApplePass ${token}` },
     body: { pushToken: 'aabbccdd' },
   });
@@ -291,7 +295,7 @@ const scenarios: Record<string, Record<number, Scenario>> = {
         method: 'POST',
         resource: REG,
         path: {
-          deviceLibraryIdentifier: 'lib-new',
+          deviceLibraryIdentifier: 'library-new-00000001',
           passTypeIdentifier: PASS_TYPE,
           serialNumber: w.serial,
         },
@@ -303,7 +307,7 @@ const scenarios: Record<string, Record<number, Scenario>> = {
         method: 'POST',
         resource: REG,
         path: {
-          deviceLibraryIdentifier: 'lib-1',
+          deviceLibraryIdentifier: 'library-0000000001',
           passTypeIdentifier: PASS_TYPE,
           serialNumber: w.serial,
         },
@@ -315,7 +319,7 @@ const scenarios: Record<string, Record<number, Scenario>> = {
         method: 'POST',
         resource: REG,
         path: {
-          deviceLibraryIdentifier: 'lib-1',
+          deviceLibraryIdentifier: 'library-0000000001',
           passTypeIdentifier: PASS_TYPE,
           serialNumber: w.serial,
         },
@@ -328,7 +332,7 @@ const scenarios: Record<string, Record<number, Scenario>> = {
         method: 'DELETE',
         resource: REG,
         path: {
-          deviceLibraryIdentifier: 'lib-gone',
+          deviceLibraryIdentifier: 'library-gone-0000001',
           passTypeIdentifier: PASS_TYPE,
           serialNumber: w.serial,
         },
@@ -339,7 +343,7 @@ const scenarios: Record<string, Record<number, Scenario>> = {
         method: 'DELETE',
         resource: REG,
         path: {
-          deviceLibraryIdentifier: 'lib-1',
+          deviceLibraryIdentifier: 'library-0000000001',
           passTypeIdentifier: PASS_TYPE,
           serialNumber: w.serial,
         },
@@ -350,13 +354,13 @@ const scenarios: Record<string, Record<number, Scenario>> = {
       pk(w, {
         method: 'GET',
         resource: LIST,
-        path: { deviceLibraryIdentifier: 'lib-1', passTypeIdentifier: PASS_TYPE },
+        path: { deviceLibraryIdentifier: 'library-0000000001', passTypeIdentifier: PASS_TYPE },
       }),
     204: (w) =>
       pk(w, {
         method: 'GET',
         resource: LIST,
-        path: { deviceLibraryIdentifier: 'nobody', passTypeIdentifier: PASS_TYPE },
+        path: { deviceLibraryIdentifier: 'nobody-library-0001', passTypeIdentifier: PASS_TYPE },
       }),
   },
   getLatestPass: {
@@ -519,7 +523,7 @@ describe('Feature: pass-service, contract conformance', () => {
             serialNumber: target(serial, UNKNOWN_SERIAL),
             handoffId: target(handoffId, UNKNOWN_HANDOFF),
             bundleIndex: c.index,
-            deviceLibraryIdentifier: target('lib-1', 'nobody'),
+            deviceLibraryIdentifier: target('library-0000000001', 'nobody-library-0001'),
             passTypeIdentifier: c.target === 'malformed' ? 'pass.other' : PASS_TYPE,
           },
         };

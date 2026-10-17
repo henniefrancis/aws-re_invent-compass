@@ -8,7 +8,7 @@
 // fan-out is skipped. Apple passes stay on the phone until they expire (the attendee is told
 // to delete them); Google objects go INACTIVE, and Google keeps its own copy.
 import type { ApiContext } from '../../app/context.js';
-import { RATE_PREFIX, PASS_PREFIX, SUB_PREFIX, isLive } from '../../data/keys.js';
+import { RATE_PREFIX, PASS_PREFIX, SUB_PREFIX, isLive, isMarker } from '../../data/keys.js';
 import type { DeviceRegistration, PassRecord } from '../../data/records.js';
 import type { Item, Key } from '../../data/table-client.js';
 import { header } from '../../http/event.js';
@@ -40,12 +40,6 @@ export const forgetMe: Handler<ApiContext> = async (req, ctx) => {
     for (const item of found) {
       erased.set(keyOf(item), item);
       keys.set(keyOf(item), { pk: item.pk, sk: item.sk });
-      if (item.pk.startsWith(PASS_PREFIX)) {
-        for (const registration of await ctx.table.query({ index: 'GSI1', pk: item.pk })) {
-          erased.set(keyOf(registration), registration);
-          keys.set(keyOf(registration), { pk: registration.pk, sk: registration.sk });
-        }
-      }
     }
     // A registration comes back from both indexes; DynamoDB rejects duplicate keys in a batch.
     await ctx.table.batchDelete([...keys.values()]);
@@ -85,6 +79,10 @@ export const forgetMe: Handler<ApiContext> = async (req, ctx) => {
 
   return json(
     202,
-    ForgetMeResponseSchema.parse({ voided: voidable.length, deleted: items.length }),
+    // The marker items are bookkeeping for the caps and are not counted as the attendee data.
+    ForgetMeResponseSchema.parse({
+      voided: voidable.length,
+      deleted: items.filter((item) => !isMarker(item)).length,
+    }),
   );
 };

@@ -9,7 +9,7 @@ export interface Key {
 export type Item = Record<string, unknown> & Key;
 
 export interface QueryInput {
-  index?: 'GSI1' | 'GSI2';
+  index?: 'GSI2';
   pk: string;
   skPrefix?: string;
 }

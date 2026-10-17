@@ -21,7 +21,7 @@ const baseConfig: ApnsConfig = {
 
 function targets(tokens: string[]): PushTarget[] {
   return tokens.map((pushToken, i) => ({
-    deviceHash: `device-${i}`,
+    deviceHash: `device-library-${String(i).padStart(4, '0')}`,
     serialNumber: `serial-${i}`,
     pushToken,
   }));

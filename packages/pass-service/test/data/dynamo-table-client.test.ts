@@ -184,11 +184,11 @@ describe('Feature: pass-service, DynamoDB table client', () => {
       ExclusiveStartKey: undefined,
     });
 
-    const gsi1 = fakeDoc({ Items: [] });
-    await createDynamoTableClient(gsi1.doc, 't').query({ index: 'GSI1', pk: 'P', skPrefix: 'D' });
-    expect(gsi1.sent[0]?.input).toMatchObject({
-      IndexName: 'GSI1',
-      ExpressionAttributeNames: { '#pk': 'gsi1pk', '#sk': 'gsi1sk' },
+    const gsi2 = fakeDoc({ Items: [] });
+    await createDynamoTableClient(gsi2.doc, 't').query({ index: 'GSI2', pk: 'P', skPrefix: 'D' });
+    expect(gsi2.sent[0]?.input).toMatchObject({
+      IndexName: 'GSI2',
+      ExpressionAttributeNames: { '#pk': 'gsi2pk', '#sk': 'gsi2sk' },
     });
   });
 
