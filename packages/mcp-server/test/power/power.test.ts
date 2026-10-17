@@ -385,6 +385,7 @@ describe('the whole Power folder', () => {
   test('contains exactly the documented files', async () => {
     const files = (await walk(power)).map((f) => relative(power, f).split('\\').join('/')).sort();
     expect(files).toEqual([
+      'POWER.md',
       'hook-templates/reinvent-compass.json',
       'mcp.json',
       'plugin.json',

@@ -23,7 +23,7 @@ You need Node.js 24 or newer. Compass starts with `npx --yes reinvent-compass@<v
 
 ### Kiro (the Power)
 
-The Power is the `power/` folder of the repository: `plugin.json`, `mcp.json`, three skills and a hook template.
+The Power is the `power/` folder of the repository: `plugin.json` and a matching `POWER.md` (Kiro needs one of the two at the root), `mcp.json`, three skills and a hook template.
 
 1. In Kiro, open the Powers panel and choose Add Custom Power.
 2. Choose Import power from GitHub and give it the repository URL: `https://github.com/henniefrancis/aws-re_invent-compass`.

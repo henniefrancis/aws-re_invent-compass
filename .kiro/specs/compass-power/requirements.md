@@ -419,3 +419,5 @@ R2.1. **Scan limits.** A scan SHALL finish inside 20 seconds in a worker thread 
 R2.2. **Safe reads.** The spec writer and the `.gitignore` offer SHALL read an existing file only when it is a regular file with one name that is not a symbolic link, is opened without following a link, is re-checked through the open handle, and is at most 256 KiB; any anomaly SHALL refuse with the fixed write-refused message and no diff.
 
 R2.3. **Packaging.** The published package SHALL be one self-contained bundle (the server and the scan worker) with only the native keyring as a dependency, SHALL carry the venue list, the sample repo and the simulated fixtures, SHALL look them up relative to the package, and SHALL pass a pack, unpack and run smoke test; the hooks and `mcp.json` SHALL pin the exact package version, and the README SHALL say that the npm name must be claimed before publishing.
+
+R2.4. **Power manifest.** The `power/` folder SHALL contain both a valid `plugin.json` and a `POWER.md` whose name, description, keywords and author equal those of `plugin.json`, so Kiro finds the power whichever manifest it reads.
