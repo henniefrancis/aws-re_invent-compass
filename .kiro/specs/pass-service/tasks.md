@@ -156,16 +156,16 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 8.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 9. Implement the rate limiter
-  - [ ] 9.1 Implement the fixed-window limiter
+- [x] 9. Implement the rate limiter
+  - [x] 9.1 Implement the fixed-window limiter
     - Create `src/data/rate-limiter.ts` with `consume` (conditional `addCounter`, refuse when count plus units exceeds 60 pass writes or 10 hand-offs in the epoch-hour window, `retryAfterSeconds` at least 1) and `record` (unconditional add for update and void), counters keyed `RATE#<subHash>` and `<kind>#<windowStartSec>` with `expiresAtMs` at the window end and `ttl` 120 seconds later; export `ACTIVE_PASS_LIMIT = 80`
     - _Requirements: 6.1, 6.2, 6.3, 6.5, 6.6, 6.7_
 
-  - [ ] 9.2 Write property test for the limiter
+  - [x] 9.2 Write property test for the limiter
     - **Property 8: The fixed-window limiter allows exactly up to the limit, atomically**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.6, 6.7**
 
-  - [ ] 9.3 Commit
+  - [x] 9.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 10. Implement request and response validation

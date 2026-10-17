@@ -38,3 +38,7 @@ export function handoffKey(handoffHash: string): Key {
 export function subIndexKey(subHash: string): string {
   return `${SUB_PREFIX}${subHash}`;
 }
+
+export function rateKey(subHash: string, name: string, windowStartSec: number): Key {
+  return { pk: `${RATE_PREFIX}${subHash}`, sk: `${name}#${windowStartSec}` };
+}

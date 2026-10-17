@@ -1219,3 +1219,4 @@ Each entry names the task that introduced it. Where this section and the text ab
 
 - Task 6: `createTokenVerifier` takes `{newJwksCache, secrets, clock}` instead of a ready `jwksCache`, so it can rebuild the verifier and cache every hour (review L1); `ApiConfig['idToken']` is a discriminated union (`cognito` with `userPoolId`, `oidc` with `jwksUri`).
 - Task 2: `json()` accepts 200, 201 and 202; the hardening headers (review M4) are added by the pipeline through `withHardening`, not by each builder, and not for getHealth.
+- Task 9: `RateLimiter` methods take an optional `scope` (per-pass update counters), `consume` and `record` cover the review counters `forgetMe`, `updates`, `passUpdate`, and `consumeHandoffRead` caps hand-off reads at 30 for the life of the hand-off (review H2, H3, M4).
