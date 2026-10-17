@@ -413,18 +413,18 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 23.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 24. Build the Kiro Power
-  - [ ] 24.1 Write plugin.json, mcp.json and the hook template
+- [x] 24. Build the Kiro Power
+  - [x] 24.1 Write plugin.json, mcp.json and the hook template
     - `power/plugin.json`, `power/mcp.json` and `power/hook-templates/reinvent-compass.json` exactly as in design Component 14, with the literal package version from `packages/mcp-server/package.json`
     - _Requirements: 20.1, 20.2, 20.6, 20.7_
-  - [ ] 24.2 Write the three skills
+  - [x] 24.2 Write the three skills
     - `power/skills/plan-my-week/SKILL.md`, `power/skills/first-timer-guide/SKILL.md` with `references/official-sources.md`, `power/skills/install-hooks/SKILL.md`, each with `name` and `description` front matter, content per design Component 14
     - For `first-timer-guide`, open every official page you cite and record its exact URL; use only `reinvent.awsevents.com`, `aws.amazon.com` and `docs.aws.amazon.com`; never guess a URL
     - _Requirements: 20.3, 20.4, 20.5, 20.8_
-  - [ ] 24.3 Write the Power structural tests
+  - [x] 24.3 Write the Power structural tests
     - In `packages/mcp-server/test/power/`: plugin and MCP files parse against local zod schemas mirroring the quoted Agent Plugins fields and the documented Kiro keys; exact keywords; versions equal across the three files and the package; `disabledTools` equals the seven Awsevents_Write_Tools; no write tool in any `autoApprove`; matchers cover exactly the documented sets with no `{{`; every cited URL uses an allowed host; no em or en dash and no AWS logo file under `power/`
     - _Requirements: 20.1, 20.2, 20.4, 20.6, 20.7, 20.8_
-  - [ ] 24.4 Commit
+  - [x] 24.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 25. Write the package README
