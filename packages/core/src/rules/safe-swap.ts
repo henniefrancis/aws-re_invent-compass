@@ -12,8 +12,10 @@
 // Outcome:
 //   unsafe   the repeat clashes with the original or another commitment; each is named
 //   failed   the confirmation schedule does not show the repeat held
-//   safe     no clash and the repeat is held
-//   unknown  the timezone or the repeat's times are unusable, or another commitment has times
+//   safe     no clash and the repeat is held. "Safe" means only that: nothing overlaps. It does
+//            not say the walks between venues are comfortable, or that seats are available.
+//   unknown  the timezone, the current time or the repeat's times are unusable, the repeat is already
+//            over (relative to Context.now), or another commitment has times
 //            that cannot be checked, so a clash cannot be ruled out
 import type { Commitment, NormalisedSession } from '@compass/contracts';
 import { findClashes, intervalOf, type ClashReport } from './clashes.js';
@@ -25,7 +27,7 @@ import {
   sessionToCommitment,
   type ScheduleInput,
 } from './resolve.js';
-import { checkZone } from './time.js';
+import { checkZone, parseInstant } from './time.js';
 
 /** One step of a swap plan. */
 export interface SwapStep {
@@ -102,11 +104,21 @@ export function planSafeSwap(
     return plan('unknown', repeat, [], reason.swapZoneProblem(zone.reason));
   }
 
+  const nowMs = parseInstant(context.now);
+  if (nowMs === undefined) {
+    return plan('unknown', repeat, [], reason.swapNowUnusable());
+  }
+
   const sessions = { ...confirmationSchedule.sessions, [repeat.sessionId]: repeat };
   const repeatCommitment = sessionToCommitment(repeat);
   const resolvedRepeat = resolveCommitment(repeatCommitment, sessions);
-  if ('missing' in intervalOf(resolvedRepeat, zone.zone)) {
+  const repeatInterval = intervalOf(resolvedRepeat, zone.zone);
+  if ('missing' in repeatInterval) {
     return plan('unknown', repeat, [], reason.swapUnknown());
+  }
+  // A repeat that is already over cannot be swapped to, whatever the schedule says.
+  if (repeatInterval.end <= nowMs) {
+    return plan('unknown', repeat, [], reason.swapRepeatPast(sessionRef(repeat)));
   }
 
   const held = confirmationSchedule.commitments.some(

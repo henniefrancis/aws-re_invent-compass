@@ -162,9 +162,37 @@ describe('safe swap examples', () => {
       reserved(early),
       touching,
       scheduleOf([early, touching]),
-      testContext(),
+      testContext({ now: '2026-03-01T00:00:00-08:00' }),
     );
     expect(result.outcome).toBe('safe');
+  });
+
+  test('unknown: a repeat that is already over cannot be swapped to', () => {
+    const confirmation = scheduleOf([original, repeat]);
+    const afterRepeat = testContext({ now: iso(BASE + 3_600_000) });
+    const result = planSafeSwap(reserved(original), repeat, confirmation, afterRepeat);
+    expect(result.outcome).toBe('unknown');
+    expect(result.reason).toBe(
+      'The repeat "DAT302-R" has already ended. The swap cannot be checked. The original stays unchanged.',
+    );
+    expect(result.steps[2].blockedUntilConfirmed).toBe(true);
+    // One second before it ends it is still a live repeat.
+    const justBefore = testContext({ now: iso(BASE + 3_599_000) });
+    expect(planSafeSwap(reserved(original), repeat, confirmation, justBefore).outcome).toBe('safe');
+  });
+
+  test('unknown: an unusable current time cannot be judged', () => {
+    const confirmation = scheduleOf([original, repeat]);
+    const result = planSafeSwap(
+      reserved(original),
+      repeat,
+      confirmation,
+      testContext({ now: 'soon' }),
+    );
+    expect(result.outcome).toBe('unknown');
+    expect(result.reason).toBe(
+      'The current time is not usable. The swap cannot be checked. The original stays unchanged.',
+    );
   });
 });
 

@@ -60,8 +60,9 @@ export function scoreEnergy(
   dayCommitments: readonly ResolvedCommitment[],
   context: Context,
 ): EnergyResult {
+  // Personal time with no location is "stay put", not missing data: it is counted, not sequenced.
   const missingDataNotes = dayCommitments
-    .filter((item) => !isPlaceable(item))
+    .filter((item) => !isPlaceable(item) && item.stayPut !== true)
     .map((item) => reason.energyDataMissing(item.ref));
 
   // Consecutive commitments, in time order. All-day items are counted but not sequenced.

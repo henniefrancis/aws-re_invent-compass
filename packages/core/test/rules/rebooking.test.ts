@@ -158,6 +158,87 @@ describe('rebooking examples', () => {
   });
 });
 
+describe('repeat suffixes and the original session', () => {
+  test('matches -R, -R1, -R2 and so on, in any case, for the base code in any case', () => {
+    const codes = ['DAT302-R', 'DAT302-R1', 'DAT302-R2', 'dat302-r', 'Dat302-R12'];
+    const repeats = codes.map((code, i) =>
+      session({ sessionId: `r${i}`, code, startsAt: later(60 + i) }),
+    );
+    const result = run('DAT302', repeats);
+    expect(result.options.map((o) => o.kind)).toEqual(Array(5).fill('repeat'));
+    expect(result.options).toHaveLength(5);
+    expect(run('dat302-r2', repeats).options).toHaveLength(5);
+  });
+
+  test('a code that only looks similar, or has no suffix, is not a repeat', () => {
+    const near = [
+      session({ sessionId: 'a', code: 'DAT302-RX', startsAt: later(60) }),
+      session({ sessionId: 'b', code: 'DAT302R', startsAt: later(60) }),
+      session({ sessionId: 'c', code: 'DAT3020-R', startsAt: later(60) }),
+      session({ sessionId: 'd', code: 'DAT302', startsAt: later(60) }),
+    ];
+    expect(run('DAT302', near).options).toEqual([]);
+  });
+
+  test('baseCodeOf strips any -R number suffix, trims, and treats non-text as empty', () => {
+    expect(baseCodeOf(' DAT302-R2 ')).toBe('DAT302');
+    expect(baseCodeOf('dat302-r')).toBe('dat302');
+    expect(baseCodeOf('DAT302-R2-R')).toBe('DAT302-R2');
+    for (const value of [undefined, null, 5, {}]) {
+      expect(baseCodeOf(value)).toBe('');
+    }
+  });
+
+  test('repeatOf matches the base code in any case', () => {
+    const pointer = session({
+      sessionId: 'p',
+      code: 'OTHER9',
+      repeatOf: 'dat302',
+      startsAt: later(60),
+    });
+    expect(run('DAT302', [pointer]).options.map((o) => o.sessionId)).toEqual(['p']);
+  });
+
+  test('an empty or blank base code matches nothing, even sessions with an empty code', () => {
+    const blank = session({ sessionId: 'x', code: '', startsAt: later(60), isReservable: false });
+    const dash = session({ sessionId: 'y', code: '-R', startsAt: later(60) });
+    for (const base of ['', '   ', '-R']) {
+      expect(run(base, [blank, dash], [blank, dash])).toEqual({
+        status: 'ok',
+        options: [],
+        message: 'No alternative was found for this session.',
+      });
+    }
+  });
+
+  test('the original session is never offered as its own alternative, when its id is known', () => {
+    const original = session({
+      sessionId: 'orig',
+      code: 'DAT302',
+      startsAt: later(30),
+      isReservable: false,
+    });
+    const standby = session({ sessionId: 'orig', code: 'DAT302', startsAt: later(30) });
+    const repeat = session({ sessionId: 'rep', code: 'DAT302-R', startsAt: later(60) });
+    const without = run('DAT302', [original, repeat], [standby]);
+    expect(without.options.map((o) => o.sessionId)).toEqual(['orig', 'rep']);
+    const withId = findRebookingOptions(
+      'DAT302',
+      [original, repeat],
+      [standby],
+      testContext(),
+      'orig',
+    );
+    expect(withId.options.map((o) => o.sessionId)).toEqual(['rep']);
+  });
+
+  test('sessions with a code that is not text are ignored, not a crash', () => {
+    const odd = session({ sessionId: 'odd', startsAt: later(60) });
+    (odd as unknown as { code: unknown }).code = 7;
+    expect(run('DAT302', [odd], [odd]).options).toEqual([]);
+  });
+});
+
 describe('rebooking unknowns', () => {
   const repeat = session({ sessionId: 'a', code: 'DAT302-R', startsAt: later(60) });
 

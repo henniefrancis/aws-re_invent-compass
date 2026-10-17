@@ -148,6 +148,21 @@ describe('scoreEnergy examples', () => {
     ]);
   });
 
+  test('stay-put personal time is counted but neither sequenced nor noted as missing data', () => {
+    const day = [
+      item('A1', 'Alpha Hall', 9 * 60, 10 * 60),
+      item('REST', undefined, 10 * 60, 11 * 60, { stayPut: true }),
+      item('B1', 'Beta Tower', 12 * 60, 13 * 60),
+    ];
+    const result = scoreEnergy(day, testContext());
+    expect(result).toMatchObject({
+      commitmentCount: 3,
+      totalWalkingMinutes: 20,
+      venueChangeCount: 1,
+      missingDataNotes: [],
+    });
+  });
+
   test('a walk with no known time adds no minutes and is named', () => {
     const day = [
       item('A1', 'Alpha Hall', 9 * 60, 10 * 60),

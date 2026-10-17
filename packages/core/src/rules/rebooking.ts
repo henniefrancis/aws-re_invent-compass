@@ -4,12 +4,13 @@
 // Three kinds of option are found for the session's base code (the code without a -R
 // suffix), and only sessions that start strictly after Context.now are offered (the engine
 // never reads the system clock):
-//   repeat   a session whose code is the base code plus -R, or that points back to the base
-//            code through repeatOf (Req 6.1)
+//   repeat   a session whose code is the base code plus -R, -R1, -R2 and so on (any case), or
+//            that points back to the base code through repeatOf (Req 6.1)
 //   standby  a favorited session that shares the base code, held as a backup (Req 6.2)
 //   walkUp   a session for the base code that needs no reservation or has no seats left, so
 //            the attendee can join the walk-up line (Req 6.3)
-// A session that fits more than one kind is listed once, under the first kind in that order.
+// A session that fits more than one kind is listed once, under the first kind in that order. The
+// original session (originalSessionId, when known) is never offered as its own alternative.
 import type { NormalisedSession } from '@compass/contracts';
 import type { Context } from './context.js';
 import * as reason from './reasons.js';
@@ -37,10 +38,17 @@ export type RebookResult =
 /** Seat bands that mean the attendee can only walk up. */
 const WALK_UP_BANDS: readonly string[] = ['unavailable', 'walkUp'];
 
-/** The base code: a session code with a trailing -R removed. */
-export function baseCodeOf(code: string): string {
-  return code.trim().replace(/-R$/, '');
+// A repeat suffix: -R, -R1, -R2 and so on, in any case.
+const REPEAT_SUFFIX = /-R\d*$/i;
+
+/** The base code: a session code with a trailing -R, -R1, -R2 and so on removed, trimmed. */
+export function baseCodeOf(code: unknown): string {
+  return typeof code === 'string' ? code.trim().replace(REPEAT_SUFFIX, '') : '';
 }
+
+/** Base codes are compared without regard to case. */
+const sameBase = (a: unknown, b: string): boolean =>
+  baseCodeOf(a).toLowerCase() === b.toLowerCase();
 
 interface Found {
   option: RebookOption;
@@ -56,6 +64,7 @@ export function findRebookingOptions(
   candidates: readonly NormalisedSession[],
   favorites: readonly NormalisedSession[],
   context: Context,
+  originalSessionId?: string,
 ): RebookResult {
   const zone = checkZone(context.eventTimezone);
   if (!zone.ok) {
@@ -67,8 +76,13 @@ export function findRebookingOptions(
   }
 
   const base = baseCodeOf(baseCode);
+  // An empty base code would match every session with an empty code, so it matches nothing.
+  if (base === '') {
+    return { status: 'ok', options: [], message: reason.rebookNone() };
+  }
   const found: Found[] = [];
-  const seen = new Set<string>();
+  // The original session is never offered as its own alternative, when its id is known.
+  const seen = new Set<string>(originalSessionId === undefined ? [] : [originalSessionId]);
 
   // Add a session as an option when it starts after now and has not been listed yet.
   const add = (
@@ -97,22 +111,23 @@ export function findRebookingOptions(
   };
 
   for (const session of candidates) {
+    const code = typeof session.code === 'string' ? session.code.trim() : '';
     const isRepeat =
-      session.code.trim() === `${base}-R` ||
-      (session.repeatOf !== undefined && session.repeatOf.trim() === base);
+      (REPEAT_SUFFIX.test(code) && sameBase(code, base)) ||
+      (session.repeatOf !== undefined && sameBase(session.repeatOf, base));
     if (isRepeat) {
       add('repeat', session, reason.rebookRepeat);
     }
   }
   for (const session of favorites) {
-    if (baseCodeOf(session.code) === base) {
+    if (sameBase(session.code, base)) {
       add('standby', session, reason.rebookStandby);
     }
   }
   for (const session of candidates) {
     const noReservation = sessionReservability(session) === false;
     const isFull = WALK_UP_BANDS.includes(session.seatAvailability);
-    if (baseCodeOf(session.code) === base && (noReservation || isFull)) {
+    if (sameBase(session.code, base) && (noReservation || isFull)) {
       add('walkUp', session, (code, local) => reason.rebookWalkUp(code, local, isFull));
     }
   }

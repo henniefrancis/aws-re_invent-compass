@@ -23,6 +23,8 @@ import { isOverloaded } from './energy.js';
 import { checkLayovers, type LayoverReport } from './layovers.js';
 import * as reason from './reasons.js';
 import {
+  inheritStayPutVenues,
+  isSeatFull,
   resolveCommitment,
   sessionToCommitment,
   type ResolvedCommitment,
@@ -30,7 +32,17 @@ import {
 } from './resolve.js';
 import { checkZone, dayKey, parseInstant } from './time.js';
 
-const RULES: readonly reason.RuleName[] = Object.values(reason.RULE_NAMES);
+// The four rules that need a usable timezone and candidate times. The timing check is separate.
+const RULES: readonly reason.RuleName[] = [
+  reason.RULE_NAMES.clash,
+  reason.RULE_NAMES.connection,
+  reason.RULE_NAMES.meal,
+  reason.RULE_NAMES.energy,
+];
+
+/** How far away, in either direction and across midnight, a neighbouring commitment can be. */
+export const NEIGHBOUR_WINDOW_HOURS = 12;
+const NEIGHBOUR_WINDOW_MS = NEIGHBOUR_WINDOW_HOURS * 3_600_000;
 
 type OkClashReport = Extract<ClashReport, { status: 'ok' }>;
 type OkLayoverReport = Extract<LayoverReport, { status: 'ok' }>;
@@ -39,6 +51,7 @@ type OkLayoverReport = Extract<LayoverReport, { status: 'ok' }>;
 interface Neighbour {
   resolved: ResolvedCommitment;
   interval: Interval;
+  isCandidate: boolean;
 }
 
 function mealMissingOn(report: OkLayoverReport, day: string): boolean {
@@ -142,39 +155,60 @@ function judgeReservation(
     skip(reason.RULE_NAMES.clash, unknownOther.reason);
   }
 
-  // Rule 2: connections to the nearest earlier and later commitment on the same event day.
-  // A commitment that clashes is already reported above, so it is not judged again here.
+  // Rule 2: connections to the nearest earlier and later commitment within 12 hours, across
+  // midnight. A commitment that clashes is already reported above, so it is not judged again.
+  // Personal time with no location means "stay put": it takes the venue of the commitment before
+  // it, and no connection is drawn into it.
   if (!resolvedCandidate.isAllDay) {
-    const neighbours: Neighbour[] = [];
+    const entries: Neighbour[] = [
+      { resolved: resolvedCandidate, interval: candidateInterval, isCandidate: true },
+    ];
     others.forEach((commitment, index) => {
       const resolved = resolveCommitment(commitment, sessions);
       const interval = intervalOf(resolved, zone.zone);
-      if (
-        'missing' in interval ||
-        resolved.isAllDay ||
-        clashing.has(index) ||
-        dayKey(interval.start, zone.zone) !== day
-      ) {
+      if ('missing' in interval || resolved.isAllDay || clashing.has(index)) {
         return;
       }
-      neighbours.push({ resolved, interval });
+      entries.push({ resolved, interval, isCandidate: false });
     });
-    const earlier = neighbours
-      .filter((n) => n.interval.end <= candidateInterval.start)
+    entries.sort((a, b) => a.interval.start - b.interval.start);
+    const filled = inheritStayPutVenues(entries.map((entry) => entry.resolved));
+    const view = entries.map((entry, i) => ({
+      ...entry,
+      resolved: filled[i] as ResolvedCommitment,
+    }));
+    const me = view.find((entry) => entry.isCandidate) as Neighbour;
+    const earlier = view
+      .filter(
+        (n) =>
+          !n.isCandidate &&
+          n.interval.end <= me.interval.start &&
+          me.interval.start - n.interval.end <= NEIGHBOUR_WINDOW_MS,
+      )
       .sort((a, b) => b.interval.end - a.interval.end)[0];
-    const later = neighbours
-      .filter((n) => n.interval.start >= candidateInterval.end)
+    const later = view
+      .filter(
+        (n) =>
+          !n.isCandidate &&
+          n.interval.start >= me.interval.end &&
+          n.interval.start - me.interval.end <= NEIGHBOUR_WINDOW_MS,
+      )
       .sort((a, b) => a.interval.start - b.interval.start)[0];
     const boardingOf = (item: ResolvedCommitment) =>
       boardingFor({ isReservable: item.isReservable, startsAt: item.startsAt }, context);
     const results: ConnectionResult[] = [];
-    if (earlier !== undefined) {
-      const toBoarding = boardingOf(resolvedCandidate);
-      results.push(classifyConnection(earlier.resolved, resolvedCandidate, toBoarding, context));
+    // Stay-put time with nothing before it has no venue to leave from, so there is no connection.
+    if (
+      earlier !== undefined &&
+      !(earlier.resolved.stayPut === true && earlier.resolved.venue === undefined)
+    ) {
+      const toBoarding = boardingOf(me.resolved);
+      results.push(classifyConnection(earlier.resolved, me.resolved, toBoarding, context));
     }
-    if (later !== undefined) {
+    // Nobody walks anywhere to stay put, so no connection is drawn into stay-put time.
+    if (later !== undefined && later.resolved.stayPut !== true) {
       const toBoarding = boardingOf(later.resolved);
-      results.push(classifyConnection(resolvedCandidate, later.resolved, toBoarding, context));
+      results.push(classifyConnection(me.resolved, later.resolved, toBoarding, context));
     }
     for (const result of results) {
       if (result.classification === 'impossible' && result.estimate === true) {
@@ -223,6 +257,28 @@ function judgeReservation(
   const overloadAfter = isOverloaded([resolvedCandidate, ...dayOthers], context);
   if (!overloadBefore.overloaded && overloadAfter.overloaded) {
     warns.push(reason.guardOverload(day, overloadAfter.explanation));
+  }
+
+  // Timing: the current time comes only from Context.now. Warn when the session is already over,
+  // or boarding has closed so a reserved seat would already be released.
+  const nowMs = parseInstant(context.now);
+  if (nowMs === undefined) {
+    skip(reason.RULE_NAMES.timing, reason.guardNowUnusable());
+  } else if (nowMs >= candidateInterval.end) {
+    warns.push(reason.guardPast(resolvedCandidate.ref));
+  } else {
+    const boarding = boardingFor(
+      { isReservable: resolvedCandidate.isReservable, startsAt: resolvedCandidate.startsAt },
+      context,
+    );
+    if (boarding.status === 'closes' && nowMs >= (parseInstant(boarding.at) as number)) {
+      warns.push(reason.guardBoardingClosed(resolvedCandidate.ref));
+    }
+  }
+
+  // Seats: a full session means the attendee would have to join the walk-up line.
+  if (isSeatFull(candidate)) {
+    warns.push(reason.guardSeatsFull(resolvedCandidate.ref));
   }
 
   return verdict();

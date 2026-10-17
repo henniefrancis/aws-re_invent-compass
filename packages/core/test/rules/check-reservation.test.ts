@@ -536,3 +536,153 @@ describe('hardening: invalid context, bad data, size and failure', () => {
     }
   });
 });
+
+describe('timing and seats from Context.now', () => {
+  const candidate = (overrides: Partial<NormalisedSession> = {}) =>
+    slot('NEW1', clock(10), clock(11), overrides);
+  const nowAt = (h: number, m = 0, s = 0) =>
+    testContext({ now: iso(MIDNIGHT + (clock(h, m) * 60 + s) * 1000) });
+
+  test('warns when the session is already over', () => {
+    const verdict = check(candidate(), [], nowAt(12));
+    expect(verdict).toEqual({
+      decision: 'warn',
+      reasons: ['"NEW1" has already ended. It is in the past.'],
+    });
+    expect(check(candidate(), [], nowAt(11)).reasons[0]).toContain('already ended');
+    expect(check(candidate(), [], nowAt(10, 59, 59)).reasons[0]).toContain(
+      'Boarding has already closed',
+    );
+  });
+
+  test('warns when boarding has closed, at the very moment and after, but not before', () => {
+    expect(check(candidate(), [], nowAt(9, 49, 59))).toEqual({ decision: 'allow', reasons: [] });
+    const atClose = check(candidate(), [], nowAt(9, 50));
+    expect(atClose).toEqual({
+      decision: 'warn',
+      reasons: [
+        'Boarding has already closed for "NEW1". A reserved seat would go to the walk-up line.',
+      ],
+    });
+    expect(check(candidate(), [], nowAt(10, 30)).decision).toBe('warn');
+  });
+
+  test('a session that needs no reservation has no boarding to miss, until it is over', () => {
+    const open = candidate({ isReservable: false });
+    expect(check(open, [], nowAt(10, 30))).toEqual({ decision: 'allow', reasons: [] });
+    expect(check(open, [], nowAt(11)).reasons[0]).toContain('already ended');
+  });
+
+  test('an unusable current time is reported as missing data for the timing check', () => {
+    for (const now of ['soon', '', '2026-02-31T10:00:00Z']) {
+      const verdict = check(candidate(), [], testContext({ now }));
+      expect(verdict).toEqual({
+        decision: 'warn',
+        reasons: [
+          'The timing check could not be judged because data was missing. The current time is not usable. Boarding time could not be checked.',
+        ],
+      });
+    }
+  });
+
+  test('a session with no seats left, or walk-up only, warns', () => {
+    for (const seatAvailability of ['unavailable', 'walkUp'] as const) {
+      const verdict = check(candidate({ seatAvailability }), []);
+      expect(verdict).toEqual({
+        decision: 'warn',
+        reasons: ['"NEW1" has no seats left. You would have to join the walk-up line.'],
+      });
+    }
+    expect(check(candidate({ seatAvailability: 'veryLimited' }), []).decision).toBe('allow');
+    expect(
+      check(candidate({ seatAvailability: 'unavailable', isReservable: false }), []).decision,
+    ).toBe('allow');
+  });
+});
+
+describe('neighbours across midnight and within 12 hours', () => {
+  test('a connection across midnight is judged', () => {
+    const lateNight = slot('OLD1', clock(22), clock(23, 40), { venue: 'Beta Tower' });
+    const verdict = check(slot('NEW1', clock(24, 5), clock(25)), [lateNight]);
+    expect(verdict.decision).toBe('warn');
+    expect(verdict.reasons[0]).toContain('Likely impossible connection');
+    const next = slot('OLD2', clock(24, 5), clock(25), { venue: 'Beta Tower' });
+    const earlyMorning = check(slot('NEW1', clock(22), clock(23, 40)), [next]);
+    expect(earlyMorning.reasons[0]).toContain('Likely impossible connection');
+  });
+
+  test('only commitments within 12 hours count, in either direction', () => {
+    const noVenue = (code: string, start: number, end: number) =>
+      slot(code, start, end, { venue: undefined });
+    // Ends at 10:00. A candidate starting at 21:59 is 11 hours 59 minutes later: considered.
+    const early = noVenue('OLD1', clock(8), clock(10));
+    expect(check(slot('NEW1', clock(21, 59), clock(23)), [early]).reasons.join(' ')).toContain(
+      'connection check',
+    );
+    // At 22:01 it is 12 hours 1 minute later: not considered, so no connection reason.
+    expect(check(slot('NEW1', clock(22, 1), clock(23)), [early]).reasons.join(' ')).not.toContain(
+      'connection check',
+    );
+    // A later commitment starting 12 hours 1 minute after the candidate ends is not considered.
+    const late = noVenue('OLD2', clock(23, 1), clock(23, 30));
+    expect(check(slot('NEW1', clock(10), clock(11)), [late]).reasons.join(' ')).not.toContain(
+      'connection check',
+    );
+    const lateNear = noVenue('OLD3', clock(22, 59), clock(23, 30));
+    expect(check(slot('NEW1', clock(10), clock(11)), [lateNear]).reasons.join(' ')).toContain(
+      'connection check',
+    );
+  });
+});
+
+describe('commitments that are not in the sessions lookup', () => {
+  test('fall back to their own times, so a clash is still found', () => {
+    const ghost = {
+      kind: 'reservedSession' as const,
+      sessionId: 'ghost',
+      startsAt: iso(MIDNIGHT + clock(10, 30) * 60_000),
+      endsAt: iso(MIDNIGHT + clock(11, 30) * 60_000),
+      venue: 'Alpha Hall',
+    };
+    const verdict = checkReservation(
+      slot('NEW1', clock(10), clock(11)),
+      { commitments: [ghost], sessions: {} },
+      testContext(),
+    );
+    expect(verdict.decision).toBe('block');
+    expect(verdict.reasons[0]).toBe(
+      '"NEW1" and "ghost" overlap from 2026-12-01 10:30 to 2026-12-01 11:00.',
+    );
+  });
+});
+
+describe('personal time with no location means stay put', () => {
+  const rest = (title: string, startMin: number, endMin: number) =>
+    personal(title, iso(MIDNIGHT + startMin * 60_000), iso(MIDNIGHT + endMin * 60_000));
+
+  test('an earlier stay-put item takes the venue of what came before it', () => {
+    const before = slot('OLD1', clock(9), clock(10), { venue: 'Beta Tower' });
+    const verdict = check(slot('NEW1', clock(11), clock(12)), [before], testContext(), [
+      rest('Rest', clock(10), clock(10, 30)),
+    ]);
+    expect(verdict.decision).toBe('warn');
+    expect(verdict.reasons[0]).toContain(
+      'Tight connection. The walk from "Beta Tower" to "Alpha Hall"',
+    );
+    expect(verdict.reasons.join(' ')).not.toContain('could not be judged');
+  });
+
+  test('no connection is drawn into a later stay-put item, and no unknown is reported', () => {
+    const verdict = check(slot('NEW1', clock(10), clock(11)), [], testContext(), [
+      rest('Rest', clock(11), clock(11, 20)),
+    ]);
+    expect(verdict).toEqual({ decision: 'allow', reasons: [] });
+  });
+
+  test('a stay-put item with nothing before it has no venue to leave from, and no unknown', () => {
+    const verdict = check(slot('NEW1', clock(10), clock(11)), [], testContext(), [
+      rest('Rest', clock(8), clock(8, 30)),
+    ]);
+    expect(verdict).toEqual({ decision: 'allow', reasons: [] });
+  });
+});

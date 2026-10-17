@@ -74,6 +74,7 @@ export const RULE_NAMES = {
   connection: 'connection check',
   meal: 'meal break check',
   energy: 'energy check',
+  timing: 'timing check',
 } as const;
 
 export type RuleName = (typeof RULE_NAMES)[keyof typeof RULE_NAMES];
@@ -354,6 +355,14 @@ export function swapOthersUnknown(ref: string): string {
   return `${q(ref)} could not be checked for clashes. The swap cannot be judged safe. The original stays unchanged.`;
 }
 
+export function swapRepeatPast(ref: string): string {
+  return `The repeat ${q(ref)} has already ended. The swap cannot be checked. The original stays unchanged.`;
+}
+
+export function swapNowUnusable(): string {
+  return 'The current time is not usable. The swap cannot be checked. The original stays unchanged.';
+}
+
 export function swapUnknown(): string {
   return 'The repeat has no usable start or end time. The swap cannot be checked. The original stays unchanged.';
 }
@@ -380,6 +389,22 @@ export function guardMealLost(day: string): string {
 
 export function guardOverload(day: string, explanation: string): string {
   return `This makes ${stamp(day)} too busy. ${explanation}`;
+}
+
+export function guardPast(ref: string): string {
+  return `${q(ref)} has already ended. It is in the past.`;
+}
+
+export function guardBoardingClosed(ref: string): string {
+  return `Boarding has already closed for ${q(ref)}. A reserved seat would go to the walk-up line.`;
+}
+
+export function guardSeatsFull(ref: string): string {
+  return `${q(ref)} has no seats left. You would have to join the walk-up line.`;
+}
+
+export function guardNowUnusable(): string {
+  return 'The current time is not usable. Boarding time could not be checked.';
 }
 
 export function guardMissingData(rule: RuleName, detail: string): string {

@@ -144,6 +144,35 @@ describe('connectionsForDay', () => {
   });
 });
 
+describe('connectionsForDay and stay-put personal time', () => {
+  const rest = (title: string, startMin: number, endMin: number) =>
+    personal(title, iso(MIDNIGHT + startMin * 60_000), iso(MIDNIGHT + endMin * 60_000));
+
+  test('stay-put time takes the venue before it, and no connection is drawn into it', () => {
+    const a = slot('AAA1', clock(9), clock(10), 'Beta Tower');
+    const b = slot('BBB1', clock(11), clock(12), 'Alpha Hall');
+    const schedule = scheduleOf([a, b], [rest('Rest', clock(10), clock(10, 30))]);
+    const result = connectionsForDay(schedule, testContext());
+    expect(result.status).toBe('ok');
+    if (result.status === 'ok') {
+      // AAA1 to Rest is skipped (stay put). Rest to BBB1 leaves from Beta Tower, the venue it kept.
+      expect(result.connections.map((c) => `${c.from}>${c.to}:${c.result.classification}`)).toEqual(
+        ['Rest>BBB1:tight'],
+      );
+      expect(result.connections[0].result.reason).toContain('"Beta Tower" to "Alpha Hall"');
+    }
+  });
+
+  test('stay-put time with nothing before it has no venue to leave from: skipped, not unknown', () => {
+    const b = slot('BBB1', clock(11), clock(12), 'Alpha Hall');
+    const result = connectionsForDay(
+      scheduleOf([b], [rest('Rest', clock(8), clock(9))]),
+      testContext(),
+    );
+    expect(result).toMatchObject({ status: 'ok', connections: [] });
+  });
+});
+
 describe('energyForDay', () => {
   test('scores the commitments of the day', () => {
     const schedule = scheduleOf(

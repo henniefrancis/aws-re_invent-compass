@@ -37,6 +37,11 @@ export interface ResolvedCommitment {
   isReservable?: boolean;
   /** Every field left absent, in a fixed order. */
   missing: Missing[];
+  /**
+   * True for personal time with no location: the attendee stays where they are. Its venue is not
+   * missing data. See inheritStayPutVenues.
+   */
+  stayPut?: boolean;
 }
 
 /** A value that is text with something in it. Anything else (absent, not text, blank) is missing. */
@@ -108,6 +113,7 @@ export function resolveCommitment(
   let endsAt: string | undefined;
   let isAllDay = false;
   let isReservable: boolean | undefined;
+  let stayPut = false;
 
   if (commitment.kind === 'reservedSession') {
     const session = sessionFor(sessions, commitment.sessionId);
@@ -115,8 +121,9 @@ export function resolveCommitment(
       firstNonEmpty(session?.code, session?.title, commitment.title, commitment.sessionId),
     );
     venue = nonEmpty(session?.venue) ?? nonEmpty(commitment.venue);
-    startsAt = session && usableTime(session, 'startsAt');
-    endsAt = session && usableTime(session, 'endsAt');
+    // A session that is not in the lookup falls back to the commitment's own times.
+    startsAt = session ? usableTime(session, 'startsAt') : usableText(commitment.startsAt);
+    endsAt = session ? usableTime(session, 'endsAt') : usableText(commitment.endsAt);
     isAllDay = session?.isAllDay === true;
     isReservable = session && sessionReservability(session);
   } else {
@@ -125,10 +132,11 @@ export function resolveCommitment(
     startsAt = usableText(commitment.startsAt);
     endsAt = usableText(commitment.endsAt);
     isReservable = false;
+    stayPut = venue === undefined;
   }
 
   const missing: Missing[] = [];
-  if (venue === undefined) missing.push('venue');
+  if (venue === undefined && !stayPut) missing.push('venue');
   if (startsAt === undefined) missing.push('startsAt');
   if (endsAt === undefined) missing.push('endsAt');
   if (isReservable === undefined) missing.push('reservability');
@@ -141,7 +149,42 @@ export function resolveCommitment(
   ) {
     missing.push('order');
   }
-  return { ref, venue, startsAt, endsAt, isAllDay, isReservable, missing };
+  return {
+    ref,
+    venue,
+    startsAt,
+    endsAt,
+    isAllDay,
+    isReservable,
+    missing,
+    ...(stayPut ? { stayPut } : {}),
+  };
+}
+
+/**
+ * Fill in the venue of personal time that has no location, in a list sorted by time: the attendee
+ * stays where they were, so it takes the venue of the commitment before it (which may itself have
+ * been filled in). The first commitment of a list, with nothing before it, keeps no venue. Only
+ * stay-put items change; the input is not modified.
+ */
+export function inheritStayPutVenues(
+  sequence: readonly ResolvedCommitment[],
+): ResolvedCommitment[] {
+  let previous: string | undefined;
+  return sequence.map((item) => {
+    const filled =
+      item.stayPut === true && item.venue === undefined ? { ...item, venue: previous } : item;
+    previous = filled.venue;
+    return filled;
+  });
+}
+
+/** Is the session full: only walk-up seats or none left? A session that needs no reservation is not. */
+export function isSeatFull(session: NormalisedSession): boolean {
+  return (
+    (session.seatAvailability === 'unavailable' || session.seatAvailability === 'walkUp') &&
+    sessionReservability(session) !== false
+  );
 }
 
 /**

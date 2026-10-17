@@ -13,7 +13,12 @@ import { classifyConnection, type ConnectionResult } from './connections.js';
 import type { Context } from './context.js';
 import { scoreEnergy, type EnergyResult } from './energy.js';
 import * as reason from './reasons.js';
-import { resolveCommitment, type ResolvedCommitment, type ScheduleInput } from './resolve.js';
+import {
+  inheritStayPutVenues,
+  resolveCommitment,
+  type ResolvedCommitment,
+  type ScheduleInput,
+} from './resolve.js';
 import { checkZone, dayKey, parseInstant } from './time.js';
 
 /** The verdict for the walk between two consecutive commitments. */
@@ -80,10 +85,16 @@ export function connectionsForDay(
   const sequence = items
     .filter((item) => !item.isAllDay)
     .sort((a, b) => (parseInstant(a.startsAt) as number) - (parseInstant(b.startsAt) as number));
+  // Personal time with no location means "stay put": it takes the venue of what came before it,
+  // and no connection is drawn into it (nobody walks anywhere to stay put).
+  const filled = inheritStayPutVenues(sequence);
   const connections: DayConnection[] = [];
-  for (let i = 1; i < sequence.length; i += 1) {
-    const from = sequence[i - 1] as ResolvedCommitment;
-    const to = sequence[i] as ResolvedCommitment;
+  for (let i = 1; i < filled.length; i += 1) {
+    const from = filled[i - 1] as ResolvedCommitment;
+    const to = filled[i] as ResolvedCommitment;
+    if (to.stayPut === true || (from.stayPut === true && from.venue === undefined)) {
+      continue;
+    }
     const toBoarding = boardingFor(
       { isReservable: to.isReservable, startsAt: to.startsAt },
       context,
