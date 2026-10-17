@@ -9,7 +9,7 @@ import { listTerraformSources, parseOutputs, readOwned } from './lib.mjs';
 // Anything secret-bearing: such a value must be marked sensitive, and the roots
 // must not output it at all.
 const SECRET_REFERENCE =
-  /random_password|secret_string|alarm_email|origin_verify|api_key|pepper|password|passphrase|\btoken\b/i;
+  /random_password|secret_string|alarm_email|origin_verify(?!\.arn|_secret_arn)|api_key|pepper|password|passphrase|\btoken\b/i;
 // Anything that embeds the account id: modules may output ARNs (they are wiring,
 // not secrets), but a root or the bootstrap may not output one unless sensitive.
 const ACCOUNT_REFERENCE = /\.arn\b|account_id|caller_identity/;

@@ -20,10 +20,13 @@ tfplan
 .terraform/
 crash.log
 crash.*.log
-# Infra build output (Lambda zips from scripts/release.sh) and provider lock files
-# (generated per platform; the owner creates them with terraform providers lock)
+# Infra build output (Lambda zips from scripts/release.sh). The lock files of the
+# three roots (infra/bootstrap, infra/envs/dev, infra/envs/prod) ARE committed,
+# generated for every platform with terraform providers lock. Lock files of the
+# modules and of infra itself are test scaffolding and are not committed.
 infra/build/
-.terraform.lock.hcl
+infra/.terraform.lock.hcl
+infra/modules/**/.terraform.lock.hcl
 override.tf
 override.tf.json
 *_override.tf
@@ -34,6 +37,8 @@ override.tf.json
 *.pfx
 *.pem
 *.key
+*.secret
+*.secret.txt
 *.p8
 *.cer
 *.crt

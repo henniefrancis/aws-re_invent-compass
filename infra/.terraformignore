@@ -15,6 +15,16 @@ cloud.auto.tfbackend
 terraform.tfvars
 **/terraform.tfvars
 *.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+**/*.auto.tfvars
+**/*.auto.tfvars.json
+
+# Key material and local environment files
+.env
+.env.*
+*.pem
+*.p12
 
 # Local state and plan artefacts
 .terraform/

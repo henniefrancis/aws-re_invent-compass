@@ -44,7 +44,7 @@ terraform {
 }
 ```
 
-Terraform generates no secret value, so no `random` provider is used. Provider lock files are git-ignored because they are generated per platform; create them with `terraform providers lock` when needed.
+Terraform generates no secret value, so no `random` provider is used. The bootstrap also uses `hashicorp/tfe ~> 0.82.0`. The lock files of the three roots (`bootstrap`, `envs/dev`, `envs/prod`) are committed once the owner has generated them for every platform with `terraform providers lock -platform=linux_amd64 -platform=windows_amd64 -platform=darwin_arm64`; the lock files of the modules are not committed.
 
 ## Offline checks
 
@@ -61,3 +61,7 @@ trivy config .
 ## Private values
 
 Real `terraform.tfvars` and `cloud.auto.tfbackend` files are git-ignored. Commit only the `.example` files, which carry placeholder shapes.
+
+## Tests
+
+Native tests (mock providers, plan only): run `terraform test` in a module or root directory, and from `infra/` for the cross-cutting tests in `infra/tests` (after `terraform init -backend=false`). Static scans and script checks, with no dependencies: `node --test "infra/tests/static/*.test.mjs"` from the repository root.
