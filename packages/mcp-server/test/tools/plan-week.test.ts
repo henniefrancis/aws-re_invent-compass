@@ -6,7 +6,9 @@ import { join } from 'node:path';
 import { mcpTools, CommitmentSchema } from '@compass/contracts';
 import { createNodeScanFs } from '@compass/core/scanner';
 import { createNodeSpecFs, weekSpecDirectory, WEEK_SPEC_ENTRY } from '@compass/core/spec';
+import type { Commitment } from '@compass/contracts';
 import { CompassError } from '../../src/ports/errors.js';
+import type { ConnectionLine } from '../../src/ports/rules-port.js';
 import { GITIGNORE_REASON, planWeekTool } from '../../src/tools/plan-week.js';
 import type { ToolContext } from '../../src/server/types.js';
 import { contextFor } from '../support/context.js';
@@ -360,4 +362,57 @@ describe('plan_week on the real file system', () => {
       await rm(temp, { recursive: true, force: true });
     }
   }, 60000);
+});
+
+describe('plan_week verdict preference (QA M3)', () => {
+  const idsOf = (outcome: Awaited<ReturnType<typeof planWeekTool>>): string[] =>
+    outcome.ok
+      ? mcpTools.plan_week.output
+          .parse(outcome.structured)
+          .commitments.flatMap((c) => (c.kind === 'reservedSession' ? [c.sessionId] : []))
+      : [];
+  const badFor =
+    (ids: ReadonlySet<string>, classification: 'impossible' | 'unknown') =>
+    (commitments: readonly Commitment[]): Map<string, ConnectionLine> =>
+      new Map(
+        commitments.flatMap((c): [string, ConnectionLine][] =>
+          c.kind === 'reservedSession' && ids.has(c.sessionId)
+            ? [[c.sessionId, { classification, reason: 'Cannot make it.' }]]
+            : [],
+        ),
+      );
+  const warnAll = (fake: ReturnType<typeof setup>['fake']): void => {
+    fake.rules.verdictFor = () => ({ decision: 'warn', reasons: ['Tight walk.'] });
+  };
+
+  test('warned sessions are taken when their walks are fine', async () => {
+    const { fake, ctx } = setup();
+    warnAll(fake);
+    expect(idsOf(await planWeekTool(GOALS, ctx)).length).toBeGreaterThan(0);
+  });
+
+  test('a warned session whose walk would be impossible or unknown is left out', async () => {
+    for (const classification of ['impossible', 'unknown'] as const) {
+      const base = setup();
+      warnAll(base.fake);
+      const first = idsOf(await planWeekTool(GOALS, base.ctx))[0] ?? '';
+      expect(first).not.toBe('');
+      const { fake, ctx } = setup();
+      warnAll(fake);
+      fake.rules.connectionLines = badFor(new Set([first]), classification);
+      const ids = idsOf(await planWeekTool(GOALS, ctx));
+      expect(ids).not.toContain(first);
+      expect(ids.length).toBeGreaterThan(0);
+    }
+  });
+
+  test('a bad walk that was already on the schedule does not count against a candidate', async () => {
+    const { fake, ctx } = setup();
+    warnAll(fake);
+    const view = await fake.events.catalog();
+    const existing = [...view.byId.values()].find((e) => e.session.code === 'ANT398');
+    fake.events.schedule.reserved.push(existing?.session.sessionId ?? '');
+    fake.rules.connectionLines = badFor(new Set([existing?.session.sessionId ?? '']), 'impossible');
+    expect(idsOf(await planWeekTool(GOALS, ctx)).length).toBeGreaterThan(0);
+  });
 });

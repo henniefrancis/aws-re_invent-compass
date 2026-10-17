@@ -11,6 +11,7 @@ export class FakePlannerRules implements PlannerRules {
     reasons: [],
   });
   repeats: (session: NormalisedSession) => NormalisedSession[] = () => [];
+  risk: (candidate: NormalisedSession, commitments: readonly Commitment[]) => boolean = () => false;
   layovers: (day: readonly Commitment[]) => { start: string; end: string; reason: string }[] =
     () => [];
 
@@ -33,6 +34,14 @@ export class FakePlannerRules implements PlannerRules {
     return Promise.resolve(this.layovers(dayCommitments));
   }
 
+  connectionRisk(
+    candidate: NormalisedSession,
+    commitments: readonly Commitment[],
+  ): Promise<boolean> {
+    this.log.push(`risk:${candidate.sessionId}`);
+    return Promise.resolve(this.risk(candidate, commitments));
+  }
+
   repeatsOf(session: NormalisedSession): Promise<NormalisedSession[]> {
     this.log.push(`repeats:${session.sessionId}`);
     return Promise.resolve(this.repeats(session));
@@ -51,6 +60,7 @@ export function session(
     isAllDay: false,
     isReservable: true,
     seatAvailability: 'available',
+    venue: 'The Venetian',
     missingFields: [],
     startsAt: '2026-12-01T18:00:00.000Z',
     endsAt: '2026-12-01T19:00:00.000Z',

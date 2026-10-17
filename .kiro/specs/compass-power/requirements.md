@@ -425,3 +425,5 @@ R2.4. **Power manifest.** The `power/` folder SHALL contain both a valid `plugin
 R2.5. **Confirmation means a ticked box.** WHERE the client supports Elicitation, a confirmation SHALL count as yes only when the accepted answer has `confirm` equal to true; anything else SHALL be no write.
 
 R2.6. **One write at a time.** THE Compass_Server SHALL run write tools one at a time, and each SHALL read the schedule again when its turn starts.
+
+R2.7. **Planner preference.** THE planner SHALL pick sessions the guardrail allows before any it only warns about, SHALL take a warned session only as a last resort within the day cap and never when its venue is missing, its walk would be impossible or unknown, or the session is full.

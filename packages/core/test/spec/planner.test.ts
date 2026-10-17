@@ -448,8 +448,10 @@ describe('Property 17: planning is deterministic and ranked as documented', () =
         )
           .filter((line) => line.startsWith('check:'))
           .map((line) => line.slice(6));
+        // A warned candidate is checked again in the second pass; only first checks have an order.
+        const firstChecks = selection.filter((id, index) => selection.indexOf(id) === index);
         let last = -1;
-        for (const id of selection) {
+        for (const id of firstChecks) {
           const position = expected.indexOf(id);
           expect(position).toBeGreaterThan(last);
           last = position;
@@ -489,5 +491,138 @@ describe('Property 18: every pick carries a valid reason, at most one standby an
       }),
       { numRuns: 150 },
     );
+  });
+});
+
+describe('verdict preference and last resorts (QA M3)', () => {
+  const at = (hour: number) => ({
+    startsAt: `2026-12-01T${String(hour).padStart(2, '0')}:00:00.000Z`,
+    endsAt: `2026-12-01T${String(hour + 1).padStart(2, '0')}:00:00.000Z`,
+  });
+  const decideBy =
+    (table: Record<string, Verdict['decision']>) =>
+    (candidate: NormalisedSession): Verdict => ({
+      decision: table[candidate.sessionId] ?? 'allow',
+      reasons: table[candidate.sessionId] === 'allow' ? [] : ['why'],
+    });
+
+  test('an allowed candidate beats a warned one with a higher score when only one fits the day', async () => {
+    const rules = new FakePlannerRules();
+    rules.decide = decideBy({ warned: 'warn', allowed: 'allow' });
+    const result = await planWeek(
+      input([entry('warned', ['database'], at(18)), entry('allowed', ['compute'], at(20))], {
+        maxPerDay: 1,
+      }),
+      rules,
+    );
+    expect(result.picks.map((p) => p.session.sessionId)).toEqual(['allowed']);
+  });
+
+  test('a warned candidate is taken last, when the day has room, and keeps its warning', async () => {
+    const rules = new FakePlannerRules();
+    rules.decide = decideBy({ warned: 'warn' });
+    const result = await planWeek(
+      input([entry('warned', ['database'], at(18)), entry('allowed', ['compute'], at(20))]),
+      rules,
+    );
+    expect(result.picks.map((p) => [p.session.sessionId, p.verdict.decision])).toEqual([
+      ['warned', 'warn'],
+      ['allowed', 'allow'],
+    ]);
+    const checks = rules.log.filter((l) => l.startsWith('check:'));
+    expect(checks.slice(0, 2)).toEqual(['check:warned', 'check:allowed']);
+  });
+
+  test('a warned candidate is dropped when its walk is impossible or its venue is unknown, or the venue is missing', async () => {
+    for (const [label, risky, venue] of [
+      ['risky walk', true, 'The Venetian'],
+      ['no venue', false, undefined],
+    ] as const) {
+      const rules = new FakePlannerRules();
+      rules.decide = decideBy({ warned: 'warn' });
+      rules.risk = () => risky;
+      const result = await planWeek(
+        input([
+          entry('warned', ['database'], {
+            ...at(18),
+            ...(venue === undefined ? { venue: undefined } : {}),
+          }),
+        ]),
+        rules,
+      );
+      expect(result.picks, label).toEqual([]);
+    }
+    const safe = new FakePlannerRules();
+    safe.decide = decideBy({ warned: 'warn' });
+    const result = await planWeek(input([entry('warned', ['database'], at(18))]), safe);
+    expect(result.picks.map((p) => p.session.sessionId)).toEqual(['warned']);
+    expect(safe.log).toContain('risk:warned');
+  });
+
+  test('a warned candidate is checked again against the picks so far: block drops it, allow skips the walk check', async () => {
+    const rules = new FakePlannerRules();
+    const counts = new Map<string, number>();
+    rules.decide = (candidate) => {
+      const n = (counts.get(candidate.sessionId) ?? 0) + 1;
+      counts.set(candidate.sessionId, n);
+      if (candidate.sessionId === 'turnsBlock') {
+        return n === 1
+          ? { decision: 'warn', reasons: ['w'] }
+          : { decision: 'block', reasons: ['b'] };
+      }
+      if (candidate.sessionId === 'turnsAllow') {
+        return n === 1 ? { decision: 'warn', reasons: ['w'] } : { decision: 'allow', reasons: [] };
+      }
+      return { decision: 'allow', reasons: [] };
+    };
+    const result = await planWeek(
+      input([entry('turnsBlock', ['database'], at(18)), entry('turnsAllow', ['database'], at(20))]),
+      rules,
+    );
+    expect(result.picks.map((p) => p.session.sessionId)).toEqual(['turnsAllow']);
+    expect(rules.log).not.toContain('risk:turnsAllow');
+  });
+
+  test('the day cap holds in the second pass too', async () => {
+    const rules = new FakePlannerRules();
+    rules.decide = decideBy({ w1: 'warn', w2: 'warn' });
+    const result = await planWeek(
+      input([entry('w1', ['database'], at(18)), entry('w2', ['database'], at(20))], {
+        maxPerDay: 1,
+      }),
+      rules,
+    );
+    expect(result.picks).toHaveLength(1);
+  });
+
+  test('a full session is never picked, and is never offered as a standby', async () => {
+    const rules = new FakePlannerRules();
+    rules.repeats = () => [session('fullRepeat', { ...at(22), seatAvailability: 'unavailable' })];
+    const result = await planWeek(
+      input([
+        entry('full', ['database'], { ...at(18), seatAvailability: 'unavailable' }),
+        entry('open', ['compute'], at(20)),
+      ]),
+      rules,
+    );
+    expect(result.picks.map((p) => p.session.sessionId)).toEqual(['open']);
+    expect(result.picks[0]?.standby).toBeUndefined();
+    expect(rules.log).not.toContain('check:full');
+  });
+
+  test('an allowed session without a venue is still planned, and its commitment carries no venue', async () => {
+    const rules = new FakePlannerRules();
+    const result = await planWeek(
+      input([
+        entry('novenue', ['database'], {
+          ...at(18),
+          venue: undefined,
+        }),
+      ]),
+      rules,
+    );
+    expect(result.picks.map((p) => p.session.sessionId)).toEqual(['novenue']);
+    const commitment = result.commitments[0];
+    expect(commitment?.kind === 'reservedSession' && 'venue' in commitment).toBe(false);
   });
 });

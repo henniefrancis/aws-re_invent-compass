@@ -50,6 +50,9 @@ export class FakeRules implements RulesPort {
   layoverSuggestions: LayoverSummary = { suggestions: [] };
   overloadedDays = new Set<string>();
   walk: number | undefined = 5;
+  /** Replaces the comfortable lines `connections` returns (a test scripts a bad walk with it). */
+  connectionLines:
+    ((commitments: readonly Commitment[]) => Map<string, ConnectionLine>) | undefined;
 
   checkReservation(
     candidate: NormalisedSession,
@@ -109,6 +112,9 @@ export class FakeRules implements RulesPort {
 
   connections(commitments: readonly Commitment[]): Promise<ReadonlyMap<string, ConnectionLine>> {
     this.calls.push({ method: 'connections', args: [commitments.length] });
+    if (this.connectionLines !== undefined) {
+      return Promise.resolve(this.connectionLines(commitments));
+    }
     const map = new Map<string, ConnectionLine>();
     for (const commitment of commitments) {
       if (commitment.kind === 'reservedSession') {

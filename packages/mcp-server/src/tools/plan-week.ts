@@ -24,7 +24,13 @@ import { CompassError } from '../ports/errors.js';
 import type { CatalogView } from '../ports/events-port.js';
 import { labelUntrusted } from '../safety/labelled-data.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
-import { confirmedCommitments, ensureSignedIn, readFreshSchedule } from './common.js';
+import type { ConnectionLine } from '../ports/rules-port.js';
+import {
+  commitmentFor,
+  confirmedCommitments,
+  ensureSignedIn,
+  readFreshSchedule,
+} from './common.js';
 
 /** The default and the largest number of sessions planned on one day. */
 export const DEFAULT_MAX_PER_DAY = 4;
@@ -55,6 +61,15 @@ function bindRules(
       (await rules.rebooking(session.code, catalog, favorites, session.sessionId))
         .filter((option) => option.kind === 'repeat')
         .map((option) => option.session),
+    connectionRisk: async (candidate, commitments) => {
+      const bad = (line: ConnectionLine | undefined): boolean =>
+        line !== undefined &&
+        (line.classification === 'impossible' || line.classification === 'unknown');
+      const before = await rules.connections(commitments, catalog);
+      const after = await rules.connections([...commitments, commitmentFor(candidate)], catalog);
+      // A risk is a bad walk that the candidate creates: one that was not there before.
+      return [...after].some(([id, line]) => bad(line) && !bad(before.get(id)));
+    },
   };
 }
 
