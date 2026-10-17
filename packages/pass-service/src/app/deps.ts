@@ -13,7 +13,7 @@ import type { TableClient } from '../data/table-client.js';
 import type { GoogleWalletClient } from '../google/google-wallet-client.js';
 import type { ConsoleLike } from '../observability/console-guard.js';
 import type { LogSink } from '../observability/request-logger.js';
-import type { SecretsProvider } from '../secrets/secrets-provider.js';
+import type { SecretsProvider } from '../credentials/secrets-provider.js';
 import type { Clock, Random } from '../seams.js';
 
 export interface BaseDeps {

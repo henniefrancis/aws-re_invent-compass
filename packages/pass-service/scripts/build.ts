@@ -4,7 +4,7 @@
 import * as esbuild from 'esbuild';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bundleLambdas } from '../src/build/bundle-lambdas.js';
+import { bundleLambdas } from '../src/bundling/bundle-lambdas.js';
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = path.join(packageRoot, 'dist', 'lambda');

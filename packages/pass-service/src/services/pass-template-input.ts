@@ -5,7 +5,7 @@ import type { PassTemplateInput } from '../apple/pass-template.js';
 import { webServiceUrl } from '../config/config.js';
 import type { PassRecord } from '../data/records.js';
 import { deriveAuthToken } from '../security/auth-token.js';
-import type { SecretsProvider } from '../secrets/secrets-provider.js';
+import type { SecretsProvider } from '../credentials/secrets-provider.js';
 
 export interface TemplateSource {
   secrets: SecretsProvider;

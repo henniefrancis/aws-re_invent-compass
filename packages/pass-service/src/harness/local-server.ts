@@ -27,7 +27,7 @@ import { createGoogleTokenSource } from '../google/token-source.js';
 import type { ProxyEvent, ProxyResult } from '../http/event.js';
 import { ProblemError } from '../http/problem.js';
 import { subHash } from '../security/hashing.js';
-import { createSecretsProvider, type SecretSource } from '../secrets/secrets-provider.js';
+import { createSecretsProvider, type SecretSource } from '../credentials/secrets-provider.js';
 import { systemClock, systemRandom } from '../seams.js';
 import { createMemoryTable } from './memory-table.js';
 

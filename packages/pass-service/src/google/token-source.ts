@@ -2,7 +2,7 @@
 // google-auth-library. The client is rebuilt only when the cached secret changes.
 // Scope: https://developers.google.com/wallet/generic/rest/v1/genericobject/insert
 import { JWT } from 'google-auth-library';
-import type { GoogleSecret, SecretsProvider } from '../secrets/secrets-provider.js';
+import type { GoogleSecret, SecretsProvider } from '../credentials/secrets-provider.js';
 
 export const WALLET_SCOPE = 'https://www.googleapis.com/auth/wallet_object.issuer';
 

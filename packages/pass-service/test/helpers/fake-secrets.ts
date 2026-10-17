@@ -5,7 +5,7 @@ import type {
   AppleSecret,
   GoogleSecret,
   SecretsProvider,
-} from '../../src/secrets/secrets-provider.js';
+} from '../../src/credentials/secrets-provider.js';
 
 /** A random value generated at test time. Nothing here is a real secret. */
 export function randomValue(bytes = 24): string {

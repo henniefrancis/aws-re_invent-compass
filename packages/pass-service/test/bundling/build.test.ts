@@ -11,8 +11,8 @@ import {
   DOS_TIME,
   UNIX_FILE_MODE,
   zipDeterministic,
-} from '../../src/build/deterministic-zip.js';
-import { MAX_BUNDLE_BYTES, bundleLambdas } from '../../src/build/bundle-lambdas.js';
+} from '../../src/bundling/deterministic-zip.js';
+import { MAX_BUNDLE_BYTES, bundleLambdas } from '../../src/bundling/bundle-lambdas.js';
 import { BASE_ENV } from '../helpers/api-fixture.js';
 import { readZip } from '../helpers/zip-reader.js';
 
@@ -43,11 +43,15 @@ describe('Feature: pass-service, deterministic zip', () => {
         fc.nat(),
         (pairs, seed) => {
           const entries = pairs.map(([p, data]) => ({ path: p, data }));
-          const shuffled = [...entries].sort((a, b) => ((a.path.length * 31 + seed) % 7) - ((b.path.length * 17 + seed) % 7));
+          const shuffled = [...entries].sort(
+            (a, b) => ((a.path.length * 31 + seed) % 7) - ((b.path.length * 17 + seed) % 7),
+          );
           const first = zipDeterministic(entries);
           expect(Buffer.from(zipDeterministic(shuffled)).equals(Buffer.from(first))).toBe(true);
           const read = readZip(first);
-          const sortedPaths = entries.map((e) => e.path).sort((a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b)));
+          const sortedPaths = entries
+            .map((e) => e.path)
+            .sort((a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b)));
           expect(read.map((e) => e.path)).toEqual(sortedPaths);
           for (const entry of read) {
             const original = entries.find((e) => e.path === entry.path);

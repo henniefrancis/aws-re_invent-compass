@@ -51,14 +51,16 @@ export async function bundleLambdas(options: BundleOptions): Promise<BundleRepor
       write: false,
       logLevel: 'silent',
     });
-    const zip = zipDeterministic([
-      { path: 'index.mjs', data: result.outputFiles[0]!.contents },
-    ]);
+    const zip = zipDeterministic([{ path: 'index.mjs', data: result.outputFiles[0]!.contents }]);
     if (zip.length >= MAX_BUNDLE_BYTES) {
       throw new Error(`bundle ${name} is ${zip.length} bytes, the limit is ${MAX_BUNDLE_BYTES}`);
     }
     writeFileSync(path.join(options.outDir, `${name}.zip`), zip);
-    reports.push({ name, bytes: zip.length, sha256: createHash('sha256').update(zip).digest('hex') });
+    reports.push({
+      name,
+      bytes: zip.length,
+      sha256: createHash('sha256').update(zip).digest('hex'),
+    });
   }
   return reports;
 }

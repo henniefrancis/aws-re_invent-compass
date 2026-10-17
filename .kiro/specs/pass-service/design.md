@@ -304,7 +304,7 @@ function withConsoleGuard<T>(console: ConsoleSink, run: () => Promise<T>): Promi
 
 `route` uses `event.resource`, never `event.path`. An unknown route logs `UNMATCHED` so the raw path never appears. `requestId` is API Gateway's request id, which identifies a request, not a person.
 
-### Component 4: Secrets provider (`src/secrets/*`)
+### Component 4: Secrets provider (`src/credentials/*`)
 
 ```ts
 interface SecretSource {
@@ -663,7 +663,7 @@ function startLocalHarness(opts: {
 
 The local harness (owner-run, for SP3 and SP4) serves both apps on `node:http`, converts each request to a `ProxyEvent` (resource matched against the 15 contract templates), uses the in-memory table from `src/harness/memory-table.ts`, reads the owner's PEM and Google key files from paths given in environment variables, injects a fixed origin-verify value, prints only "listening" and request lines in the Request_Logger format, and exposes a small page to issue, update, void, hand off and repeat-insert passes for made-up sessions. It never prints file contents, tokens or identifiers. `scripts/local-harness.ts` is its thin launcher.
 
-### Component 19: Build (`src/build/*`, `scripts/build.ts`)
+### Component 19: Build (`src/bundling/*`, `scripts/build.ts`)
 
 ```ts
 function zipDeterministic(entries: { path: string; data: Uint8Array }[]): Uint8Array; // sorted, DOS time 1980-01-01 00:00, mode 0644, deflate
@@ -1235,4 +1235,4 @@ Each entry names the task that introduced it. Where this section and the text ab
 - Task 21: both route tables are declared with `satisfies Record<ApiRouteKey | PasskitRouteKey, ...>` over route keys computed from `CompassApi['paths']` in `src/app/contract-routes.ts`, so a missing or extra path or method fails `tsc` (checked by removing a route). The apps export `API_ROUTE_KEYS` and `PASSKIT_ROUTE_KEYS` for the contract test, which also reads the YAML for statuses and media types.
 - Task 22: the log-redaction test checks logs and console output against every identifier, and responses only against the values a response must never hold (sub, email, token, device id, push token), because success bodies carry serial numbers, hand-off ids, session codes and titles by design. The structural guard for the Passkit wiring is behavioural here (no google-wallet read across all five passkit operations); task 23 adds the wiring check. The ADR-026 re-check result is recorded in the README.
 - Task 23: the owner-run harness is started through `scripts/run.mjs` (`node packages/pass-service/scripts/run.mjs packages/pass-service/scripts/local-harness.ts`) rather than `node packages/pass-service/scripts/local-harness.ts`, because the sources use `.js` import specifiers. Its variables are `HARNESS_HOST`, `HARNESS_PORT`, `HARNESS_PASS_TYPE_ID`, `HARNESS_TEAM_ID`, `HARNESS_SIGNER_CERT_FILE`, `HARNESS_SIGNER_KEY_FILE`, `HARNESS_WWDR_FILE`, `HARNESS_SIGNER_KEY_PASSPHRASE`, `HARNESS_GOOGLE_KEY_FILE` and `HARNESS_GOOGLE_ISSUER_ID`, plus the Compass variables; the pepper and origin-verify value are generated at start-up, and the stand-in sign-in takes the bearer text as the identity (a missing Authorization header is still a 401). The extra `/harness/repeat-insert/{serial}` route (Google duplicate insert, SP4 step 7) exists only in the harness. Tests can pass `overrides` for the APNs and Google clients.
-- Task 24: the repository `.gitignore` has a bare `build/` rule, which also ignores `packages/pass-service/src/build/` and `test/build/`; those two folders were added with `git add -f`, and the integrator should add an un-ignore rule (`!packages/pass-service/src/build/` and `!packages/pass-service/test/build/`). `bundleLambdas` takes an optional `packageRoot` because `scripts/run.mjs` replaces `import.meta.url` with the entry script URL; the bundle is about 520 KB per Lambda.
+- Task 24 (code review C1): the root `.gitignore` rules `secrets/` and `build/` hid `src/secrets`, `test/secrets`, `src/build` and `test/build`, so a clean checkout could not build (the secrets folders were never committed, the build folders were force-added). The folders are now `src/credentials`, `test/credentials`, `src/bundling` and `test/bundling`, a structural test checks that no source or test path has a segment that the root `.gitignore` ignores, and the build was verified from a fresh `git archive`. `bundleLambdas` takes an optional `packageRoot` because `scripts/run.mjs` replaces `import.meta.url` with the entry script URL; the bundle is about 520 KB per Lambda.

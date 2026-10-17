@@ -33,7 +33,7 @@ describe('Feature: pass-service, structural guards', () => {
       .filter((file) => relative(file).startsWith('test/') && file.endsWith('.ts'))
       .filter((file) => readFileSync(file, 'utf8').includes(SECRETS_CLIENT))
       .map(relative);
-    expect(importers).toEqual(['test/secrets/aws-secret-source.test.ts']);
+    expect(importers).toEqual(['test/credentials/aws-secret-source.test.ts']);
   });
 
   test('no file holds a certificate block, a private key header or a .p12 file name', () => {

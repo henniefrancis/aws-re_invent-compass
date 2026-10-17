@@ -63,7 +63,7 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 
 - [x] 3. Implement the secrets provider
   - [x] 3.1 Implement the secrets provider and the AWS source
-    - Create `src/secrets/secret-shapes.ts` (zod schemas for the app, apple-pass and google-wallet JSON keys in the design's secrets table) and `src/secrets/secrets-provider.ts` (`createSecretsProvider` with a per-secret cache of `SECRETS_CACHE_TTL_SECONDS`, single-flight refresh, failures not cached, `DependencyError('secret')` without any value) and `awsSecretSource` over `GetSecretValueCommand` (SecretString only)
+    - Create `src/credentials/secret-shapes.ts` (zod schemas for the app, apple-pass and google-wallet JSON keys in the design's secrets table) and `src/credentials/secrets-provider.ts` (`createSecretsProvider` with a per-secret cache of `SECRETS_CACHE_TTL_SECONDS`, single-flight refresh, failures not cached, `DependencyError('secret')` without any value) and `awsSecretSource` over `GetSecretValueCommand` (SecretString only)
     - _Requirements: 21.1, 21.2, 21.3, 21.6_
 
   - [x] 3.2 Write property test for the secrets cache
@@ -456,7 +456,7 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 
 - [x] 24. Build the deterministic Lambda bundles
   - [x] 24.1 Implement the deterministic zip writer
-    - Create `src/build/deterministic-zip.ts` (`zipDeterministic`: sorted entries, DOS time 1980-01-01 00:00, mode 0644, deflate with `zlib.deflateRawSync`, CRC with `zlib.crc32`, no extra fields)
+    - Create `src/bundling/deterministic-zip.ts` (`zipDeterministic`: sorted entries, DOS time 1980-01-01 00:00, mode 0644, deflate with `zlib.deflateRawSync`, CRC with `zlib.crc32`, no extra fields)
     - _Requirements: 1.3, 1.4_
 
   - [x] 24.2 Write property test for the zip writer
@@ -464,7 +464,7 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
     - **Validates: Requirements 1.3, 1.4**
 
   - [x] 24.3 Implement the bundler and the build script
-    - Create `src/build/bundle-lambdas.ts` (`bundleLambdas` with `esbuild`: bundle, `platform: 'node'`, `target: 'node24'`, `format: 'esm'`, minify, no source maps, no legal comments, a `createRequire` banner for CommonJS dependencies, output `index.mjs`, zip, fail at 5 MB or more) and `scripts/build.ts` (writes `dist/lambda/api.zip` and `dist/lambda/passkit.zip`, prints names, sizes and SHA-256 values only)
+    - Create `src/bundling/bundle-lambdas.ts` (`bundleLambdas` with `esbuild`: bundle, `platform: 'node'`, `target: 'node24'`, `format: 'esm'`, minify, no source maps, no legal comments, a `createRequire` banner for CommonJS dependencies, output `index.mjs`, zip, fail at 5 MB or more) and `scripts/build.ts` (writes `dist/lambda/api.zip` and `dist/lambda/passkit.zip`, prints names, sizes and SHA-256 values only)
     - _Requirements: 1.1, 1.2, 1.5, 1.6_
 
   - [x] 24.4 Write the build test
@@ -541,7 +541,7 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 
 - **Requests for the integrator recorded while building (task 25.2).** No change was made outside `packages/pass-service/**` and this spec folder.
   - Dependencies: none beyond the declared ones. `zod`, `ical-generator`, `node-forge` (tests only) and the rest were declared by the integrator.
-  - `.gitignore`: the bare `build/` rule ignores `packages/pass-service/src/build/` and `test/build/`. They were added with `git add -f`; please add `!packages/pass-service/src/build/` and `!packages/pass-service/test/build/`.
+  - `.gitignore`: no change needed. The rules `secrets/` and `build/` matched the original folder names, so the folders were renamed to `src/credentials`, `test/credentials`, `src/bundling` and `test/bundling` (code review C1).
   - Build plan 4.1 and 4.2 and ADR-012 wording: SubHash and DeviceHash are HKDF-SHA256 sub-keys of the pepper (info `compass/sub/v1`, `compass/device/v1`); the Auth_Token is HMAC of the serial and a per-pass random `tokenSalt`; every record stores `pepperId`; there are new counters (`forgetMe`, `updates`, `passUpdate`, hand-off reads); forget_me keeps counters; at most 10 registrations per pass.
   - S6 alignment: secrets `compass/<env>/app` (`pepper`, `pepperId`) and `compass/<env>/origin-verify` (`originVerify`, optional `originVerifyPrevious`) named by `APP_SECRET_ID` and `ORIGIN_VERIFY_SECRET_ID` on both Lambdas; both roles read `app`, `origin-verify` and `apple-pass`, only `api` reads `google-wallet`; `PUBLIC_BASE_URL` is set in the second apply; the table keys, GSIs and `ttl` attribute in the README; `dynamodb:BatchWriteItem` for `api`; the passkit role limited with `dynamodb:LeadingKeys` to `DEV#*` for writes; the `api` timeout of 10 s is close to the forget_me fan-out budget (8 s), so 15 s is advised (or `APNS_BUDGET_MS=3000`).
   - Contract: no change requested. 403 for a missing or wrong origin-verify header is outside the contract on purpose. logMessages answers 200 for an unreadable body and registerDevice answers 401 for a bad body, because the contract lists no other status for them. The `x-api-key` header is enforced by API Gateway and never read by the Lambdas.

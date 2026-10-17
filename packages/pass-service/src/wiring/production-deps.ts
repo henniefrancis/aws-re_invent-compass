@@ -19,7 +19,7 @@ import { createRateLimiter } from '../data/rate-limiter.js';
 import { createRegistrationRepository } from '../data/registration-repository.js';
 import { createGoogleWalletClient } from '../google/google-wallet-client.js';
 import { createGoogleTokenSource } from '../google/token-source.js';
-import { createSecretsProvider, awsSecretSource } from '../secrets/secrets-provider.js';
+import { createSecretsProvider, awsSecretSource } from '../credentials/secrets-provider.js';
 import { systemClock, systemRandom } from '../seams.js';
 
 /** The production JWKS cache: aws-jwt-verify defaults (10 second penalty box, 3 second fetch timeout). */

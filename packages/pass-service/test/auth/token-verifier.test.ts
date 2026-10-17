@@ -9,7 +9,7 @@ import {
 import type { IdTokenConfig } from '../../src/config/config.js';
 import { DependencyError, ProblemError, problem } from '../../src/http/problem.js';
 import { subHash } from '../../src/security/hashing.js';
-import type { SecretsProvider } from '../../src/secrets/secrets-provider.js';
+import type { SecretsProvider } from '../../src/credentials/secrets-provider.js';
 import { createFakeClock } from '../helpers/fake-clock.js';
 import { createFakeSecrets } from '../helpers/fake-secrets.js';
 import {

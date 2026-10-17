@@ -12,7 +12,7 @@ import { createFakeClock } from '../helpers/fake-clock.js';
 import { createFakeSecrets, randomValue } from '../helpers/fake-secrets.js';
 import { createSeededRandom } from '../helpers/seeded-random.js';
 import { buildEvent } from '../helpers/proxy-event.js';
-import type { SecretsProvider } from '../../src/secrets/secrets-provider.js';
+import type { SecretsProvider } from '../../src/credentials/secrets-provider.js';
 
 function setup(routes: Partial<Record<RouteKey, Handler<BaseDeps>>>, secrets?: SecretsProvider) {
   const fake = createFakeSecrets();

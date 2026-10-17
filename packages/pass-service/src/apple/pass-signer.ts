@@ -10,7 +10,7 @@
 import { PKPass } from 'passkit-generator';
 import { DependencyError } from '../http/problem.js';
 import { withConsoleGuard, type ConsoleLike } from '../observability/console-guard.js';
-import type { SecretsProvider } from '../secrets/secrets-provider.js';
+import type { SecretsProvider } from '../credentials/secrets-provider.js';
 import { ARTWORK } from './artwork.js';
 import { buildPassJson, type PassTemplateInput } from './pass-template.js';
 

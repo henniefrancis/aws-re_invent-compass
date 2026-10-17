@@ -7,7 +7,7 @@
 // logs content, ids, keys or tokens.
 // https://developers.google.com/wallet/generic/rest/v1/genericobject/insert
 // https://developers.google.com/wallet/generic/rest/v1/genericobject/patch
-import type { SecretsProvider } from '../secrets/secrets-provider.js';
+import type { SecretsProvider } from '../credentials/secrets-provider.js';
 import type { GenericObject } from './google-object.js';
 import { saveLink, signSaveJwt } from './save-jwt.js';
 import type { GoogleTokenSource } from './token-source.js';

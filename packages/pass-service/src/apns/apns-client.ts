@@ -9,7 +9,7 @@
 // Docs: https://developer.apple.com/documentation/usernotifications/handling-notification-responses-from-apns
 import type { ClientHttp2Session } from 'node:http2';
 import type { ApiConfig } from '../config/config.js';
-import type { SecretsProvider } from '../secrets/secrets-provider.js';
+import type { SecretsProvider } from '../credentials/secrets-provider.js';
 import type { Http2Connector } from './http2-connector.js';
 
 export interface PushTarget {

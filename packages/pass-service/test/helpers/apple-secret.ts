@@ -1,4 +1,4 @@
-import type { AppleSecret } from '../../src/secrets/secrets-provider.js';
+import type { AppleSecret } from '../../src/credentials/secrets-provider.js';
 import { throwawayPki } from './throwaway-pki.js';
 
 /** An apple-pass secret built from the throwaway PKI. Made-up identifiers. */

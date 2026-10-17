@@ -13,7 +13,7 @@ import type { JwksCache } from 'aws-jwt-verify/jwk';
 import type { IdTokenConfig } from '../config/config.js';
 import { ProblemError } from '../http/problem.js';
 import { subHash } from '../security/hashing.js';
-import type { SecretsProvider } from '../secrets/secrets-provider.js';
+import type { SecretsProvider } from '../credentials/secrets-provider.js';
 import type { Clock } from '../seams.js';
 import { parseBearer } from './bearer.js';
 

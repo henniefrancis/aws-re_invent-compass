@@ -21,7 +21,9 @@ const VERSION_MADE_BY_UNIX = (3 << 8) | 30;
 const METHOD_DEFLATE = 8;
 
 export function zipDeterministic(entries: readonly ZipEntry[]): Uint8Array {
-  const sorted = [...entries].sort((a, b) => Buffer.compare(Buffer.from(a.path), Buffer.from(b.path)));
+  const sorted = [...entries].sort((a, b) =>
+    Buffer.compare(Buffer.from(a.path), Buffer.from(b.path)),
+  );
   if (new Set(sorted.map((entry) => entry.path)).size !== sorted.length) {
     throw new RangeError('duplicate zip entry path');
   }

@@ -4,7 +4,7 @@
 // being rotated, the previous value is accepted as well. Both comparisons always run.
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { header, type ProxyEvent } from '../http/event.js';
-import type { OriginSecret } from '../secrets/secret-shapes.js';
+import type { OriginSecret } from '../credentials/secret-shapes.js';
 
 function digest(value: string): Buffer {
   return createHash('sha256').update(value, 'utf8').digest();
