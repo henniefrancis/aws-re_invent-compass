@@ -1,7 +1,7 @@
 // The stored record types (design, Data Models, with the security review fields).
 import type { PassFields } from '@compass/contracts';
 
-export type GoogleState = 'none' | 'active' | 'inactive' | 'pending_inactive' | 'failed';
+export type GoogleState = 'none' | 'active' | 'inactive' | 'pending_inactive';
 export type Platform = 'apple' | 'google';
 
 /** Personal data record P10. */

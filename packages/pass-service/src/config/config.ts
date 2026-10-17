@@ -35,7 +35,7 @@ export interface ApiConfig {
     timeoutMs: number;
     budgetMs: number;
   };
-  google: { enabled: boolean; classSuffix?: string };
+  google: { enabled: false } | { enabled: true; classSuffix: string };
   handoffCalendarEnabled: boolean;
   secretsCacheSeconds: number;
   serviceVersion: string;

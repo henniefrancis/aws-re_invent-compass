@@ -266,44 +266,44 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - [x] 15. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 16. Implement the pass lifecycle and the attendee pass handlers
-  - [ ] 16.1 Implement issue in the lifecycle service
+- [x] 16. Implement the pass lifecycle and the attendee pass handlers
+  - [x] 16.1 Implement issue in the lifecycle service
     - Create `src/services/pass-lifecycle.ts` with `issue`: active-pass cap (429 `active_pass_limit`, no `Retry-After`), `consume('passWrites', n)` (429 `rate_limited` with `Retry-After`), then per pass `randomUUID`, `deriveAuthToken`, `sha256Hex`, `putIfAbsent`, then a Google insert when requested and enabled, returning platforms that succeeded in request order; with Google disabled no Google call is made
     - _Requirements: 6.2, 6.4, 8.1, 8.2, 8.3, 8.4, 8.5, 14.7_
 
-  - [ ] 16.2 Implement the issuePasses and getApplePass handlers
+  - [x] 16.2 Implement the issuePasses and getApplePass handlers
     - Create `src/handlers/api/issue-passes.ts` (verify, parse, issue, 201) and `src/handlers/api/get-apple-pass.ts` (verify, owner match with `constantTimeEqualHex`, sign on demand, 200 `application/vnd.apple.pkpass`; unknown, expired, foreign and non-UUID serials all the same 404); register both routes in `createApiApp`
     - _Requirements: 5.1, 5.2, 5.3, 8.5, 10.1, 10.2_
 
-  - [ ] 16.3 Write property test for issue
+  - [x] 16.3 Write property test for issue
     - **Property 11: Issue creates exactly the right records**
     - **Validates: Requirements 8.1, 8.2, 8.5, 19.3**
 
-  - [ ] 16.4 Write property test for Google degradation
+  - [x] 16.4 Write property test for Google degradation
     - **Property 12: A Google failure or a disabled Google degrades only the platform list**
     - **Validates: Requirements 8.3, 8.4, 14.7**
 
-  - [ ] 16.5 Write property test for the active-pass cap
+  - [x] 16.5 Write property test for the active-pass cap
     - **Property 9: The active-pass cap refuses issue only, and update and void are never refused**
     - **Validates: Requirements 6.4, 6.5**
 
-  - [ ] 16.6 Write property test for the owner match
+  - [x] 16.6 Write property test for the owner match
     - **Property 7: A non-owner is indistinguishable from an unknown serial**
     - **Validates: Requirements 5.1, 5.2, 5.3**
 
-  - [ ] 16.7 Implement update and void
+  - [x] 16.7 Implement update and void
     - Add `update`, `void` and `voidRecord` to the lifecycle service per design Component 14 (owner match, active check, session code equality, `record('passWrites', 1)`, version-checked save with one re-read retry, `nextLastUpdated`, `extendExpiry` on registrations, pushes to `listByPass` with invalid registrations deleted and metrics recorded, Google patch or `INACTIVE` with `googleState` kept, idempotent repeat void retrying only a pending Google patch), and create `src/handlers/api/update-pass.ts` and `src/handlers/api/void-pass.ts`; register both routes
     - _Requirements: 6.5, 7.5, 11.1, 11.2, 11.3, 11.4, 11.5, 12.1, 12.2, 12.3, 12.4, 13.3, 13.4, 13.6_
 
-  - [ ] 16.8 Write property test for update
+  - [x] 16.8 Write property test for update
     - **Property 17: Update replaces content, bumps once and pushes once per device**
     - **Validates: Requirements 11.1, 11.2, 11.3, 11.4**
 
-  - [ ] 16.9 Write property test for void idempotence
+  - [x] 16.9 Write property test for void idempotence
     - **Property 18: Void is idempotent**
     - **Validates: Requirements 12.1, 12.2, 12.3, 12.4**
 
-  - [ ] 16.10 Commit
+  - [x] 16.10 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 17. Implement the hand-off and the calendar
