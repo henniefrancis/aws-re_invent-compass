@@ -9,7 +9,7 @@ The Apple update service and the hand-off mean the Compass API holds some person
 ## Decision
 
 - **Hashed identifiers:** `subHash` = HMAC-SHA256(Builder ID `sub`, pepper); `deviceHash` = HMAC-SHA256(`deviceLibraryIdentifier`, pepper). The pepper is in Secrets Manager. The Apple `authenticationToken` and the `handoffId` are stored only as SHA-256 hashes. `serialNumber` is a random UUID v4.
-- **TTLs:** pass record until session end plus 24 hours (ADR-022); device registration deleted on unregister, on an APNs "invalid token" reply, or at pass TTL; hand-off 15 minutes; rate counters 2 minutes. Reads check `expiresAt`; TTL only cleans up.
+- **TTLs:** pass record until session end plus 24 hours (ADR-022); device registration deleted on unregister, on an APNs "invalid token" reply, or at pass TTL; hand-off 15 minutes; rate counters until their one-hour window ends plus 2 minutes (amended 2026-10-17: the limits in plan section 7 are per hour, so per-minute counters could not enforce them). Reads check `expiresAt`; TTL only cleans up.
 - **Apple path exception:** Apple fixes the PassKit paths, which contain `deviceLibraryIdentifier` and `serialNumber`. Mitigations: access logs record `$context.resourcePath` only, CloudFront standard logs off, WAF logging off and API rule sampling off.
 - **No identifier logging:** Lambdas never log paths, headers or bodies. Log groups keep 14 days.
 - **`forget_me`:** `DELETE /api/v1/me` voids every pass for the caller's `subHash` and deletes the pass records, device registrations, hand-offs and rate counters (P10 to P13). The local tool also deletes the schedule snapshot, issued-pass record and generated files (P4, P5, P9).
