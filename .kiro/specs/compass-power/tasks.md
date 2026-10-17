@@ -303,23 +303,23 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 16.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 17. Build add_standby, remove_standby and add_layover
-  - [ ] 17.1 Implement the standby tools
+- [x] 17. Build add_standby, remove_standby and add_layover
+  - [x] 17.1 Implement the standby tools
     - `src/tools/add-standby.ts` and `remove-standby.ts`: identifier checks, catalog lookup, one confirmed write each, results confirmed against `schedule.favorites`, the "standby is a backup, not a reservation" line
     - _Requirements: 11.4, 14.1, 14.2_
-  - [ ] 17.2 Implement add_layover
+  - [x] 17.2 Implement add_layover
     - `src/tools/add-layover.ts`: offset, order and window validation before any call, overlap warning through `RulesPort.findClashes`, one confirmed `events.createPersonalTime`, `personalTimeId` from the matching confirmed entry, title shown only as attendee labelled data; written around an internal create, update or delete action union so the S0 change in Open Question 3 is a schema swap
     - _Requirements: 14.3, 14.4, 14.5, 14.6_
-  - [ ] 17.3 Write property test for exactly-once writes
+  - [x] 17.3 Write property test for exactly-once writes
     - **Property 31: A block sends nothing and an allow sends exactly once**
     - **Validates: Requirements 12.3, 12.4, 13.6, 14.1, 14.2, 14.3, 17.4**
-  - [ ] 17.4 Write property test for confirmed reporting
+  - [x] 17.4 Write property test for confirmed reporting
     - **Property 32: Success is reported only when the schedule confirms it**
     - **Validates: Requirements 12.5, 12.6, 13.6, 14.2, 14.3**
-  - [ ] 17.5 Write property test for layover validation
+  - [x] 17.5 Write property test for layover validation
     - **Property 34: Invalid layovers never reach S1**
     - **Validates: Requirements 14.4**
-  - [ ] 17.6 Commit
+  - [x] 17.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 18. Build the boarding pass tools
