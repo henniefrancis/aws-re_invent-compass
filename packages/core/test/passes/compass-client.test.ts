@@ -806,3 +806,39 @@ describe('Feature: boarding-passes, Compass_Client example tests', () => {
     expect(unauthorised.status).toBe(401);
   });
 });
+
+describe('Feature: boarding-passes, the token_use check is configurable (SP2 confirmation)', () => {
+  const opaque = 'aaaaaaaa.bbbbbbbb.cccccccc';
+  const clientWith = (checkTokenUse: boolean | undefined, token: string) => {
+    const mock = createContractMock();
+    const client = createCompassClient({
+      baseUrl: BASE_URL,
+      allowedHosts: TEST_HOSTS,
+      transport: mock,
+      clock: fakeClock(),
+      idToken: { getIdToken: () => Promise.resolve(token) },
+      ...(checkTokenUse === undefined ? {} : { checkTokenUse }),
+    });
+    return { client, mock };
+  };
+
+  test('it is on by default and refuses a token without token_use id', async () => {
+    expect((await failureOf(clientWith(undefined, opaque).client.forgetMe())).code).toBe(
+      'compass.no_id_token',
+    );
+    expect((await failureOf(clientWith(true, opaque).client.forgetMe())).code).toBe(
+      'compass.no_id_token',
+    );
+  });
+
+  test('switched off, a plain header-safe token is accepted, and a malformed one still is not', async () => {
+    const { client, mock } = clientWith(false, opaque);
+    await client.forgetMe();
+    expect(mock.requests[0]?.headers.authorization).toBe(`Bearer ${opaque}`);
+    for (const bad of ['has space', 'line\r\nbreak', '']) {
+      expect((await failureOf(clientWith(false, bad).client.forgetMe())).code).toBe(
+        'compass.no_id_token',
+      );
+    }
+  });
+});

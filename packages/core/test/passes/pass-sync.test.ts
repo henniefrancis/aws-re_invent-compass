@@ -1047,3 +1047,43 @@ describe('Feature: boarding-passes, a failed compensating void is queued and ret
     expect(await rig.store.readPendingVoids()).toEqual([issuedSerial('CODE1')]);
   });
 });
+
+describe('Feature: boarding-passes, returned platforms must be a subset of the requested ones (security M4)', () => {
+  test('an issue answer naming a platform that was not requested records nothing', async () => {
+    const { store, fs } = await seeded({ passes: [] });
+    const { client, calls } = fakeClient({
+      issue: (request) =>
+        Promise.resolve({
+          passes: request.passes.map((pass) => ({
+            serialNumber: issuedSerial(pass.sessionCode),
+            sessionCode: pass.sessionCode,
+            platforms: ['apple' as const, 'google' as const],
+          })),
+        }),
+    });
+    const error = await failureOf(syncPasses(inputFor(['CODE1']), depsFor(store, client)));
+    expect(error.code).toBe('sync.identity_mismatch');
+    expect(error.message).toContain('forget_me');
+    expect(writesIn(fs.ops)).toBe(0);
+    expect(calls.map((call) => call.kind)).toEqual(['issue']);
+  });
+
+  test('fewer platforms than requested is fine, and an empty list too', async () => {
+    const { store } = await seeded({ passes: [] });
+    const { client } = fakeClient({
+      issue: (request) =>
+        Promise.resolve({
+          passes: request.passes.map((pass, index) => ({
+            serialNumber: issuedSerial(pass.sessionCode),
+            sessionCode: pass.sessionCode,
+            platforms: index === 0 ? ['apple' as const] : [],
+          })),
+        }),
+    });
+    const result = await syncPasses(inputFor(['CODE1', 'CODE2']), {
+      ...depsFor(store, client),
+      platforms: ['apple', 'google'],
+    });
+    expect(result.record.passes.map((pass) => pass.platforms)).toEqual([['apple'], []]);
+  });
+});

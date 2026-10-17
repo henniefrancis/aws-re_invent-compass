@@ -238,7 +238,8 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
     calls += 1;
 
     // Trust nothing the server says about identity: every answer is for a requested code,
-    // once, with a serial the record does not already hold. Otherwise record nothing.
+    // once, with a serial the record does not already hold, and for platforms that were
+    // requested. Otherwise record nothing.
     const requested = new Set(group.map((entry) => entry.sessionCode));
     const answered = new Set<string>();
     const serials = new Set(passes.map((pass) => pass.serialNumber));
@@ -246,7 +247,8 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
       if (
         !requested.has(issued.sessionCode) ||
         answered.has(issued.sessionCode) ||
-        serials.has(issued.serialNumber)
+        serials.has(issued.serialNumber) ||
+        !issued.platforms.every((platform) => platforms.includes(platform))
       ) {
         identityMismatch(true);
       }

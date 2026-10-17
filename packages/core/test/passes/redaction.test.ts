@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { PassError, passError, redact } from '../../src/passes/redaction.js';
+import { MAX_REDACT_INPUT, PassError, passError, redact } from '../../src/passes/redaction.js';
 
 // Unit tests for the redaction helper and the shared error shape (boarding-passes, S4).
 //
@@ -129,5 +129,37 @@ describe('Feature: boarding-passes, passError redacts its summary', () => {
   test('a clean summary passes through unchanged', () => {
     const err = passError('compass.validation_failed', 'response did not match schema');
     expect(err.summary).toBe('response did not match schema');
+  });
+});
+
+describe('Feature: boarding-passes, redact caps its input at 8 KB (security N6)', () => {
+  test('text at the limit is scanned whole, and the limit is 8 KB', () => {
+    expect(MAX_REDACT_INPUT).toBe(8192);
+    const atLimit = `${'word '.repeat(1637)}tok=${SENTINEL_JWT}`.slice(0, MAX_REDACT_INPUT);
+    expect(redact(atLimit)).not.toContain('[truncated]');
+  });
+
+  test('longer text is cut at the last whitespace inside the limit and marked, so no half token survives', () => {
+    // A token that straddles the limit: its first characters sit before byte 8192.
+    const head = `${'word '.repeat(1630)}`;
+    const straddling = `${head}${SENTINEL_JWT}${' tail'.repeat(500)}`;
+    expect(straddling.length).toBeGreaterThan(MAX_REDACT_INPUT);
+    const out = redact(straddling);
+    expect(out.endsWith(' [truncated]')).toBe(true);
+    expect(out.length).toBeLessThanOrEqual(MAX_REDACT_INPUT + ' [truncated]'.length);
+    expect(out).not.toContain(SENTINEL_JWT.slice(0, 10));
+    expect(out).not.toContain('eyJ');
+  });
+
+  test('a long run with no whitespace at all is cut at the limit and its tokens are still removed', () => {
+    const out = redact(`${'A1b2'.repeat(5000)}`);
+    expect(out).toBe('[redacted] [truncated]');
+  });
+
+  test('a huge hostile input is handled quickly', () => {
+    const started = Date.now();
+    redact('a@'.repeat(500_000));
+    redact('https://'.repeat(100_000));
+    expect(Date.now() - started).toBeLessThan(2000);
   });
 });

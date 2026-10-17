@@ -70,6 +70,26 @@ const KEY_VALUE_PATTERN =
  */
 const OPAQUE_PATTERN = /(?<![A-Za-z0-9+/_-])[A-Za-z0-9+/_-]{22,}={0,2}/g;
 
+/** The longest input redact will scan. Longer text is cut (see redact) so a hostile string cannot make the patterns slow. */
+export const MAX_REDACT_INPUT = 8 * 1024;
+/** Appended where the input was cut. */
+const TRUNCATED = ' [truncated]';
+
+/**
+ * Cut text to the scan limit without leaving a half token at the cut: back up to the last
+ * whitespace inside the limit (when there is one) so no partial secret prefix survives.
+ */
+function bounded(value: string): string {
+  if (value.length <= MAX_REDACT_INPUT) {
+    return value;
+  }
+  let end = MAX_REDACT_INPUT;
+  while (end > 0 && !/\s/.test(value.charAt(end - 1))) {
+    end -= 1;
+  }
+  return `${value.slice(0, end > 0 ? end : MAX_REDACT_INPUT)}${TRUNCATED}`;
+}
+
 /**
  * Return a string that is safe to log or to place in an error message. Every http or
  * https URL (which carries the Board_URL and the hand-off id fragment), every bearer
@@ -80,7 +100,7 @@ const OPAQUE_PATTERN = /(?<![A-Za-z0-9+/_-])[A-Za-z0-9+/_-]{22,}={0,2}/g;
  * emails and bare opaque tokens.
  */
 export function redact(value: string): string {
-  return value
+  return bounded(value)
     .replace(URL_PATTERN, REDACTED)
     .replace(BEARER_PATTERN, REDACTED)
     .replace(KEY_VALUE_PATTERN, REDACTED)

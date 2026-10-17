@@ -118,6 +118,13 @@ export interface CompassClientOptions {
   allowedHosts: readonly string[];
   /** True only for a simulated run: allows localhost over http. */
   simulated?: boolean;
+  /**
+   * Refuse a token whose unverified payload does not say token_use is id. Defaults to true. This
+   * is defence in depth; the check is confirmed against a real Builder ID token at spike SP2,
+   * and this switch exists so a different real claim shape can be accommodated without a code
+   * change. The token must still be a plain header-safe string.
+   */
+  checkTokenUse?: boolean;
   transport: HttpTransport;
   idToken: IdTokenProvider;
   /** Used for the single Retry-After wait and to resolve an HTTP-date. */
@@ -277,6 +284,7 @@ function checkSerial(serialNumber: string): string {
 /** Build the Compass_Client over the injected seams. */
 export function createCompassClient(options: CompassClientOptions): CompassClient {
   const { transport, idToken, clock } = options;
+  const checkTokenUse = options.checkTokenUse ?? true;
   const { base: baseUrl, origin } = normaliseBaseUrl(
     options.baseUrl,
     options.allowedHosts,
@@ -291,7 +299,11 @@ export function createCompassClient(options: CompassClientOptions): CompassClien
     } catch {
       throw new CompassError('compass.no_id_token', 'No ID token is available. Sign in again.');
     }
-    if (token.length > MAX_TOKEN_LENGTH || !TOKEN_PATTERN.test(token) || !claimsIdToken(token)) {
+    if (
+      token.length > MAX_TOKEN_LENGTH ||
+      !TOKEN_PATTERN.test(token) ||
+      (checkTokenUse && !claimsIdToken(token))
+    ) {
       throw new CompassError('compass.no_id_token', 'No ID token is available. Sign in again.');
     }
     return `Bearer ${token}`;
