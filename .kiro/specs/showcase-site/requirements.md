@@ -37,7 +37,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 - **Source_Document**: One of `CONCEPT.md`, `README.md`, `.kiro/steering/product.md`, `docs/architecture/build-plan.md`, and for install content `packages/mcp-server/README.md` (S3) and the official Kiro powers installation guide.
 - **Content_Block**: One unit of Site copy, kept in a content module with the Source_Document it comes from.
 - **Notice**: The exact sentence from `README.md`: "re:Invent Compass is an independent community project and is not affiliated with, endorsed by, or sponsored by Amazon Web Services."
-- **Required_CSP**: The Content-Security-Policy the Site is built to run under: `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests`.
+- **Required_CSP**: The Content-Security-Policy the Site is built to run under: `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests`.
 - **Build_Output_Check**: The Node script in `site/scripts/` that inspects every prerendered HTML file after a build.
 - **Budget_Check**: The Node script in `site/scripts/` that measures compressed JavaScript sizes after a build.
 - **Static_Server**: The Node script in `site/scripts/` that serves the built output for browser tests, emulating the CloudFront directory rewrite and sending the Required_CSP.

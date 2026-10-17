@@ -1,3 +1,4 @@
+import { globalConfig } from 'zod/v4/core';
 import { describe, expect, test } from 'vitest';
 import { DEMO_EVENT, DEMO_SESSIONS } from '../../src/lib/demo/demo-catalog';
 import { createDemoRuntime } from '../../src/lib/demo/demo-deps';
@@ -21,6 +22,10 @@ const context = createFakeEngine().withContextDefaults({
 });
 
 describe('rules port', () => {
+  test('the zod eval probe is switched off before the engine loads, so a strict CSP sees no violation', () => {
+    expect(globalConfig.jitless).toBe(true);
+  });
+
   test('every port method hands its arguments to the engine and returns its answer', () => {
     const { engine, calls } = createRecordingEngine(
       createFakeEngine({

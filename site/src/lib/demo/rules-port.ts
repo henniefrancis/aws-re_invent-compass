@@ -10,6 +10,8 @@
 // bundler keeps only the functions the demo calls.
 //
 
+// First, so that zod is told not to probe for eval before the engine builds its schemas.
+import './zod-jitless';
 import type { Commitment, NormalisedSession, Verdict } from '@compass/contracts';
 import {
   checkLayovers,

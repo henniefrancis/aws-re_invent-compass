@@ -311,36 +311,36 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 14. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, coverage of Site_Logic is 100%, both build checks pass and the guided clash works in a local `npx ng serve`; ask the user if questions arise.
 
-- [ ] 15. Static server and browser test suite
-  - [ ] 15.1 Implement the Static_Server and the Required_CSP constant
+- [x] 15. Static server and browser test suite
+  - [x] 15.1 Implement the Static_Server and the Required_CSP constant
     - Create `site/scripts/required-csp.mjs` (`REQUIRED_CSP`, the single source) and `site/scripts/serve-static.mjs` (`resolveSitePath` with the extensionless rewrite and 403 for unknown or traversal paths, `contentType`, `SECURITY_HEADERS`, `createStaticServer` on `node:http`)
     - Write unit tests for path resolution, headers and an in-process server on port 0
     - _Requirements: 3.6, 3.7, 22.5_
 
-  - [ ] 15.2 Configure Playwright
+  - [x] 15.2 Configure Playwright
     - Create `site/playwright.config.ts` with the seven Device_Profiles chosen from the pinned Playwright device registry (assert each descriptor exists), `retries: 0`, `webServer` starting the Static_Server on `site/dist/site/browser/`, and shared helpers in `site/e2e/support/` that wait only on focus, headings and live region text
     - _Requirements: 20.1, 22.3, 22.4, 22.5_
 
-  - [ ] 15.3 Write the page, accessibility, forced-colors and layout specs
+  - [x] 15.3 Write the page, accessibility, forced-colors and layout specs
     - `pages.spec.ts`, `a11y.spec.ts` (axe with WCAG 2.0, 2.1 and 2.2 A and AA tags on every page and every board and demo state), `forced-colors.spec.ts` (Chromium) and `layout.spec.ts` (44 by 44 targets, no horizontal scroll at 320px, no positioned element, the focused element never covered while tabbing on iPhone landscape, board first action in the first viewport)
     - _Requirements: 4.1, 4.2, 4.4, 19.1, 19.4, 19.5, 19.6, 19.7, 19.8, 19.11, 20.1, 20.3, 20.4_
 
-  - [ ] 15.4 Write the demo and board specs
+  - [x] 15.4 Write the demo and board specs
     - `demo.spec.ts`: the guided clash (block with reasons announced), the safe swap in three steps, adding the blocked session, the sample pass, and the `.ics` download parsed with `ical.js`
     - `board.spec.ts`: every fixture state through `page.route`; invalid fragments send no request; the fragment is gone from the URL after load; focus on the state heading; local expiry with Playwright's clock
     - _Requirements: 8.6, 8.8, 8.10, 10.5, 10.8, 11.1, 12.1, 16.3, 16.4, 18.1, 18.4, 18.5, 18.6, 18.7, 18.8_
 
-  - [ ] 15.5 Write the CSP, privacy and performance specs
+  - [x] 15.5 Write the CSP, privacy and performance specs
     - `csp.spec.ts`: zero `securitypolicyviolation` events under the Required_CSP across every flow
     - `privacy-network.spec.ts`: every request is same-origin; the id appears only in hand-off route paths and in no console message; cookies, web storage and IndexedDB are empty after every flow
     - `performance.spec.ts`: Chromium LCP proxy under throttling below 2.5 seconds on the Home_Page (Lighthouse mobile once the Integrator pins it)
     - _Requirements: 2.2, 2.3, 2.5, 2.7, 3.7, 16.5, 16.6, 21.3_
 
-  - [ ] 15.6 Run the browser suite once and fix findings
+  - [x] 15.6 Run the browser suite once and fix findings
     - Install the browsers locally (`npx playwright install`), build, run `npx playwright test -c playwright.config.ts` from `site/`, and fix every failure in the site; record the run summary in the commit body
     - _Requirements: 19.1, 20.1, 22.3_
 
-  - [ ] 15.7 Commit
+  - [x] 15.7 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 16. README and hand-over notes
