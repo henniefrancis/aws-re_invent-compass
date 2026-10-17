@@ -12,6 +12,8 @@ export interface FakeStore extends TokenStore {
   saves: TokenSet[];
   clears: number;
   setKind(kind: StorageKind): void;
+  /** When true, a refresh write falls back to memory, as a failing keychain would. */
+  degradeOnReplace: boolean;
 }
 
 /** Create a fake store. `kind` decides what save reports. */
@@ -22,6 +24,7 @@ export function fakeStore(initial?: TokenSet, kind: StorageKind = 'keychain'): F
   const store: FakeStore = {
     saves: [],
     clears: 0,
+    degradeOnReplace: false,
     get kind() {
       return currentKind;
     },
@@ -49,6 +52,9 @@ export function fakeStore(initial?: TokenSet, kind: StorageKind = 'keychain'): F
     replaceIfCurrent(expected, tokens) {
       if (expected !== generation) {
         return undefined;
+      }
+      if (store.degradeOnReplace) {
+        currentKind = 'memory';
       }
       store.saves.push(tokens);
       held = { ...tokens };

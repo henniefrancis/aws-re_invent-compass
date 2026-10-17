@@ -85,6 +85,9 @@ Scope boundary: this stream does not build the guardrails engine (S2 rules), the
 3. WHEN a refresh succeeds, THE Token_Store SHALL replace the stored Access_Token and ID_Token with the refreshed values.
 4. IF a refresh fails because the Refresh_Token is rejected, THEN THE Auth_Module SHALL clear all stored tokens and return an error that reports that the attendee must sign in again.
 5. IF a refresh is requested while a refresh for the same Refresh_Token is already in progress, THEN THE Auth_Module SHALL reuse the result of the in-progress refresh rather than starting a second refresh.
+6. IF a refresh succeeds but the Keychain cannot be written, THEN THE Auth_Module SHALL log one fixed warning and return the memory-only notice, and neither SHALL contain a token value.
+7. IF a refresh fails for a reason other than a rejected Refresh_Token while the current Access_Token has not yet expired, THEN THE Auth_Module SHALL keep using the current Access_Token and SHALL only log the failure.
+8. IF a refresh succeeds with a rotated Refresh_Token but the result is dropped because the session changed meanwhile, THEN THE Auth_Module SHALL revoke the rotated Refresh_Token on a best-effort basis.
 
 ### Requirement 4: Token audience separation
 
@@ -136,6 +139,7 @@ Scope boundary: this stream does not build the guardrails engine (S2 rules), the
 5. IF the Events API responds with a status from 500 to 599, THEN THE Events_Client SHALL return a typed server error that carries the response status.
 6. IF the Events API responds with a failure status that is not 400, 401, 403, 404, 409, 429 or in the range 500 to 599, THEN THE Events_Client SHALL return a typed unexpected response error that carries the response status.
 7. WHEN the Events_Client builds any error, THE Events_Client SHALL exclude every access token, refresh token, ID token, email and Authorization header value from the error message and from all error fields.
+8. IF a request fails over the network, is aborted or its redirect is refused, THEN THE Events_Client SHALL return a typed network error or timeout error with a fixed message and no cause.
 
 ### Requirement 8: Retry on 401 and 429
 

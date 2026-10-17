@@ -25,6 +25,8 @@ const OPERATIONS: Record<string, string> = {
 
 /** Every other runtime export of the api entry point, listed on purpose. */
 const SUPPORT_EXPORTS = [
+  'NetworkError',
+  'TimeoutError',
   'createClientContext',
   'ClientConfigError',
   'SimulatedModeRefusedError',

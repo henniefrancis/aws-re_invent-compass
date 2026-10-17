@@ -80,3 +80,17 @@ export class RefreshFailedError extends AuthError {
     super('RefreshFailedError', 'The access token could not be refreshed');
   }
 }
+
+/** An OAuth call failed over the network. Fixed message; the cause is not kept. */
+export class OAuthNetworkError extends AuthError {
+  constructor() {
+    super('OAuthNetworkError', 'The sign-in service could not be reached');
+  }
+}
+
+/** An OAuth call ran past its time limit. Fixed message; the cause is not kept. */
+export class OAuthTimeoutError extends AuthError {
+  constructor() {
+    super('OAuthTimeoutError', 'The sign-in service did not answer in time');
+  }
+}

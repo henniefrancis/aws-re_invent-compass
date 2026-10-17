@@ -5,6 +5,9 @@ import * as auth from '../../src/auth/index.js';
 // The list is explicit so a new export, especially one that could expose a token, is a deliberate change.
 
 const EXPECTED = [
+  'OAuthNetworkError',
+  'OAuthTimeoutError',
+  'CONNECTIONS_CHECKING_INTERVAL_MS',
   'AUTHORIZE_ENDPOINT',
   'AudienceError',
   'AuthError',

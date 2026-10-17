@@ -123,6 +123,8 @@ export {
   EventWindowError,
   QuotaExceededError,
   ResponseTooLargeError,
+  NetworkError,
+  TimeoutError,
   errorForStatus,
 } from './errors.js';
 

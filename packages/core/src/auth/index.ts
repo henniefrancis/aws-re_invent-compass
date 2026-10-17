@@ -16,6 +16,8 @@ export {
   SignInFailedError,
   SignInRequiredError,
   RefreshFailedError,
+  OAuthNetworkError,
+  OAuthTimeoutError,
 } from './errors.js';
 
 export {
@@ -35,6 +37,7 @@ export {
   MAX_HEADER_SIZE_BYTES,
   HEADERS_TIMEOUT_MS,
   REQUEST_TIMEOUT_MS,
+  CONNECTIONS_CHECKING_INTERVAL_MS,
   type LoopbackResult,
   type LoopbackServer,
   type LoopbackDeps,
@@ -88,6 +91,7 @@ export {
   refreshNow,
   createCredentialSources,
   type RefreshDeps,
+  type RefreshResult,
 } from './refresh.js';
 
 export { signOut, REVOKE_TIMEOUT_MS, type SignOutDeps, type SignOutResult } from './sign-out.js';

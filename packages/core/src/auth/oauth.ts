@@ -9,7 +9,14 @@
 // a token or a header: a failed call yields only a status and a safe error code.
 
 import { z } from 'zod';
-import { MAX_OAUTH_BODY_BYTES, readBodyCapped, type CappableResponse } from '../api/capped-body.js';
+import {
+  BodyTooLargeError,
+  MAX_OAUTH_BODY_BYTES,
+  readBodyCapped,
+  type CappableResponse,
+} from '../api/capped-body.js';
+import { isTimeoutLike } from '../api/errors.js';
+import { OAuthNetworkError, OAuthTimeoutError } from './errors.js';
 
 export const AUTHORIZE_ENDPOINT = 'https://oauth.awsevents.com/oauth2/authorize';
 export const TOKEN_ENDPOINT = 'https://oauth.awsevents.com/oauth2/token';
@@ -71,8 +78,20 @@ export async function postForm(
     redirect: 'error',
     signal: signal ?? AbortSignal.timeout(OAUTH_REQUEST_TIMEOUT_MS),
   };
-  const response = await doFetch(url, init);
-  const text = await readBodyCapped(response, MAX_OAUTH_BODY_BYTES);
+  let response: OAuthResponseLike;
+  let text: string;
+  try {
+    response = await doFetch(url, init);
+    text = await readBodyCapped(response, MAX_OAUTH_BODY_BYTES);
+  } catch (error) {
+    // A body over the limit keeps its own type; every other failure (connection,
+    // abort, refused redirect, unreadable body) becomes a typed error with a fixed
+    // message and no cause (finding N7).
+    if (error instanceof BodyTooLargeError) {
+      throw error;
+    }
+    throw isTimeoutLike(error) ? new OAuthTimeoutError() : new OAuthNetworkError();
+  }
   let json: unknown;
   try {
     json = JSON.parse(text);

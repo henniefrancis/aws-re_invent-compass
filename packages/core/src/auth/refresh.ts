@@ -21,6 +21,7 @@ import { NotSignedInError, RefreshFailedError, SignInRequiredError } from './err
 import {
   CLIENT_ID,
   REFRESH_WINDOW_SECONDS,
+  REVOKE_ENDPOINT,
   TOKEN_ENDPOINT,
   hostOf,
   isOk,
@@ -29,6 +30,8 @@ import {
   postForm,
   type OAuthFetch,
 } from './oauth.js';
+import { MEMORY_ONLY_NOTICE } from './sign-in.js';
+import { REVOKE_TIMEOUT_MS } from './sign-out.js';
 import type { TokenSet, TokenStore } from './token-store.js';
 import type { RedactingLogger } from '../api/redacting-logger.js';
 
@@ -40,7 +43,35 @@ export interface RefreshDeps {
 }
 
 /** Refreshes in progress, keyed by the refresh token they are using. */
-const inFlight = new Map<string, Promise<void>>();
+const inFlight = new Map<string, Promise<RefreshResult>>();
+
+/** What a refresh reports back. */
+export interface RefreshResult {
+  /**
+   * Present when the refreshed tokens are held in memory only (the keychain could not
+   * be written). It never contains a token value.
+   */
+  memoryOnlyNotice?: string;
+}
+
+/**
+ * Best-effort revoke of a rotated refresh token that was not stored because the
+ * session changed meanwhile (finding N8): without this the new token would stay
+ * valid at the server, unknown to the client, until it expires.
+ */
+async function revokeDropped(token: string, deps: RefreshDeps): Promise<void> {
+  try {
+    assertAudience('refresh-token', hostOf(REVOKE_ENDPOINT));
+    await postForm(
+      deps.fetch,
+      REVOKE_ENDPOINT,
+      { token, client_id: CLIENT_ID },
+      AbortSignal.timeout(REVOKE_TIMEOUT_MS),
+    );
+  } catch {
+    deps.logger.warn('A refresh token that was dropped could not be revoked');
+  }
+}
 
 /** Run one refresh exchange for the held tokens and store the result. */
 async function exchange(
@@ -48,7 +79,7 @@ async function exchange(
   held: TokenSet,
   generation: number,
   deps: RefreshDeps,
-): Promise<void> {
+): Promise<RefreshResult> {
   assertAudience('refresh-token', hostOf(TOKEN_ENDPOINT));
   let result;
   try {
@@ -68,7 +99,7 @@ async function exchange(
       // sign-in, nor repeat a clear that sign-out already did (finding M2).
       if (!store.clearIfCurrent(generation)) {
         deps.logger.warn('Token refresh result discarded: the session changed meanwhile');
-        return;
+        return {};
       }
       deps.logger.warn('Token refresh rejected: sign-in is required');
       throw new SignInRequiredError();
@@ -87,6 +118,7 @@ async function exchange(
   deps.logger.addSecret(parsed.refreshToken);
   // Write only if no sign-in, sign-out or clear happened since this refresh started,
   // so a late refresh can never bring back tokens after sign-out (finding M2).
+  const keychainBefore = store.kind === 'keychain';
   const stored = store.replaceIfCurrent(generation, {
     accessToken: parsed.accessToken,
     idToken: parsed.idToken,
@@ -95,11 +127,23 @@ async function exchange(
   });
   if (stored === undefined) {
     deps.logger.warn('Token refresh result discarded: the session changed meanwhile');
+    if (parsed.refreshToken !== undefined && parsed.refreshToken !== held.refreshToken) {
+      await revokeDropped(parsed.refreshToken, deps);
+    }
+    return {};
   }
+  if (stored === 'memory') {
+    // The keychain could not be written (finding M9): say so, without any token value.
+    if (keychainBefore) {
+      deps.logger.warn('The keychain could not be written; tokens are now held in memory only');
+    }
+    return { memoryOnlyNotice: MEMORY_ONLY_NOTICE };
+  }
+  return {};
 }
 
 /** Refresh now, sharing any refresh already running for the same refresh token. */
-export function refreshNow(store: TokenStore, deps: RefreshDeps): Promise<void> {
+export function refreshNow(store: TokenStore, deps: RefreshDeps): Promise<RefreshResult> {
   const held = store.load();
   const generation = store.generation;
   if (held === undefined) {
@@ -116,26 +160,41 @@ export function refreshNow(store: TokenStore, deps: RefreshDeps): Promise<void> 
   return started;
 }
 
-/** Refresh only when the access token has 300 seconds or fewer left at `now`. */
+/**
+ * Refresh only when the access token has 300 seconds or fewer left at `now`. If the
+ * refresh fails for a reason other than a rejected refresh token (a 5xx, a network
+ * error) while the current access token is still valid, the current token is used and
+ * the failure is only logged (QA L9); a rejected refresh token always propagates.
+ */
 export async function refreshIfNeeded(
   store: TokenStore,
   now: number,
   deps: RefreshDeps,
-): Promise<void> {
+): Promise<RefreshResult> {
   const held = store.load();
-  if (held === undefined) {
-    return;
+  if (held === undefined || held.accessTokenExpiresAt - now > REFRESH_WINDOW_SECONDS * 1000) {
+    return {};
   }
-  if (held.accessTokenExpiresAt - now <= REFRESH_WINDOW_SECONDS * 1000) {
-    await refreshNow(store, deps);
+  try {
+    return await refreshNow(store, deps);
+  } catch (error) {
+    if (error instanceof RefreshFailedError && held.accessTokenExpiresAt > now) {
+      deps.logger.warn('Token refresh failed; the current access token is still valid and is used');
+      return {};
+    }
+    throw error;
   }
 }
 
 /** Wire the store and refresh into the CredentialSources the providers read. */
 export function createCredentialSources(store: TokenStore, deps: RefreshDeps): CredentialSources {
   return {
-    refreshIfNeeded: () => refreshIfNeeded(store, deps.now(), deps),
-    refreshNow: () => refreshNow(store, deps),
+    refreshIfNeeded: async () => {
+      await refreshIfNeeded(store, deps.now(), deps);
+    },
+    refreshNow: async () => {
+      await refreshNow(store, deps);
+    },
     accessToken: () => store.load()?.accessToken,
     idToken: () => store.load()?.idToken,
   };

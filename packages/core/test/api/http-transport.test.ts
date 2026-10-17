@@ -6,7 +6,12 @@ import {
   type FetchInit,
   type FetchResponseLike,
 } from '../../src/api/http-transport.js';
-import { ValidationError } from '../../src/api/errors.js';
+import {
+  NetworkError,
+  TimeoutError,
+  ValidationError,
+  isTimeoutLike,
+} from '../../src/api/errors.js';
 import { AudienceError } from '../../src/auth/errors.js';
 import type { ClientRequest, EventsApiCredential } from '../../src/api/transport.js';
 
@@ -237,5 +242,56 @@ describe('events-client, M3: the bearer token can only go to the Events API', ()
       transport.send({ operation: 'GetSchedule', method: 'GET', path: '/elsewhere' }),
     ).rejects.toBeInstanceOf(ValidationError);
     expect(asked).toBe(false);
+  });
+});
+
+describe('events-client, N7: network, abort and redirect failures are typed, fixed and cause-free', () => {
+  const req: ClientRequest = {
+    operation: 'GetSchedule',
+    method: 'GET',
+    path: '/events/E1/schedule',
+  };
+  const transportFailing = (error: Error): ReturnType<typeof createHttpTransport> =>
+    createHttpTransport({ credential: credential(), fetch: () => Promise.reject(error) });
+
+  test('a connection error, a refused redirect and any other fetch failure become NetworkError', async () => {
+    for (const error of [
+      new TypeError('fetch failed: https://api.awsevents.com/?token=SECRET', {
+        cause: new Error('ECONNRESET authorization: Bearer SECRET'),
+      }),
+      new TypeError('redirect mode is set to error'),
+      new Error('plain failure'),
+    ]) {
+      const failure = await transportFailing(error)
+        .send(req)
+        .catch((e: unknown) => e);
+      expect(failure).toBeInstanceOf(NetworkError);
+      expect((failure as Error).message).toBe(
+        'GetSchedule could not be completed over the network',
+      );
+      expect((failure as Error).cause).toBeUndefined();
+      expect(JSON.stringify(failure)).not.toContain('SECRET');
+    }
+  });
+
+  test('a timeout or an abort becomes TimeoutError', async () => {
+    for (const name of ['TimeoutError', 'AbortError']) {
+      const error = new Error('The operation was aborted due to timeout');
+      error.name = name;
+      const failure = await transportFailing(error)
+        .send(req)
+        .catch((e: unknown) => e);
+      expect(failure).toBeInstanceOf(TimeoutError);
+      expect((failure as Error).message).toBe('GetSchedule timed out');
+      expect((failure as Error).cause).toBeUndefined();
+    }
+  });
+
+  test('isTimeoutLike recognises only those two names', () => {
+    expect(isTimeoutLike({ name: 'TimeoutError' })).toBe(true);
+    expect(isTimeoutLike({ name: 'AbortError' })).toBe(true);
+    for (const other of [{ name: 'TypeError' }, {}, 'TimeoutError', null, undefined, 7]) {
+      expect(isTimeoutLike(other)).toBe(false);
+    }
   });
 });

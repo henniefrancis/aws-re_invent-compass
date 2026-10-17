@@ -110,7 +110,7 @@ describe('Feature: events-client, Property 5: Token storage round-trips through 
         expect(store.save(tokens)).toBe('keychain');
         expect(store.load()).toEqual(tokens);
         expect(Buffer.from(keyring.secrets.get('access') ?? []).toString('utf8')).toBe(
-          tokens.accessToken,
+          `${String(tokens.accessTokenExpiresAt)}:${tokens.accessToken}`,
         );
         expect(Buffer.from(keyring.secrets.get('refresh') ?? []).toString('utf8')).toBe(
           tokens.refreshToken,
@@ -158,10 +158,27 @@ describe('Feature: events-client, Property 5: Token storage round-trips through 
     }
   });
 
-  test('after a restart the expiry is unknown and reads as 0 so the first use refreshes', () => {
+  test('the expiry is stored with the access token and survives a restart (QA L9)', () => {
     const keyring = fakeKeyring();
     createTokenStore(keyring).save(sample);
-    expect(createTokenStore(keyring).load()?.accessTokenExpiresAt).toBe(0);
+    expect(createTokenStore(keyring).load()).toEqual(sample);
+  });
+
+  test('an access value written by an earlier version (no expiry prefix) reads as a bare token with expiry 0', () => {
+    const keyring = fakeKeyring();
+    const store = createTokenStore(keyring);
+    store.save(sample);
+    keyring.secrets.set('access', [...Buffer.from('eyJhbGciOiJub25lIn0.payload.sig', 'utf8')]);
+    expect(store.load()).toEqual({
+      ...sample,
+      accessToken: 'eyJhbGciOiJub25lIn0.payload.sig',
+      accessTokenExpiresAt: 0,
+    });
+    // A colon with a non-numeric prefix, or a leading colon, is also a bare token.
+    for (const bare of ['abc:def', ':leading', '12ab:tail']) {
+      keyring.secrets.set('access', [...Buffer.from(bare, 'utf8')]);
+      expect(store.load()?.accessToken).toBe(bare);
+    }
   });
 
   test('clear removes every token from the keychain and from memory', () => {

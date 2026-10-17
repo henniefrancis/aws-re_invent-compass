@@ -9,7 +9,7 @@ import {
   type CappableResponse,
 } from '../../src/api/capped-body.js';
 import { createHttpTransport, type FetchResponseLike } from '../../src/api/http-transport.js';
-import { ResponseTooLargeError } from '../../src/api/errors.js';
+import { NetworkError, ResponseTooLargeError } from '../../src/api/errors.js';
 import { headers } from './operation-harness.js';
 
 // Tests for capped response body reads (events-client, S1, finding L3).
@@ -149,15 +149,18 @@ describe('events-client, L3: the Events API transport maps an oversize body to a
     ).rejects.toBeInstanceOf(ResponseTooLargeError);
   });
 
-  test('another read failure is not disguised as a size error', async () => {
+  test('another read failure becomes a typed network error, not a size error, and keeps no cause', async () => {
     const res: FetchResponseLike = {
       status: 200,
       headers: headers(),
       text: () => Promise.reject(new Error('socket closed')),
     };
     const transport = createHttpTransport({ credential, fetch: () => Promise.resolve(res) });
-    await expect(
-      transport.send({ operation: 'GetSchedule', method: 'GET', path: '/events/E1/schedule' }),
-    ).rejects.toThrow('socket closed');
+    const failure = await transport
+      .send({ operation: 'GetSchedule', method: 'GET', path: '/events/E1/schedule' })
+      .catch((e: unknown) => e);
+    expect(failure).toBeInstanceOf(NetworkError);
+    expect((failure as Error).message).not.toContain('socket closed');
+    expect((failure as Error).cause).toBeUndefined();
   });
 });

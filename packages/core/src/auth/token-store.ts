@@ -14,9 +14,11 @@
 // and by the value returned from save, never by anything containing a token.
 //
 // The access token expiry (derived from expires_in, never from decoding a JWT) is
-// not a secret and has no keychain entry of its own, so it is kept in memory. After
-// a restart it is unknown and reads as 0, which makes the first use refresh the
-// access token with the stored refresh token.
+// stored in the same keychain entry as the access token, as "<expiresAtMs>:<token>"
+// (QA L9), so it survives a restart and the account names stay the three the spec
+// fixes. A value without that prefix (written by an earlier version) is read as a
+// bare token with an unknown expiry of 0, which makes the first use refresh it. A JWT
+// never starts with digits and a colon, so the two forms cannot be confused.
 //
 // The keyring is injected so tests never touch the real OS keychain.
 
@@ -117,6 +119,15 @@ function getSecret(entry: KeyringEntryLike): string | undefined {
   return bytes === null ? undefined : Buffer.from(bytes).toString('utf8');
 }
 
+/** Split a stored access value into the token and its expiry (0 when there is none). */
+function splitAccess(stored: string): { token: string; expiresAt: number } {
+  const separator = stored.indexOf(':');
+  if (separator > 0 && /^\d{1,16}$/.test(stored.slice(0, separator))) {
+    return { token: stored.slice(separator + 1), expiresAt: Number(stored.slice(0, separator)) };
+  }
+  return { token: stored, expiresAt: 0 };
+}
+
 /** Write one secret as UTF-8 bytes. */
 function setSecret(entry: KeyringEntryLike, value: string): void {
   entry.setSecret(Buffer.from(value, 'utf8'));
@@ -138,7 +149,6 @@ export function createTokenStore(keyring: KeyringLike = realKeyring): TokenStore
   const entries = buildEntries(keyring);
   let kind: StorageKind = entries === undefined ? 'memory' : 'keychain';
   let memory: TokenSet | undefined;
-  let expiresAt = 0;
   let generation = 0;
 
   /** Switch to memory only after a keychain failure, removing any leftovers. */
@@ -149,10 +159,9 @@ export function createTokenStore(keyring: KeyringLike = realKeyring): TokenStore
 
   /** Write the tokens to the keychain, or to memory after a keychain failure. */
   function write(tokens: TokenSet): StorageKind {
-    expiresAt = tokens.accessTokenExpiresAt;
     if (kind === 'keychain' && entries !== undefined) {
       try {
-        setSecret(entries.access, tokens.accessToken);
+        setSecret(entries.access, `${String(tokens.accessTokenExpiresAt)}:${tokens.accessToken}`);
         setSecret(entries.refresh, tokens.refreshToken);
         setSecret(entries.id, tokens.idToken);
         memory = undefined;
@@ -169,7 +178,6 @@ export function createTokenStore(keyring: KeyringLike = realKeyring): TokenStore
   function wipe(): void {
     generation += 1;
     memory = undefined;
-    expiresAt = 0;
     if (entries !== undefined) {
       deleteAll(entries);
     }
@@ -185,13 +193,19 @@ export function createTokenStore(keyring: KeyringLike = realKeyring): TokenStore
         return memory === undefined ? undefined : { ...memory };
       }
       try {
-        const accessToken = getSecret(entries.access);
+        const storedAccess = getSecret(entries.access);
         const refreshToken = getSecret(entries.refresh);
         const idToken = getSecret(entries.id);
-        if (accessToken === undefined || refreshToken === undefined || idToken === undefined) {
+        if (storedAccess === undefined || refreshToken === undefined || idToken === undefined) {
           return undefined;
         }
-        return { accessToken, refreshToken, idToken, accessTokenExpiresAt: expiresAt };
+        const access = splitAccess(storedAccess);
+        return {
+          accessToken: access.token,
+          refreshToken,
+          idToken,
+          accessTokenExpiresAt: access.expiresAt,
+        };
       } catch {
         fallBack(entries);
         return undefined;

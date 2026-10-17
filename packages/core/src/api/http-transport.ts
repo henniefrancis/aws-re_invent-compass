@@ -18,7 +18,13 @@ import {
   readBodyCapped,
   type CappableResponse,
 } from './capped-body.js';
-import { ResponseTooLargeError, ValidationError } from './errors.js';
+import {
+  NetworkError,
+  ResponseTooLargeError,
+  TimeoutError,
+  ValidationError,
+  isTimeoutLike,
+} from './errors.js';
 import {
   EVENTS_API_BASE_URL,
   type ClientRequest,
@@ -69,6 +75,14 @@ export interface HttpTransportDeps {
  * validation layer above can reject it as a validation error; this transport makes
  * no success/failure judgement of its own.
  */
+/**
+ * Turn any failure from the fetch (a connection error, an abort, a refused redirect, a
+ * failed body read) into a typed error with a fixed message and no cause (finding N7).
+ */
+function wrapNetworkFailure(error: unknown, operation: OperationName): Error {
+  return isTimeoutLike(error) ? new TimeoutError(operation) : new NetworkError(operation);
+}
+
 async function parseBody(res: FetchResponseLike, operation: OperationName): Promise<unknown> {
   let text: string;
   try {
@@ -77,7 +91,7 @@ async function parseBody(res: FetchResponseLike, operation: OperationName): Prom
     if (error instanceof BodyTooLargeError) {
       throw new ResponseTooLargeError(operation, res.status);
     }
-    throw error;
+    throw wrapNetworkFailure(error, operation);
   }
   if (text.length === 0) {
     return undefined;
@@ -159,7 +173,12 @@ export function createHttpTransport(deps: HttpTransportDeps): Transport {
         headers['content-type'] = 'application/json';
         init.body = JSON.stringify(req.body);
       }
-      const res = await deps.fetch(target, init);
+      let res: FetchResponseLike;
+      try {
+        res = await deps.fetch(target, init);
+      } catch (error) {
+        throw wrapNetworkFailure(error, req.operation);
+      }
       const body = await parseBody(res, req.operation);
       return { status: res.status, headers: res.headers, body };
     },

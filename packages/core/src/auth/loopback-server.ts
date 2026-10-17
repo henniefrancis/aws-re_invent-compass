@@ -60,6 +60,7 @@ export const MAX_WRONG_STATE_CALLBACKS = 3;
 export const MAX_HEADER_SIZE_BYTES = 8192;
 export const HEADERS_TIMEOUT_MS = 10_000;
 export const REQUEST_TIMEOUT_MS = 10_000;
+export const CONNECTIONS_CHECKING_INTERVAL_MS = 1000;
 
 const COMPLETE_PAGE =
   '<!doctype html><meta charset="utf-8"><title>Signed in</title>' +
@@ -105,6 +106,7 @@ export type RequestHandler = (req: RequestLike, res: ResponseLike) => void;
 /** The part of a node:http server this module drives. */
 export interface ServerLike {
   once(event: 'error', listener: (error: { code?: string }) => void): unknown;
+  on(event: 'error', listener: (error: { code?: string }) => void): unknown;
   listen(port: number, host: string, listener: () => void): unknown;
   close(): unknown;
   closeAllConnections(): void;
@@ -125,6 +127,7 @@ export const defaultLoopbackDeps: LoopbackDeps = {
         maxHeaderSize: MAX_HEADER_SIZE_BYTES,
         headersTimeout: HEADERS_TIMEOUT_MS,
         requestTimeout: REQUEST_TIMEOUT_MS,
+        connectionsCheckingInterval: CONNECTIONS_CHECKING_INTERVAL_MS,
       },
       handler,
     ),
@@ -303,6 +306,12 @@ export async function bindLoopback(
     } else if (v6.code === undefined || !UNSUPPORTED_CODES.has(v6.code)) {
       shutdown();
       continue;
+    }
+
+    // A permanent error handler: an error after listening (a socket fault) must never
+    // become an uncaught exception that ends the process (finding N9).
+    for (const server of servers) {
+      server.on('error', () => undefined);
     }
 
     timers.handle = setTimeout(() => {

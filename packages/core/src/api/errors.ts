@@ -126,6 +126,30 @@ export class ResponseTooLargeError extends EventsApiError {
   }
 }
 
+/**
+ * The request could not be completed over the network (connection failure, a refused
+ * redirect, a body that could not be read). A fixed message: the underlying error is
+ * not kept, because it can carry a URL, a header or a token.
+ */
+export class NetworkError extends EventsApiError {
+  constructor(operation: OperationName) {
+    super('NetworkError', operation, `${operation} could not be completed over the network`);
+  }
+}
+
+/** The request ran past its time limit and was aborted. Fixed message, no cause. */
+export class TimeoutError extends EventsApiError {
+  constructor(operation: OperationName) {
+    super('TimeoutError', operation, `${operation} timed out`);
+  }
+}
+
+/** True for the error a timeout or an abort produces (name TimeoutError or AbortError). */
+export function isTimeoutLike(error: unknown): boolean {
+  const name = (error as { name?: unknown } | null | undefined)?.name;
+  return name === 'TimeoutError' || name === 'AbortError';
+}
+
 /** A client-side per-operation quota would be exceeded; raised before any send. */
 export class QuotaExceededError extends EventsApiError {
   constructor(operation: OperationName, message: string) {

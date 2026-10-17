@@ -332,7 +332,7 @@ describe('events-client, M2: a refresh cannot outlive the session it started in'
     const fresh = heldTokens({ refreshToken: 'newer-sign-in-refresh' });
     store.save(fresh);
     release();
-    await expect(pending).resolves.toBeUndefined();
+    await expect(pending).resolves.toEqual({});
     expect(store.load()).toEqual(fresh);
     expect(store.clears).toBe(0);
 
@@ -341,7 +341,7 @@ describe('events-client, M2: a refresh cannot outlive the session it started in'
     const pending2 = refreshNow(other, deps(second.oauth).deps);
     other.clear();
     second.release();
-    await expect(pending2).resolves.toBeUndefined();
+    await expect(pending2).resolves.toEqual({});
     expect(other.clears).toBe(1);
   });
 

@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
 import {
   CALLBACK_PATH,
+  CONNECTIONS_CHECKING_INTERVAL_MS,
   HEADERS_TIMEOUT_MS,
   LOOPBACK_PORTS,
   MAX_HEADER_SIZE_BYTES,
@@ -68,6 +69,10 @@ class FakeServer implements ServerLike {
         this.errorListener?.(outcome === 'nocode' ? {} : { code: outcome });
       }
     });
+  }
+  errorHandlers: ((error: { code?: string }) => void)[] = [];
+  on(_event: 'error', listener: (error: { code?: string }) => void): void {
+    this.errorHandlers.push(listener);
   }
   close(): void {
     this.closeCount += 1;
@@ -195,6 +200,20 @@ describe('Feature: events-client, Property 2: Loopback binds the lowest free por
     expect(server.port).toBe(8485);
     expect(world.servers[0]?.closeCount).toBe(1);
     expect(world.servers[0]?.closeAllCount).toBe(1);
+  });
+
+  test('every listener that stays open gets a permanent error handler, so a later socket fault cannot crash the process (N9)', async () => {
+    const world = fakeWorld(() => 'ok');
+    const server = await bindLoopback([8484], world.deps, OPTIONS);
+    expect(world.servers.map((s) => s.errorHandlers.length)).toEqual([1, 1]);
+    for (const s of world.servers) {
+      expect(() => s.errorHandlers[0]?.({ code: 'ECONNRESET' })).not.toThrow();
+    }
+    server.close();
+    const failed = fakeWorld((host) => (host === v4 ? 'ok' : 'EADDRINUSE'));
+    await expect(bindLoopback([8484], failed.deps, OPTIONS)).rejects.toBeInstanceOf(
+      NoLoopbackPortError,
+    );
   });
 
   test('the ports are exactly 8484 to 8489 in ascending order', () => {
@@ -508,6 +527,11 @@ describe('events-client, task 9.5: loopback request handling (real socket on 127
     expect(server.headersTimeout).toBe(HEADERS_TIMEOUT_MS);
     expect(server.requestTimeout).toBe(REQUEST_TIMEOUT_MS);
     expect(MAX_HEADER_SIZE_BYTES).toBe(8192);
+    expect(server.maxHeaderSize).toBe(MAX_HEADER_SIZE_BYTES);
+    expect(
+      (server as unknown as { connectionsCheckingInterval: number }).connectionsCheckingInterval,
+    ).toBe(CONNECTIONS_CHECKING_INTERVAL_MS);
+    expect(CONNECTIONS_CHECKING_INTERVAL_MS).toBe(1000);
     server.close();
   });
 
