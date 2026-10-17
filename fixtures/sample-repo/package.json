@@ -1,0 +1,12 @@
+{
+  "name": "sample-repo",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/client-s3": "^3.0.0"
+  },
+  "devDependencies": {
+    "aws-cdk-lib": "^2.0.0"
+  }
+}

@@ -130,17 +130,17 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 4.9 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 5. Create the sample repo and the scanner fixture tests
-  - [ ] 5.1 Create `fixtures/sample-repo/`
+- [x] 5. Create the sample repo and the scanner fixture tests
+  - [x] 5.1 Create `fixtures/sample-repo/`
     - A small made-up project: Terraform with `aws_s3_bucket`, `aws_lambda_function` and `aws_dynamodb_table`; CDK TypeScript using `aws-cdk-lib/aws-sqs`; SDK v3 code importing `@aws-sdk/client-s3` and `@aws-sdk/client-dynamodb` and sending commands; a Python file using boto3; `package.json` and `requirements.txt`; a `.gitignore` with one ignored folder; a README stating it is sample data. No secrets, keys or real account ids. Add a note to the task notes asking the integrator to exclude it from ESLint and `tsc`
     - _Requirements: 25.3_
-  - [ ] 5.2 Write the scanner fixture tests
+  - [x] 5.2 Write the scanner fixture tests
     - Scan the sample repo and assert services, evidence, depths and levels; copy it to a temp folder, add decoys (a `node_modules` folder, a file in the ignored folder, a 2 MiB file, a binary file, a symlink where the OS allows) and assert they contribute nothing; never write into the tracked fixture
     - _Requirements: 1.3, 1.4, 1.5, 1.6, 25.3_
-  - [ ] 5.3 Commit
+  - [x] 5.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 6. Checkpoint: ensure all tests pass
+- [x] 6. Checkpoint: ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Build the week planner
