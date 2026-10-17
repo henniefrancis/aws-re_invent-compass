@@ -77,16 +77,16 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 3.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 4. Implement the hashing and capability helpers
-  - [ ] 4.1 Implement hashing, the Auth_Token derivation and the hand-off id
+- [x] 4. Implement the hashing and capability helpers
+  - [x] 4.1 Implement hashing, the Auth_Token derivation and the hand-off id
     - Create `src/security/hashing.ts` (`subHash`, `deviceHash`, `sha256Hex`, `constantTimeEqualHex` with `timingSafeEqual`), `src/security/auth-token.ts` (`deriveAuthToken` as base64url HMAC-SHA256 of `compass-apple-auth-token-v1:` plus the serial, 43 characters) and `src/security/handoff-id.ts` (`newHandoffId` from 16 injected random bytes, `HANDOFF_ID_PATTERN`, `UUID_V4_PATTERN`)
     - _Requirements: 4.7, 9.9, 15.1, 17.7, 19.4_
 
-  - [ ] 4.2 Write unit tests for the helpers
+  - [x] 4.2 Write unit tests for the helpers
     - Lengths and alphabets, determinism, pepper sensitivity, constant-time comparison on equal and unequal lengths, UUID v4 and hand-off id patterns
     - _Requirements: 4.7, 9.9, 15.1_
 
-  - [ ] 4.3 Commit
+  - [x] 4.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 5. Implement the origin guard and the request pipeline
