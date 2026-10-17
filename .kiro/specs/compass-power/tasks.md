@@ -102,32 +102,32 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 3.11 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 4. Build evidence, depth, level, reasoning, taxonomy and the scanRepo entry
-  - [ ] 4.1 Implement evidence aggregation, depth and level
+- [x] 4. Build evidence, depth, level, reasoning, taxonomy and the scanRepo entry
+  - [x] 4.1 Implement evidence aggregation, depth and level
     - Create `src/scanner/evidence.ts`, `depth.ts` (`classifyDepth`, `suggestLevel`, `depthToNumber` with the rule and level tables from design Component 1)
     - _Requirements: 3.1, 3.2, 3.3_
-  - [ ] 4.2 Write property test for depth and level
+  - [x] 4.2 Write property test for depth and level
     - **Property 10: Depth follows the documented rules and never drops as evidence grows**
     - **Validates: Requirements 3.2, 3.3**
-  - [ ] 4.3 Implement the reasoning sentence
+  - [x] 4.3 Implement the reasoning sentence
     - Create `src/scanner/reasoning.ts` (`explain`): plain English, names counts, depth and level, no em or en dash, no sentence over 25 words, never a file name
     - _Requirements: 3.4_
-  - [ ] 4.4 Write property test for reasoning
+  - [x] 4.4 Write property test for reasoning
     - **Property 13: Reasoning is plain English that states the counts**
     - **Validates: Requirements 3.4**
-  - [ ] 4.5 Implement scanRepo and the taxonomy mapping
+  - [x] 4.5 Implement scanRepo and the taxonomy mapping
     - Create `src/scanner/scan-repo.ts` (walk, run detectors, aggregate per service, sort by key, `pythonAnalysed: false` while boto3 is not built), `src/scanner/taxonomy.ts` (`mapToTaxonomy`, case-insensitive, catalog spelling returned) and `src/scanner/index.ts` exporting the public surface by name
     - _Requirements: 2.7, 3.1, 3.5, 3.6, 4.2_
-  - [ ] 4.6 Write property test for exclusions
+  - [x] 4.6 Write property test for exclusions
     - **Property 2: Excluded paths never contribute evidence**
     - **Validates: Requirements 1.3, 1.4, 1.5, 1.6, 1.8**
-  - [ ] 4.7 Write property test for order independence
+  - [x] 4.7 Write property test for order independence
     - **Property 11: Scan results do not depend on listing order**
     - **Validates: Requirements 3.6**
-  - [ ] 4.8 Write property test for taxonomy matching
+  - [x] 4.8 Write property test for taxonomy matching
     - **Property 15: Taxonomy labels are always taken from the catalog**
     - **Validates: Requirements 4.2**
-  - [ ] 4.9 Commit
+  - [x] 4.9 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 5. Create the sample repo and the scanner fixture tests
@@ -233,7 +233,10 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [ ] 12.3 Implement the simulated runtime factory over ports
     - Create `src/simulated/simulated-runtime.ts` that composes a `Runtime` from injected port implementations, the pass service and the `simulated/` app-data subfolder; the real S1, S2 and S4 adapters are plugged in at task 26
     - _Requirements: 16.5, 22.1, 23.1_
-  - [ ] 12.4 Commit
+  - [ ] 12.4 Implement the production transport and file system adapters
+    - `src/adapters/fetch-transport.ts` (https only, timeout, `redirect: 'error'`, binary bodies, `fetch` injected) and `src/adapters/node-fs-adapter.ts` (files `0o600`, directories `0o700`, POSIX modes ignored on Windows and documented), with unit tests
+    - _Requirements: 17.2, 22.1, 23.1_
+  - [ ] 12.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 13. Build the session and catalog tools

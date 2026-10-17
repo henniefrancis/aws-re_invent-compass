@@ -1,3 +1,4 @@
+import { DASH_PATTERN } from '../support/dashes.js';
 import { describe, expect, test } from 'vitest';
 import { SERVICE_TABLE, entryFor, resolveService } from '../../src/scanner/service-table.js';
 import type { IdentifierKind } from '../../src/scanner/service-table.js';
@@ -25,7 +26,7 @@ describe('SERVICE_TABLE structure', () => {
     const names = SERVICE_TABLE.map((entry) => entry.displayName);
     expect(new Set(names).size).toBe(names.length);
     for (const name of names) {
-      expect(name).not.toMatch(/[–—]/);
+      expect(name).not.toMatch(DASH_PATTERN);
     }
   });
 
