@@ -64,6 +64,20 @@ describe('allow', () => {
   });
 });
 
+/** A context where every walking time is an official one, so an impossible connection blocks. */
+function officialContext() {
+  const venueData = testVenueData();
+  venueData.walkingTimes = venueData.walkingTimes.map((edge) => ({
+    ...edge,
+    source: {
+      kind: 'official' as const,
+      url: 'https://aws.amazon.com/events/reinvent/faqs/',
+      retrievedOn: '2026-10-17',
+    },
+  }));
+  return testContext({ venueData });
+}
+
 describe('block rules', () => {
   test('a clash between two other commitments is not a problem for the candidate', () => {
     const first = slot('OLD1', clock(9), clock(10));
@@ -81,20 +95,40 @@ describe('block rules', () => {
     ]);
   });
 
-  test('an impossible connection from an earlier commitment blocks and names it', () => {
+  test('an impossible connection on an OFFICIAL walking time blocks and names it', () => {
     const earlier = slot('OLD1', clock(9), clock(10), { venue: 'Beta Tower' });
-    const verdict = check(slot('NEW1', clock(10, 25), clock(11, 25)), [earlier]);
+    const verdict = check(slot('NEW1', clock(10, 25), clock(11, 25)), [earlier], officialContext());
     expect(verdict.decision).toBe('block');
     expect(verdict.reasons).toEqual([
-      'Impossible connection. The walk from "Beta Tower" to "Alpha Hall" is 20 minutes, an estimate. You would arrive 5 minutes late.',
+      'Impossible connection. The walk from "Beta Tower" to "Alpha Hall" is 10 minutes. With a 10 minute buffer, you need 20 minutes. You would arrive 5 minutes late.',
     ]);
   });
 
-  test('an impossible connection to a later commitment blocks', () => {
+  test('an impossible connection to a later commitment on an official walking time blocks', () => {
     const later = slot('OLD1', clock(11, 25), clock(12, 25), { venue: 'Beta Tower' });
-    const verdict = check(slot('NEW1', clock(10), clock(11)), [later]);
+    const verdict = check(slot('NEW1', clock(10), clock(11)), [later], officialContext());
     expect(verdict.decision).toBe('block');
     expect(verdict.reasons[0]).toContain('Impossible connection');
+  });
+
+  test('an impossible connection on an ESTIMATED walk is only a warning: likely impossible', () => {
+    const earlier = slot('OLD1', clock(9), clock(10), { venue: 'Beta Tower' });
+    const verdict = check(slot('NEW1', clock(10, 25), clock(11, 25)), [earlier]);
+    expect(verdict).toEqual({
+      decision: 'warn',
+      reasons: [
+        'Likely impossible connection. The walk from "Beta Tower" to "Alpha Hall" is 10 minutes, an estimate. With a 10 minute buffer, you need 20 minutes. You would arrive 5 minutes late. The walk is an estimate, so check it yourself.',
+      ],
+    });
+    const later = slot('OLD2', clock(11, 25), clock(12, 25), { venue: 'Beta Tower' });
+    expect(check(slot('NEW1', clock(10), clock(11)), [later]).decision).toBe('warn');
+  });
+
+  test('a clash still blocks even when the walk is an estimate', () => {
+    const verdict = check(slot('NEW1', clock(10), clock(11)), [
+      slot('OLD1', clock(10, 30), clock(11, 30)),
+    ]);
+    expect(verdict.decision).toBe('block');
   });
 
   test('a clashing neighbour is reported once, as a clash, not again as a connection', () => {
@@ -113,7 +147,7 @@ describe('warn rules', () => {
     expect(verdict).toEqual({
       decision: 'warn',
       reasons: [
-        'Tight connection. The walk from "Beta Tower" to "Alpha Hall" is 20 minutes, an estimate. That leaves only 3 minutes to spare.',
+        'Tight connection. The walk from "Beta Tower" to "Alpha Hall" is 10 minutes, an estimate. With a 10 minute buffer, you need 20 minutes. That leaves only 3 minutes to spare.',
       ],
     });
   });
@@ -132,8 +166,12 @@ describe('warn rules', () => {
       iso(MIDNIGHT + clock(12) * 60_000),
       'Alpha Hall',
     );
-    const candidate = slot('NEW1', clock(12, 25), clock(13, 56));
-    const verdict = check(candidate, [], testContext(), [work]);
+    const candidate = slot('NEW1', clock(12, 30), clock(13, 56));
+    // The meal window needs 45 free minutes here, so 34 left after the candidate is too few.
+    const context = testContext({
+      mealWindow: { start: '11:30', end: '14:00', requiredFreeMinutes: 45 },
+    });
+    const verdict = check(candidate, [], context, [work]);
     expect(verdict).toEqual({
       decision: 'warn',
       reasons: ['This removes your only meal break on 2026-12-01.'],
@@ -141,7 +179,7 @@ describe('warn rules', () => {
   });
 
   test('no warning when the meal break was already missing', () => {
-    const verdict = check(slot('NEW1', clock(14, 10), clock(15)), [
+    const verdict = check(slot('NEW1', clock(14, 20), clock(15)), [
       slot('OLD1', clock(11, 30), clock(13, 45)),
     ]);
     expect(verdict.decision).toBe('allow');
@@ -154,9 +192,9 @@ describe('warn rules', () => {
     expect(verdict).toEqual({
       decision: 'warn',
       reasons: [
-        'This makes 2026-12-01 too busy. Energy score is 50: 3 commitments times 10, 20 walking minutes, 0 venue changes times 15. ' +
+        'This makes 2026-12-01 too busy. Energy score is 60: 3 commitments times 10, 30 walking minutes, 0 venue changes times 15. ' +
           'Formula: commitments times 10 plus walking minutes plus venue changes times 15. ' +
-          'That is above the limit of 40, so the day is overloaded.',
+          'That is above the limit of 40, so the day is overloaded. The walking minutes are estimates.',
       ],
     });
   });

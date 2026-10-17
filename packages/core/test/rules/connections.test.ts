@@ -49,8 +49,9 @@ describe('connection examples', () => {
       classification: 'comfortable',
       walkingMinutes: 20,
       spareMinutes: 30,
+      estimate: true,
       reason:
-        'The walk from "Alpha Hall" to "Beta Tower" is 20 minutes, an estimate. You arrive 30 minutes before it is due.',
+        'The walk from "Alpha Hall" to "Beta Tower" is 10 minutes, an estimate. With a 10 minute buffer, you need 20 minutes. You arrive 30 minutes before it is due.',
     });
   });
 
@@ -59,7 +60,7 @@ describe('connection examples', () => {
     expect(result.classification).toBe('tight');
     expect(result.spareMinutes).toBe(3);
     expect(result.reason).toBe(
-      'The walk from "Alpha Hall" to "Beta Tower" is 20 minutes, an estimate. That leaves only 3 minutes to spare.',
+      'The walk from "Alpha Hall" to "Beta Tower" is 10 minutes, an estimate. With a 10 minute buffer, you need 20 minutes. That leaves only 3 minutes to spare.',
     );
   });
 
@@ -74,7 +75,7 @@ describe('connection examples', () => {
     expect(result.classification).toBe('impossible');
     expect(result.spareMinutes).toBe(-5);
     expect(result.reason).toBe(
-      'The walk from "Alpha Hall" to "Beta Tower" is 20 minutes, an estimate. You would arrive 5 minutes late.',
+      'The walk from "Alpha Hall" to "Beta Tower" is 10 minutes, an estimate. With a 10 minute buffer, you need 20 minutes. You would arrive 5 minutes late.',
     );
   });
 
@@ -86,9 +87,13 @@ describe('connection examples', () => {
     expect(classify(item(), next(25, { isReservable: false })).classification).toBe('comfortable');
   });
 
-  test('the same venue is zero raw minutes plus the buffer, labelled an estimate', () => {
+  test('the same venue is a 5 minute estimate plus the buffer, never zero', () => {
     const result = classify(item(), next(60, { venue: 'alpha hall' }));
-    expect(result).toMatchObject({ classification: 'comfortable', walkingMinutes: 10 });
+    expect(result).toMatchObject({
+      classification: 'comfortable',
+      walkingMinutes: 15,
+      estimate: true,
+    });
     expect(result.reason).toContain('an estimate');
   });
 
@@ -181,6 +186,47 @@ describe('connection unknowns', () => {
   });
 });
 
+describe('connection wording', () => {
+  test('spare time is rounded down and lateness rounded up, so the words match the class', () => {
+    // A gap of 33.7 minutes leaves 3.7 spare minutes: tight, shown as 3.
+    const tight = classify(item(), next(33.7));
+    expect(tight.classification).toBe('tight');
+    expect(tight.reason).toContain('That leaves only 3 minutes to spare.');
+    // 0.9 spare minutes is shown as 0, not rounded up to 1, and is still tight.
+    const nearly = classify(item(), next(30.9));
+    expect(nearly.classification).toBe('tight');
+    expect(nearly.reason).toContain('only 0 minutes to spare');
+    // 4.2 minutes late is shown as 5, never as 4.
+    const late = classify(item(), next(25.8));
+    expect(late.classification).toBe('impossible');
+    expect(late.reason).toContain('You would arrive 5 minutes late.');
+    // 5.7 spare minutes is comfortable, shown as 5.
+    const comfy = classify(item(), next(35.7));
+    expect(comfy.classification).toBe('comfortable');
+    expect(comfy.reason).toContain('You arrive 5 minutes before it is due.');
+  });
+
+  test('the walk and the buffer are stated separately, and the estimate flag is carried', () => {
+    const result = classify(item(), next(60), testContext({ bufferMinutes: 7 }));
+    expect(result.estimate).toBe(true);
+    expect(result.reason).toContain(
+      'is 10 minutes, an estimate. With a 7 minute buffer, you need 17 minutes.',
+    );
+    const venueData = testVenueData();
+    venueData.walkingTimes = venueData.walkingTimes.map((edge) => ({
+      ...edge,
+      source: {
+        kind: 'official' as const,
+        url: 'https://aws.amazon.com/events/reinvent/',
+        retrievedOn: '2026-10-17',
+      },
+    }));
+    const official = classify(item(), next(60), testContext({ venueData }));
+    expect(official.estimate).toBe(false);
+    expect(official.reason).not.toContain('estimate');
+  });
+});
+
 describe('connection hardening', () => {
   test('a tuning value that makes the spare time infinite or NaN is unknown, never a verdict', () => {
     for (const bufferMinutes of [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NaN]) {
@@ -223,7 +269,7 @@ describe('connection properties', () => {
           });
           const result = classify(item(), to, context);
 
-          const walking = (sameVenue ? 0 : rawWalk) + buffer;
+          const walking = (sameVenue ? 5 : rawWalk) + buffer;
           const due = gap - (reservable ? 10 : 0);
           const spare = due - walking;
           const expected = spare < 0 ? 'impossible' : spare < margin ? 'tight' : 'comfortable';

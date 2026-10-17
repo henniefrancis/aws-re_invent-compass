@@ -42,6 +42,10 @@ function isOfficialUrl(value: string): boolean {
   );
 }
 
+/** The raw walking minutes between two places inside one venue. It is always an estimate. */
+export const SAME_VENUE_WALK_MINUTES = 5;
+const SAME_VENUE_BASIS = 'room to room inside one venue, estimate';
+
 /** Match venue names after trimming and lowercasing, by exact name only. */
 export function normaliseName(name: string): string {
   return name.trim().toLowerCase();
@@ -224,8 +228,8 @@ export function lookupWalk(data: VenueData, from: string, to: string): WalkLooku
   if (a === b) {
     return {
       found: true,
-      minutes: 0,
-      source: { kind: 'estimate', basis: 'Both places are in the same venue.' },
+      minutes: SAME_VENUE_WALK_MINUTES,
+      source: { kind: 'estimate', basis: SAME_VENUE_BASIS },
     };
   }
   const edge = data.walkingTimes.find(

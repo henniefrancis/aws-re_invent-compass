@@ -28,7 +28,7 @@ const zone = fc.constantFrom<'missing' | 'unrecognised'>('missing', 'unrecognise
 const edge = fc.constantFrom<'start' | 'end' | 'order'>('start', 'end', 'order');
 const placement = fc.constantFrom<'after' | 'before'>('after', 'before');
 const kind = fc.constantFrom<'meal' | 'rest'>('meal', 'rest');
-const alert = fc.constantFrom<'tight' | 'impossible'>('tight', 'impossible');
+const alert = fc.constantFrom<'tight' | 'impossible' | 'likely'>('tight', 'impossible', 'likely');
 const rule = fc.constantFrom(...Object.values(reasons.RULE_NAMES));
 
 // Every builder, paired with an arbitrary for its arguments.
@@ -42,20 +42,26 @@ const builders: Array<[string, fc.Arbitrary<string>]> = [
   [
     'connectionComfortable',
     fc
-      .tuple(freeText, freeText, num, flag, num)
-      .map(([a, b, m, e, s]) => reasons.connectionComfortable(a, b, m, e, s)),
+      .tuple(freeText, freeText, num, num, flag, num)
+      .map(([a, b, m, buf, e, s]) =>
+        reasons.connectionComfortable({ from: a, to: b, walk: m, buffer: buf, estimate: e }, s),
+      ),
   ],
   [
     'connectionTight',
     fc
-      .tuple(freeText, freeText, num, flag, num)
-      .map(([a, b, m, e, s]) => reasons.connectionTight(a, b, m, e, s)),
+      .tuple(freeText, freeText, num, num, flag, num)
+      .map(([a, b, m, buf, e, s]) =>
+        reasons.connectionTight({ from: a, to: b, walk: m, buffer: buf, estimate: e }, s),
+      ),
   ],
   [
     'connectionImpossible',
     fc
-      .tuple(freeText, freeText, num, flag, num)
-      .map(([a, b, m, e, s]) => reasons.connectionImpossible(a, b, m, e, s)),
+      .tuple(freeText, freeText, num, num, flag, num)
+      .map(([a, b, m, buf, e, s]) =>
+        reasons.connectionImpossible({ from: a, to: b, walk: m, buffer: buf, estimate: e }, s),
+      ),
   ],
   ['connectionVenueMissing', freeText.map((r) => reasons.connectionVenueMissing(r))],
   ['connectionVenueNotListed', freeText.map((r) => reasons.connectionVenueNotListed(r))],
@@ -91,6 +97,7 @@ const builders: Array<[string, fc.Arbitrary<string>]> = [
     fc.tuple(freeText, edge).map(([r, e]) => reasons.layoverTimeMissing(r, e)),
   ],
   ['dayViewTimeMissing', freeText.map((r) => reasons.dayViewTimeMissing(r))],
+  ['energyEstimateNote', fc.constant(reasons.energyEstimateNote())],
   ['connectionSpareUnknown', fc.constant(reasons.connectionSpareUnknown())],
   ['guardContextInvalid', freeText.map((r) => reasons.guardContextInvalid(r))],
   ['guardScheduleTooLarge', num.map((n) => reasons.guardScheduleTooLarge(n))],
@@ -176,15 +183,30 @@ describe('reason builders', () => {
   });
 
   test('representative strings read as plain English', () => {
-    expect(reasons.connectionTight('Venetian', 'Wynn', 30, true, 3)).toBe(
-      'The walk from "Venetian" to "Wynn" is 30 minutes, an estimate. That leaves only 3 minutes to spare.',
+    expect(
+      reasons.connectionTight(
+        { from: 'Venetian', to: 'Wynn', walk: 30, buffer: 10, estimate: true },
+        3,
+      ),
+    ).toBe(
+      'The walk from "Venetian" to "Wynn" is 30 minutes, an estimate. With a 10 minute buffer, you need 40 minutes. That leaves only 3 minutes to spare.',
     );
     expect(reasons.boardingCloses('2026-12-01 10:20')).toBe(
       'Boarding closes at 2026-12-01 10:20. Your seat is released then.',
     );
-    expect(reasons.connectionComfortable('A', 'B', 5, false, 9)).toBe(
-      'The walk from "A" to "B" is 5 minutes. You arrive 9 minutes before it is due.',
+    expect(
+      reasons.connectionComfortable({ from: 'A', to: 'B', walk: 5, buffer: 1, estimate: false }, 9),
+    ).toBe(
+      'The walk from "A" to "B" is 5 minutes. With a 1 minute buffer, you need 6 minutes. You arrive 9 minutes before it is due.',
     );
+    expect(
+      reasons.connectionImpossible({ from: 'A', to: 'B', walk: 5, buffer: 10, estimate: false }, 2),
+    ).toContain('You would arrive 2 minutes late.');
+    expect(reasons.connectionAlert('likely', 'x.')).toBe(
+      'Likely impossible connection. x. The walk is an estimate, so check it yourself.',
+    );
+    expect(reasons.connectionAlert('impossible', 'x.')).toBe('Impossible connection. x.');
+    expect(reasons.energyEstimateNote()).toBe('The walking minutes are estimates.');
     expect(reasons.energyCountOnly(7, 6, true)).toBe('7 commitments is more than the limit of 6.');
     expect(reasons.energyCountOnly(3, 6, false)).toBe('3 commitments is within the limit of 6.');
     expect(reasons.energyOverloadVerdict(false, 100)).toBe('That is within the limit of 100.');

@@ -4,6 +4,7 @@ import * as fc from 'fast-check';
 import type { VenueData } from '../../src/rules/context.js';
 import {
   OFFICIAL_HOSTS,
+  SAME_VENUE_WALK_MINUTES,
   VenueDataSchema,
   lookupWalk,
   normaliseName,
@@ -316,10 +317,14 @@ describe('lookupWalk', () => {
     expect(lookupWalk(data, 'Alpha Hall', 'Ghost')).toMatchObject({ venue: 'Ghost' });
   });
 
-  test('gives zero raw minutes, labelled an estimate, within one venue', () => {
+  test('gives 5 raw minutes, labelled an estimate, within one venue, never zero', () => {
     const result = lookupWalk(data, 'Alpha Hall', 'alpha hall');
-    expect(result).toMatchObject({ found: true, minutes: 0 });
-    expect(result.found && result.source.kind).toBe('estimate');
+    expect(result).toEqual({
+      found: true,
+      minutes: SAME_VENUE_WALK_MINUTES,
+      source: { kind: 'estimate', basis: 'room to room inside one venue, estimate' },
+    });
+    expect(SAME_VENUE_WALK_MINUTES).toBe(5);
   });
 
   test('reports a pair with no matrix value', () => {

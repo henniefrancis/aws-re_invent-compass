@@ -77,7 +77,7 @@ This document uses the airline metaphor from the product steering: boarding clos
 6. IF a named venue is absent from the Walking_Time_Matrix, THEN THE Rules_Engine SHALL classify the Connection as "unknown" and SHALL state the reason, naming the unmatched venue.
 7. IF the next commitment is reservable and has no Boarding_Closes available, THEN THE Rules_Engine SHALL classify the Connection as "unknown" and SHALL state that the next commitment's boarding time is missing.
 8. WHERE the next commitment is not reservable and so has no Boarding_Closes, THE Rules_Engine SHALL judge the Connection against the next commitment's start time instead of returning "unknown", classifying it comfortable, tight, or impossible by the same spare-time rules measured against that start time.
-9. THE Rules_Engine SHALL attach a plain-English reason to every Connection classification that names the two venues and the computed walking minutes.
+9. THE Rules_Engine SHALL attach a plain-English reason to every Connection classification that names the two venues and the computed walking minutes, stating the walk, the buffer and the total separately, and stating "an estimate" when the walking time is an estimate. Spare time SHALL be shown rounded down and lateness rounded up.
 10. WHEN classifying a Connection, THE Rules_Engine SHALL interpret both commitment times in the Event_Timezone supplied in Context.
 
 ### Requirement 3: Clashes
@@ -169,7 +169,7 @@ Note: The safe-swap function takes a confirmation schedule as an input parameter
 
 1. THE Rules_Engine SHALL expose a single function checkReservation that takes a candidate session as a NormalisedSession, the current schedule as a Commitment array plus a Sessions_Lookup (a map of NormalisedSession keyed by sessionId), and Context, and returns exactly one Verdict whose decision is allow, warn, or block.
 2. IF the candidate clashes with an existing commitment, THEN THE checkReservation function SHALL return a Verdict with decision "block" and SHALL name the clashing commitment in the reasons.
-3. IF the candidate creates an impossible Connection to or from an adjacent commitment, THEN THE checkReservation function SHALL return a Verdict with decision "block" and SHALL name the impossible Connection in the reasons.
+3. IF the candidate creates an impossible Connection to or from an adjacent commitment, and the walking time is official, THEN THE checkReservation function SHALL return a Verdict with decision "block" and SHALL name the impossible Connection in the reasons. IF the walking time is an estimate, THEN the Verdict SHALL be "warn" with a reason that the connection is likely impossible.
 4. WHEN the candidate creates a tight Connection, using the shared Tight definition from the Glossary (walking time, the Walking_Time_Matrix value plus Buffer, leaves fewer than tightMarginMinutes of spare time before the next item is due), THE checkReservation function SHALL return a Verdict with decision "warn" and SHALL name the tight Connection in the reasons.
 5. WHEN the candidate removes the day's only meal Layover, THE checkReservation function SHALL return a Verdict with decision "warn" and SHALL name the lost meal Layover in the reasons.
 6. WHEN the candidate raises the day's Energy_Budget above the defined overload threshold, THE checkReservation function SHALL return a Verdict with decision "warn" and SHALL name the overload in the reasons.

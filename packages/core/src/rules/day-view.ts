@@ -79,11 +79,7 @@ export function connectionsForDay(
   const { items, skipped } = dayItems(schedule, zone.zone, day);
   const sequence = items
     .filter((item) => !item.isAllDay)
-    .sort(
-      (a, b) =>
-        (parseInstant(a.startsAt as string) as number) -
-        (parseInstant(b.startsAt as string) as number),
-    );
+    .sort((a, b) => (parseInstant(a.startsAt) as number) - (parseInstant(b.startsAt) as number));
   const connections: DayConnection[] = [];
   for (let i = 1; i < sequence.length; i += 1) {
     const from = sequence[i - 1] as ResolvedCommitment;

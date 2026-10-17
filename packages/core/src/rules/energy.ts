@@ -67,14 +67,11 @@ export function scoreEnergy(
   // Consecutive commitments, in time order. All-day items are counted but not sequenced.
   const sequence = dayCommitments
     .filter((item) => isPlaceable(item) && !item.isAllDay)
-    .sort(
-      (a, b) =>
-        (parseInstant(a.startsAt as string) as number) -
-        (parseInstant(b.startsAt as string) as number),
-    );
+    .sort((a, b) => (parseInstant(a.startsAt) as number) - (parseInstant(b.startsAt) as number));
 
   let totalWalkingMinutes = 0;
   let venueChangeCount = 0;
+  let usedEstimate = false;
   for (let i = 1; i < sequence.length; i += 1) {
     const from = sequence[i - 1] as ResolvedCommitment;
     const to = sequence[i] as ResolvedCommitment;
@@ -86,6 +83,7 @@ export function scoreEnergy(
     const walk = lookupWalk(context.venueData, fromVenue, toVenue);
     if (walk.found) {
       totalWalkingMinutes += walk.minutes + context.bufferMinutes;
+      usedEstimate = usedEstimate || walk.source.kind === 'estimate';
     } else {
       missingDataNotes.push(reason.energyWalkUnknown(fromVenue, toVenue));
     }
@@ -100,6 +98,7 @@ export function scoreEnergy(
   const explanation = [
     reason.energyExplanation(score, commitmentCount, totalWalkingMinutes, venueChangeCount),
     reason.energyOverloadVerdict(overloaded, context.overloadThreshold),
+    ...(usedEstimate ? [reason.energyEstimateNote()] : []),
     ...missingDataNotes,
   ].join(' ');
   return {

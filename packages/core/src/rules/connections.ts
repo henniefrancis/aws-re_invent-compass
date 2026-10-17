@@ -28,6 +28,8 @@ export interface ConnectionResult {
   walkingMinutes?: number;
   /** Minutes between arrival and the due time, negative when late. Absent when unknown. */
   spareMinutes?: number;
+  /** True when the walking time is an estimate. Absent when the connection is unknown. */
+  estimate?: boolean;
   /** Plain English. Names both venues and the walking minutes unless data is missing. */
   reason: string;
 }
@@ -93,38 +95,39 @@ export function classifyConnection(
     return unknown(reason.connectionSpareUnknown());
   }
 
+  const text = {
+    from: from.venue,
+    to: to.venue,
+    walk: walk.minutes,
+    buffer: context.bufferMinutes,
+    estimate,
+  };
+  // Spare time is shown rounded down and lateness rounded up, so the words match the class.
   if (spareMinutes < 0) {
+    const late = Math.ceil(-spareMinutes);
     return {
       classification: 'impossible',
       walkingMinutes,
       spareMinutes,
-      reason: reason.connectionImpossible(
-        from.venue,
-        to.venue,
-        walkingMinutes,
-        estimate,
-        -spareMinutes,
-      ),
+      estimate,
+      reason: reason.connectionImpossible(text, late),
     };
   }
+  const spare = Math.floor(spareMinutes);
   if (spareMinutes < context.tightMarginMinutes) {
     return {
       classification: 'tight',
       walkingMinutes,
       spareMinutes,
-      reason: reason.connectionTight(from.venue, to.venue, walkingMinutes, estimate, spareMinutes),
+      estimate,
+      reason: reason.connectionTight(text, spare),
     };
   }
   return {
     classification: 'comfortable',
     walkingMinutes,
     spareMinutes,
-    reason: reason.connectionComfortable(
-      from.venue,
-      to.venue,
-      walkingMinutes,
-      estimate,
-      spareMinutes,
-    ),
+    estimate,
+    reason: reason.connectionComfortable(text, spare),
   };
 }

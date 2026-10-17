@@ -123,39 +123,35 @@ export function boardingMissingReservability(): string {
 // Connections
 // ---------------------------------------------------------------------------
 
-function walkSentence(from: string, to: string, minutes: number, estimate: boolean): string {
-  const tail = estimate ? ', an estimate' : '';
-  return `The walk from ${q(from)} to ${q(to)} is ${mins(minutes)}${tail}.`;
+/** A walk between two venues: the raw walk, the buffer added to it, and whether it is an estimate. */
+export interface WalkText {
+  from: string;
+  to: string;
+  /** The raw walking minutes, before the buffer. */
+  walk: number;
+  /** The buffer minutes added to the walk. */
+  buffer: number;
+  estimate: boolean;
 }
 
-export function connectionComfortable(
-  from: string,
-  to: string,
-  minutes: number,
-  estimate: boolean,
-  spare: number,
-): string {
-  return `${walkSentence(from, to, minutes, estimate)} You arrive ${mins(spare)} before it is due.`;
+function walkSentences(w: WalkText): string {
+  const tail = w.estimate ? ', an estimate' : '';
+  return (
+    `The walk from ${q(w.from)} to ${q(w.to)} is ${mins(w.walk)}${tail}. ` +
+    `With a ${Math.round(w.buffer)} minute buffer, you need ${mins(w.walk + w.buffer)}.`
+  );
 }
 
-export function connectionTight(
-  from: string,
-  to: string,
-  minutes: number,
-  estimate: boolean,
-  spare: number,
-): string {
-  return `${walkSentence(from, to, minutes, estimate)} That leaves only ${mins(spare)} to spare.`;
+export function connectionComfortable(w: WalkText, spare: number): string {
+  return `${walkSentences(w)} You arrive ${mins(spare)} before it is due.`;
 }
 
-export function connectionImpossible(
-  from: string,
-  to: string,
-  minutes: number,
-  estimate: boolean,
-  late: number,
-): string {
-  return `${walkSentence(from, to, minutes, estimate)} You would arrive ${mins(late)} late.`;
+export function connectionTight(w: WalkText, spare: number): string {
+  return `${walkSentences(w)} That leaves only ${mins(spare)} to spare.`;
+}
+
+export function connectionImpossible(w: WalkText, late: number): string {
+  return `${walkSentences(w)} You would arrive ${mins(late)} late.`;
 }
 
 export function connectionVenueMissing(ref: string): string {
@@ -183,8 +179,13 @@ export function connectionSpareUnknown(): string {
 }
 
 /** A guardrail headline placed in front of a connection reason. */
-export function connectionAlert(kind: 'tight' | 'impossible', reason: string): string {
-  return kind === 'tight' ? `Tight connection. ${reason}` : `Impossible connection. ${reason}`;
+export function connectionAlert(kind: 'tight' | 'impossible' | 'likely', reason: string): string {
+  if (kind === 'tight') {
+    return `Tight connection. ${reason}`;
+  }
+  return kind === 'impossible'
+    ? `Impossible connection. ${reason}`
+    : `Likely impossible connection. ${reason} The walk is an estimate, so check it yourself.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -250,6 +251,10 @@ export function energyExplanation(
     `${Math.round(walkingMinutes)} walking minutes, ${Math.round(venueChanges)} venue changes times 15. ` +
     'Formula: commitments times 10 plus walking minutes plus venue changes times 15.'
   );
+}
+
+export function energyEstimateNote(): string {
+  return 'The walking minutes are estimates.';
 }
 
 export function energyDataMissing(ref: string): string {
