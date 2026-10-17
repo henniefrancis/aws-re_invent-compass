@@ -1,4 +1,137 @@
-// @compass/core/passes entry point (foundation-contracts, S0).
-// Owned by S4: PassFields builder, Compass API client, sync, .ics, itinerary HTML, QR.
-// Day-1 stub only, kept empty so the solution compiles.
-export {};
+// @compass/core/passes entry point (boarding-passes, S4).
+//
+// Owned by S4: the PassFields builder, the Compass API client, the issued-pass store
+// and sync, the hand-off QR renders, the .ics calendar and the offline itinerary page.
+// This subpath re-exports the S4 public surface by name. verbatimModuleSyntax is on, so
+// runtime values use a plain export and type-only members use export type.
+//
+// Task 1 lands the foundation: the injected interface contracts, the owned data model
+// shapes, the redaction helper and PassError, and the field hash. Later tasks add the
+// components that build on them.
+
+// Injected interface contracts (type-only).
+export type {
+  IdTokenProvider,
+  ConnectionProvider,
+  Clock,
+  AppDataResolver,
+  FileSystem,
+  HttpRequest,
+  HttpResponse,
+  HttpTransport,
+} from './interfaces.js';
+
+// S4-owned data model shapes (type-only).
+export type {
+  EventWindow,
+  IssuedPass,
+  IssuedPassRecord,
+  ItineraryCommitment,
+  Itinerary,
+  IncludeFlags,
+  SyncInput,
+  BuildSession,
+  AdjacentCommitment,
+  AdjacentSession,
+  BuildPassFn,
+} from './models.js';
+
+// Redaction helper and the shared error shape.
+export { redact, passError, PassError } from './redaction.js';
+
+// Field hash used by the sync diff.
+export { fieldsHash } from './field-hash.js';
+
+// Pass_Builder: builds validated PassFields from a confirmed session.
+export { buildPass } from './pass-builder.js';
+export type { BuildPassInput, BuildPassResult, BuildPassDeps } from './pass-builder.js';
+
+// Compass_Client and the contract-typed response schemas.
+export { createCompassClient, CompassError } from './compass-client.js';
+export type {
+  CompassClient,
+  CompassClientOptions,
+  UpdatePassResult,
+  VoidPassResult,
+  ForgetMeResult,
+} from './compass-client.js';
+export {
+  IssuePassesResponseSchema,
+  UpdatePassResponseSchema,
+  VoidPassResponseSchema,
+  CreateHandoffResponseSchema,
+  ForgetMeResponseSchema,
+} from './compass-api-schemas.js';
+export type {
+  IssuePassesRequest,
+  IssuePassesResponse,
+  UpdatePassResponse,
+  VoidPassResponse,
+  CreateHandoffRequest,
+  CreateHandoffResponse,
+  ForgetMeResponse,
+} from './compass-api-schemas.js';
+
+// Pass_Store and the per-OS app-data folder.
+export {
+  createAppDataResolver,
+  createNodeAppDataResolver,
+  joinInFolder,
+  APP_FOLDER_NAME,
+  APP_DIR_MODE,
+  RECORD_FILE_NAME,
+  OUTPUT_FOLDER_NAME,
+  CALENDAR_FILE_NAME,
+  ITINERARY_FILE_NAME,
+} from './app-data.js';
+export type { AppDataEnvironment } from './app-data.js';
+export {
+  createPassStore,
+  RECORD_FILE_MODE,
+  BACKUP_FILE_NAME,
+  TEMP_FILE_NAME,
+  LOCK_FILE_NAME,
+  STALE_LOCK_MS,
+} from './pass-store.js';
+export type { PassStore, PassStoreDeps, ReadResult } from './pass-store.js';
+
+// Pass_Sync: the four-case diff and the sync driver.
+export { diffSchedule, syncPasses, MAX_ISSUE_CHUNK } from './pass-sync.js';
+export type { DiffCase, SyncPlanEntry, SyncResult, SyncDeps } from './pass-sync.js';
+
+// The forgetMe orchestrator.
+export { forgetMe } from './forget-me.js';
+export type { ForgetMeDeps, ForgetMeOutcome } from './forget-me.js';
+
+// Handoff_Builder: the Board_URL as terminal, chat-text and chat-PNG QR codes.
+export {
+  createHandoffBuilder,
+  renderTerminalQr,
+  renderChatText,
+  QUIET_ZONE,
+  PNG_SCALE,
+  BOARD_PATH,
+} from './handoff-builder.js';
+export type { HandoffBuilder, HandoffBuilderDeps, HandoffRenders } from './handoff-builder.js';
+
+// Boarding_Closes helpers and the Ics_Exporter.
+export { BOARDING_CLOSES_MINUTES, boardingClosesAt, parseInstant } from './boarding.js';
+export { createIcsExporter, CALENDAR_FILE_MODE } from './ics-exporter.js';
+export type { IcsExporter, IcsExporterDeps } from './ics-exporter.js';
+
+// Itinerary_Page: the offline HTML itinerary.
+export {
+  createItineraryPage,
+  ITINERARY_FILE_MODE,
+  VENUE_NOT_PUBLISHED,
+  PAGE_TITLE,
+  PALETTE,
+} from './itinerary-page.js';
+export type { ItineraryPage, ItineraryPageDeps } from './itinerary-page.js';
+export { validWalkMinutes, MAX_WALK_MINUTES } from './boarding.js';
+
+// Schedule helpers: the BuildPassFn and the Itinerary from a schedule.
+export { buildPassFor, buildItinerary } from './itinerary-builder.js';
+export type { ScheduleView, PassBuildDeps } from './itinerary-builder.js';
+export { clampedWalk } from './boarding.js';
+export { MAX_UNCONFIRMED_VOIDS } from './pass-sync.js';

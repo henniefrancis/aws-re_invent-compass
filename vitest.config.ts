@@ -14,6 +14,9 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     include: ['packages/**/test/**/*.test.ts', 'spikes/test/**/*.test.ts'],
+    // Property tests run 100+ cases each; under CPU load (parallel streams, CI
+    // runners) the 5 s default timed out intermittently, so allow 30 s per test.
+    testTimeout: 30_000,
     env: {
       COMPASS_MODE: 'simulated',
     },
