@@ -1,0 +1,370 @@
+{
+  "venues": [
+    {
+      "venue": {
+        "name": "Caesars Forum"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/",
+        "retrievedOn": "2026-10-17"
+      }
+    },
+    {
+      "venue": {
+        "name": "Caesars Palace"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/",
+        "retrievedOn": "2026-10-17"
+      }
+    },
+    {
+      "venue": {
+        "name": "Encore"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/",
+        "retrievedOn": "2026-10-17"
+      }
+    },
+    {
+      "venue": {
+        "name": "MGM Grand"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/",
+        "retrievedOn": "2026-10-17"
+      }
+    },
+    {
+      "venue": {
+        "name": "The Venetian"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/",
+        "retrievedOn": "2026-10-17"
+      },
+      "aliases": [
+        {
+          "name": "Venetian",
+          "source": {
+            "kind": "official",
+            "url": "https://aws.amazon.com/resources/analyst-summit",
+            "retrievedOn": "2026-10-17"
+          }
+        },
+        {
+          "name": "The Venetian Expo",
+          "source": {
+            "kind": "estimate",
+            "basis": "A spelling variant for the Expo at The Venetian. It is not a venue name that AWS publishes."
+          }
+        },
+        {
+          "name": "Venetian Expo",
+          "source": {
+            "kind": "estimate",
+            "basis": "A spelling variant for the Expo at The Venetian. It is not a venue name that AWS publishes."
+          }
+        }
+      ]
+    },
+    {
+      "venue": {
+        "name": "Wynn"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/",
+        "retrievedOn": "2026-10-17"
+      },
+      "aliases": [
+        {
+          "name": "Wynn Las Vegas",
+          "source": {
+            "kind": "official",
+            "url": "https://aws.amazon.com/resources/analyst-summit",
+            "retrievedOn": "2026-10-17"
+          }
+        }
+      ]
+    }
+  ],
+  "walkingTimes": [
+    {
+      "from": "Caesars Forum",
+      "to": "Caesars Palace",
+      "minutes": 40,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Forum and Caesars Palace is 1614 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 1614 / 66.7 = 24.2, plus 15 = 39.2, rounded up to 40. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed."
+      }
+    },
+    {
+      "from": "Caesars Forum",
+      "to": "Encore",
+      "minutes": 45,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Forum and Encore is 1875 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 1875 / 66.7 = 28.1, plus 15 = 43.1, rounded up to 45. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed."
+      }
+    },
+    {
+      "from": "Caesars Forum",
+      "to": "MGM Grand",
+      "minutes": 55,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Forum and MGM Grand is 2423 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2423 / 66.7 = 36.3, plus 15 = 51.3, rounded up to 55. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Walking is unrealistic here, so use the shuttle or the free monorail."
+      }
+    },
+    {
+      "from": "Caesars Forum",
+      "to": "The Venetian",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Forum and The Venetian is 894 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 894 / 66.7 = 13.4, plus 15 = 28.4, rounded up to 30. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Distance is the longer of the hotel (668 m) and the Expo (894 m). AWS lists a temporary walkway during Expo hours. AWS source for the routes: https://aws.amazon.com/resources/analyst-summit."
+      }
+    },
+    {
+      "from": "Caesars Forum",
+      "to": "Wynn",
+      "minutes": 45,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Forum and Wynn is 1731 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 1731 / 66.7 = 26.0, plus 15 = 41.0, rounded up to 45. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed."
+      }
+    },
+    {
+      "from": "Caesars Palace",
+      "to": "Caesars Forum",
+      "minutes": 40,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Forum and Caesars Palace is 1614 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 1614 / 66.7 = 24.2, plus 15 = 39.2, rounded up to 40. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed."
+      }
+    },
+    {
+      "from": "Caesars Palace",
+      "to": "Encore",
+      "minutes": 55,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Palace and Encore is 2646 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2646 / 66.7 = 39.7, plus 15 = 54.7, rounded up to 55. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. A long walk, so the shuttle is advised."
+      }
+    },
+    {
+      "from": "Caesars Palace",
+      "to": "MGM Grand",
+      "minutes": 60,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Palace and MGM Grand is 2867 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2867 / 66.7 = 43.0, plus 15 = 58.0, rounded up to 60. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Walking is unrealistic here, so use the shuttle or the free monorail."
+      }
+    },
+    {
+      "from": "Caesars Palace",
+      "to": "The Venetian",
+      "minutes": 55,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Palace and The Venetian is 2532 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2532 / 66.7 = 38.0, plus 15 = 53.0, rounded up to 55. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Distance is the longer of the hotel (1465 m) and the Expo (2532 m)."
+      }
+    },
+    {
+      "from": "Caesars Palace",
+      "to": "Wynn",
+      "minutes": 55,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Palace and Wynn is 2502 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2502 / 66.7 = 37.5, plus 15 = 52.5, rounded up to 55. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. A long walk, so the shuttle is advised."
+      }
+    },
+    {
+      "from": "Encore",
+      "to": "Caesars Forum",
+      "minutes": 45,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Forum and Encore is 1875 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 1875 / 66.7 = 28.1, plus 15 = 43.1, rounded up to 45. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed."
+      }
+    },
+    {
+      "from": "Encore",
+      "to": "Caesars Palace",
+      "minutes": 55,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Palace and Encore is 2646 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2646 / 66.7 = 39.7, plus 15 = 54.7, rounded up to 55. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. A long walk, so the shuttle is advised."
+      }
+    },
+    {
+      "from": "Encore",
+      "to": "MGM Grand",
+      "minutes": 75,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Encore and MGM Grand is 3988 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 3988 / 66.7 = 59.8, plus 15 = 74.8, rounded up to 75. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Walking is unrealistic here, so use the shuttle."
+      }
+    },
+    {
+      "from": "Encore",
+      "to": "The Venetian",
+      "minutes": 45,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Encore and The Venetian is 1727 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 1727 / 66.7 = 25.9, plus 15 = 40.9, rounded up to 45. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Distance is the longer of the hotel (1410 m) and the Expo (1727 m). The indoor route goes through Wynn and the Wynn to Venetian bridge that AWS lists. AWS source for the routes: https://aws.amazon.com/resources/analyst-summit."
+      }
+    },
+    {
+      "from": "Encore",
+      "to": "Wynn",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Encore and Wynn is 622 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 622 / 66.7 = 9.3, plus 15 = 24.3, rounded up to 25. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was applied, so 25 became 30. AWS says Encore and Wynn are connected internally. AWS source for the routes: https://aws.amazon.com/resources/analyst-summit."
+      }
+    },
+    {
+      "from": "MGM Grand",
+      "to": "Caesars Forum",
+      "minutes": 55,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Forum and MGM Grand is 2423 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2423 / 66.7 = 36.3, plus 15 = 51.3, rounded up to 55. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Walking is unrealistic here, so use the shuttle or the free monorail."
+      }
+    },
+    {
+      "from": "MGM Grand",
+      "to": "Caesars Palace",
+      "minutes": 60,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Palace and MGM Grand is 2867 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2867 / 66.7 = 43.0, plus 15 = 58.0, rounded up to 60. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Walking is unrealistic here, so use the shuttle or the free monorail."
+      }
+    },
+    {
+      "from": "MGM Grand",
+      "to": "Encore",
+      "minutes": 75,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Encore and MGM Grand is 3988 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 3988 / 66.7 = 59.8, plus 15 = 74.8, rounded up to 75. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Walking is unrealistic here, so use the shuttle."
+      }
+    },
+    {
+      "from": "MGM Grand",
+      "to": "The Venetian",
+      "minutes": 60,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between MGM Grand and The Venetian is 2958 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2958 / 66.7 = 44.3, plus 15 = 59.3, rounded up to 60. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Distance is the longer of the hotel (2730 m) and the Expo (2958 m). Walking is unrealistic here, so use the shuttle."
+      }
+    },
+    {
+      "from": "MGM Grand",
+      "to": "Wynn",
+      "minutes": 75,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between MGM Grand and Wynn is 3844 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 3844 / 66.7 = 57.6, plus 15 = 72.6, rounded up to 75. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Walking is unrealistic here, so use the shuttle."
+      }
+    },
+    {
+      "from": "The Venetian",
+      "to": "Caesars Forum",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Forum and The Venetian is 894 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 894 / 66.7 = 13.4, plus 15 = 28.4, rounded up to 30. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Distance is the longer of the hotel (668 m) and the Expo (894 m). AWS lists a temporary walkway during Expo hours. AWS source for the routes: https://aws.amazon.com/resources/analyst-summit."
+      }
+    },
+    {
+      "from": "The Venetian",
+      "to": "Caesars Palace",
+      "minutes": 55,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Palace and The Venetian is 2532 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2532 / 66.7 = 38.0, plus 15 = 53.0, rounded up to 55. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Distance is the longer of the hotel (1465 m) and the Expo (2532 m)."
+      }
+    },
+    {
+      "from": "The Venetian",
+      "to": "Encore",
+      "minutes": 45,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Encore and The Venetian is 1727 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 1727 / 66.7 = 25.9, plus 15 = 40.9, rounded up to 45. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Distance is the longer of the hotel (1410 m) and the Expo (1727 m). The indoor route goes through Wynn and the Wynn to Venetian bridge that AWS lists. AWS source for the routes: https://aws.amazon.com/resources/analyst-summit."
+      }
+    },
+    {
+      "from": "The Venetian",
+      "to": "MGM Grand",
+      "minutes": 60,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between MGM Grand and The Venetian is 2958 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2958 / 66.7 = 44.3, plus 15 = 59.3, rounded up to 60. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Distance is the longer of the hotel (2730 m) and the Expo (2958 m). Walking is unrealistic here, so use the shuttle."
+      }
+    },
+    {
+      "from": "The Venetian",
+      "to": "Wynn",
+      "minutes": 40,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between The Venetian and Wynn is 1583 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 1583 / 66.7 = 23.7, plus 15 = 38.7, rounded up to 40. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Distance is the longer of the hotel (1266 m) and the Expo (1583 m). AWS lists a bridge between Wynn and The Venetian. AWS source for the routes: https://aws.amazon.com/resources/analyst-summit."
+      }
+    },
+    {
+      "from": "Wynn",
+      "to": "Caesars Forum",
+      "minutes": 45,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Forum and Wynn is 1731 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 1731 / 66.7 = 26.0, plus 15 = 41.0, rounded up to 45. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed."
+      }
+    },
+    {
+      "from": "Wynn",
+      "to": "Caesars Palace",
+      "minutes": 55,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Caesars Palace and Wynn is 2502 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 2502 / 66.7 = 37.5, plus 15 = 52.5, rounded up to 55. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. A long walk, so the shuttle is advised."
+      }
+    },
+    {
+      "from": "Wynn",
+      "to": "Encore",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between Encore and Wynn is 622 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 622 / 66.7 = 9.3, plus 15 = 24.3, rounded up to 25. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was applied, so 25 became 30. AWS says Encore and Wynn are connected internally. AWS source for the routes: https://aws.amazon.com/resources/analyst-summit."
+      }
+    },
+    {
+      "from": "Wynn",
+      "to": "MGM Grand",
+      "minutes": 75,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between MGM Grand and Wynn is 3844 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 3844 / 66.7 = 57.6, plus 15 = 72.6, rounded up to 75. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Walking is unrealistic here, so use the shuttle."
+      }
+    },
+    {
+      "from": "Wynn",
+      "to": "The Venetian",
+      "minutes": 40,
+      "source": {
+        "kind": "estimate",
+        "basis": "Estimate, not an official time. OSRM foot distance between The Venetian and Wynn is 1583 m on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124?annotations=distance,duration), and it is the same in both directions. Formula: minutes = round up to 5 of (distance in metres / 66.7 metres per minute + 15 minutes for getting out of one building and into the next). That is 1583 / 66.7 = 23.7, plus 15 = 38.7, rounded up to 40. Floor: every walk between two venues is at least 30 minutes, the low end of the AWS guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit). The 30 minute floor was not needed. Distance is the longer of the hotel (1266 m) and the Expo (1583 m). AWS lists a bridge between Wynn and The Venetian. AWS source for the routes: https://aws.amazon.com/resources/analyst-summit."
+      }
+    }
+  ]
+}
