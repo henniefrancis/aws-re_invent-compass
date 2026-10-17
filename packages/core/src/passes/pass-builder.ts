@@ -14,6 +14,7 @@
 import { createPassFieldsSchema, normalisePassText, type PassFields } from '@compass/contracts';
 import type { ConnectionProvider } from './interfaces.js';
 import type { AdjacentCommitment, AdjacentSession, BuildSession, EventWindow } from './models.js';
+import { clampedWalk } from './boarding.js';
 import { passError } from './redaction.js';
 
 /** The longest title the pass carries, in UTF-16 code units, as the schema counts it. */
@@ -26,9 +27,6 @@ const ASCII_ELLIPSIS = '...';
 const TITLE_FALLBACK = 'Title not shown';
 /** The longest attendee name the pass carries. */
 const MAX_NAME_LENGTH = 40;
-/** The PassFields schema bounds for a walk, in whole minutes. */
-const MIN_WALK_MINUTES = 0;
-const MAX_WALK_MINUTES = 90;
 
 /** The input to buildPass. */
 export interface BuildPassInput {
@@ -94,14 +92,6 @@ function truncateTitle(title: string): string {
     return title;
   }
   return `${cutAtUnits(title, TRUNCATED_TITLE_LENGTH)}${ASCII_ELLIPSIS}`;
-}
-
-/** Clamp a known walk to the schema bounds, rounding to whole minutes. Undefined stays unknown. */
-function knownWalk(minutes: number | undefined): number | undefined {
-  if (minutes === undefined || !Number.isFinite(minutes)) {
-    return undefined;
-  }
-  return Math.min(MAX_WALK_MINUTES, Math.max(MIN_WALK_MINUTES, Math.round(minutes)));
 }
 
 /** The venue of the previous commitment: a session venue or a layover location. */
@@ -186,14 +176,14 @@ function assembleCandidate(
 
   if (previous) {
     const fromVenue = previousVenue(previous);
-    const minutes = knownWalk(connections.walkMinutes(fromVenue, sessionVenue));
+    const minutes = clampedWalk(connections.walkMinutes(fromVenue, sessionVenue));
     if (minutes !== undefined) {
       candidate.walkFromPrevious = { minutes, fromVenue: normalisePassText(fromVenue) };
     }
   }
 
   if (next) {
-    const walkMinutes = knownWalk(connections.walkMinutes(sessionVenue, next.venue));
+    const walkMinutes = clampedWalk(connections.walkMinutes(sessionVenue, next.venue));
     if (walkMinutes !== undefined) {
       candidate.nextConnection = {
         sessionCode: next.sessionCode,

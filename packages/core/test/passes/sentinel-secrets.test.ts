@@ -267,7 +267,7 @@ async function driveAllFailurePaths(
     errors.push(
       await failing(() =>
         syncPasses(
-          { sessions: [session] },
+          { sessions: [session], scheduleConfirmed: true },
           {
             store,
             client,

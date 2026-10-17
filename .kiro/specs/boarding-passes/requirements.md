@@ -51,6 +51,7 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 8. THE Pass_Builder SHALL run `normalisePassText` from `@compass/contracts` on the title, venue, room and from-venue values before validation. IF the title still fails the text rules after normalisation, THEN THE Pass_Builder SHALL use the text "Title not shown" and SHALL keep the session code. IF a venue or room still fails after normalisation, THEN THE Pass_Builder SHALL send it as an empty string. THE Pass_Builder SHALL never echo the rejected text.
 9. WHEN the venue or the room for a session is empty, THE Pass_Builder SHALL send the venue and room as empty strings, and the text "Venue not published" SHALL be rendered from an empty value rather than sent as field content.
 10. THE Pass_Builder SHALL rely on the server to set the boarding-closes, disclaimer, expiration, relevant-dates, transit-type and sharing-prohibited fields, and SHALL send no barcode field.
+11. THE boarding-passes module SHALL provide `buildPassFor(schedule, deps)`, returning the pass-building function Pass_Sync injects (with the previous commitment and the next reserved session as neighbours and walk minutes from an injected lookup), and `buildItinerary(schedule, walks)`, returning the ordered Itinerary with each reserved commitment's walk minutes, so that consumers do not rebuild that logic.
 
 ### Requirement 2: Call the Compass API through a contract client
 
@@ -104,6 +105,11 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 5. THE Pass_Sync SHALL classify a session as changed WHEN the hash of the rebuilt PassFields differs from the hash stored in the Issued_Pass_Record, and SHALL classify a session as cancelled WHEN it is present in the Issued_Pass_Record but absent from the current Schedule.
 6. WHEN Pass_Sync runs with a Schedule that matches the Issued_Pass_Record, THE Pass_Sync SHALL make no Compass API calls and SHALL leave the Issued_Pass_Record unchanged.
 7. WHEN Pass_Sync completes an issue, update or void, THE Pass_Sync SHALL write the resulting state to the Issued_Pass_Record.
+8. THE Pass_Sync SHALL require the caller to assert `scheduleConfirmed` (the session list came from a successful, complete GetSchedule), SHALL require `confirmEmpty` to void every recorded pass against an empty list, and SHALL require `allowBulkVoid` to void more than five passes in one run; otherwise it SHALL stop before any Compass API call.
+9. THE Pass_Sync SHALL build every pass it could need before the first Compass API call, so that a builder error makes no call.
+10. IF the Issued_Pass_Record cannot be written after an issue, THEN THE Pass_Sync SHALL void the just-issued passes again and raise `sync.store_failed`; IF an issue response lacks a requested session code, THEN THE Pass_Sync SHALL record what came back and raise `sync.partial_issue`.
+11. THE Pass_Sync SHALL refuse a response that answers for a different serial on update or void, and an issue response that answers for an unrequested code, repeats a code, or repeats a serial already recorded, recording nothing for it; and SHALL match record entries on both session code and serial.
+12. THE Pass_Sync SHALL void every older duplicate entry for a session code before any other change, and every serial of a cancelled code.
 
 ### Requirement 5: Hand off passes with a QR code
 

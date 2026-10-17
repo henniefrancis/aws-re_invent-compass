@@ -42,3 +42,14 @@ export function validWalkMinutes(minutes: number): number | undefined {
   }
   return Math.round(minutes);
 }
+
+/**
+ * A known walk clamped to 0 to 90 and rounded to whole minutes, as the pass fields require.
+ * Undefined, and any value that is not a finite number, stays unknown.
+ */
+export function clampedWalk(minutes: number | undefined): number | undefined {
+  if (minutes === undefined || !Number.isFinite(minutes)) {
+    return undefined;
+  }
+  return Math.min(MAX_WALK_MINUTES, Math.max(0, Math.round(minutes)));
+}

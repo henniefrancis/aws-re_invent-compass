@@ -128,3 +128,9 @@ export {
 } from './itinerary-page.js';
 export type { ItineraryPage, ItineraryPageDeps } from './itinerary-page.js';
 export { validWalkMinutes, MAX_WALK_MINUTES } from './boarding.js';
+
+// Schedule helpers: the BuildPassFn and the Itinerary from a schedule.
+export { buildPassFor, buildItinerary } from './itinerary-builder.js';
+export type { ScheduleView, PassBuildDeps } from './itinerary-builder.js';
+export { clampedWalk } from './boarding.js';
+export { MAX_UNCONFIRMED_VOIDS } from './pass-sync.js';

@@ -72,6 +72,16 @@ export interface IncludeFlags {
  */
 export interface SyncInput {
   sessions: NormalisedSession[];
+  /**
+   * The caller asserts that the list came from a successful, complete GetSchedule. A list built
+   * from a failed, partial or stale read must never be synced, because the sync voids the pass
+   * of every recorded session that is missing from it. Required, and always true.
+   */
+  scheduleConfirmed: true;
+  /** Required to void every recorded pass against an empty session list. */
+  confirmEmpty?: boolean;
+  /** Required to void more than five passes in one run. */
+  allowBulkVoid?: boolean;
 }
 
 /**

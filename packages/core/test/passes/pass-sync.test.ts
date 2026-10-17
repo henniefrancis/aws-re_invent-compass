@@ -1,13 +1,25 @@
 import fc from 'fast-check';
 import { describe, expect, test } from 'vitest';
 import type { PassFields } from '@compass/contracts';
-import { createAppDataResolver } from '../../src/passes/app-data.js';
+import {
+  createAppDataResolver,
+  joinInFolder,
+  RECORD_FILE_NAME,
+} from '../../src/passes/app-data.js';
 import { createCompassClient } from '../../src/passes/compass-client.js';
-import type { CompassClient } from '../../src/passes/compass-client.js';
+import type {
+  CompassClient,
+  UpdatePassResult,
+  VoidPassResult,
+} from '../../src/passes/compass-client.js';
+import type {
+  IssuePassesRequest,
+  IssuePassesResponse,
+} from '../../src/passes/compass-api-schemas.js';
 import { fieldsHash } from '../../src/passes/field-hash.js';
 import type { IssuedPass, IssuedPassRecord } from '../../src/passes/models.js';
 import { buildPass } from '../../src/passes/pass-builder.js';
-import { createPassStore } from '../../src/passes/pass-store.js';
+import { createPassStore, LOCK_FILE_NAME } from '../../src/passes/pass-store.js';
 import { diffSchedule, MAX_ISSUE_CHUNK, syncPasses } from '../../src/passes/pass-sync.js';
 import { PassError, passError } from '../../src/passes/redaction.js';
 import { memoryFs } from './memory-fs.js';
@@ -72,6 +84,9 @@ type Call =
 interface FakeClientOptions {
   gone?: Set<string>;
   omit?: Set<string>;
+  issue?: (request: IssuePassesRequest) => Promise<IssuePassesResponse>;
+  update?: (serial: string) => Promise<UpdatePassResult>;
+  voidPass?: (serial: string) => Promise<VoidPassResult>;
 }
 
 function fakeClient(options: FakeClientOptions = {}): { client: CompassClient; calls: Call[] } {
@@ -86,6 +101,9 @@ function fakeClient(options: FakeClientOptions = {}): { client: CompassClient; c
         codes: request.passes.map((pass) => pass.sessionCode),
         platforms: request.platforms,
       });
+      if (options.issue) {
+        return options.issue(request);
+      }
       return Promise.resolve({
         passes: request.passes
           .filter((pass) => !omit.has(pass.sessionCode))
@@ -98,6 +116,9 @@ function fakeClient(options: FakeClientOptions = {}): { client: CompassClient; c
     },
     updatePass(serial, fields) {
       calls.push({ kind: 'update', serial, fields });
+      if (options.update) {
+        return options.update(serial);
+      }
       return Promise.resolve(
         gone.has(serial)
           ? { outcome: 'gone' as const }
@@ -106,6 +127,9 @@ function fakeClient(options: FakeClientOptions = {}): { client: CompassClient; c
     },
     voidPass(serial) {
       calls.push({ kind: 'void', serial });
+      if (options.voidPass) {
+        return options.voidPass(serial);
+      }
       return Promise.resolve(
         gone.has(serial)
           ? { outcome: 'gone' as const }
@@ -128,8 +152,17 @@ function storeWith(record?: IssuedPassRecord) {
   return { fs, store, seed: () => (record ? store.write(record) : Promise.resolve()) };
 }
 
-function inputFor(codes: string[]) {
-  return { sessions: codes.map((code) => makeSession({ code })) };
+function inputFor(
+  codes: string[],
+  extra: { confirmEmpty?: boolean; allowBulkVoid?: boolean } = {},
+) {
+  return {
+    sessions: codes.map((code) => makeSession({ code })),
+    scheduleConfirmed: true as const,
+    confirmEmpty: true,
+    allowBulkVoid: true,
+    ...extra,
+  };
 }
 
 function writesIn(ops: string[]): number {
@@ -220,7 +253,7 @@ describe('Feature: boarding-passes, Property 16: sync drives the correct call pe
           const { fs, store, seed } = storeWith(record);
           await seed();
           fs.ops.length = 0;
-          const { client, calls } = fakeClient({ gone: scenario.gone, omit: scenario.omit });
+          const { client, calls } = fakeClient({ gone: scenario.gone });
 
           const result = await syncPasses(inputFor(scenario.scheduled), {
             store,
@@ -270,7 +303,6 @@ describe('Feature: boarding-passes, Property 16: sync drives the correct call pe
             }
           }
           for (const code of added) {
-            if (scenario.omit.has(code)) continue;
             expected.push({
               serialNumber: issuedSerial(code),
               sessionCode: code,
@@ -303,18 +335,22 @@ describe('Feature: boarding-passes, Property 16: sync drives the correct call pe
     expect(result.calls).toBe(2);
   });
 
-  test('a session the server did not answer for is not recorded, so the next sync issues it again', async () => {
+  test('a session the server did not answer for is recorded as far as it came back, then reported', async () => {
     const { store } = storeWith();
     const { client } = fakeClient({ omit: new Set(['CODE1']) });
     const input = inputFor(['CODE1', 'CODE2']);
-    const result = await syncPasses(input, {
-      store,
-      client,
-      builder: (code) => fieldsFor(code),
-      platforms: ['apple'],
+    await expect(
+      syncPasses(input, {
+        store,
+        client,
+        builder: (code) => fieldsFor(code),
+        platforms: ['apple'],
+      }),
+    ).rejects.toMatchObject({
+      code: 'sync.partial_issue',
+      message: expect.stringContaining('1 of 2') as string,
     });
-    expect(result.record.passes.map((pass) => pass.sessionCode)).toEqual(['CODE2']);
-    expect(result.plan.map((entry) => entry.diffCase)).toEqual(['added', 'added']);
+    expect((await store.read()).passes.map((pass) => pass.sessionCode)).toEqual(['CODE2']);
   });
 
   test('progress already made is kept when a later call fails', async () => {
@@ -396,6 +432,19 @@ describe('Feature: boarding-passes, sync end to end over the real builder, clien
   test('issue, then no-op, then update after a change, then void after a cancellation', async () => {
     const mock = createContractMock();
     let counter = 0;
+    // The sync checks that an update and a void answer for the serial asked about, so the
+    // mock echoes it from the request URL.
+    const serialOf = (url: string) => /passes\/([0-9a-f-]{36})/.exec(url)?.[1] ?? '';
+    mock.handle('updatePass', (request) => ({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ serialNumber: serialOf(request.url), version: 2 }),
+    }));
+    mock.handle('voidPass', (request) => ({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ serialNumber: serialOf(request.url), status: 'voided' }),
+    }));
     mock.handle('issuePasses', (request) => {
       const body = request.body as { platforms: string[]; passes: { sessionCode: string }[] };
       const passes = body.passes.map((pass) => {
@@ -431,7 +480,7 @@ describe('Feature: boarding-passes, sync end to end over the real builder, clien
     ];
     const sync = (current: typeof sessions) =>
       syncPasses(
-        { sessions: current },
+        { sessions: current, scheduleConfirmed: true },
         {
           store,
           client,
@@ -473,5 +522,368 @@ describe('Feature: boarding-passes, sync end to end over the real builder, clien
     for (const request of mock.requests) {
       expect(request.violations).toEqual([]);
     }
+  });
+});
+
+// ----- Review round 1: safety rules, compensation, identity and duplicates ---------------
+
+const RECORD_PATH = joinInFolder(APP_DATA.resolve(), RECORD_FILE_NAME);
+const LOCK_PATH = joinInFolder(APP_DATA.resolve(), LOCK_FILE_NAME);
+
+function depsFor(store: ReturnType<typeof storeWith>['store'], client: CompassClient) {
+  return {
+    store,
+    client,
+    builder: (code: string) => fieldsFor(code),
+    platforms: ['apple' as const],
+  };
+}
+
+/** A store seeded with a record, returning how many renames (record writes) have happened since. */
+async function seeded(record: IssuedPassRecord) {
+  const rig = storeWith(record);
+  await rig.seed();
+  rig.fs.ops.length = 0;
+  return rig;
+}
+
+function codes(count: number, prefix = 'CODE'): string[] {
+  return Array.from({ length: count }, (_, i) => `${prefix}${String(i + 1)}`);
+}
+
+function recordFor(list: string[], version = 0): IssuedPassRecord {
+  return { passes: list.map((code) => storedPass(code, version)) };
+}
+
+async function failureOf(promise: Promise<unknown>): Promise<PassError> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(error).toBeInstanceOf(PassError);
+    return error as PassError;
+  }
+  throw new Error('expected the call to fail');
+}
+
+describe('Feature: boarding-passes, the schedule must be confirmed and mass voids need confirmation (QA H3)', () => {
+  test('a sync without scheduleConfirmed changes nothing and makes no call', async () => {
+    const { store, fs } = await seeded(recordFor(['CODE1']));
+    const { client, calls } = fakeClient();
+    const unconfirmed = { ...inputFor(['CODE2']), scheduleConfirmed: false } as never;
+    const error = await failureOf(syncPasses(unconfirmed, depsFor(store, client)));
+    expect(error.code).toBe('sync.schedule_unconfirmed');
+    expect(calls).toEqual([]);
+    expect(writesIn(fs.ops)).toBe(0);
+  });
+
+  test('an empty list against a non-empty record is refused without confirmEmpty', async () => {
+    const { store, fs } = await seeded(recordFor(['CODE1']));
+    const { client, calls } = fakeClient();
+    const error = await failureOf(
+      syncPasses(inputFor([], { confirmEmpty: false }), depsFor(store, client)),
+    );
+    expect(error.code).toBe('sync.empty_schedule_refused');
+    expect(error.message).toContain('1 pass(es)');
+    expect(calls).toEqual([]);
+    expect(writesIn(fs.ops)).toBe(0);
+    expect((await store.read()).passes).toHaveLength(1);
+  });
+
+  test('confirmEmpty lets a small record be voided, and an empty list against an empty record is fine', async () => {
+    const { store } = await seeded(recordFor(['CODE1']));
+    const { client, calls } = fakeClient();
+    const result = await syncPasses(
+      inputFor([], { confirmEmpty: true, allowBulkVoid: false }),
+      depsFor(store, client),
+    );
+    expect(calls.map((call) => call.kind)).toEqual(['void']);
+    expect(result.record.passes).toEqual([]);
+
+    const again = await syncPasses(
+      inputFor([], { confirmEmpty: false, allowBulkVoid: false }),
+      depsFor(store, fakeClient().client),
+    );
+    expect(again.calls).toBe(0);
+  });
+
+  test('more than five voids need allowBulkVoid, and the refusal comes before any call', async () => {
+    const { store, fs } = await seeded(recordFor(codes(6)));
+    const { client, calls } = fakeClient();
+    const error = await failureOf(
+      syncPasses(inputFor(['CODE90'], { allowBulkVoid: false }), depsFor(store, client)),
+    );
+    expect(error.code).toBe('sync.bulk_void_refused');
+    expect(error.message).toContain('6 passes');
+    expect(calls).toEqual([]);
+    expect(writesIn(fs.ops)).toBe(0);
+    expect((await store.read()).passes).toHaveLength(6);
+  });
+
+  test('exactly five voids are allowed without the flag, and six with it', async () => {
+    const five = await seeded(recordFor(codes(5)));
+    const fiveClient = fakeClient();
+    const fiveResult = await syncPasses(
+      inputFor(['CODE90'], { allowBulkVoid: false }),
+      depsFor(five.store, fiveClient.client),
+    );
+    expect(fiveClient.calls.filter((call) => call.kind === 'void')).toHaveLength(5);
+    expect(fiveResult.record.passes.map((pass) => pass.sessionCode)).toEqual(['CODE90']);
+
+    const six = await seeded(recordFor(codes(6)));
+    const sixClient = fakeClient();
+    await syncPasses(
+      inputFor(['CODE90'], { allowBulkVoid: true }),
+      depsFor(six.store, sixClient.client),
+    );
+    expect(sixClient.calls.filter((call) => call.kind === 'void')).toHaveLength(6);
+  });
+
+  test('superseded duplicates count toward the bulk-void limit', async () => {
+    const rig = storeWith();
+    const lines = [...codes(6), ...codes(6)].map((code, i) => ({
+      ...storedPass(code, 0),
+      serialNumber: storedSerial(`CODE${String(i + 1)}`),
+    }));
+    rig.fs.files.set(RECORD_PATH, JSON.stringify({ passes: lines }));
+    const { client, calls } = fakeClient();
+    const error = await failureOf(
+      syncPasses(inputFor(codes(6), { allowBulkVoid: false }), depsFor(rig.store, client)),
+    );
+    expect(error.code).toBe('sync.bulk_void_refused');
+    expect(calls).toEqual([]);
+    expect(error.message).toContain('6 passes');
+  });
+});
+
+describe('Feature: boarding-passes, no orphaned pass when the record cannot be saved (QA H1)', () => {
+  test('a failed save after an issue voids the just-issued passes again and says so', async () => {
+    const { store, fs } = await seeded({ passes: [] });
+    fs.failing.add('rename');
+    const { client, calls } = fakeClient();
+    const error = await failureOf(syncPasses(inputFor(['CODE1', 'CODE2']), depsFor(store, client)));
+    expect(error.code).toBe('sync.store_failed');
+    expect(error.message).toContain('2 just-issued pass(es) were voided again.');
+    expect(error.message).not.toContain('example.com');
+    expect(calls.map((call) => call.kind)).toEqual(['issue', 'void', 'void']);
+    expect(calls.filter((call) => call.kind === 'void').map((call) => call.serial)).toEqual([
+      issuedSerial('CODE1'),
+      issuedSerial('CODE2'),
+    ]);
+    fs.failing.clear();
+    expect((await store.read()).passes).toEqual([]);
+  });
+
+  test('a compensating void that fails is counted, not hidden', async () => {
+    const { store, fs } = await seeded({ passes: [] });
+    fs.failing.add('rename');
+    const { client } = fakeClient({
+      voidPass: (serial) =>
+        serial === issuedSerial('CODE1')
+          ? Promise.reject(new Error('network down'))
+          : Promise.resolve({
+              outcome: 'voided' as const,
+              response: { serialNumber: serial, status: 'voided' as const },
+            }),
+    });
+    const error = await failureOf(syncPasses(inputFor(['CODE1', 'CODE2']), depsFor(store, client)));
+    expect(error.code).toBe('sync.store_failed');
+    expect(error.message).toContain(
+      '1 just-issued pass(es) were voided again, and 1 could not be voided.',
+    );
+    expect(error.message).not.toContain('network down');
+  });
+
+  test('a failed save after an update or a void is a fixed store error with no compensation', async () => {
+    for (const [schedule, kind] of [
+      [['CODE1'], 'update'],
+      [['CODE90'], 'void'],
+    ] as const) {
+      const { store, fs } = await seeded(recordFor(['CODE1'], schedule[0] === 'CODE1' ? 1 : 0));
+      fs.failing.add('rename');
+      const { client, calls } = fakeClient();
+      const error = await failureOf(syncPasses(inputFor([...schedule]), depsFor(store, client)));
+      expect(error.code).toBe('sync.store_failed');
+      expect(calls.some((call) => call.kind === kind)).toBe(true);
+      expect(calls.filter((call) => call.kind === 'void')).toHaveLength(kind === 'void' ? 1 : 0);
+    }
+  });
+});
+
+describe('Feature: boarding-passes, the sync does not trust the identity in a response (security M4)', () => {
+  async function refusedIssue(
+    answer: IssuePassesResponse,
+    record: IssuedPassRecord = { passes: [] },
+  ) {
+    const { store, fs } = await seeded(record);
+    const { client, calls } = fakeClient({ issue: () => Promise.resolve(answer) });
+    const error = await failureOf(syncPasses(inputFor(['CODE1', 'CODE2']), depsFor(store, client)));
+    expect(error.code).toBe('sync.identity_mismatch');
+    expect(writesIn(fs.ops)).toBe(0);
+    expect(calls.map((call) => call.kind)).toEqual(['issue']);
+    expect((await store.read()).passes).toEqual(record.passes);
+  }
+  const answer = (code: string, serial: string) => ({
+    serialNumber: serial,
+    sessionCode: code,
+    platforms: ['apple' as const],
+  });
+
+  test('an answer for a code that was not requested records nothing for the chunk', async () => {
+    await refusedIssue({
+      passes: [answer('CODE1', issuedSerial('CODE1')), answer('OTHER9', issuedSerial('CODE2'))],
+    });
+  });
+
+  test('an answer repeated for the same code records nothing for the chunk', async () => {
+    await refusedIssue({
+      passes: [answer('CODE1', issuedSerial('CODE1')), answer('CODE1', issuedSerial('CODE2'))],
+    });
+  });
+
+  test('a serial already in the record, or repeated in the answer, records nothing for the chunk', async () => {
+    await refusedIssue(
+      { passes: [answer('CODE1', storedSerial('CODE9')), answer('CODE2', issuedSerial('CODE2'))] },
+      recordFor(['CODE9']),
+    );
+    await refusedIssue({
+      passes: [answer('CODE1', issuedSerial('CODE1')), answer('CODE2', issuedSerial('CODE1'))],
+    });
+  });
+
+  test('an update or a void that answers for another serial changes nothing', async () => {
+    const wrong = issuedSerial('CODE5');
+    const update = await seeded(recordFor(['CODE1'], 1));
+    const updateClient = fakeClient({
+      update: () =>
+        Promise.resolve({
+          outcome: 'updated' as const,
+          response: { serialNumber: wrong, version: 3 },
+        }),
+    });
+    expect(
+      (await failureOf(syncPasses(inputFor(['CODE1']), depsFor(update.store, updateClient.client))))
+        .code,
+    ).toBe('sync.identity_mismatch');
+    expect(writesIn(update.fs.ops)).toBe(0);
+
+    const cancelled = await seeded(recordFor(['CODE1', 'CODE2']));
+    const voidClient = fakeClient({
+      voidPass: () =>
+        Promise.resolve({
+          outcome: 'voided' as const,
+          response: { serialNumber: wrong, status: 'voided' as const },
+        }),
+    });
+    expect(
+      (
+        await failureOf(
+          syncPasses(inputFor(['CODE1']), depsFor(cancelled.store, voidClient.client)),
+        )
+      ).code,
+    ).toBe('sync.identity_mismatch');
+    expect(writesIn(cancelled.fs.ops)).toBe(0);
+    expect((await cancelled.store.read()).passes).toHaveLength(2);
+  });
+
+  test('record entries are matched on both code and serial', async () => {
+    const shared = storedSerial('CODE1');
+    const record: IssuedPassRecord = {
+      passes: [
+        { ...storedPass('CODE1', 0), serialNumber: shared },
+        { ...storedPass('CODE2', 0), serialNumber: shared },
+      ],
+    };
+    const { store } = await seeded(record);
+    const { client } = fakeClient();
+    const result = await syncPasses(inputFor(['CODE2']), depsFor(store, client));
+    expect(result.record.passes.map((pass) => pass.sessionCode)).toEqual(['CODE2']);
+  });
+});
+
+describe('Feature: boarding-passes, one pass per session code and the lock (QA M5, M4)', () => {
+  const duplicate = (code: string, older: string, newer: string) => [
+    { ...storedPass(code, 0), serialNumber: older },
+    { ...storedPass(code, 0), serialNumber: newer },
+  ];
+
+  test('an older duplicate is voided first, the record is rewritten, and nothing else is touched', async () => {
+    const rig = storeWith();
+    const older = storedSerial('CODE8');
+    const newer = storedSerial('CODE1');
+    rig.fs.files.set(RECORD_PATH, JSON.stringify({ passes: duplicate('CODE1', older, newer) }));
+    const { client, calls } = fakeClient();
+    const result = await syncPasses(inputFor(['CODE1']), depsFor(rig.store, client));
+    expect(calls).toEqual([{ kind: 'void', serial: older }]);
+    expect(result.record.passes.map((pass) => pass.serialNumber)).toEqual([newer]);
+    expect(writesIn(rig.fs.ops)).toBe(1);
+    expect(JSON.parse(rig.fs.files.get(RECORD_PATH) ?? '{}')).toEqual({
+      passes: [storedPass('CODE1', 0)],
+    });
+  });
+
+  test('every serial for a cancelled code is voided, the older ones first', async () => {
+    const rig = storeWith();
+    const older = storedSerial('CODE8');
+    const newer = storedSerial('CODE1');
+    rig.fs.files.set(RECORD_PATH, JSON.stringify({ passes: duplicate('CODE1', older, newer) }));
+    const { client, calls } = fakeClient();
+    const result = await syncPasses(inputFor(['CODE90']), depsFor(rig.store, client));
+    expect(calls.filter((call) => call.kind === 'void').map((call) => call.serial)).toEqual([
+      older,
+      newer,
+    ]);
+    expect(result.record.passes.map((pass) => pass.sessionCode)).toEqual(['CODE90']);
+  });
+
+  test('a void of an older duplicate that fails leaves the duplicates in the file for the next run', async () => {
+    const rig = storeWith();
+    rig.fs.files.set(
+      RECORD_PATH,
+      JSON.stringify({ passes: duplicate('CODE1', storedSerial('CODE8'), storedSerial('CODE1')) }),
+    );
+    const { client } = fakeClient({
+      voidPass: () => Promise.reject(passError('compass.transport_failed', 'down')),
+    });
+    await expect(
+      syncPasses(inputFor(['CODE1']), depsFor(rig.store, client)),
+    ).rejects.toBeInstanceOf(PassError);
+    expect(
+      (JSON.parse(rig.fs.files.get(RECORD_PATH) ?? '{}') as IssuedPassRecord).passes,
+    ).toHaveLength(2);
+  });
+
+  test('a void of an older duplicate that answers for another serial is refused', async () => {
+    const rig = storeWith();
+    rig.fs.files.set(
+      RECORD_PATH,
+      JSON.stringify({ passes: duplicate('CODE1', storedSerial('CODE8'), storedSerial('CODE1')) }),
+    );
+    const { client } = fakeClient({
+      voidPass: () =>
+        Promise.resolve({
+          outcome: 'voided' as const,
+          response: { serialNumber: issuedSerial('CODE3'), status: 'voided' as const },
+        }),
+    });
+    expect(
+      (await failureOf(syncPasses(inputFor(['CODE1']), depsFor(rig.store, client)))).code,
+    ).toBe('sync.identity_mismatch');
+  });
+
+  test('the whole run holds the store lock and releases it afterwards', async () => {
+    const { store, fs } = await seeded(recordFor(['CODE1'], 1));
+    const lockSeen: boolean[] = [];
+    const { client } = fakeClient({
+      update: (serial) => {
+        lockSeen.push(fs.files.has(LOCK_PATH));
+        return Promise.resolve({
+          outcome: 'updated' as const,
+          response: { serialNumber: serial, version: 2 },
+        });
+      },
+    });
+    await syncPasses(inputFor(['CODE1']), depsFor(store, client));
+    expect(lockSeen).toEqual([true]);
+    expect(fs.files.has(LOCK_PATH)).toBe(false);
   });
 });
