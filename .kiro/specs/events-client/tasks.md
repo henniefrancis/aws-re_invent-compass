@@ -381,13 +381,13 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 17.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 18. Implement the owner-gated live smoke tests
-  - [ ] 18.1 Write the owner-gated live smoke tests
+- [x] 18. Implement the owner-gated live smoke tests
+  - [x] 18.1 Write the owner-gated live smoke tests
     - Guard with `COMPASS_LIVE_TESTS=1`: when unset, every test is reported skipped (never passed) and sends no live request; when set, cover sign-in, catalog, schedule, a favorite round trip, a personal-time round trip and exactly one reservation using only an owner-supplied session id
     - Do not run these tests yourself; they run only with `COMPASS_LIVE_TESTS=1`, set by the owner locally
     - _Requirements: 21.2, 21.3, 21.4, 21.5_
 
-  - [ ] 18.2 Commit
+  - [x] 18.2 Commit
     - After `npm test` (with the live tests skipped), `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 19. Final checkpoint - Ensure all tests pass and coverage is complete
