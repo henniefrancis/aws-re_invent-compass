@@ -21,10 +21,13 @@
 const REDACTED = '[REDACTED]';
 
 /**
- * The longest line the redactor looks at. Anything longer is cut to this length before
- * any pattern runs (finding N4), so a hostile 100 KB line can never make the patterns
- * take quadratic time, and every pattern below is bounded to this size as well. Cutting
- * only removes data, so it cannot expose a secret.
+ * The longest line the redactor looks at with its structural patterns. The registered
+ * secrets are removed from the FULL input first (each is a plain literal search, linear
+ * in the input), and only then is the line cut to this length, so a secret that sits
+ * across or beyond the cut is already gone and a hostile 100 KB line can never make the
+ * patterns take quadratic time (finding N4). If the cut would leave the beginning of a
+ * registered secret at its very end, that fragment is dropped as well, so not even a
+ * prefix of a secret survives. Every pattern below is bounded to this size too.
  */
 export const MAX_REDACT_INPUT_LENGTH = 8192;
 const TRUNCATED_MARK = '[TRUNCATED]';
@@ -66,6 +69,28 @@ const JSON_KEY_PATTERN =
 // never reach a log line.
 const EMAIL_PATTERN =
   /(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]{1,8192}@[A-Za-z0-9.-]{1,255}\.[A-Za-z]{2,63}/g;
+
+/**
+ * Cut the line to MAX_REDACT_INPUT_LENGTH and mark it. A trailing fragment that is the
+ * beginning of a registered needle is dropped too, so no prefix of a secret is left at
+ * the cut.
+ */
+function cutAtLimit(text: string, needles: readonly string[]): string {
+  if (text.length <= MAX_REDACT_INPUT_LENGTH) {
+    return text;
+  }
+  const kept = text.slice(0, MAX_REDACT_INPUT_LENGTH);
+  let drop = 0;
+  for (const needle of needles) {
+    for (let length = Math.min(needle.length - 1, kept.length); length > drop; length -= 1) {
+      if (kept.endsWith(needle.slice(0, length))) {
+        drop = length;
+        break;
+      }
+    }
+  }
+  return `${kept.slice(0, kept.length - drop)}${TRUNCATED_MARK}`;
+}
 
 /**
  * Escape a string for safe inclusion in a RegExp source.
@@ -159,15 +184,14 @@ export function createRedactingLogger(sink: LogSink = consoleSink): RedactingLog
   const secrets = new Set<string>();
 
   function redact(line: string): string {
-    let out =
-      line.length > MAX_REDACT_INPUT_LENGTH
-        ? `${line.slice(0, MAX_REDACT_INPUT_LENGTH)}${TRUNCATED_MARK}`
-        : line;
-    // Registered needles, longest first so overlapping values collapse cleanly.
+    let out = line;
+    // Registered needles over the whole input, longest first so overlapping values
+    // collapse cleanly.
     const needles = [...secrets].sort((a, b) => b.length - a.length);
     for (const needle of needles) {
       out = out.replace(new RegExp(escapeRegExp(needle), 'g'), REDACTED);
     }
+    out = cutAtLimit(out, needles);
     // Structural patterns. Authorization first so its credential is replaced as a
     // unit (scheme kept, credential removed), then standalone JWTs and emails.
     out = out.replace(AUTHORIZATION_PATTERN, (_match, prefix: string) => `${prefix}${REDACTED}`);

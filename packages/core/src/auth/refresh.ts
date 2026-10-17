@@ -30,7 +30,7 @@ import {
   postForm,
   type OAuthFetch,
 } from './oauth.js';
-import { MEMORY_ONLY_NOTICE } from './sign-in.js';
+import { KEYCHAIN_FAILED_NOTICE, MEMORY_ONLY_NOTICE } from './sign-in.js';
 import { REVOKE_TIMEOUT_MS } from './sign-out.js';
 import type { TokenSet, TokenStore } from './token-store.js';
 import type { RedactingLogger } from '../api/redacting-logger.js';
@@ -137,7 +137,7 @@ async function exchange(
     if (keychainBefore) {
       deps.logger.warn('The keychain could not be written; tokens are now held in memory only');
     }
-    return { memoryOnlyNotice: MEMORY_ONLY_NOTICE };
+    return { memoryOnlyNotice: keychainBefore ? KEYCHAIN_FAILED_NOTICE : MEMORY_ONLY_NOTICE };
   }
   return {};
 }

@@ -21,7 +21,11 @@ export interface ListSessionsParams {
   locale?: string;
 }
 
-/** List one page of sessions. */
+/**
+ * List one page of sessions. The result is the raw validated response: its text is NOT
+ * sanitised. Consumers show sessions through normaliseSession, the catalog cache or the
+ * catalog API, which sanitise first.
+ */
 export function listSessions(
   ctx: ClientContext,
   params: ListSessionsParams = {},

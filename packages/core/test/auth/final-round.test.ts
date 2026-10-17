@@ -13,7 +13,7 @@ import {
   type OAuthFetch,
 } from '../../src/auth/oauth.js';
 import { refreshIfNeeded, refreshNow, type RefreshDeps } from '../../src/auth/refresh.js';
-import { MEMORY_ONLY_NOTICE } from '../../src/auth/sign-in.js';
+import { KEYCHAIN_FAILED_NOTICE, MEMORY_ONLY_NOTICE } from '../../src/auth/sign-in.js';
 import { capturingLogger, fakeOAuth, fakeStore, heldTokens, tokenBody } from './auth-harness.js';
 
 // Final-round tests for the token handling findings: N7 (typed OAuth failures), N8
@@ -165,7 +165,7 @@ describe('events-client, M9: a keychain write failure during refresh is reported
     store.degradeOnReplace = true;
     const { deps, lines } = setup(fakeOAuth([{ status: 200, body: tokenBody() }]).fetch);
     const first = await refreshNow(store, deps);
-    expect(first).toEqual({ memoryOnlyNotice: MEMORY_ONLY_NOTICE });
+    expect(first).toEqual({ memoryOnlyNotice: KEYCHAIN_FAILED_NOTICE });
     expect(lines.filter((l) => l.includes('keychain could not be written'))).toHaveLength(1);
     // Already memory-only: still reported, but not warned about again.
     const second = await refreshNow(store, deps);

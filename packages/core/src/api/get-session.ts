@@ -15,7 +15,11 @@ export interface GetSessionParams {
   locale?: string;
 }
 
-/** Read a single session by its id. */
+/**
+ * Read a single session by its id. The result is the raw validated response: its text
+ * is NOT sanitised. Consumers show sessions through normaliseSession, the catalog cache
+ * or the catalog API, which sanitise first.
+ */
 export function getSession(
   ctx: ClientContext,
   sessionId: string,
