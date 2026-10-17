@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { HANDOFF_ID, mockHandoff, watch, openBoard } from './support/site';
+import { HANDOFF_ID, installClock, mockHandoff, watch, openBoard } from './support/site';
 
 const heading = (page: import('@playwright/test').Page) => page.locator('h1');
 
@@ -156,11 +156,23 @@ test.describe('the fragment', () => {
   });
 });
 
+test.describe('the suite does not depend on the date', () => {
+  for (const day of ['2026-11-30T08:00:00-08:00', '2031-06-15T12:00:00Z']) {
+    test(`a ready hand-off is ready when the page clock says ${day}`, async ({ page }) => {
+      await installClock(page, day);
+      await mockHandoff(page, 'ready-one-bundle');
+      await openBoard(page);
+      await expect(heading(page)).toHaveText('Your boarding passes are ready');
+      await expect(page.getByText('This link works for about 15 more minutes.')).toBeVisible();
+    });
+  }
+});
+
 test.describe('local expiry', () => {
   test('the page switches to expired and removes every action when the clock reaches expiresAt', async ({
     page,
   }) => {
-    await page.clock.install({ time: new Date('2026-11-30T08:00:00-08:00') });
+    await installClock(page, '2026-11-30T08:00:00-08:00');
     await mockHandoff(page, 'ready-one-bundle');
     await openBoard(page);
     await expect(heading(page)).toHaveText('Your boarding passes are ready');

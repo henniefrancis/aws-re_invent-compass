@@ -32,10 +32,15 @@ export async function mockHandoff(page: Page, ...names: string[]): Promise<() =>
   await page.route(`**/api/v1/handoffs/${HANDOFF_ID}`, async (route: Route) => {
     const chosen = fixture(names[Math.min(count, names.length - 1)] as string);
     count += 1;
+    // A ready body carries an expiry that follows the page clock, so the suite never expires.
+    const body =
+      chosen.status === 200 && chosen.body !== undefined
+        ? { ...(chosen.body as object), expiresAt: expiryFor(page) }
+        : chosen.body;
     await route.fulfill({
       status: chosen.status,
       contentType: chosen.contentType,
-      body: chosen.rawBody ?? JSON.stringify(chosen.body),
+      body: chosen.rawBody ?? JSON.stringify(body),
     });
   });
   return () => count;
@@ -102,4 +107,22 @@ export const boardPath = `/board#h=${HANDOFF_ID}`;
 export async function openBoard(page: Page, hash: string = `#h=${HANDOFF_ID}`): Promise<void> {
   await page.goto('about:blank');
   await page.goto(`/board${hash}`);
+}
+
+const pageClock = new WeakMap<Page, number>();
+
+/**
+ * Give the page a fixed clock. mockHandoff then sets expiresAt 15 minutes after this time, so no
+ * test depends on the real date.
+ */
+export async function installClock(page: Page, time: string): Promise<void> {
+  const at = new Date(time);
+  pageClock.set(page, at.getTime());
+  await page.clock.install({ time: at });
+}
+
+/** A hand-off expiry 15 minutes after the page clock (or after now), as an ISO date-time in UTC. */
+function expiryFor(page: Page): string {
+  const now = pageClock.get(page) ?? Date.now();
+  return new Date(now + 15 * 60_000).toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
