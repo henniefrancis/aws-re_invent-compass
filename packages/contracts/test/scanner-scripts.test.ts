@@ -388,6 +388,8 @@ describe('Feature: foundation-contracts, scanner runCli branches', () => {
     expect(err.stderr.length).toBeGreaterThan(0);
   });
 
+  // Scans every tracked file, so it gets a longer timeout: it ran past the 5 s
+  // default under CPU load from parallel test runs.
   test('dash-check runCli reports ok and findings, and skips unreadable files', async () => {
     const ok = dashRunCli();
     expect(ok.code).toBe(0);
@@ -413,5 +415,5 @@ describe('Feature: foundation-contracts, scanner runCli branches', () => {
     });
     expect(errored.code).toBe(1);
     expect(errored.stderr).toContain('scan boom');
-  });
+  }, 30_000);
 });

@@ -1,0 +1,28 @@
+# Copy this file to terraform.tfvars (git-ignored) and replace every placeholder.
+# Never commit the real file: the organisation and workspace names are private.
+
+hcp_organization = "REPLACE_WITH_HCP_ORGANIZATION_NAME"
+hcp_project      = "reinvent-compass"
+
+hcp_workspaces = {
+  dev  = "REPLACE_WITH_DEV_WORKSPACE_NAME"
+  prod = "REPLACE_WITH_PROD_WORKSPACE_NAME"
+}
+
+# Non-sensitive variables to set on each environment workspace. Never put
+# alarm_email, origin_verify_value or api_key_value here: set those with
+# scripts/set-workspace-secrets.sh from local files.
+workspace_variables = {
+  dev = {
+    event_timezone     = "REPLACE_WITH_IANA_TIME_ZONE"
+    event_window_start = "REPLACE_WITH_ISO_8601_START_WITH_OFFSET"
+    event_window_end   = "REPLACE_WITH_ISO_8601_END_WITH_OFFSET"
+    id_token_issuer    = "REPLACE_WITH_ID_TOKEN_ISSUER_URL"
+  }
+  prod = {
+    event_timezone     = "REPLACE_WITH_IANA_TIME_ZONE"
+    event_window_start = "REPLACE_WITH_ISO_8601_START_WITH_OFFSET"
+    event_window_end   = "REPLACE_WITH_ISO_8601_END_WITH_OFFSET"
+    id_token_issuer    = "REPLACE_WITH_ID_TOKEN_ISSUER_URL"
+  }
+}
