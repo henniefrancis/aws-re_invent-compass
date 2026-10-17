@@ -454,24 +454,24 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 23.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 24. Build the deterministic Lambda bundles
-  - [ ] 24.1 Implement the deterministic zip writer
+- [x] 24. Build the deterministic Lambda bundles
+  - [x] 24.1 Implement the deterministic zip writer
     - Create `src/build/deterministic-zip.ts` (`zipDeterministic`: sorted entries, DOS time 1980-01-01 00:00, mode 0644, deflate with `zlib.deflateRawSync`, CRC with `zlib.crc32`, no extra fields)
     - _Requirements: 1.3, 1.4_
 
-  - [ ] 24.2 Write property test for the zip writer
+  - [x] 24.2 Write property test for the zip writer
     - **Property 37: The zip writer is deterministic**
     - **Validates: Requirements 1.3, 1.4**
 
-  - [ ] 24.3 Implement the bundler and the build script
+  - [x] 24.3 Implement the bundler and the build script
     - Create `src/build/bundle-lambdas.ts` (`bundleLambdas` with `esbuild`: bundle, `platform: 'node'`, `target: 'node24'`, `format: 'esm'`, minify, no source maps, no legal comments, a `createRequire` banner for CommonJS dependencies, output `index.mjs`, zip, fail at 5 MB or more) and `scripts/build.ts` (writes `dist/lambda/api.zip` and `dist/lambda/passkit.zip`, prints names, sizes and SHA-256 values only)
     - _Requirements: 1.1, 1.2, 1.5, 1.6_
 
-  - [ ] 24.4 Write the build test
+  - [x] 24.4 Write the build test
     - Build into a temporary folder twice: exactly two zips, each with only `index.mjs`, byte-identical across runs, each under 5 MB, and the bundled `index.mjs` exports `handler`
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-  - [ ] 24.5 Commit
+  - [x] 24.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 25. Write the README and the S6 hand-off
