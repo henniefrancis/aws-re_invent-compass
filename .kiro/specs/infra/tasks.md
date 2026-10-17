@@ -240,36 +240,36 @@ The build order lays the shared foundation first (version pins, provider, tags, 
 - [x] 14. Checkpoint - environments composed and invariants verified
   - Ensure all offline checks pass. Ask the user if questions arise.
 
-- [ ] 15. Implement the owner-run deploy and setup scripts (`scripts/**`)
-  - [ ] 15.1 Implement `scripts/bootstrap.sh`
+- [x] 15. Implement the owner-run deploy and setup scripts (`scripts/**`)
+  - [x] 15.1 Implement `scripts/bootstrap.sh`
     - Run `terraform init` and `terraform apply` against `infra/bootstrap`; exit 0 on a clean apply and non-zero on failure, never reporting success on failure; echo no secret or identifier on any path
     - Do not execute this script; it is owner-run only. Validate it with `shellcheck`
     - _Requirements: 11.1, 11.2, 11.3_
 
-  - [ ] 15.2 Implement `scripts/release.sh`
+  - [x] 15.2 Implement `scripts/release.sh`
     - Accept exactly one env argument validated against `dev|prod` (usage message and non-zero exit otherwise, no Terraform run); load `infra/envs/<env>/cloud.auto.tfbackend` and export the three `TF_CLOUD_*` vars, failing by name if any is missing
     - Build the two Lambda zips into git-ignored `infra/build/` and build the site; run `terraform plan -out`; refuse any saved plan that would destroy or replace a Retained_Resource or introduce a resource type outside the allow list (print which, non-zero exit, no apply); require a typed `yes`
     - On confirmation apply the saved plan, `aws s3 sync` the site, and `aws cloudfront create-invalidation`; exit non-zero if apply, sync, or invalidation fails; health-check `GET https://<cf>/api/v1/health` treating only HTTP 200 as success; echo no secret or identifier on any path
     - Do not execute this script; it is owner-run only. Validate it with `shellcheck`
     - _Requirements: 1.6, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9, 12.10_
 
-  - [ ] 15.3 Implement `scripts/load-secrets.sh`
+  - [x] 15.3 Implement `scripts/load-secrets.sh`
     - Read certificate and key material from owner-provided file-path arguments; exit non-zero with a path-only (never content) error when a file is missing or unreadable; write each value into the matching Secrets Manager secret; exit non-zero if a write fails; never echo, print, or log any secret value on any path, referring to secrets only by name or path
     - Do not execute this script; it is owner-run only. Validate it with `shellcheck`
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
 
-  - [ ] 15.4 Implement `scripts/google-wallet-class.mjs`
+  - [x] 15.4 Implement `scripts/google-wallet-class.mjs`
     - Idempotent create-or-update of the Google Wallet issuer and class (repeat runs leave the same state, no duplicates); exit 0 on success and non-zero on any Google Wallet API failure; manage nothing in Terraform; echo no secret value
     - Do not execute this script; it is owner-run only
     - _Requirements: 14.1, 14.2, 14.3, 14.4_
 
-  - [ ] 15.5 Write script behaviour and leakage tests
+  - [x] 15.5 Write script behaviour and leakage tests
     - Assert `shellcheck` is clean on `bootstrap.sh`, `release.sh`, and `load-secrets.sh`
     - Example tests for deterministic branches: `release.sh` argument validation, missing backend key named, Retained_Resource refusal, unexpected resource-type refusal, non-`yes` abort; `load-secrets.sh` missing-file and write-failure paths
     - **Property 8: No script echoes a secret on any exit path** (static grep-based assertion that no script path echoes a secret-bearing variable)
     - **Validates: Requirements 11.4, 12.11, 13.5, 13.6, 17.2**
 
-  - [ ] 15.6 Run the script checks offline and commit the scripts
+  - [x] 15.6 Run the script checks offline and commit the scripts
     - Run `shellcheck` on all three shell scripts and the script behaviour and leakage tests; fix any finding. Never run any script in `scripts/`
     - Commit the scripts and their tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9, 12.10, 12.11, 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 14.1, 14.2, 14.3, 14.4, 17.2_
