@@ -111,22 +111,22 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 7.5 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 8. Implement connection classification
-  - [ ] 8.1 Implement `connections.ts` `classifyConnection`
+- [x] 8. Implement connection classification
+  - [x] 8.1 Implement `connections.ts` `classifyConnection`
     - Compute walking minutes as the matrix value plus `bufferMinutes`; same-venue walk is 0 plus buffer with an estimate label in the reason
     - Due time is the next item's boarding instant when reservable, otherwise its start time; classify comfortable at `tightMarginMinutes` or more spare, tight below that, impossible when arrival is after due time
     - Return unknown when a venue is missing, a venue is absent from the matrix, or a reservable next item has no boarding; every reason names both venues and the walking minutes, and states estimate when the source is an estimate
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10, 9.8, 9.9_
-  - [ ] 8.2 Write property test for connection classification by spare time
+  - [x] 8.2 Write property test for connection classification by spare time
     - **Property 5: Connection classification follows spare time against the due time, with walking minutes and a naming reason**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.8, 2.9**
-  - [ ] 8.3 Write property test for unknown connections
+  - [x] 8.3 Write property test for unknown connections
     - **Property 6: Missing venue, matrix value, or missing boarding yields an unknown connection**
     - **Validates: Requirements 2.6, 2.7, 9.8, 9.9**
-  - [ ] 8.4 Write connection example tests
+  - [x] 8.4 Write connection example tests
     - Assert one comfortable, one tight, and one impossible connection with representative outputs
     - _Requirements: 2.2, 2.3, 2.4_
-  - [ ] 8.5 Run the rules tests, confirm they pass, then commit
+  - [x] 8.5 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 9. Implement clash detection
