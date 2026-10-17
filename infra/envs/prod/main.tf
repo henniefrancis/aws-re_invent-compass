@@ -33,6 +33,19 @@ module "api" {
   throttle_rate            = var.throttle_rate
   throttle_burst           = var.throttle_burst
   route_throttles          = var.route_throttles
+
+  public_base_url            = var.public_base_url
+  event_timezone             = var.event_timezone
+  event_window_start         = var.event_window_start
+  event_window_end           = var.event_window_end
+  service_version            = var.service_version
+  id_token_verifier          = var.id_token_verifier
+  id_token_issuer            = var.id_token_issuer
+  id_token_jwks_uri          = var.id_token_jwks_uri
+  apns_enabled               = var.apns_enabled
+  apns_push_type             = var.apns_push_type
+  google_wallet_enabled      = var.google_wallet_enabled
+  google_wallet_class_suffix = local.google_wallet_class_suffix
 }
 
 module "site" {

@@ -4,10 +4,13 @@ locals {
   # Stage that serves /api/* behind CloudFront. It matches the api module.
   stage_name = "live"
 
-  # Custom metric the passkit Lambda emits (embedded metric format) each time an
-  # APNs push fails. The pass-service stream must emit this exact name.
+  # Custom metric the api Lambda emits (embedded metric format, namespace
+  # Compass, single dimension Function) each time an APNs push fails. The names
+  # are the ones the pass-service design defines. Pushes are sent by the api
+  # Lambda.
   apns_metric_namespace = "Compass"
-  apns_metric_name      = "ApnsPushFailures"
+  apns_metric_name      = "ApnsFailure"
+  apns_metric_function  = "api"
 
   # Budget (Requirement 8.5 and 8.6).
   budget_limit_usd         = "20"

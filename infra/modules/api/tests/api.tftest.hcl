@@ -71,7 +71,12 @@ variables {
     apple  = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/apple-pass-AbCdEf"
     google = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/google-wallet-AbCdEf"
   }
-  permissions_boundary_arn = "arn:aws:iam::aws:policy/compass-permissions-boundary"
+  permissions_boundary_arn   = "arn:aws:iam::aws:policy/compass-permissions-boundary"
+  event_timezone             = "America/Los_Angeles"
+  event_window_start         = "2026-11-30T08:00:00-08:00"
+  event_window_end           = "2026-12-04T20:00:00-08:00"
+  id_token_issuer            = "https://issuer.example.invalid"
+  google_wallet_class_suffix = "compass-dev"
 }
 
 run "rest_api_from_contract" {
@@ -191,8 +196,62 @@ run "lambda_functions" {
   }
 
   assert {
-    condition     = !contains(keys(one(aws_lambda_function.passkit.environment).variables), "GOOGLE_SECRET_ARN") && contains(keys(one(aws_lambda_function.api.environment).variables), "GOOGLE_SECRET_ARN")
+    condition     = !contains(keys(one(aws_lambda_function.passkit.environment).variables), "GOOGLE_SECRET_ID") && contains(keys(one(aws_lambda_function.api.environment).variables), "GOOGLE_SECRET_ID")
     error_message = "Only the api Lambda may know the Google secret."
+  }
+}
+
+run "lambda_environment_matches_the_pass_service" {
+  command = plan
+
+  assert {
+    condition = alltrue([
+      for k in ["TABLE_NAME", "APP_SECRET_ID", "APPLE_SECRET_ID", "EVENT_TIMEZONE"] :
+      contains(keys(one(aws_lambda_function.passkit.environment).variables), k)
+    ])
+    error_message = "The passkit Lambda must receive the variables the pass-service reads."
+  }
+
+  assert {
+    condition = alltrue([
+      for k in ["TABLE_NAME", "APP_SECRET_ID", "APPLE_SECRET_ID", "GOOGLE_SECRET_ID", "EVENT_TIMEZONE", "EVENT_WINDOW_START", "EVENT_WINDOW_END", "ID_TOKEN_VERIFIER", "ID_TOKEN_ISSUER", "APNS_ENABLED", "GOOGLE_WALLET_ENABLED", "GOOGLE_WALLET_CLASS_SUFFIX", "SERVICE_VERSION"] :
+      contains(keys(one(aws_lambda_function.api.environment).variables), k)
+    ])
+    error_message = "The api Lambda must receive the variables the pass-service reads."
+  }
+
+  assert {
+    condition     = !contains(keys(one(aws_lambda_function.api.environment).variables), "PUBLIC_BASE_URL") && !contains(keys(one(aws_lambda_function.api.environment).variables), "ID_TOKEN_JWKS_URI") && !contains(keys(one(aws_lambda_function.api.environment).variables), "APNS_PUSH_TYPE")
+    error_message = "Optional variables must be omitted when empty."
+  }
+}
+
+run "optional_environment_is_set_when_given" {
+  command = plan
+
+  variables {
+    public_base_url   = "https://example.invalid"
+    id_token_jwks_uri = "https://issuer.example.invalid/jwks"
+    apns_push_type    = "alert"
+  }
+
+  assert {
+    condition     = one(aws_lambda_function.api.environment).variables["PUBLIC_BASE_URL"] == "https://example.invalid" && one(aws_lambda_function.passkit.environment).variables["PUBLIC_BASE_URL"] == "https://example.invalid" && one(aws_lambda_function.api.environment).variables["APNS_PUSH_TYPE"] == "alert"
+    error_message = "Optional values must reach the Lambdas when set."
+  }
+}
+
+run "lambda_role_policies_follow_least_privilege" {
+  command = plan
+
+  assert {
+    condition     = !strcontains(aws_iam_role_policy.passkit.policy, "google-wallet") && strcontains(aws_iam_role_policy.api.policy, "google-wallet")
+    error_message = "Only the api role may read the Google secret."
+  }
+
+  assert {
+    condition     = !strcontains(aws_iam_role_policy.passkit.policy, "dynamodb:UpdateItem") && strcontains(aws_iam_role_policy.api.policy, "dynamodb:UpdateItem") && !strcontains(aws_iam_role_policy.api.policy, "BatchWriteItem")
+    error_message = "Table actions must match what each Lambda needs."
   }
 }
 

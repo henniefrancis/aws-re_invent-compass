@@ -25,7 +25,12 @@ variables {
     apple  = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/apple-pass-AbCdEf"
     google = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/google-wallet-AbCdEf"
   }
-  permissions_boundary_arn = "arn:aws:iam::aws:policy/compass-permissions-boundary"
+  permissions_boundary_arn   = "arn:aws:iam::aws:policy/compass-permissions-boundary"
+  event_timezone             = "America/Los_Angeles"
+  event_window_start         = "2026-11-30T08:00:00-08:00"
+  event_window_end           = "2026-12-04T20:00:00-08:00"
+  id_token_issuer            = "https://issuer.example.invalid"
+  google_wallet_class_suffix = "compass-dev"
 }
 
 run "every_log_group_keeps_14_days" {

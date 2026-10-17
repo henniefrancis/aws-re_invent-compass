@@ -97,8 +97,8 @@ run "four_alarms_wired_to_the_topic" {
   }
 
   assert {
-    condition     = aws_cloudwatch_metric_alarm.apns_push_failures.metric_name == "ApnsPushFailures"
-    error_message = "The APNs alarm must watch ApnsPushFailures."
+    condition     = aws_cloudwatch_metric_alarm.apns_push_failures.metric_name == "ApnsFailure"
+    error_message = "The APNs alarm must watch ApnsFailure."
   }
 
   assert {

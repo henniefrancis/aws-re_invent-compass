@@ -55,13 +55,8 @@ run "gsi_projections" {
   }
 
   assert {
-    condition     = length(regexall("projection_type[[:space:]]*=[[:space:]]*\"INCLUDE\"", file("${path.module}/main.tf"))) == 2
-    error_message = "Each GSI must set an explicit INCLUDE projection."
-  }
-
-  assert {
-    condition     = length(regexall("(?m)^[[:space:]]*non_key_attributes[[:space:]]*=[[:space:]]*local[.]gsi[12]_non_key_attributes", file("${path.module}/main.tf"))) == 2
-    error_message = "Each GSI must project its non-key attributes."
+    condition     = length(regexall("projection_type[[:space:]]*=[[:space:]]*\"ALL\"", file("${path.module}/main.tf"))) == 2
+    error_message = "Each GSI must set an explicit ALL projection."
   }
 
   assert {
@@ -70,7 +65,7 @@ run "gsi_projections" {
   }
 
   assert {
-    condition     = can(regex("hash_key[[:space:]]*=[[:space:]]*\"GSI1PK\"", file("${path.module}/main.tf"))) && can(regex("hash_key[[:space:]]*=[[:space:]]*\"GSI2PK\"", file("${path.module}/main.tf")))
+    condition     = can(regex("hash_key[[:space:]]*=[[:space:]]*\"gsi1pk\"", file("${path.module}/main.tf"))) && can(regex("hash_key[[:space:]]*=[[:space:]]*\"gsi2pk\"", file("${path.module}/main.tf")))
     error_message = "Each GSI must use its own partition key attribute."
   }
 }

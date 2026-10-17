@@ -107,7 +107,7 @@ resource "aws_cloudwatch_metric_alarm" "apns_push_failures" {
   alarm_actions       = [aws_sns_topic.alarms.arn]
 
   dimensions = {
-    Environment = var.env
+    Function = local.apns_metric_function
   }
 }
 

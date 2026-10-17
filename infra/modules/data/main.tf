@@ -8,38 +8,38 @@
 resource "aws_dynamodb_table" "this" {
   name         = local.table_name
   billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "PK"
-  range_key    = "SK"
+  hash_key     = "pk"
+  range_key    = "sk"
 
   deletion_protection_enabled = true
 
   attribute {
-    name = "PK"
+    name = "pk"
     type = "S"
   }
 
   attribute {
-    name = "SK"
+    name = "sk"
     type = "S"
   }
 
   attribute {
-    name = "GSI1PK"
+    name = "gsi1pk"
     type = "S"
   }
 
   attribute {
-    name = "GSI1SK"
+    name = "gsi1sk"
     type = "S"
   }
 
   attribute {
-    name = "GSI2PK"
+    name = "gsi2pk"
     type = "S"
   }
 
   attribute {
-    name = "GSI2SK"
+    name = "gsi2sk"
     type = "S"
   }
 
@@ -59,19 +59,17 @@ resource "aws_dynamodb_table" "this" {
   }
 
   global_secondary_index {
-    name               = "GSI1"
-    hash_key           = "GSI1PK"
-    range_key          = "GSI1SK"
-    projection_type    = "INCLUDE"
-    non_key_attributes = local.gsi1_non_key_attributes
+    name            = "GSI1"
+    hash_key        = "gsi1pk"
+    range_key       = "gsi1sk"
+    projection_type = "ALL"
   }
 
   global_secondary_index {
-    name               = "GSI2"
-    hash_key           = "GSI2PK"
-    range_key          = "GSI2SK"
-    projection_type    = "INCLUDE"
-    non_key_attributes = local.gsi2_non_key_attributes
+    name            = "GSI2"
+    hash_key        = "gsi2pk"
+    range_key       = "gsi2sk"
+    projection_type = "ALL"
   }
 
   lifecycle {

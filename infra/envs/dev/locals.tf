@@ -15,4 +15,6 @@ locals {
   # The shared permissions boundary created by the bootstrap. The apply role may
   # create a role only when it carries this policy.
   permissions_boundary_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/compass-permissions-boundary"
+
+  google_wallet_class_suffix = coalesce(var.google_wallet_class_suffix, "compass-${var.env}")
 }

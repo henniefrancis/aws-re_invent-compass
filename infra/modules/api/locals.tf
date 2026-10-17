@@ -23,22 +23,38 @@ locals {
     outcome            = "$context.error.responseType"
   })
 
-  # Environment for both Lambdas. Names and ARNs only, never a secret value:
-  # the Lambdas resolve the secrets at runtime.
-  common_environment = {
-    COMPASS_ENV    = var.env
-    TABLE_NAME     = var.table_name
-    APP_SECRET_ARN = var.secret_arns.app
-  }
+  # Environment for the Lambdas, using the variable names the pass-service
+  # (S5) reads. Names and ARNs only, never a secret value: the Lambdas resolve
+  # the secrets at runtime. Optional values are omitted when empty so the S5
+  # defaults apply.
+  common_environment = merge(
+    {
+      TABLE_NAME      = var.table_name
+      APP_SECRET_ID   = var.secret_arns.app
+      APPLE_SECRET_ID = var.secret_arns.apple
+      EVENT_TIMEZONE  = var.event_timezone
+    },
+    var.public_base_url == "" ? {} : { PUBLIC_BASE_URL = var.public_base_url },
+  )
 
-  api_environment = merge(local.common_environment, {
-    APPLE_SECRET_ARN  = var.secret_arns.apple
-    GOOGLE_SECRET_ARN = var.secret_arns.google
-  })
+  api_environment = merge(
+    local.common_environment,
+    {
+      EVENT_WINDOW_START         = var.event_window_start
+      EVENT_WINDOW_END           = var.event_window_end
+      ID_TOKEN_VERIFIER          = var.id_token_verifier
+      ID_TOKEN_ISSUER            = var.id_token_issuer
+      APNS_ENABLED               = tostring(var.apns_enabled)
+      GOOGLE_WALLET_ENABLED      = tostring(var.google_wallet_enabled)
+      GOOGLE_SECRET_ID           = var.secret_arns.google
+      GOOGLE_WALLET_CLASS_SUFFIX = var.google_wallet_class_suffix
+      SERVICE_VERSION            = var.service_version
+    },
+    var.id_token_jwks_uri == "" ? {} : { ID_TOKEN_JWKS_URI = var.id_token_jwks_uri },
+    var.apns_push_type == "" ? {} : { APNS_PUSH_TYPE = var.apns_push_type },
+  )
 
-  passkit_environment = merge(local.common_environment, {
-    APPLE_SECRET_ARN = var.secret_arns.apple
-  })
+  passkit_environment = local.common_environment
 
   lambda_assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -65,7 +81,6 @@ locals {
         Sid    = "UseTable"
         Effect = "Allow"
         Action = [
-          "dynamodb:BatchWriteItem",
           "dynamodb:DeleteItem",
           "dynamodb:GetItem",
           "dynamodb:PutItem",
@@ -103,7 +118,6 @@ locals {
           "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:Query",
-          "dynamodb:UpdateItem",
         ]
         Resource = [var.table_arn, "${var.table_arn}/index/*"]
       },

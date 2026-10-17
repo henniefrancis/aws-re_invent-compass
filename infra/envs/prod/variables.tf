@@ -83,3 +83,76 @@ variable "passkit_lambda_zip" {
   type        = string
   default     = "../../build/passkit-lambda.zip"
 }
+
+variable "public_base_url" {
+  description = "Public base URL, https://<distribution>.cloudfront.net with no trailing slash. The distribution depends on the API Lambdas, so this is known only after the first apply: set it from the cloudfront_domain_name output and apply again. Empty omits PUBLIC_BASE_URL."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.public_base_url == "" || can(regex("^https://[a-z0-9.-]+$", var.public_base_url))
+    error_message = "The public_base_url value must be empty or an https URL with no path and no trailing slash."
+  }
+}
+
+variable "event_timezone" {
+  description = "IANA time zone of the event, from the Events API GetEvent. Never hard-coded."
+  type        = string
+}
+
+variable "event_window_start" {
+  description = "Event start, ISO 8601 with offset, from GetEvent."
+  type        = string
+}
+
+variable "event_window_end" {
+  description = "Event end, ISO 8601 with offset, from GetEvent."
+  type        = string
+}
+
+variable "service_version" {
+  description = "Version string returned by the health route. scripts/release.sh passes the release version."
+  type        = string
+  default     = "0.0.0"
+}
+
+variable "id_token_verifier" {
+  description = "ID token verifier mode, cognito or oidc (spike SP2)."
+  type        = string
+  default     = "cognito"
+}
+
+variable "id_token_issuer" {
+  description = "Exact iss claim of the Builder ID ID token (spike SP2)."
+  type        = string
+}
+
+variable "id_token_jwks_uri" {
+  description = "JWKS URI, required in oidc mode (spike SP2). Empty omits the variable."
+  type        = string
+  default     = ""
+}
+
+variable "apns_enabled" {
+  description = "Switch for Apple push notifications (spike SP3 fallback)."
+  type        = bool
+  default     = true
+}
+
+variable "apns_push_type" {
+  description = "APNs push type, alert or background (spike SP3). Empty omits the variable."
+  type        = string
+  default     = ""
+}
+
+variable "google_wallet_enabled" {
+  description = "Switch for Google Wallet (spike SP4)."
+  type        = bool
+  default     = true
+}
+
+variable "google_wallet_class_suffix" {
+  description = "Suffix of the Google Wallet class id, the same value scripts/google-wallet-class.mjs uses. Null selects compass-<env>."
+  type        = string
+  default     = null
+}

@@ -112,3 +112,120 @@ variable "route_throttles" {
     error_message = "Each route_throttles rate must be above 0 and each burst at least 1."
   }
 }
+
+variable "public_base_url" {
+  description = "Public base URL of the distribution, https://<distribution>.cloudfront.net, with no trailing slash. Empty omits PUBLIC_BASE_URL. The distribution depends on this module, so the value is known only after the first apply: set it from the cloudfront_domain_name output and apply again."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.public_base_url == "" || can(regex("^https://[a-z0-9.-]+$", var.public_base_url))
+    error_message = "The public_base_url value must be empty or an https URL with no path and no trailing slash."
+  }
+}
+
+variable "event_timezone" {
+  description = "IANA time zone of the event, from GetEvent."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[A-Za-z]+(/[A-Za-z_+-]+)+$", var.event_timezone))
+    error_message = "The event_timezone value must be an IANA zone such as Area/City."
+  }
+}
+
+variable "event_window_start" {
+  description = "Event start, ISO 8601 with offset, from GetEvent."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?(Z|[+-][0-9]{2}:[0-9]{2})$", var.event_window_start))
+    error_message = "The event_window_start value must be ISO 8601 with an offset."
+  }
+}
+
+variable "event_window_end" {
+  description = "Event end, ISO 8601 with offset, from GetEvent."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?(Z|[+-][0-9]{2}:[0-9]{2})$", var.event_window_end))
+    error_message = "The event_window_end value must be ISO 8601 with an offset."
+  }
+}
+
+variable "service_version" {
+  description = "Version string returned by the health route."
+  type        = string
+  default     = "0.0.0"
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9._+-]{1,64}$", var.service_version))
+    error_message = "The service_version value must be 1 to 64 letters, digits or . _ + -."
+  }
+}
+
+variable "id_token_verifier" {
+  description = "ID token verifier mode, cognito or oidc (spike SP2)."
+  type        = string
+  default     = "cognito"
+
+  validation {
+    condition     = contains(["cognito", "oidc"], var.id_token_verifier)
+    error_message = "The id_token_verifier value must be cognito or oidc."
+  }
+}
+
+variable "id_token_issuer" {
+  description = "Exact iss claim of the ID token (spike SP2)."
+  type        = string
+
+  validation {
+    condition     = startswith(var.id_token_issuer, "https://")
+    error_message = "The id_token_issuer value must be an https URL."
+  }
+}
+
+variable "id_token_jwks_uri" {
+  description = "JWKS URI, required in oidc mode (spike SP2). Empty omits ID_TOKEN_JWKS_URI."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.id_token_jwks_uri == "" || startswith(var.id_token_jwks_uri, "https://")
+    error_message = "The id_token_jwks_uri value must be empty or an https URL."
+  }
+}
+
+variable "apns_enabled" {
+  description = "Switch for Apple push notifications (spike SP3 fallback)."
+  type        = bool
+  default     = true
+}
+
+variable "apns_push_type" {
+  description = "APNs push type, alert or background (spike SP3). Empty omits APNS_PUSH_TYPE."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = contains(["", "alert", "background"], var.apns_push_type)
+    error_message = "The apns_push_type value must be empty, alert or background."
+  }
+}
+
+variable "google_wallet_enabled" {
+  description = "Switch for Google Wallet (spike SP4, cut-list item 10)."
+  type        = bool
+  default     = true
+}
+
+variable "google_wallet_class_suffix" {
+  description = "Suffix of the Google Wallet class id created by scripts/google-wallet-class.mjs."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9._-]{1,64}$", var.google_wallet_class_suffix))
+    error_message = "The google_wallet_class_suffix value must be 1 to 64 letters, digits or . _ -."
+  }
+}
