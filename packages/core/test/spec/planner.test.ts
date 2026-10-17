@@ -210,6 +210,17 @@ describe('planWeek examples', () => {
     expect(reason.length).toBe(200);
   });
 
+  test('ties on score and start time break on code, then session id, in either input order', async () => {
+    const make = (id: string, code: string) => entry(id, ['storage'], { code });
+    for (const sessions of [
+      [make('s1', 'ZZ1'), make('s2', 'AA1'), make('s3', 'AA1')],
+      [make('s3', 'AA1'), make('s2', 'AA1'), make('s1', 'ZZ1')],
+    ]) {
+      const result = await planWeek(input(sessions), new FakePlannerRules());
+      expect(result.picks.map((p) => p.session.sessionId)).toEqual(['s2', 's3', 's1']);
+    }
+  });
+
   test('with no usable input there are no picks', async () => {
     const result = await planWeek(input([]), new FakePlannerRules());
     expect(result).toEqual({
