@@ -144,24 +144,24 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 9.4 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 10. Implement layovers and personal time
-  - [ ] 10.1 Implement `layovers.ts` `checkLayovers`
+- [x] 10. Implement layovers and personal time
+  - [x] 10.1 Implement `layovers.ts` `checkLayovers`
     - Report a missing meal layover when free minutes inside the meal window fall below the required free minutes; report a long stretch over `maxStretchMinutes`
     - Produce suggested blocks in clash-free gaps, each with start, end, and reason, or state that none could be placed; use event-timezone wall-clock time for windows and stretches
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8_
-  - [ ] 10.2 Write property test for the meal layover report
+  - [x] 10.2 Write property test for the meal layover report
     - **Property 8: Meal layover reported exactly when free minutes fall short**
     - **Validates: Requirements 4.1, 4.2**
-  - [ ] 10.3 Write property test for the long stretch report
+  - [x] 10.3 Write property test for the long stretch report
     - **Property 9: Long stretch reported exactly when an unbroken run exceeds the max**
     - **Validates: Requirements 4.3, 4.4**
-  - [ ] 10.4 Write property test for suggested blocks
+  - [x] 10.4 Write property test for suggested blocks
     - **Property 10: Suggested blocks are complete and clash-free, or none is reported**
     - **Validates: Requirements 4.5, 4.6, 4.7**
-  - [ ] 10.5 Write default meal-window and stretch example tests
+  - [x] 10.5 Write default meal-window and stretch example tests
     - Assert the default meal window 11:30 to 14:00 needing 30 free minutes and the default maximum stretch of 180 minutes
     - _Requirements: 4.2, 4.3_
-  - [ ] 10.6 Run the rules tests, confirm they pass, then commit
+  - [x] 10.6 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 11. Checkpoint - core fact rules

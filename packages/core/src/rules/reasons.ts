@@ -177,6 +177,10 @@ export function longStretch(day: string, minutes: number, maxMinutes: number): s
   return `On ${stamp(day)} you have ${mins(minutes)} without a break. The limit is ${mins(maxMinutes)}.`;
 }
 
+export function layoverTimeMissing(ref: string, what: 'start' | 'end'): string {
+  return `${missingTime(ref, what)} It is left out of the break checks.`;
+}
+
 export function suggestMealBlock(): string {
   return 'Take a meal break in this gap.';
 }
