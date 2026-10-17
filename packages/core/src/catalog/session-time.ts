@@ -32,24 +32,33 @@ export const MAX_CACHED_ZONES = 64;
 
 /** The IANA identifiers the runtime reports, in their canonical case. */
 const SUPPORTED_ZONES: ReadonlySet<string> = new Set(Intl.supportedValuesOf('timeZone'));
-/** The shape of a properly cased Area/Location alias such as Asia/Kolkata. */
-const ALIAS_PATTERN = /^[A-Z][a-z]+(\/[A-Z][A-Za-z0-9_+-]*)+$/;
+/** The shape of an IANA name: every path segment starts with an upper-case letter. */
+const IANA_SHAPE = /^[A-Z][A-Za-z_]+(\/[A-Z][A-Za-z0-9_+-]+)+$/;
 
 /**
- * Strict IANA check (QA M8). Intl accepts any letter case, so it is not enough: the
- * identifier must be exactly as the runtime lists it, or UTC, or exactly the name the
- * runtime resolves it to, or a properly cased alias of a listed zone (such as Asia/Kolkata, which the runtime resolves to its
- * canonical name). A different casing of the same zone is refused.
+ * Strict IANA check (QA M8, L2). Intl accepts any letter case and, in current runtimes,
+ * even a bare offset such as +08:00, so it is not enough. The zone is accepted when it is
+ * exactly one the runtime lists (Intl.supportedValuesOf), or UTC, or exactly the
+ * canonical name the runtime resolves it to (this covers Etc/GMT+8). A valid alias that
+ * the runtime resolves to another name (Asia/Kolkata, which this runtime lists as
+ * Asia/Calcutta) is accepted when Intl accepts it and it has the shape of an IANA name:
+ * path segments starting with an upper-case letter, not written all in capitals. An
+ * offset string, any all-lower-case form and a different letter case of a zone the
+ * runtime already knows under that name are refused.
  */
 function isStrictZone(zone: string, resolved: string): boolean {
+  if (zone.startsWith('+') || zone.startsWith('-')) {
+    return false;
+  }
   if (SUPPORTED_ZONES.has(zone) || zone === 'UTC' || resolved === zone) {
     return true;
   }
   if (resolved.toLowerCase() === zone.toLowerCase()) {
     return false;
   }
-  return ALIAS_PATTERN.test(zone);
+  return IANA_SHAPE.test(zone) && zone !== zone.toUpperCase();
 }
+
 /** A formatter for the zone, or null when the zone is not a valid IANA identifier. */
 function formatterFor(zone: string): Intl.DateTimeFormat | null {
   const cached = formatterCache.get(zone);

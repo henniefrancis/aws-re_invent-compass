@@ -23,6 +23,21 @@
 // session with no venue, and one session with no end time (a sessionTime with no
 // length). Every generated session parses against SessionWireSchema.
 //
+// Repeat rule: every fourth session (index 4, 8, 12, ...) is a true repeat of the
+// nearest earlier non-repeat session (its base). It copies the base's code with the
+// -R (index divisible by 8) or -R2 suffix, plus its title, abstract, type, level,
+// services and speakers, so a repeat is genuinely the same session. It keeps its own
+// day, start time, length, venue and room, and its own seat availability (when the
+// copied type is reservable but the original draw was a walk-up, a band is chosen
+// from the index, with no extra PRNG draw). If its drawn slot would overlap its
+// base on the same day, the repeat moves to the next EVENT_DAYS day (wrapping from
+// the last day to the first). The PRNG call sequence is unchanged, so session ids
+// and every non-repeat session are byte-identical to the previous generator.
+//
+// Code uniqueness: every non-repeat session code is unique. A drawn code that
+// collides with an earlier non-repeat code is bumped by one (wrapping inside 100 to
+// 499) until it is free, with no extra PRNG draw; repeats follow their base's code.
+//
 // This file contains no em dash or en dash.
 
 // ----------------------------------------------------------------------------
@@ -173,6 +188,13 @@ const LENGTHS = ['60', '90', '120'] as const;
 // to, and every one is valid under SessionWireSchema).
 // ----------------------------------------------------------------------------
 
+export interface SessionTime {
+  date: string;
+  time?: string;
+  length?: string;
+  timezone: string;
+}
+
 export interface GeneratedSession {
   sessionId: string;
   title: string;
@@ -185,12 +207,7 @@ export interface GeneratedSession {
   isAllDaySession: boolean;
   isReservable: boolean;
   seatAvailability: string;
-  sessionTime?: {
-    date: string;
-    time?: string;
-    length?: string;
-    timezone: string;
-  };
+  sessionTime?: SessionTime;
   speakers: Array<{ name: string }>;
   services: string[];
 }
@@ -200,6 +217,48 @@ function pick<T>(rng: () => number, list: readonly T[]): T {
   const index = Math.floor(rng() * list.length);
   // Guard the upper bound in case rng() returns a value extremely close to 1.
   return list[Math.min(index, list.length - 1)] as T;
+}
+
+// Minutes since midnight for an "HH:MM" start time.
+function minutesOf(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number);
+  return (hours as number) * 60 + (minutes as number);
+}
+
+// Whether two timed sessions on the same day overlap (half-open intervals). Only
+// called for repeats and their bases, which always have a start time and a length.
+function overlaps(a: SessionTime, b: SessionTime): boolean {
+  const aStart = minutesOf(a.time as string);
+  const bStart = minutesOf(b.time as string);
+  return (
+    a.date === b.date && aStart < bStart + Number(b.length) && bStart < aStart + Number(a.length)
+  );
+}
+
+// Turn a generated session into a true repeat of its base, in place (see the file
+// header for the rule).
+function applyRepeat(session: GeneratedSession, base: GeneratedSession, index: number): void {
+  const suffix = index % 8 === 0 ? '-R' : '-R2';
+  session.abbreviation = `${base.abbreviation}${suffix}`;
+  session.title = base.title;
+  session.abstract = base.abstract;
+  session.type = base.type;
+  session.level = base.level;
+  session.services = [...base.services];
+  session.speakers = base.speakers.map((speaker) => ({ ...speaker }));
+  session.isReservable = !session.isAllDaySession && !NON_RESERVABLE_TYPES.has(base.type);
+  if (!session.isReservable) {
+    session.seatAvailability = 'walkUp';
+  } else if (session.seatAvailability === 'walkUp') {
+    session.seatAvailability = RESERVABLE_SEAT_BANDS[
+      index % RESERVABLE_SEAT_BANDS.length
+    ] as string;
+  }
+  const own = session.sessionTime as SessionTime;
+  if (overlaps(own, base.sessionTime as SessionTime)) {
+    const next = EVENT_DAYS.indexOf(own.date as (typeof EVENT_DAYS)[number]) + 1;
+    own.date = EVENT_DAYS[next % EVENT_DAYS.length] as string;
+  }
 }
 
 /**
@@ -214,6 +273,10 @@ export function generateCatalog({
 }: { seed?: number; count?: number } = {}): GeneratedSession[] {
   const rng = mulberry32(seed);
   const sessions: GeneratedSession[] = [];
+  // The nearest earlier non-repeat session, the base of the next repeat.
+  let base: GeneratedSession | undefined;
+  // The codes already taken by non-repeat sessions, so every one is unique.
+  const usedCodes = new Set<string>();
 
   // Reserve the last two ids for the keynotes so the total stays at count.
   const KEYNOTE_COUNT = 2;
@@ -225,11 +288,20 @@ export function generateCatalog({
     const sessionId = `syn-${seq}`;
 
     const prefix = pick(rng, CODE_PREFIXES);
-    const codeNumber = 100 + Math.floor(rng() * 400);
+    let codeNumber = 100 + Math.floor(rng() * 400);
+    // A repeat takes its base's code, so only non-repeats need a unique code. On a
+    // collision the number is bumped by one (wrapping inside 100 to 499), with no
+    // extra PRNG draw, until the code is free.
 
     // Every fourth session is a repeat, carrying the -R suffix (sometimes -R<digit>).
     const isRepeat = i % 4 === 0 && i > 0;
     const repeatSuffix = isRepeat ? (i % 8 === 0 ? '-R' : '-R2') : '';
+    if (!isRepeat) {
+      while (usedCodes.has(`${prefix}${codeNumber}`)) {
+        codeNumber = 100 + ((codeNumber - 100 + 1) % 400);
+      }
+      usedCodes.add(`${prefix}${codeNumber}`);
+    }
     const abbreviation = `${prefix}${codeNumber}${repeatSuffix}`;
 
     const title = `${pick(rng, TITLE_TOPICS)}: ${pick(rng, TITLE_SHAPES)}`;
@@ -290,6 +362,12 @@ export function generateCatalog({
         length,
         timezone: 'America/Los_Angeles',
       };
+    }
+
+    if (isRepeat) {
+      applyRepeat(session, base as GeneratedSession, i);
+    } else {
+      base = session;
     }
 
     sessions.push(session);

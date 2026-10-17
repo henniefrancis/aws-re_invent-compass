@@ -3,14 +3,14 @@
   "body": {
     "items": [
       {
-        "abbreviation": "DEV217-R2",
-        "abstract": "A made-up abstract for Container platforms: A builder guide. Synthetic data for testing only.",
+        "abbreviation": "BWP388-R2",
+        "abstract": "A made-up abstract for Zero-downtime deploys: A builder guide. Synthetic data for testing only.",
         "isAllDaySession": false,
         "isReservable": true,
         "level": "300",
         "room": "Room 123",
         "seatAvailability": "unavailable",
-        "services": ["analytics"],
+        "services": ["machine-learning"],
         "sessionId": "syn-101",
         "sessionTime": {
           "date": "2026-12-03",
@@ -20,10 +20,10 @@
         },
         "speakers": [
           {
-            "name": "Gray Chen"
+            "name": "Blair Diaz"
           }
         ],
-        "title": "Container platforms: A builder guide",
+        "title": "Zero-downtime deploys: A builder guide",
         "type": "Builders session",
         "venue": "Caesars Forum"
       },
@@ -103,14 +103,14 @@
         "venue": "Wynn"
       },
       {
-        "abbreviation": "DAT401-R",
-        "abstract": "A made-up abstract for Event-driven systems: Lessons from the field. Synthetic data for testing only.",
+        "abbreviation": "DEV358-R",
+        "abstract": "A made-up abstract for Serverless APIs: Deep dive. Synthetic data for testing only.",
         "isAllDaySession": false,
-        "isReservable": true,
-        "level": "100",
+        "isReservable": false,
+        "level": "300",
         "room": "Room 111",
-        "seatAvailability": "unavailable",
-        "services": ["security"],
+        "seatAvailability": "walkUp",
+        "services": ["networking"],
         "sessionId": "syn-105",
         "sessionTime": {
           "date": "2026-11-30",
@@ -120,11 +120,11 @@
         },
         "speakers": [
           {
-            "name": "Finley Gupta"
+            "name": "Casey Farrell"
           }
         ],
-        "title": "Event-driven systems: Lessons from the field",
-        "type": "Chalk talk",
+        "title": "Serverless APIs: Deep dive",
+        "type": "Breakout session",
         "venue": "Mandalay Bay"
       },
       {
@@ -203,14 +203,14 @@
         "venue": "Wynn"
       },
       {
-        "abbreviation": "STG185-R2",
-        "abstract": "A made-up abstract for Zero-downtime deploys: Patterns and practice. Synthetic data for testing only.",
+        "abbreviation": "ANT269-R2",
+        "abstract": "A made-up abstract for Zero-downtime deploys: Deep dive. Synthetic data for testing only.",
         "isAllDaySession": false,
         "isReservable": false,
         "level": "100",
         "room": "Room 132",
         "seatAvailability": "walkUp",
-        "services": ["containers"],
+        "services": ["analytics"],
         "sessionId": "syn-109",
         "sessionTime": {
           "date": "2026-12-03",
@@ -220,10 +220,10 @@
         },
         "speakers": [
           {
-            "name": "Alex Adams"
+            "name": "Emery Gupta"
           }
         ],
-        "title": "Zero-downtime deploys: Patterns and practice",
+        "title": "Zero-downtime deploys: Deep dive",
         "type": "Breakout session",
         "venue": "MGM Grand"
       },
@@ -303,14 +303,14 @@
         "venue": "Wynn"
       },
       {
-        "abbreviation": "STG464-R",
-        "abstract": "A made-up abstract for Edge delivery: Hands on workshop. Synthetic data for testing only.",
+        "abbreviation": "CMP236-R",
+        "abstract": "A made-up abstract for Edge delivery: From zero to production. Synthetic data for testing only.",
         "isAllDaySession": false,
         "isReservable": true,
-        "level": "100",
+        "level": "200",
         "room": "Room 100",
         "seatAvailability": "veryLimited",
-        "services": ["storage"],
+        "services": ["security"],
         "sessionId": "syn-113",
         "sessionTime": {
           "date": "2026-12-02",
@@ -320,11 +320,11 @@
         },
         "speakers": [
           {
-            "name": "Alex Eriksson"
+            "name": "Emery Chen"
           }
         ],
-        "title": "Edge delivery: Hands on workshop",
-        "type": "Builders session",
+        "title": "Edge delivery: From zero to production",
+        "type": "Chalk talk",
         "venue": "The Venetian"
       },
       {
@@ -403,14 +403,14 @@
         "venue": "Mandalay Bay"
       },
       {
-        "abbreviation": "CMP327-R2",
-        "abstract": "A made-up abstract for Cost optimisation: Patterns and practice. Synthetic data for testing only.",
+        "abbreviation": "AIM407-R2",
+        "abstract": "A made-up abstract for Container platforms: Patterns and practice. Synthetic data for testing only.",
         "isAllDaySession": false,
         "isReservable": true,
-        "level": "200",
+        "level": "300",
         "room": "Room 136",
         "seatAvailability": "unavailable",
-        "services": ["storage"],
+        "services": ["compute"],
         "sessionId": "syn-117",
         "sessionTime": {
           "date": "2026-12-04",
@@ -420,11 +420,11 @@
         },
         "speakers": [
           {
-            "name": "Devon Eriksson"
+            "name": "Harper Gupta"
           }
         ],
-        "title": "Cost optimisation: Patterns and practice",
-        "type": "Chalk talk",
+        "title": "Container platforms: Patterns and practice",
+        "type": "Workshop",
         "venue": "Caesars Forum"
       },
       {

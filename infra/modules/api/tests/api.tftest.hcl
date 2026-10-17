@@ -210,7 +210,7 @@ run "lambda_functions" {
   }
 
   assert {
-    condition     = aws_lambda_function.api.timeout == 10 && aws_lambda_function.passkit.timeout == 5
+    condition     = aws_lambda_function.api.timeout == 15 && aws_lambda_function.passkit.timeout == 5
     error_message = "The api timeout must be 10 s and the passkit timeout 5 s."
   }
 

@@ -9,8 +9,8 @@
 //   - Simulated mode must be unmistakable: the transport is marked `simulated: true`,
 //     one "SIMULATED MODE: no real data" warning is logged here, and every object
 //     result is tagged `simulated: true` by the operation path.
-//   - Simulated mode is refused when NODE_ENV=production unless COMPASS_ALLOW_SIMULATED
-//     is exactly 1.
+//   - Simulated mode is refused when NODE_ENV is production (in any letter case) unless
+//     COMPASS_ALLOW_SIMULATED is exactly 1.
 //   - It fails closed: if the simulated fixtures cannot be loaded (a bundled build that
 //     does not ship them, a moved directory) createClientContext throws
 //     SimulatedFixturesMissingError. It never falls back to the live API.
@@ -100,7 +100,10 @@ export interface ClientContextDeps {
 export function createClientContext(env: EnvLike, deps: ClientContextDeps): ClientContext {
   const simulated = env.COMPASS_MODE === SIMULATED_MODE;
   if (simulated) {
-    if (env.NODE_ENV === 'production' && env.COMPASS_ALLOW_SIMULATED !== '1') {
+    if (
+      env.NODE_ENV?.trim().toLowerCase() === 'production' &&
+      env.COMPASS_ALLOW_SIMULATED !== '1'
+    ) {
       throw new SimulatedModeRefusedError();
     }
     deps.logger.warn(SIMULATED_MODE_WARNING);
