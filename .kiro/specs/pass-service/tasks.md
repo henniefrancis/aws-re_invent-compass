@@ -235,35 +235,35 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 13.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 14. Implement the Google Wallet client
-  - [ ] 14.1 Implement the generic object builder
+- [x] 14. Implement the Google Wallet client
+  - [x] 14.1 Implement the generic object builder
     - Create `src/google/google-object.ts` (`buildGenericObject`: `id` `<issuerId>.<serial>`, `classId` `<issuerId>.<suffix>`, `state`, `cardTitle`, `header`, `subheader`, `textModulesData` with gate, boarding closes, start and the disclaimer, `hexBackgroundColor`, `validTimeInterval.end.date` equal to `endsAt`, no `barcode`, no `logo`)
     - _Requirements: 14.1_
 
-  - [ ] 14.2 Implement the REST client and the token source
+  - [x] 14.2 Implement the REST client and the token source
     - Create `src/google/google-wallet-client.ts` (`insert` with `POST https://walletobjects.googleapis.com/walletobjects/v1/genericObject` and a 409 fallback to one patch, `patch` with `PATCH .../genericObject/{resourceId}`, timeouts, `'failed'` on any other non-2xx or network error) over an injected `fetch`, and `src/google/token-source.ts` (`createGoogleTokenSource` with `google-auth-library` `JWT({email, key, scopes: ['https://www.googleapis.com/auth/wallet_object.issuer']})`); the client never logs content, ids, keys or tokens
     - _Requirements: 14.2, 14.3, 14.4, 14.7, 14.8_
 
-  - [ ] 14.3 Implement the save JWT
+  - [x] 14.3 Implement the save JWT
     - Create `src/google/save-jwt.ts` (`signSaveJwt` with `node:crypto` RS256; claims `iss`, `aud: 'google'`, `typ: 'savetowallet'`, `iat`, `origins: []`, `payload.genericObjects` of `{id, classId}`; link `https://pay.google.com/gp/v/save/<jwt>`; oversize flag above 1800 characters)
     - _Requirements: 14.5, 14.6_
 
-  - [ ] 14.4 Write property test for the object mapping
+  - [x] 14.4 Write property test for the object mapping
     - **Property 21: Google objects follow the fixed mapping**
     - **Validates: Requirements 14.1**
 
-  - [ ] 14.5 Write property test for the REST calls
+  - [x] 14.5 Write property test for the REST calls
     - **Property 22: Google REST calls use the documented endpoints**
     - **Validates: Requirements 14.2, 14.3, 14.4**
 
-  - [ ] 14.6 Write property test for the save JWT
+  - [x] 14.6 Write property test for the save JWT
     - **Property 23: Save links carry a verifiable RS256 JWT**
     - **Validates: Requirements 14.5, 14.6**
 
-  - [ ] 14.7 Commit
+  - [x] 14.7 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 15. Checkpoint - Ensure all tests pass
+- [x] 15. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 16. Implement the pass lifecycle and the attendee pass handlers
