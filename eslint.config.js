@@ -39,6 +39,7 @@ export default tseslint.config(
       '**/coverage/**',
       '**/generated/**',
       '**/*.generated.ts',
+      'fixtures/sample-repo/**',
     ],
   },
   ...tseslint.configs.recommendedTypeChecked,
