@@ -24,22 +24,22 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 
 ## Tasks
 
-- [ ] 1. Establish the server's shared seams and test fakes
-  - [ ] 1.1 Define the ports and the runtime
+- [x] 1. Establish the server's shared seams and test fakes
+  - [x] 1.1 Define the ports and the runtime
     - Create `packages/mcp-server/src/ports/` with `runtime.ts` (`Runtime`), `events-port.ts` (`EventsPort`, `CatalogView`), `rules-port.ts` (`RulesPort`, `ConnectionLine`, `EnergyLine`), `passes-port.ts` (`PassesPort`), `clock.ts` (`Clock`), `logger.ts` (`Logger` interface) and `fs-ports.ts`, exactly as in design Components 6 and 10, importing shared types from `@compass/contracts` only
     - Add `src/node-types.d.ts` with a triple-slash reference to the Node types if the package tsconfig does not load them (as S4 recorded)
     - _Requirements: 23.1, 23.4_
-  - [ ] 1.2 Implement the stderr logger and the configuration module
+  - [x] 1.2 Implement the stderr logger and the configuration module
     - Create `src/logging/stderr-logger.ts`: writes only to an injected stderr stream, never stdout, and passes every line through a redaction function (a local implementation now; task 26 swaps in S1's redacting logger and S4 `redact`)
     - Create `src/config/runtime-config.ts` reading `COMPASS_MODE` and `COMPASS_API_URL`, and `src/config/compass-api.ts` holding the single live base URL constant (placeholder until the integrator sets it)
     - _Requirements: 8.6, 17.2, 22.1_
-  - [ ] 1.3 Write the test fakes and the network guard
+  - [x] 1.3 Write the test fakes and the network guard
     - Create `packages/mcp-server/test/support/` with recording fakes for every port (each records calls and can be scripted to return results or throw typed errors), a fake catalog builder from `SessionWire`-shaped sessions drawn from `fixtures/synthetic/catalog.json` (read-only), a fixed clock, and a global network guard that fails any `fetch` or socket use
     - _Requirements: 23.1, 25.7_
-  - [ ] 1.4 Write unit tests for the logger and configuration
+  - [x] 1.4 Write unit tests for the logger and configuration
     - Logger never writes to stdout and redacts token-shaped, email-shaped and URL values; configuration reads the mode and URL override
     - _Requirements: 8.6, 17.2_
-  - [ ] 1.5 Commit
+  - [x] 1.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Include `.kiro/specs/compass-power/` in this first commit. Verify every edit landed. Never push.
 
 - [ ] 2. Build scanner discovery: read-only file access, gitignore and the walker

@@ -632,9 +632,7 @@ interface PassesPort {
     itinerary: readonly Commitment[],
   ): Promise<{ sessionId: string; serialNumber: string }[]>;
   issuedRecord(): Promise<{ sessionCode: string; serialNumber: string }[]>;
-  handoff(
-    serials: string[],
-  ): Promise<{
+  handoff(serials: string[]): Promise<{
     boardUrl: string;
     expiresAt: string;
     terminalQr: string;
@@ -1468,3 +1466,12 @@ Each item records the option chosen now (the build plan's preference where it ha
 11. **Packaging the sample repo and venue data (integrator).** The npm package must carry `data/venues.json` and `fixtures/sample-repo/` for the server and `demo`. Chosen: a build step copies both into `packages/mcp-server/dist/`; the integrator adds it (package.json is integrator-owned).
 12. **`repository` and `homepage` in `plugin.json` (integrator).** The public repository URL is not recorded in the files read. Chosen: omit both until the integrator supplies the URL.
 13. **Lint and typecheck scope for `fixtures/sample-repo` (integrator).** Its TypeScript files import `aws-cdk-lib` and `@aws-sdk/*`, which are not installed. Chosen: ask the integrator to exclude `fixtures/sample-repo/**` from ESLint and `tsc` (Prettier may still format it).
+
+## Deviations recorded during the build
+
+Each item below changes or refines the design above. It was made while building and is recorded in the same commit as the code.
+
+1. **Port-level error taxonomy (task 1).** S1, S2 and S4 error classes cannot be imported before they merge, so the seams carry one `CompassError` class (`ports/errors.ts`) with a closed set of codes (`NotSignedIn`, `CatalogMissing`, `RateLimited` with `retryAfterSeconds`, `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`, `BadRequest`, `Validation`, `Server`, `UnexpectedResponse`, `EventWindow`, `PassError` with a redacted `summary`, plus the local codes in the Error Handling table). Adapters (task 26) map S1 and S4 errors onto it. The class carries no upstream free text.
+2. **Seam types made concrete (task 1).** `ConfirmedWriteResult<T>` is `{ kind: 'confirmed'; result; schedule } | { kind: 'unconfirmed'; result }` and void writes use `null` as the result. `ClashSummary`, `LayoverSummary`, `RebookOption`, `SwapPlan`, `ConnectionLine` and `EnergyLine` are defined in `ports/rules-port.ts` as plain-English records; the S2 adapter maps onto them.
+3. **Interfaces that later tasks implement are declared early (task 1).** `ScanFs` (`core/src/scanner/scan-fs.ts`), `SpecFs` (`core/src/spec/spec-fs.ts`) and `ScheduleSnapshot` with `SnapshotStore` (`state/schedule-snapshot.ts`) exist from task 1 because the `Runtime` types against them. Their implementations arrive in tasks 2.1, 9.2 and 11.5.
+4. **Logger sink (task 1).** `createStderrLogger` takes a `{ write(chunk: string) }` sink rather than a `Writable`, so tests capture lines without a stream; `process.stderr` satisfies it.

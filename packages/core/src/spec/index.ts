@@ -1,4 +1,3 @@
-// @compass/core/spec entry point (foundation-contracts, S0).
-// Owned by S3: week spec generator.
-// Day-1 stub only, kept empty so the solution compiles.
-export {};
+// @compass/core/spec entry point (S3): the week planner, the week spec renderer and the
+// spec writer. The public surface is exported by name; there is no barrel of barrels.
+export type { SpecFs } from './spec-fs.js';

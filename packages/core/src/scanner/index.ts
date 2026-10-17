@@ -1,4 +1,3 @@
-// @compass/core/scanner entry point (foundation-contracts, S0).
-// Owned by S3: repo to services (terraform, cdk-ts, sdk-js-v3, boto3).
-// Day-1 stub only, kept empty so the solution compiles.
-export {};
+// @compass/core/scanner entry point (S3): repo to services (terraform, cdk-ts, sdk-js-v3, boto3).
+// The public surface is exported by name; there is no barrel of barrels.
+export type { ScanFs, ScanStat } from './scan-fs.js';
