@@ -12,14 +12,15 @@ import { executeOperation } from './execute-operation.js';
 import { eventPath } from './event-path.js';
 import { assertBulkInput } from './bulk-input.js';
 import { validateBody } from './validate.js';
-import { BulkWriteResultSchema, type BulkWriteResult } from './response-wrappers.js';
+import { BulkWriteResultSchema } from './response-wrappers.js';
+import { annotateBulkResult, type AnnotatedBulkWriteResult } from './bulk-failure-codes.js';
 import type { ClientContext } from './transport.js';
 
 /** Favorite 1 to 10 distinct sessions. The result reports per session. */
 export function associateFavorites(
   ctx: ClientContext,
   sessionIds: readonly string[],
-): Promise<BulkWriteResult> {
+): Promise<AnnotatedBulkWriteResult> {
   assertBulkInput('AssociateFavorites', sessionIds);
   return executeOperation(
     ctx,
@@ -30,6 +31,7 @@ export function associateFavorites(
       body: { sessionIds: [...sessionIds] },
     },
     { units: sessionIds.length },
-    (response) => validateBody('AssociateFavorites', BulkWriteResultSchema, response.body),
+    (response) =>
+      annotateBulkResult(validateBody('AssociateFavorites', BulkWriteResultSchema, response.body)),
   );
 }

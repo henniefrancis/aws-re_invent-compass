@@ -172,7 +172,7 @@ Scope boundary: this stream does not build the guardrails engine (S2 rules), the
 3. IF a ReserveSessions or AssociateFavorites request is built with two or more equal session ids, THEN THE Events_Client SHALL return a typed validation error before sending the request and SHALL NOT send the request.
 4. WHEN the Events_Client returns a validated `BulkResult` for a ReserveSessions or AssociateFavorites response, THE Events_Client SHALL read `result.successful` and `result.failed` from that validated `BulkResult` and SHALL return the `successful` session ids and the `failed` per-session results, including the case where `successful` or `failed` is empty.
 5. WHEN the events-client stream compiles, THE events-client build SHALL check the known `BulkFailureCode` list maintained in `core/src/api` against the generated `EventsApi` `BulkFailureCode` type at compile time.
-6. IF a per-session failure in a validated `BulkResult` carries a code that is not one of the known `BulkFailureCode` values, THEN THE Events_Client SHALL classify that failure as an Unrecognised_Refusal, SHALL report it as a refusal and SHALL NOT report it as a success or as a safe retry.
+6. IF a per-session failure in a validated `BulkResult` carries a code that is not one of the known `BulkFailureCode` values, THEN THE Events_Client SHALL classify that failure as an Unrecognised_Refusal, SHALL report it as a refusal and SHALL NOT report it as a success or as a safe retry. THE Events_Client SHALL annotate each failed entry it returns with refusal `known` or `unrecognised` according to that classification.
 
 ### Requirement 11: Confirmed-write helper
 

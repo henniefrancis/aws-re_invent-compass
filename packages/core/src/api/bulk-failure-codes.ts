@@ -61,3 +61,30 @@ const KNOWN_SET = new Set<string>(KNOWN_BULK_FAILURE_CODES);
 export function classifyFailure(failure: BulkFailure): FailureClassification {
   return KNOWN_SET.has(failure.code) ? 'known' : 'unrecognised-refusal';
 }
+
+/** A per-session failure annotated with how the client classifies its code. */
+export type AnnotatedBulkFailure = BulkFailure & { refusal: 'known' | 'unrecognised' };
+
+/** The bulk write result with every failed entry annotated (QA M3). */
+export interface AnnotatedBulkWriteResult {
+  result: { successful: string[]; failed: AnnotatedBulkFailure[] };
+}
+
+/**
+ * Annotate each failed entry with `refusal: 'known'` or `'unrecognised'`, so a caller
+ * can show an unrecognised code as a plain refusal without re-deriving it. An
+ * unrecognised code is never a success and never a safe retry.
+ */
+export function annotateBulkResult(wire: {
+  result: { successful: string[]; failed: BulkFailure[] };
+}): AnnotatedBulkWriteResult {
+  return {
+    result: {
+      successful: wire.result.successful,
+      failed: wire.result.failed.map((failure) => ({
+        ...failure,
+        refusal: classifyFailure(failure) === 'known' ? 'known' : 'unrecognised',
+      })),
+    },
+  };
+}

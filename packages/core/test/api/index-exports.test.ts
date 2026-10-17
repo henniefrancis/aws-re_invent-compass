@@ -54,6 +54,7 @@ const SUPPORT_EXPORTS = [
   'assertBulkInput',
   'assertNoBody',
   'classifyFailure',
+  'annotateBulkResult',
   'confirmedWrite',
   'consoleSink',
   'createHttpTransport',

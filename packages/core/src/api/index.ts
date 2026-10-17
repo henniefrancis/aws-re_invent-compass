@@ -49,6 +49,9 @@ export { assertBulkInput, MIN_BULK_IDS, MAX_BULK_IDS } from './bulk-input.js';
 export {
   KNOWN_BULK_FAILURE_CODES,
   classifyFailure,
+  annotateBulkResult,
+  type AnnotatedBulkFailure,
+  type AnnotatedBulkWriteResult,
   type KnownBulkFailureCode,
   type FailureClassification,
 } from './bulk-failure-codes.js';

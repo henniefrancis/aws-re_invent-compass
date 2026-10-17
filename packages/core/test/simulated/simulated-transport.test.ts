@@ -461,14 +461,19 @@ describe('Feature: events-client, Property 38: Simulated bulk results are derive
   test('named cases: sessionFull, scheduleConflict with conflictsWith, alreadyScheduled', async () => {
     const { ctx } = simRig({ fullSessionIds: [fullId] });
     expect((await reserveSessions(ctx, [fullId])).result.failed).toEqual([
-      { sessionId: fullId, code: 'sessionFull' },
+      { sessionId: fullId, code: 'sessionFull', refusal: 'known' },
     ]);
     await reserveSessions(ctx, [clashA.sessionId]);
     expect((await reserveSessions(ctx, [clashB.sessionId])).result.failed).toEqual([
-      { sessionId: clashB.sessionId, code: 'scheduleConflict', conflictsWith: [clashA.sessionId] },
+      {
+        sessionId: clashB.sessionId,
+        code: 'scheduleConflict',
+        conflictsWith: [clashA.sessionId],
+        refusal: 'known',
+      },
     ]);
     expect((await reserveSessions(ctx, [clashA.sessionId])).result.failed).toEqual([
-      { sessionId: clashA.sessionId, code: 'alreadyScheduled' },
+      { sessionId: clashA.sessionId, code: 'alreadyScheduled', refusal: 'known' },
     ]);
   });
 
@@ -484,8 +489,8 @@ describe('Feature: events-client, Property 38: Simulated bulk results are derive
     await associateFavorites(ctx, [clashA.sessionId]);
     const { result } = await associateFavorites(ctx, [clashA.sessionId, 'unknown-id']);
     expect(result.failed).toEqual([
-      { sessionId: clashA.sessionId, code: 'alreadyFavorited' },
-      { sessionId: 'unknown-id', code: 'other' },
+      { sessionId: clashA.sessionId, code: 'alreadyFavorited', refusal: 'known' },
+      { sessionId: 'unknown-id', code: 'other', refusal: 'known' },
     ]);
   });
 
@@ -592,7 +597,7 @@ describe('events-client, S3 change request: the demo catalog and clock', () => {
     expect((await reserveSessions(before.ctx, ['syn-096'])).result.successful).toEqual(['syn-096']);
     const after = simRig({ now: () => Date.parse('2026-12-04T10:00:00-08:00') });
     expect((await reserveSessions(after.ctx, ['syn-096'])).result.failed).toEqual([
-      { sessionId: 'syn-096', code: 'timePassed' },
+      { sessionId: 'syn-096', code: 'timePassed', refusal: 'known' },
     ]);
     const noClock = simRig();
     expect((await reserveSessions(noClock.ctx, ['syn-096'])).result.successful).toEqual([

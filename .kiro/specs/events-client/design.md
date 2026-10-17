@@ -270,6 +270,8 @@ function signOut(store: TokenStore, deps: SignOutDeps): Promise<SignOutResult>; 
 
 **QA M1 (wrong-state callbacks, ruling).** The loopback filter stays: a callback with a missing or wrong state is answered 400 and does not use up the slot. After `MAX_WRONG_STATE_CALLBACKS` (3) such callbacks (only requests that already passed the method, path and Host checks are counted) the attempt is rejected with `StateMismatchError`, the response is flushed and all listeners shut down; later requests are 404. Requirement 1.13 is amended to match, and the behaviour is tested through the fake factory and through a real 127.0.0.1 socket.
 
+**QA M3 (refusal annotation).** `reserveSessions` and `associateFavorites` now return `AnnotatedBulkWriteResult`: the validated `{ result: { successful, failed } }` with every failed entry also carrying `refusal: 'known' | 'unrecognised'` (from `classifyFailure`; `annotateBulkResult` does the mapping and is exported). The contract wire schema is unchanged (the annotation is added after validation), an unrecognised code is still a refusal, never a success and never a safe retry, and `conflictsWith` is preserved.
+
 The access token is attached to Events API requests only. The ID token is never attached to Events API requests. No token value is included in any thrown error or logged line; all logging goes through a redacting logger (Component 7).
 
 ### Component 2: Events_Client operations (`core/src/api`)

@@ -320,7 +320,12 @@ describe('Feature: events-client, Property 19: Bulk results pass through success
           const h = createHarness({ responses: [response(200, { result: wire })] });
           const got = await reserveSessions(h.ctx, successful.length > 0 ? successful : ['x']);
           expect(got.result.successful).toEqual(successful);
-          expect(got.result.failed).toEqual(failed);
+          expect(got.result.failed).toEqual(
+            failed.map((f) => ({
+              ...f,
+              refusal: f.code === 'brandNewCode' ? 'unrecognised' : 'known',
+            })),
+          );
         },
       ),
       { numRuns: 100 },
@@ -410,5 +415,39 @@ describe('events-client, QA H1 (Requirement 12.9): every 429 blocks the next cal
     await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(RateLimitedError);
     await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(QuotaExceededError);
     expect(h.sent).toHaveLength(2);
+  });
+});
+
+describe('events-client, QA M3: failed entries are annotated with how the code was classified', () => {
+  const failed = [
+    { sessionId: 'a', code: 'sessionFull' },
+    { sessionId: 'b', code: 'scheduleConflict', conflictsWith: ['x'] },
+    { sessionId: 'c', code: 'brandNewRefusalCode' },
+    { sessionId: 'd', code: 'other' },
+  ];
+
+  test('reserveSessions marks known codes known and any other code unrecognised, never as success', async () => {
+    const h = createHarness({
+      responses: [response(200, { result: { successful: ['e'], failed } })],
+    });
+    const { result } = await reserveSessions(h.ctx, ['a', 'b', 'c', 'd', 'e']);
+    expect(result.successful).toEqual(['e']);
+    expect(result.failed.map((f) => [f.sessionId, f.refusal])).toEqual([
+      ['a', 'known'],
+      ['b', 'known'],
+      ['c', 'unrecognised'],
+      ['d', 'known'],
+    ]);
+    expect(result.failed[1]?.conflictsWith).toEqual(['x']);
+  });
+
+  test('associateFavorites annotates the same way', async () => {
+    const h = createHarness({
+      responses: [
+        response(200, { result: { successful: [], failed: [{ sessionId: 'z', code: 'weird' }] } }),
+      ],
+    });
+    const { result } = await associateFavorites(h.ctx, ['z']);
+    expect(result.failed).toEqual([{ sessionId: 'z', code: 'weird', refusal: 'unrecognised' }]);
   });
 });
