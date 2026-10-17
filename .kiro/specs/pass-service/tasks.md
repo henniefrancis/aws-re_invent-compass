@@ -306,36 +306,36 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 16.10 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 17. Implement the hand-off and the calendar
-  - [ ] 17.1 Implement hand-off creation
+- [x] 17. Implement the hand-off and the calendar
+  - [x] 17.1 Implement hand-off creation
     - Create `src/services/handoff-service.ts` with `create` (every serial live, active and owned, else one 400; `consume('handoffs', 1)`; `newHandoffId`; store only its SHA-256 with `expiresAtMs = now + 900000`; `boardUrl` from the base URL plus `/board#h=`) and `src/handlers/api/create-handoff.ts`; register the route
     - _Requirements: 6.3, 15.1, 15.2, 15.3, 15.4, 19.4_
 
-  - [ ] 17.2 Write property test for hand-off creation
+  - [x] 17.2 Write property test for hand-off creation
     - **Property 24: Hand-off creation stores only a hash and a 15-minute expiry**
     - **Validates: Requirements 15.1, 15.2, 19.3, 19.4**
 
-  - [ ] 17.3 Write property test for foreign serials
+  - [x] 17.3 Write property test for foreign serials
     - **Property 25: Hand-off creation refuses foreign serials uniformly**
     - **Validates: Requirements 15.3, 15.4**
 
-  - [ ] 17.4 Implement the view, the bundle download and the calendar
+  - [x] 17.4 Implement the view, the bundle download and the calendar
     - Add `view`, `appleBundle` and `calendar` with a shared `resolve(handoffId, now)` (pattern, hash lookup, expiry, active passes in stored order, one 404 for every failure); create `src/calendar/calendar-builder.ts` with `ical-generator` (UTC, `UID` equal to the serial, `SUMMARY`, `LOCATION`, `DESCRIPTION` with boarding closes and the disclaimer, a display alarm at boarding closes); return `calendarPath: null` and 404 `not_enabled` when the calendar is disabled; return `google: null` unless Google is included, enabled and at least one active pass has a Google object; create `src/handlers/api/get-handoff.ts`, `get-handoff-apple-bundle.ts` and `get-handoff-calendar.ts`; register the routes
     - _Requirements: 14.7, 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7, 19.2_
 
-  - [ ] 17.5 Write property test for the hand-off view
+  - [x] 17.5 Write property test for the hand-off view
     - **Property 26: The hand-off view lists exactly the active passes and their bundles**
     - **Validates: Requirements 14.7, 16.1, 16.2, 16.3, 16.4**
 
-  - [ ] 17.6 Write property test for hand-off expiry
+  - [x] 17.6 Write property test for hand-off expiry
     - **Property 27: Unknown and expired hand-offs look the same**
     - **Validates: Requirements 16.7, 19.2**
 
-  - [ ] 17.7 Write property test for the calendar
+  - [x] 17.7 Write property test for the calendar
     - **Property 28: The hand-off calendar is valid RFC 5545**
     - **Validates: Requirements 16.5, 16.6**
 
-  - [ ] 17.8 Commit
+  - [x] 17.8 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 18. Implement forget_me and health
