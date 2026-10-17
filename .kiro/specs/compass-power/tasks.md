@@ -445,14 +445,14 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 26.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 27. Run the simulated end-to-end acceptance test
-  - [ ] 27.1 Write the full-flow acceptance test
+- [x] 27. Run the simulated end-to-end acceptance test
+  - [x] 27.1 Write the full-flow acceptance test
     - `packages/mcp-server/test/e2e/full-flow.test.ts` per the design Testing Strategy: in-memory MCP client, real modules, In_Process_Pass_Service, a deterministic helper choosing sessions A, A-R and B from the synthetic catalog; steps sign in, refresh, scan the temp sample copy, plan, reserve A, blocked clash on B with zero ReserveSessions, reserve A-R, cancel A as a completed swap, reserve B, issue for A-R and B, send to phone, cancel B, sync with B voided, forget me
     - _Requirements: 25.1, 25.7_
-  - [ ] 27.2 Write the demo acceptance test
+  - [x] 27.2 Write the demo acceptance test
     - Run `runCli(['demo', '--repo', <temp sample copy>])` with the real simulated runtime; assert exit 0 and the ten step headings in order
     - _Requirements: 18.2, 18.3, 25.2_
-  - [ ] 27.3 Commit
+  - [x] 27.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 28. Build the boto3 detector (cut-list item 3, last)
