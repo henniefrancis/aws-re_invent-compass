@@ -200,48 +200,48 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 10.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 11. Implement sign-in, refresh and sign-out
-  - [ ] 11.1 Implement the sign-in flow
+- [x] 11. Implement sign-in, refresh and sign-out
+  - [x] 11.1 Implement the sign-in flow
     - Create `src/auth/sign-in.ts` building the authorize request (endpoint, client id `7vmom55m1qstvq8i71ph127bfq`, scope `openid email events/access`, `code_challenge_method=S256`, `identity_provider=AWSBuilderID`, exact `http://localhost:<port>/callback`), returning the URL and using an injected browser opener, comparing returned `state`, exchanging the code at the token endpoint, storing all three tokens, storing no partial token on failure, and returning the memory-only notice when applicable
     - _Requirements: 1.7, 1.9, 1.10, 1.11, 1.12, 1.13, 1.14, 1.15, 1.16, 2.3_
 
-  - [ ] 11.2 Write property test for authorize request construction
+  - [x] 11.2 Write property test for authorize request construction
     - **Property 3: Authorize request is built correctly for any bound port**
     - **Validates: Requirements 1.9, 1.10, 1.11**
 
-  - [ ] 11.3 Write property test for state mismatch rejection
+  - [x] 11.3 Write property test for state mismatch rejection
     - **Property 4: State mismatch is rejected**
     - **Validates: Requirements 1.12, 1.13**
 
-  - [ ] 11.4 Write unit tests for token exchange failure and memory-only notice
+  - [x] 11.4 Write unit tests for token exchange failure and memory-only notice
     - No partial token stored on exchange failure; memory-only notice text returned when no keychain is available
     - _Requirements: 1.15, 1.16, 2.3_
 
-  - [ ] 11.5 Implement single-flight refresh
+  - [x] 11.5 Implement single-flight refresh
     - Create `src/auth/refresh.ts` with `refreshIfNeeded` and `refreshNow` single-flight on the current refresh token, refreshing within 300s of expiry (expiry from `expires_in`, no JWT decoded), sending the refresh token only to the token endpoint, replacing stored access/ID tokens on success, and clearing all tokens only on `invalid_grant`
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-  - [ ] 11.6 Write property test for the refresh window boundary
+  - [x] 11.6 Write property test for the refresh window boundary
     - **Property 8: Access token is refreshed exactly within 300 seconds of expiry**
     - **Validates: Requirements 3.1**
 
-  - [ ] 11.7 Write property test for invalid_grant clearing behaviour
+  - [x] 11.7 Write property test for invalid_grant clearing behaviour
     - **Property 9: Only an invalid_grant refresh clears all tokens**
     - **Validates: Requirements 3.4**
 
-  - [ ] 11.8 Write property test for single-flight refresh
+  - [x] 11.8 Write property test for single-flight refresh
     - **Property 10: Concurrent refreshes are single-flight**
     - **Validates: Requirements 3.5**
 
-  - [ ] 11.9 Implement sign-out
+  - [x] 11.9 Implement sign-out
     - Create `src/auth/sign-out.ts` revoking the refresh token at the revoke endpoint, then clearing all tokens and returning `https://idp.awsevents.com/oidc/logout`, clearing regardless of revoke failure or a 10-second timeout
     - _Requirements: 5.1, 5.2, 5.3_
 
-  - [ ] 11.10 Write property test for sign-out
+  - [x] 11.10 Write property test for sign-out
     - **Property 12: Sign-out always clears tokens and returns the logout URL**
     - **Validates: Requirements 5.1, 5.2, 5.3**
 
-  - [ ] 11.11 Commit
+  - [x] 11.11 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 12. Checkpoint - Ensure all tests pass

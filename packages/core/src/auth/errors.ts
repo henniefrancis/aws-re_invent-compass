@@ -52,3 +52,31 @@ export class NotSignedInError extends AuthError {
     super('NotSignedInError', 'Not signed in. Sign in to continue');
   }
 }
+
+/** The redirect state did not match the state generated for this attempt. */
+export class StateMismatchError extends AuthError {
+  constructor() {
+    super('StateMismatchError', 'Sign-in was rejected because the state value did not match');
+  }
+}
+
+/** The authorization code exchange failed or returned an unusable response. */
+export class SignInFailedError extends AuthError {
+  constructor() {
+    super('SignInFailedError', 'Sign-in failed during the token exchange');
+  }
+}
+
+/** The refresh token was rejected, so the attendee must sign in again. */
+export class SignInRequiredError extends AuthError {
+  constructor() {
+    super('SignInRequiredError', 'The session has ended. Sign in again to continue');
+  }
+}
+
+/** A refresh failed for a reason other than a rejected refresh token. */
+export class RefreshFailedError extends AuthError {
+  constructor() {
+    super('RefreshFailedError', 'The access token could not be refreshed');
+  }
+}
