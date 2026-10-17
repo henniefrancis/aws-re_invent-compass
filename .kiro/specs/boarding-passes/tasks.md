@@ -124,15 +124,15 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Pass_Sync diff and drive issue, update and void" -m "Pure four-case diff keyed on session code drives chunked issue, PUT update and void, self-heals on 404 and is idempotent on a matching run."`
 
-- [ ] 6. Implement the forgetMe orchestrator
+- [x] 6. Implement the forgetMe orchestrator
   - Implement `forgetMe(deps)` composing the `CompassClient`, `PassStore`, `FileSystem` and `AppDataResolver`.
   - Call `client.forgetMe()`; only on a 202 response delete the local record and remove `output/reinvent.ics` and `output/itinerary.html`; on any other status leave local files untouched.
   - Surface copy that states passes are voided and will expire, and never claims passes are deleted from the phone.
   - _Requirements: 2.7_
-  - [ ] 6.1 Write example tests for the orchestrator outcomes
+  - [x] 6.1 Write example tests for the orchestrator outcomes
     - On 202, assert the local record is deleted and both output files are removed; on any other status, assert local files are untouched; assert the copy states passes are voided and expire and never claims phone deletion.
     - _Requirements: 2.7_
-  - [ ] 6.2 Run this task's tests, then commit locally
+  - [x] 6.2 Run this task's tests, then commit locally
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add forgetMe orchestrator for local deletion on 202" -m "Composes client, store and filesystem; deletes the record and output files only on a 202 and keeps copy honest about wallet deletion."`
 

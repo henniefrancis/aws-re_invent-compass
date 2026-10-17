@@ -90,3 +90,7 @@ export type { PassStore, PassStoreDeps } from './pass-store.js';
 // Pass_Sync: the four-case diff and the sync driver.
 export { diffSchedule, syncPasses, MAX_ISSUE_CHUNK } from './pass-sync.js';
 export type { DiffCase, SyncPlanEntry, SyncResult, SyncDeps } from './pass-sync.js';
+
+// The forgetMe orchestrator.
+export { forgetMe } from './forget-me.js';
+export type { ForgetMeDeps, ForgetMeOutcome } from './forget-me.js';
