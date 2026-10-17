@@ -53,19 +53,19 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit the module and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 9.2_
 
-- [ ] 3. Implement the Secrets_Module (`infra/modules/secrets`)
-  - [ ] 3.1 Implement the three secret containers and the generated values
+- [x] 3. Implement the Secrets_Module (`infra/modules/secrets`)
+  - [x] 3.1 Implement the three secret containers and the generated values
     - Write `versions.tf`, `variables.tf` (`env`), `locals.tf`, `main.tf`, `outputs.tf`
     - Create `compass/<env>/apple-pass`, `compass/<env>/google-wallet`, `compass/<env>/app` containers, each with `lifecycle { prevent_destroy = true }`
     - Generate `random_password` for the pepper and the origin-verify value, each `length >= 32`, marked sensitive; write both into the `app` secret version only; create no Terraform-managed version for `apple-pass` or `google-wallet`, and apply `ignore_changes = [secret_string]` where a version resource exists so an out-of-band value is never overwritten
     - Expose outputs `app_secret_arn`, `apple_secret_arn`, `google_secret_arn`, and a `sensitive` `origin_verify_secret_value` for in-graph wiring only; declare no output of the pepper or origin-verify as a non-sensitive value
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 9.3, 17.1_
 
-  - [ ] 3.2 Write plan assertions for the Secrets_Module
+  - [x] 3.2 Write plan assertions for the Secrets_Module
     - Native test asserting three containers with the exact names, a `random_password` pepper and origin-verify each of length >= 32, no Terraform version on apple/google, and `prevent_destroy = true` on all three containers
     - _Requirements: 7.1, 7.2, 7.5, 9.3_
 
-  - [ ] 3.3 Run the offline checks and commit the Secrets_Module
+  - [x] 3.3 Run the offline checks and commit the Secrets_Module
     - Run `terraform fmt`, `terraform validate` (`init -backend=false`), `tflint`, `terraform test` (mock providers), and a Trivy config scan; fix any finding
     - Commit the module and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 9.3, 17.1_

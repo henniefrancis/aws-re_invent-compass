@@ -1,7 +1,9 @@
 # Plan-only assertions for the data module (Requirements 6.1 to 6.8, 9.2).
 # The aws provider is mocked, so nothing here reaches AWS.
 
-mock_provider "aws" {}
+mock_provider "aws" {
+  override_during = plan
+}
 
 variables {
   env = "dev"
