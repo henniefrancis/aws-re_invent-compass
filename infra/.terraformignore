@@ -1,0 +1,31 @@
+# Files excluded from the HCP Terraform upload (S6 infra).
+#
+# When this file exists it replaces the Terraform CLI defaults, so the defaults
+# are repeated here. Private values never travel with the upload: real backend
+# and variable files stay on the owner's machine, and workspace variables in HCP
+# carry the values instead.
+
+# Generated build output (Lambda zips written by scripts/release.sh)
+build/
+**/build/
+
+# Real private configuration (only the .example files are committed)
+cloud.auto.tfbackend
+**/cloud.auto.tfbackend
+terraform.tfvars
+**/terraform.tfvars
+*.tfvars.json
+
+# Local state and plan artefacts
+.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+
+# Version control metadata
+.git/
+.gitignore

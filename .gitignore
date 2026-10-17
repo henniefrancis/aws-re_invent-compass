@@ -20,6 +20,10 @@ tfplan
 .terraform/
 crash.log
 crash.*.log
+# Infra build output (Lambda zips from scripts/release.sh) and provider lock files
+# (generated per platform; the owner creates them with terraform providers lock)
+infra/build/
+.terraform.lock.hcl
 override.tf
 override.tf.json
 *_override.tf
