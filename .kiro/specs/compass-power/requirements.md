@@ -421,3 +421,7 @@ R2.2. **Safe reads.** The spec writer and the `.gitignore` offer SHALL read an e
 R2.3. **Packaging.** The published package SHALL be one self-contained bundle (the server and the scan worker) with only the native keyring as a dependency, SHALL carry the venue list, the sample repo and the simulated fixtures, SHALL look them up relative to the package, and SHALL pass a pack, unpack and run smoke test; the hooks and `mcp.json` SHALL pin the exact package version, and the README SHALL say that the npm name must be claimed before publishing.
 
 R2.4. **Power manifest.** The `power/` folder SHALL contain both a valid `plugin.json` and a `POWER.md` whose name, description, keywords and author equal those of `plugin.json`, so Kiro finds the power whichever manifest it reads.
+
+R2.5. **Confirmation means a ticked box.** WHERE the client supports Elicitation, a confirmation SHALL count as yes only when the accepted answer has `confirm` equal to true; anything else SHALL be no write.
+
+R2.6. **One write at a time.** THE Compass_Server SHALL run write tools one at a time, and each SHALL read the schedule again when its turn starts.

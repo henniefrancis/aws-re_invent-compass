@@ -8,7 +8,9 @@ import type { Runtime } from '../../src/ports/runtime.js';
 import type { SessionState } from '../../src/state/session-state.js';
 
 /** How the connected client answers elicitation. `undefined` means it does not support it. */
-export type ElicitMode = 'accept' | 'decline' | 'cancel' | undefined;
+/** `acceptUnticked`, `acceptEmpty` and `acceptText` accept the form but without a ticked box. */
+export type ElicitMode =
+  'accept' | 'decline' | 'cancel' | 'acceptUnticked' | 'acceptEmpty' | 'acceptText' | undefined;
 
 /** A connected in-memory client and server. */
 export interface Connection {
@@ -35,7 +37,18 @@ export async function connect(
     const action = options.elicit;
     client.setRequestHandler(ElicitRequestSchema, (request) => {
       questions.push(request.params.message);
-      return action === 'accept' ? { action, content: { confirm: true } } : { action };
+      switch (action) {
+        case 'accept':
+          return { action, content: { confirm: true } };
+        case 'acceptUnticked':
+          return { action: 'accept' as const, content: { confirm: false } };
+        case 'acceptEmpty':
+          return { action: 'accept' as const };
+        case 'acceptText':
+          return { action: 'accept' as const, content: { confirm: 'true' } };
+        default:
+          return { action };
+      }
     });
   }
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();

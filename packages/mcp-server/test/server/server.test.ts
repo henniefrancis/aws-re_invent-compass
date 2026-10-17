@@ -1,3 +1,4 @@
+import { ElicitRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { mcpTools } from '@compass/contracts';
 import type { McpToolName } from '@compass/contracts';
@@ -203,7 +204,10 @@ describe('elicitation', () => {
     vi.restoreAllMocks();
   });
 
-  async function runWith(elicit: 'accept' | 'decline' | 'cancel' | undefined) {
+  async function runWith(
+    elicit:
+      'accept' | 'decline' | 'cancel' | 'acceptUnticked' | 'acceptEmpty' | 'acceptText' | undefined,
+  ) {
     const seen: (ToolContext['elicit'] | 'none')[] = [];
     const answers: string[] = [];
     vi.spyOn(TOOL_SPECS.sign_in, 'handler').mockImplementation(async (_input, ctx) => {
@@ -226,6 +230,33 @@ describe('elicitation', () => {
       expect(answers).toEqual([mode]);
       expect(questions).toEqual(['Really do it?']);
     }
+  });
+
+  test('an accepted form without a ticked box is a decline (QA M1, security L2)', async () => {
+    for (const mode of ['acceptUnticked', 'acceptEmpty'] as const) {
+      const { answers } = await runWith(mode);
+      expect(answers, mode).toEqual(['decline']);
+    }
+    // An answer that breaks the form (confirm as text) is rejected by the SDK and is not a yes.
+    expect((await runWith('acceptText')).answers).toEqual(['cancel']);
+  });
+
+  test('the form asks for confirm and marks it required', async () => {
+    const schemas: unknown[] = [];
+    vi.spyOn(TOOL_SPECS.sign_in, 'handler').mockImplementation(async (_input, ctx) => {
+      await ctx.elicit?.({ message: 'Really?' });
+      return { ok: true, structured: { signedIn: true }, text: 'done' };
+    });
+    const connection = await connect(createFakeRuntime().runtime, { elicit: 'accept' });
+    connection.client.setRequestHandler(ElicitRequestSchema, (request) => {
+      schemas.push(request.params.requestedSchema);
+      return { action: 'accept', content: { confirm: true } };
+    });
+    await connection.call('sign_in');
+    await connection.close();
+    expect(schemas).toHaveLength(1);
+    expect((schemas[0] as { required: string[] }).required).toEqual(['confirm']);
+    expect(Object.keys((schemas[0] as { properties: object }).properties)).toEqual(['confirm']);
   });
 
   test('a client without elicitation gets no elicit function', async () => {

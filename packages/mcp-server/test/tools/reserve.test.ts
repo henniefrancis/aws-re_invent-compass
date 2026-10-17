@@ -235,3 +235,21 @@ describe('reserve_with_guardrails confirmation (CTO review M4)', () => {
     expect(asked).toEqual([]);
   });
 });
+
+describe('an elicited answer counts as yes only with a ticked box (QA M1)', () => {
+  test('accepting the form without confirm=true books nothing', async () => {
+    for (const mode of ['acceptUnticked', 'acceptEmpty', 'acceptText'] as const) {
+      const fake = createFakeRuntime({ catalog: syntheticCatalogView() });
+      const connection = await connect(fake.runtime, { elicit: mode });
+      const result = await connection.call('reserve_with_guardrails', { sessionIds: [TRIPLE.a] });
+      expect(textOf(result), mode).toContain('because you did not confirm');
+      expect(fake.events.writeCalls, mode).toEqual([]);
+      await connection.close();
+    }
+    const fake = createFakeRuntime({ catalog: syntheticCatalogView() });
+    const connection = await connect(fake.runtime, { elicit: 'accept' });
+    await connection.call('reserve_with_guardrails', { sessionIds: [TRIPLE.a] });
+    expect(fake.events.callsTo('reserve')).toHaveLength(1);
+    await connection.close();
+  });
+});
