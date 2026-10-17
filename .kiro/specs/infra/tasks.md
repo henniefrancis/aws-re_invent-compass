@@ -86,28 +86,28 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit the module and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 9.4_
 
-- [ ] 5. Implement the Edge_Module (`infra/modules/edge`)
-  - [ ] 5.1 Implement the CloudFront function, response headers policy, and distribution
+- [x] 5. Implement the Edge_Module (`infra/modules/edge`)
+  - [x] 5.1 Implement the CloudFront function, response headers policy, and distribution
     - Write `versions.tf`, `variables.tf` (`site_bucket_regional_domain_name`, `oac_id`, `api_stage_invoke_host`, `origin_verify_secret_value` sensitive, `kill_switch_enabled` default false), `locals.tf`, `main.tf`, `outputs.tf` (`distribution_arn`, `distribution_domain_name`)
     - Create one `aws_cloudfront_function` (viewer-request) that rewrites directory-style paths to `index.html`, and one `aws_cloudfront_response_headers_policy` setting CSP, HSTS, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, and `Permissions-Policy`
     - Create one `aws_cloudfront_distribution` with `default_root_object = "index.html"`, `lifecycle { prevent_destroy = true }`; default behaviour to the site bucket via OAC with the response headers policy and the viewer-request function attached; an ordered `/api/*` behaviour to stage `live` as a custom origin with `origin_path = "/live"`, the `x-origin-verify` custom origin header sourced from `origin_verify_secret_value`, the managed `CachingDisabled` cache policy and `AllViewerExceptHostHeader` origin request policy, and no CloudFront function; no `custom_error_response` block; no standard (access) logging
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 9.1_
 
-  - [ ] 5.2 Implement the WAF Web_ACL and associate it with the distribution
+  - [x] 5.2 Implement the WAF Web_ACL and associate it with the distribution
     - Create one `aws_wafv2_web_acl` at scope `CLOUDFRONT` (us-east-1) with exactly five rules in priority order: per-IP rate-based, `AWSManagedRulesCommonRuleSet`, `AWSManagedRulesKnownBadInputsRuleSet`, `AWSManagedRulesAmazonIpReputationList`, and a kill-switch rule at priority 5 whose action is `block` when `kill_switch_enabled` is true and `count` when false
     - Set `visibility_config.sampled_requests_enabled = false` on every rule and at the ACL level; configure no WAF logging destination
     - Associate the Web_ACL with the distribution by setting the distribution `web_acl_id` to the Web_ACL ARN
     - _Requirements: 4.8, 4.9, 4.10, 4.11, 4.12_
 
-  - [ ] 5.3 Write property test for WAF sampling disabled
+  - [x] 5.3 Write property test for WAF sampling disabled
     - **Property 2: Sampling is disabled on every WAF rule**
     - **Validates: Requirements 4.11, 16.5, 17.4**
 
-  - [ ] 5.4 Write plan assertions for the Edge_Module distribution and headers
+  - [x] 5.4 Write plan assertions for the Edge_Module distribution and headers
     - Native test asserting one distribution with `default_root_object`, OAC default behaviour with the viewer-request function, `/api/*` ordered behaviour to stage `live` with `origin_path = "/live"` and the two managed policies and no function, no `custom_error_response`, response headers policy present, no standard logging, `web_acl_id` set to the Web_ACL ARN, one Web_ACL at `CLOUDFRONT` scope with five ordered rules and the kill-switch at priority 5 (block when enabled, count when disabled), and `prevent_destroy = true` on the distribution
     - _Requirements: 4.1, 4.2, 4.3, 4.5, 4.6, 4.7, 4.8, 4.9, 4.12, 9.1_
 
-  - [ ] 5.5 Run the offline checks and commit the Edge_Module
+  - [x] 5.5 Run the offline checks and commit the Edge_Module
     - Run `terraform fmt`, `terraform validate` (`init -backend=false`), `tflint`, `terraform test` (mock providers), and a Trivy config scan; fix any finding
     - Commit the module and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 4.10, 4.11, 4.12, 9.1_
