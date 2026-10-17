@@ -84,9 +84,16 @@ resource "aws_cloudfront_distribution" "this" {
       origin_ssl_protocols   = ["TLSv1.2"]
     }
 
+    # CloudFront overwrites a viewer-supplied header of the same name with a
+    # custom origin header, so a client cannot choose either value.
     custom_header {
       name  = "x-origin-verify"
       value = var.origin_verify_secret_value
+    }
+
+    custom_header {
+      name  = "x-api-key"
+      value = var.api_key_value
     }
   }
 
@@ -288,6 +295,46 @@ resource "aws_wafv2_web_acl" "this" {
     visibility_config {
       cloudwatch_metrics_enabled = true
       metric_name                = "${local.name_prefix}-kill-switch"
+      sampled_requests_enabled   = false
+    }
+  }
+
+  # Per-IP ceiling on the PassKit web service paths only (sixth rule, after the
+  # kill switch so the documented priorities 1 to 5 never move).
+  rule {
+    name     = "passkit-rate-limit"
+    priority = 6
+
+    action {
+      block {}
+    }
+
+    statement {
+      rate_based_statement {
+        limit              = local.passkit_rate_limit
+        aggregate_key_type = "IP"
+
+        scope_down_statement {
+          byte_match_statement {
+            search_string         = "/api/passkit/"
+            positional_constraint = "STARTS_WITH"
+
+            field_to_match {
+              uri_path {}
+            }
+
+            text_transformation {
+              priority = 0
+              type     = "NONE"
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${local.name_prefix}-passkit-rate-limit"
       sampled_requests_enabled   = false
     }
   }

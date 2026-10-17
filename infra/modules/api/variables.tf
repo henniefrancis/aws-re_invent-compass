@@ -72,6 +72,17 @@ variable "permissions_boundary_arn" {
   }
 }
 
+variable "api_key_value" {
+  description = "Value of the API key that CloudFront sends in x-api-key. Supply it as a sensitive HCP variable."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.api_key_value) >= 20 && length(var.api_key_value) <= 128
+    error_message = "The api_key_value value must be 20 to 128 characters."
+  }
+}
+
 variable "throttle_rate" {
   description = "Stage-wide steady-state request rate limit (requests per second)."
   type        = number

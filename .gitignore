@@ -41,6 +41,8 @@ override.tf.json
 *service-account*.json
 *credentials*.json
 secrets/
+# The infra secrets module holds Terraform only (no secret material), so it is tracked.
+!infra/modules/secrets/
 
 # Raw API recordings (may contain personal data); only scrubbed fixtures are committed
 fixtures/.raw/

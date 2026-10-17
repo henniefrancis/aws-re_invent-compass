@@ -70,7 +70,7 @@ locals {
     "s3:ListAllMyBuckets",
     "s3:ListBucket",
     "secretsmanager:Describe*",
-    "secretsmanager:Get*",
+    "secretsmanager:GetResourcePolicy",
     "secretsmanager:List*",
     "sns:Get*",
     "sns:List*",
@@ -80,16 +80,15 @@ locals {
     "wafv2:List*",
   ]
 
-  # The secret values are readable only for the app secret (pepper and
-  # origin-verify). The pattern is app- plus the six character suffix, so it
-  # does not also match the apple-pass secret, which starts with the same
-  # letters. Apple and Google material is never readable by a Terraform run.
+  # No Terraform run reads a secret value: Terraform creates the containers only
+  # and the owner loads the values. The deny is explicit so a later broadening of
+  # the read list cannot expose the Apple, Google, pepper or origin-verify values.
   secret_value_deny = {
     for e in local.envs : e => {
-      Sid         = "DenySecretValuesExceptApp"
-      Effect      = "Deny"
-      Action      = "secretsmanager:GetSecretValue"
-      NotResource = ["arn:aws:secretsmanager:${local.region}:${local.account_id}:secret:compass/${e}/app-??????"]
+      Sid      = "DenySecretValues"
+      Effect   = "Deny"
+      Action   = "secretsmanager:GetSecretValue"
+      Resource = "*"
     }
   }
 }

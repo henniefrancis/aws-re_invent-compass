@@ -33,6 +33,7 @@ variables {
     google = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/google-wallet-AbCdEf"
   }
   permissions_boundary_arn   = "arn:aws:iam::aws:policy/compass-permissions-boundary"
+  api_key_value              = "abcdefghijklmnopqrstuvwxyz0123456789"
   event_timezone             = "America/Los_Angeles"
   event_window_start         = "2026-11-30T08:00:00-08:00"
   event_window_end           = "2026-12-04T20:00:00-08:00"

@@ -102,18 +102,13 @@ run "plan_role_is_read_only_and_cannot_read_apple_or_google_secrets" {
   }
 
   assert {
-    condition     = jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[1].Effect == "Deny" && jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[1].Action == "secretsmanager:GetSecretValue"
-    error_message = "The plan role must deny reading secret values."
+    condition     = jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[1].Effect == "Deny" && jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[1].Action == "secretsmanager:GetSecretValue" && jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[1].Resource == "*"
+    error_message = "The plan role must deny reading every secret value."
   }
 
   assert {
-    condition     = tolist(jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[1].NotResource) == tolist(["arn:aws:secretsmanager:us-east-1:example:secret:compass/dev/app-??????"])
-    error_message = "The deny must except only the dev app secret."
-  }
-
-  assert {
-    condition     = !strcontains(join(",", jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[1].NotResource), "apple") && !strcontains(join(",", jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[1].NotResource), "prod")
-    error_message = "The exception must not cover the apple-pass secret or another environment."
+    condition     = !contains(jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[0].Action, "secretsmanager:Get*") && !contains(jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[0].Action, "secretsmanager:GetSecretValue")
+    error_message = "The read list must not allow secret values."
   }
 }
 

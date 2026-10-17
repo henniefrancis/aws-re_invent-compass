@@ -72,6 +72,7 @@ variables {
     google = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/google-wallet-AbCdEf"
   }
   permissions_boundary_arn   = "arn:aws:iam::aws:policy/compass-permissions-boundary"
+  api_key_value              = "abcdefghijklmnopqrstuvwxyz0123456789"
   event_timezone             = "America/Los_Angeles"
   event_window_start         = "2026-11-30T08:00:00-08:00"
   event_window_end           = "2026-12-04T20:00:00-08:00"
@@ -253,6 +254,58 @@ run "lambda_role_policies_follow_least_privilege" {
     condition     = !strcontains(aws_iam_role_policy.passkit.policy, "dynamodb:UpdateItem") && strcontains(aws_iam_role_policy.api.policy, "dynamodb:UpdateItem") && !strcontains(aws_iam_role_policy.api.policy, "BatchWriteItem")
     error_message = "Table actions must match what each Lambda needs."
   }
+
+  assert {
+    condition = alltrue([
+      for s in jsondecode(aws_iam_role_policy.passkit.policy).Statement :
+      !anytrue([for a in try(tolist(s.Action), [s.Action]) : contains(["dynamodb:PutItem", "dynamodb:DeleteItem"], a)]) ||
+      s.Condition["ForAllValues:StringLike"]["dynamodb:LeadingKeys"] == ["DEV#*"]
+    ])
+    error_message = "The passkit role may write only DEV# items."
+  }
+
+  assert {
+    condition = alltrue([
+      for s in jsondecode(aws_iam_role_policy.api.policy).Statement :
+      !anytrue([for a in try(tolist(s.Action), [s.Action]) : contains(["dynamodb:PutItem", "dynamodb:DeleteItem", "dynamodb:UpdateItem"], a)]) ||
+      toset(s.Condition["ForAllValues:StringLike"]["dynamodb:LeadingKeys"]) == toset(["PASS#*", "DEV#*", "HANDOFF#*", "RATE#*"])
+    ])
+    error_message = "The api role may write only the known key prefixes."
+  }
+}
+
+run "api_key_and_tracing" {
+  command = plan
+
+  assert {
+    condition     = aws_api_gateway_rest_api.this.api_key_source == "HEADER"
+    error_message = "The API key must be read from the header."
+  }
+
+  assert {
+    condition     = aws_api_gateway_stage.live.xray_tracing_enabled == false
+    error_message = "X-Ray must be off on the stage."
+  }
+
+  assert {
+    condition     = aws_api_gateway_api_key.this.enabled && aws_api_gateway_usage_plan_key.this.key_type == "API_KEY"
+    error_message = "The API key must be enabled and attached to the usage plan."
+  }
+
+  assert {
+    condition     = one(aws_lambda_function.api.tracing_config).mode == "PassThrough" && one(aws_lambda_function.passkit.tracing_config).mode == "PassThrough"
+    error_message = "Lambda tracing must stay off (PassThrough)."
+  }
+}
+
+run "short_api_key_is_rejected" {
+  command = plan
+
+  variables {
+    api_key_value = "short"
+  }
+
+  expect_failures = [var.api_key_value]
 }
 
 run "lambda_permissions" {

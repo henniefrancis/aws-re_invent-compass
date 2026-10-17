@@ -20,14 +20,15 @@ variables {
   oac_id                           = "oac-example"
   api_stage_invoke_host            = "abc123.execute-api.us-east-1.amazonaws.com"
   origin_verify_secret_value       = "0123456789012345678901234567890123456789"
+  api_key_value                    = "abcdefghijklmnopqrstuvwxyz0123456789"
 }
 
 run "sampling_off_with_kill_switch_disabled" {
   command = plan
 
   assert {
-    condition     = length(aws_wafv2_web_acl.this.rule) == 5
-    error_message = "The web ACL must contain exactly five rules."
+    condition     = length(aws_wafv2_web_acl.this.rule) == 6
+    error_message = "The web ACL must contain six rules (the five defined rules and the PassKit rate rule)."
   }
 
   assert {

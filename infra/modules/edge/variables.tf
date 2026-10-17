@@ -39,13 +39,24 @@ variable "api_stage_invoke_host" {
 }
 
 variable "origin_verify_secret_value" {
-  description = "Value of the x-origin-verify header sent to the API origin (from the secrets module, in-graph only)."
+  description = "Value of the x-origin-verify header sent to the API origin. Supply it as a sensitive HCP variable; the same value is loaded into the app secret by scripts/load-secrets.sh."
   type        = string
   sensitive   = true
 
   validation {
     condition     = length(var.origin_verify_secret_value) >= 32
     error_message = "The origin_verify_secret_value value must be at least 32 characters."
+  }
+}
+
+variable "api_key_value" {
+  description = "Value of the x-api-key header sent to the API origin, so API Gateway rejects a direct call before the Lambda runs. Supply it as a sensitive HCP variable."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.api_key_value) >= 20 && length(var.api_key_value) <= 128
+    error_message = "The api_key_value value must be 20 to 128 characters."
   }
 }
 

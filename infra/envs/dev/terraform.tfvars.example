@@ -33,3 +33,9 @@ google_wallet_enabled = true
 # Set after the first apply, from the cloudfront_domain_name output
 # (https:// plus the domain, no trailing slash), then apply again.
 # public_base_url = "REPLACE_WITH_HTTPS_URL_OF_THE_DISTRIBUTION"
+
+# Sensitive values. Set them as sensitive HCP workspace variables (this file is
+# not uploaded) and never commit the real values. Generation steps are in
+# docs/runbooks/secrets.md.
+origin_verify_value = "REPLACE_WITH_GENERATED_ORIGIN_VERIFY_VALUE"
+api_key_value       = "REPLACE_WITH_GENERATED_API_KEY_VALUE"

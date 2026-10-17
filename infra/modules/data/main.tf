@@ -48,8 +48,11 @@ resource "aws_dynamodb_table" "this" {
     enabled        = true
   }
 
+  # Point-in-time recovery is off by owner decision: forget_me must be a real
+  # erasure, and the data lives only until session end plus 24 hours. Deletion
+  # protection stays on, so the table itself cannot be removed by accident.
   point_in_time_recovery {
-    enabled = true
+    enabled = false
   }
 
   # Encrypted at rest with the AWS owned key by default; the table holds no

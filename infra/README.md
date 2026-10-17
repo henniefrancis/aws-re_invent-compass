@@ -40,15 +40,11 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.0"
     }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.9"
-    }
   }
 }
 ```
 
-`random` is declared only where it is used (the secrets module). Provider lock files are git-ignored because they are generated per platform; create them with `terraform providers lock` when needed.
+Terraform generates no secret value, so no `random` provider is used. Provider lock files are git-ignored because they are generated per platform; create them with `terraform providers lock` when needed.
 
 ## Offline checks
 

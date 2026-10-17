@@ -68,6 +68,10 @@ resource "aws_lambda_function" "api" {
   filename         = var.api_lambda_zip
   source_code_hash = filebase64sha256(var.api_lambda_zip)
 
+  tracing_config {
+    mode = "PassThrough"
+  }
+
   environment {
     variables = local.api_environment
   }
@@ -86,6 +90,10 @@ resource "aws_lambda_function" "passkit" {
   timeout          = 5
   filename         = var.passkit_lambda_zip
   source_code_hash = filebase64sha256(var.passkit_lambda_zip)
+
+  tracing_config {
+    mode = "PassThrough"
+  }
 
   environment {
     variables = local.passkit_environment
@@ -110,6 +118,9 @@ resource "aws_api_gateway_rest_api" "this" {
     api_lambda_invoke_arn     = aws_lambda_function.api.invoke_arn
     passkit_lambda_invoke_arn = aws_lambda_function.passkit.invoke_arn
   })
+
+  # The API key is read from the x-api-key header, which CloudFront injects.
+  api_key_source = "HEADER"
 
   endpoint_configuration {
     types = ["REGIONAL"]
@@ -138,6 +149,9 @@ resource "aws_api_gateway_stage" "live" {
   deployment_id = aws_api_gateway_deployment.this.id
   stage_name    = local.stage_name
   description   = "Live stage served through CloudFront at /api/*."
+
+  # No X-Ray tracing: nothing here may record request detail.
+  xray_tracing_enabled = false
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.access.arn
@@ -180,6 +194,39 @@ resource "aws_api_gateway_method_settings" "route" {
   }
 
   depends_on = [aws_api_gateway_method_settings.default]
+}
+
+# ---------------------------------------------------------------------------
+# API key: CloudFront sends it in x-api-key so that API Gateway can refuse a
+# direct execute-api call before any Lambda runs. A method enforces the key only
+# when the contract marks it apiKeyRequired; see design.md (the contract change
+# is an S0 request).
+# ---------------------------------------------------------------------------
+
+resource "aws_api_gateway_api_key" "this" {
+  name    = "${local.name_prefix}-edge"
+  enabled = true
+  value   = var.api_key_value
+}
+
+resource "aws_api_gateway_usage_plan" "this" {
+  name = "${local.name_prefix}-edge"
+
+  api_stages {
+    api_id = aws_api_gateway_rest_api.this.id
+    stage  = aws_api_gateway_stage.live.stage_name
+  }
+
+  throttle_settings {
+    rate_limit  = var.throttle_rate
+    burst_limit = var.throttle_burst
+  }
+}
+
+resource "aws_api_gateway_usage_plan_key" "this" {
+  key_id        = aws_api_gateway_api_key.this.id
+  key_type      = "API_KEY"
+  usage_plan_id = aws_api_gateway_usage_plan.this.id
 }
 
 # ---------------------------------------------------------------------------

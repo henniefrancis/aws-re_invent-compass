@@ -35,6 +35,7 @@ variables {
   oac_id                           = "oac-example"
   api_stage_invoke_host            = "abc123.execute-api.us-east-1.amazonaws.com"
   origin_verify_secret_value       = "0123456789012345678901234567890123456789"
+  api_key_value                    = "abcdefghijklmnopqrstuvwxyz0123456789"
 }
 
 run "distribution_default_behaviour" {
@@ -109,12 +110,12 @@ run "web_acl_shape" {
   }
 
   assert {
-    condition     = length(aws_wafv2_web_acl.this.rule) == 5
-    error_message = "The web ACL must contain exactly five rules."
+    condition     = length(aws_wafv2_web_acl.this.rule) == 6
+    error_message = "The web ACL must contain the five defined rules and the PassKit rate rule."
   }
 
   assert {
-    condition     = sort([for r in aws_wafv2_web_acl.this.rule : format("%d-%s", r.priority, r.name)]) == tolist(["1-per-ip-rate-limit", "2-aws-managed-common", "3-aws-managed-known-bad-inputs", "4-aws-managed-ip-reputation", "5-kill-switch"])
+    condition     = sort([for r in aws_wafv2_web_acl.this.rule : format("%d-%s", r.priority, r.name)]) == tolist(["1-per-ip-rate-limit", "2-aws-managed-common", "3-aws-managed-known-bad-inputs", "4-aws-managed-ip-reputation", "5-kill-switch", "6-passkit-rate-limit"])
     error_message = "The rules must be in the defined priority order."
   }
 }
@@ -170,6 +171,16 @@ run "invalid_api_host_is_rejected" {
   expect_failures = [var.api_stage_invoke_host]
 }
 
+run "short_api_key_is_rejected" {
+  command = plan
+
+  variables {
+    api_key_value = "short"
+  }
+
+  expect_failures = [var.api_key_value]
+}
+
 run "short_origin_verify_is_rejected" {
   command = plan
 
@@ -189,6 +200,11 @@ run "source_scan" {
   assert {
     condition     = can(regex("(?s)resource[[:space:]]+\"aws_cloudfront_distribution\"[[:space:]]+\"this\".*lifecycle[[:space:]]*[{][[:space:]]*prevent_destroy[[:space:]]*=[[:space:]]*true", file("${path.module}/main.tf")))
     error_message = "The distribution must set prevent_destroy = true."
+  }
+
+  assert {
+    condition     = can(regex("name[[:space:]]*=[[:space:]]*\"x-api-key\"", file("${path.module}/main.tf"))) && can(regex("value[[:space:]]*=[[:space:]]*var[.]api_key_value", file("${path.module}/main.tf")))
+    error_message = "The API origin must also send x-api-key from the variable."
   }
 
   assert {

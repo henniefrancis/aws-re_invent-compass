@@ -33,8 +33,8 @@ run "table_settings" {
   }
 
   assert {
-    condition     = one(aws_dynamodb_table.this.point_in_time_recovery).enabled
-    error_message = "Point-in-time recovery must be enabled."
+    condition     = one(aws_dynamodb_table.this.point_in_time_recovery).enabled == false
+    error_message = "Point-in-time recovery must be off so forget_me is a real erasure."
   }
 
   assert {

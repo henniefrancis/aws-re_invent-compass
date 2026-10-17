@@ -65,6 +65,12 @@ locals {
     }]
   })
 
+  # Key prefixes of the single table, from the pass-service data model. Writes
+  # are limited to them with dynamodb:LeadingKeys, so a bug or a stolen role
+  # cannot write any other item.
+  api_write_key_prefixes     = ["PASS#*", "DEV#*", "HANDOFF#*", "RATE#*"]
+  passkit_write_key_prefixes = ["DEV#*"]
+
   # The api Lambda reads and writes pass, hand-off and rate records, reads device
   # registrations to push, and reads all three secrets (it signs Apple passes and
   # patches Google objects).
@@ -78,16 +84,19 @@ locals {
         Resource = "${aws_cloudwatch_log_group.api_lambda.arn}:*"
       },
       {
-        Sid    = "UseTable"
-        Effect = "Allow"
-        Action = [
-          "dynamodb:DeleteItem",
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:Query",
-          "dynamodb:UpdateItem",
-        ]
+        Sid      = "ReadTable"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:Query"]
         Resource = [var.table_arn, "${var.table_arn}/index/*"]
+      },
+      {
+        Sid      = "WriteTableItems"
+        Effect   = "Allow"
+        Action   = ["dynamodb:DeleteItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
+        Resource = var.table_arn
+        Condition = {
+          "ForAllValues:StringLike" = { "dynamodb:LeadingKeys" = local.api_write_key_prefixes }
+        }
       },
       {
         Sid      = "ReadSecrets"
@@ -99,8 +108,8 @@ locals {
   })
 
   # The passkit Lambda serves the Apple PassKit web service: it records device
-  # registrations and serves pass bundles. It needs the app and Apple secrets and
-  # never the Google key.
+  # registrations and serves pass bundles. It writes only device registration
+  # items, needs the app and Apple secrets, and never the Google key.
   passkit_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -111,15 +120,19 @@ locals {
         Resource = "${aws_cloudwatch_log_group.passkit_lambda.arn}:*"
       },
       {
-        Sid    = "UseTable"
-        Effect = "Allow"
-        Action = [
-          "dynamodb:DeleteItem",
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:Query",
-        ]
+        Sid      = "ReadTable"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:Query"]
         Resource = [var.table_arn, "${var.table_arn}/index/*"]
+      },
+      {
+        Sid      = "WriteDeviceRegistrations"
+        Effect   = "Allow"
+        Action   = ["dynamodb:DeleteItem", "dynamodb:PutItem"]
+        Resource = var.table_arn
+        Condition = {
+          "ForAllValues:StringLike" = { "dynamodb:LeadingKeys" = local.passkit_write_key_prefixes }
+        }
       },
       {
         Sid      = "ReadSecrets"

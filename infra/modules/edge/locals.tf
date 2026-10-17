@@ -5,6 +5,9 @@ locals {
   # source addresses in memory only; nothing is logged (Requirement 4.10).
   rate_limit = 600
 
+  # Tighter ceiling for the PassKit web service paths, over the same window.
+  passkit_rate_limit = 300
+
   site_origin_id = "site"
   api_origin_id  = "api"
 

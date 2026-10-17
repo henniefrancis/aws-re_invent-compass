@@ -30,6 +30,7 @@ module "api" {
   }
 
   permissions_boundary_arn = local.permissions_boundary_arn
+  api_key_value            = var.api_key_value
   throttle_rate            = var.throttle_rate
   throttle_burst           = var.throttle_burst
   route_throttles          = var.route_throttles
@@ -55,8 +56,8 @@ module "site" {
   distribution_arn   = module.edge.distribution_arn
 }
 
-# The origin-verify value flows from the secrets module straight into the edge
-# origin header inside the graph. It is never a root output.
+# The origin-verify and API key values come from sensitive variables (HCP
+# workspace variables) and are never root outputs.
 module "edge" {
   source = "../../modules/edge"
 
@@ -64,7 +65,8 @@ module "edge" {
   site_bucket_regional_domain_name = module.site.bucket_regional_domain_name
   oac_id                           = module.site.oac_id
   api_stage_invoke_host            = module.api.stage_invoke_host
-  origin_verify_secret_value       = module.secrets.origin_verify_secret_value
+  origin_verify_secret_value       = var.origin_verify_value
+  api_key_value                    = var.api_key_value
   kill_switch_enabled              = var.kill_switch_enabled
 }
 

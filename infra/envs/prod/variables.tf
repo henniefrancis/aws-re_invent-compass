@@ -156,3 +156,25 @@ variable "google_wallet_class_suffix" {
   type        = string
   default     = null
 }
+
+variable "origin_verify_value" {
+  description = "Value of the x-origin-verify header CloudFront sends to the API. Sensitive: supply it as an HCP workspace variable. Generate it locally (see docs/runbooks/secrets.md) and load the same value into the app secret with scripts/load-secrets.sh."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.origin_verify_value) >= 32
+    error_message = "The origin_verify_value value must be at least 32 characters."
+  }
+}
+
+variable "api_key_value" {
+  description = "Value of the API key CloudFront sends in x-api-key. Sensitive: supply it as an HCP workspace variable, 20 to 128 characters."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.api_key_value) >= 20 && length(var.api_key_value) <= 128
+    error_message = "The api_key_value value must be 20 to 128 characters."
+  }
+}
