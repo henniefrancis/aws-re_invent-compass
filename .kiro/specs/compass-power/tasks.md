@@ -42,29 +42,29 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 1.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Include `.kiro/specs/compass-power/` in this first commit. Verify every edit landed. Never push.
 
-- [ ] 2. Build scanner discovery: read-only file access, gitignore and the walker
-  - [ ] 2.1 Implement the read-only scan file system
+- [x] 2. Build scanner discovery: read-only file access, gitignore and the walker
+  - [x] 2.1 Implement the read-only scan file system
     - Create `packages/core/src/scanner/scan-fs.ts` with the `ScanFs` interface (no write, rename, delete or mkdir member) and `createNodeScanFs()` over `node:fs/promises` using `lstat`, opening files with flag `r` and reading at most the requested bytes
     - _Requirements: 1.1, 1.2, 1.6_
-  - [ ] 2.2 Implement the gitignore matcher
+  - [x] 2.2 Implement the gitignore matcher
     - Create `src/scanner/gitignore.ts` with `parseGitignore` and `isIgnored`: comments, blank lines, trailing-space trimming, `\` escapes, negation, directory-only rules, anchoring by a leading or middle `/`, `*`, `**`, `?`, character classes, last match wins
     - _Requirements: 1.4_
-  - [ ] 2.3 Write property test for the gitignore matcher
+  - [x] 2.3 Write property test for the gitignore matcher
     - **Property 1: The gitignore matcher follows last-matching-rule semantics**
     - **Validates: Requirements 1.4**
-  - [ ] 2.4 Implement the walker and file filter
+  - [x] 2.4 Implement the walker and file filter
     - Create `src/scanner/file-filter.ts` (supported extensions and names, excluded directory names) and `src/scanner/walker.ts` (no symlink following, nested `.gitignore` rules, never descending into an ignored directory, 1 MiB size limit, 8 KiB NUL probe, 20,000 file cap with `truncated`, skip counts by reason, repository-level production marker); file names and paths stay inside the walker
     - _Requirements: 1.1, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
-  - [ ] 2.5 Write property test for read-only access
+  - [x] 2.5 Write property test for read-only access
     - **Property 3: The scanner never writes**
     - **Validates: Requirements 1.2**
-  - [ ] 2.6 Write property test for the file cap
+  - [x] 2.6 Write property test for the file cap
     - **Property 4: The file cap is exact**
     - **Validates: Requirements 1.7**
-  - [ ] 2.7 Write unit tests for discovery edge cases
+  - [x] 2.7 Write unit tests for discovery edge cases
     - Missing path and file path give "folder not found" without echoing the path; nested `.gitignore` with negation; symlink counted as skipped; empty tree
     - _Requirements: 1.1, 1.4, 1.6_
-  - [ ] 2.8 Commit
+  - [x] 2.8 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 3. Build the service table and the Terraform, CDK, SDK and manifest detectors
@@ -159,23 +159,23 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [ ] 7.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 8. Build the week spec renderer
-  - [ ] 8.1 Implement the renderer
+- [x] 8. Build the week spec renderer
+  - [x] 8.1 Implement the renderer
     - Create `src/spec/render.ts` with `renderWeekSpec`, `sanitiseCatalogText` and `formatLocal` per design Component 3: EARS goals, itinerary by day with code, quoted title, type, level, gate or "Venue not published", times, boarding closes, reason, connection, layovers and energy; one task per API action naming its tool; final "Issue boarding passes" task; timezone stated once; scan summary limited to display names and depth
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8_
-  - [ ] 8.2 Write property test for tasks
+  - [x] 8.2 Write property test for tasks
     - **Property 20: Spec tasks match the API actions, ending with issue**
     - **Validates: Requirements 6.3**
-  - [ ] 8.3 Write property test for catalog text sanitisation
+  - [x] 8.3 Write property test for catalog text sanitisation
     - **Property 21: Catalog text cannot change the spec's structure**
     - **Validates: Requirements 6.4, 6.8**
-  - [ ] 8.4 Write property test for determinism and local time
+  - [x] 8.4 Write property test for determinism and local time
     - **Property 22: Spec rendering is deterministic and time-honest**
     - **Validates: Requirements 6.6, 6.7**
-  - [ ] 8.5 Write a snapshot test for a representative week
+  - [x] 8.5 Write a snapshot test for a representative week
     - A fixed plan with a tight connection, an unknown venue, a walk-up keynote, a layover and an overloaded day
     - _Requirements: 6.1, 6.2_
-  - [ ] 8.6 Commit
+  - [x] 8.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 9. Build the spec writer, the line diff and the gitignore entry
