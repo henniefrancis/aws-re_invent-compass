@@ -238,6 +238,8 @@ export interface CatalogRead {
   entries: CacheEntry[];
   /** True when the refetch failed and an out-of-date cache is served instead. */
   stale: boolean;
+  /** True when the client is simulated, so the catalog is not real data (finding N2). */
+  simulated: boolean;
 }
 
 /** Refetch the whole catalog and overwrite the cache in place. */
@@ -297,16 +299,17 @@ function rebuild(cache: CatalogCache, deps: CatalogDeps): CacheEntry[] {
  * error is thrown.
  */
 export async function readCatalog(deps: CatalogDeps): Promise<CatalogRead> {
+  const simulated = deps.ctx.transport.simulated === true;
   const cache = readCache(deps.dir, deps.ctx.eventId, deps.fs);
   const usable = cache !== undefined && cache.eventId === deps.ctx.eventId;
   if (cache !== undefined && usable && !isStale(cache, deps)) {
-    return { entries: rebuild(cache, deps), stale: false };
+    return { entries: rebuild(cache, deps), stale: false, simulated };
   }
   try {
-    return { entries: await refreshCatalog(deps), stale: false };
+    return { entries: await refreshCatalog(deps), stale: false, simulated };
   } catch (error) {
     if (cache !== undefined && usable && !(error instanceof CacheWriteError)) {
-      return { entries: rebuild(cache, deps), stale: true };
+      return { entries: rebuild(cache, deps), stale: true, simulated };
     }
     throw error;
   }

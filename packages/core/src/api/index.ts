@@ -133,3 +133,15 @@ export {
   MAX_ABSTRACT_CODE_POINTS,
   type SanitiseOptions,
 } from './sanitise-text.js';
+
+// Composition root: live or simulated client context, and the simulated markers (N2).
+export {
+  createClientContext,
+  ClientConfigError,
+  SimulatedModeRefusedError,
+  SimulatedFixturesMissingError,
+  LiveClientNotConfiguredError,
+  SIMULATED_MODE_WARNING,
+  type ClientContextDeps,
+} from './client-context.js';
+export { isSimulatedResult } from './execute-operation.js';

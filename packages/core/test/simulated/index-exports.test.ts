@@ -5,6 +5,9 @@ import * as simulated from '../../src/simulated/index.js';
 // The list is explicit so the public surface changes only on purpose.
 
 const EXPECTED = [
+  'SimulatedScenarioError',
+  'createSimulatedCredential',
+  'SIMULATED_ACCESS_TOKEN',
   'createFsFixtureLoader',
   'createInMemorySchedule',
   'createSimulatedTransport',

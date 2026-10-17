@@ -81,6 +81,12 @@ export interface RawResponse {
 
 /** The seam every operation function calls. */
 export interface Transport {
+  /**
+   * Present and true only on the simulated transport. It marks everything served as
+   * not real, so a caller (the MCP layer, a UI) can say so, and the operation path
+   * tags each object result with simulated: true (security finding N2).
+   */
+  readonly simulated?: true;
   send(req: ClientRequest): Promise<RawResponse>;
 }
 

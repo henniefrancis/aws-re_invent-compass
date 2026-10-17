@@ -34,6 +34,14 @@ import { createInMemorySchedule } from './in-memory-schedule.js';
 import { checkBulkBody, checkPersonalTimeBody } from './request-rules.js';
 import type { FixtureLoader } from './fixtures.js';
 
+/** A simulated scenario was configured that cannot be served. */
+export class SimulatedScenarioError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SimulatedScenarioError';
+  }
+}
+
 /** Scenarios and sizes for the simulated transport. */
 export interface SimulatedConfig {
   /** Sessions that always answer sessionFull when reserved. */
@@ -138,7 +146,7 @@ export function createSimulatedTransport(cfg: SimulatedConfig, fixtures: Fixture
       try {
         fixtures.fixture(op, name);
       } catch {
-        throw new Error(`The simulated API has no ${name} scenario for ${op}`);
+        throw new SimulatedScenarioError(`The simulated API has no ${name} scenario for ${op}`);
       }
     }
   }
@@ -276,6 +284,7 @@ export function createSimulatedTransport(cfg: SimulatedConfig, fixtures: Fixture
   }
 
   return {
+    simulated: true,
     send: (req) =>
       new Promise<RawResponse>((resolve) => {
         resolve(serve(req));

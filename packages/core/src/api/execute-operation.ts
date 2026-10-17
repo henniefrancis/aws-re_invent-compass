@@ -62,6 +62,27 @@ function reserveQuota(ctx: ClientContext, operation: OperationName, units: numbe
   ctx.quota.record(operation, units, ctx.now());
 }
 
+/**
+ * In simulated mode every object result carries simulated: true, so nothing produced
+ * from fixtures can be mistaken for real data (security finding N2). A result with no
+ * body (a 204) cannot carry it; the caller reads ctx.transport.simulated for those.
+ */
+function tagSimulated<T>(ctx: ClientContext, value: T): T {
+  if (ctx.transport.simulated === true && typeof value === 'object' && value !== null) {
+    return { ...value, simulated: true };
+  }
+  return value;
+}
+
+/** True when a result was produced in simulated mode. */
+export function isSimulatedResult(value: unknown): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as { simulated?: unknown }).simulated === true
+  );
+}
+
 /** How long to block an operation after a 429 that carries no usable Retry-After. */
 export const DEFAULT_RATE_LIMIT_BLOCK_SECONDS = 30;
 
@@ -144,5 +165,5 @@ export async function executeOperation<T>(
     throw errorForStatus(operation, response.status);
   }
 
-  return handle(response);
+  return tagSimulated(ctx, handle(response));
 }

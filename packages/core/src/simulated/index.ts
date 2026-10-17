@@ -4,7 +4,11 @@
 // signed-in attendee, serves the synthetic catalog and canned responses, keeps an
 // in-memory schedule and never touches the network.
 
-export { createSimulatedTransport, type SimulatedConfig } from './simulated-transport.js';
+export {
+  createSimulatedTransport,
+  SimulatedScenarioError,
+  type SimulatedConfig,
+} from './simulated-transport.js';
 export {
   createFsFixtureLoader,
   defaultFixturesRoot,
@@ -18,3 +22,4 @@ export {
   type InMemorySchedule,
   type ScheduleWorld,
 } from './in-memory-schedule.js';
+export { createSimulatedCredential, SIMULATED_ACCESS_TOKEN } from './simulated-credential.js';

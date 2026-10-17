@@ -287,6 +287,9 @@ Scope boundary: this stream does not build the guardrails engine (S2 rules), the
 6. WHERE Simulated_Mode is active, WHEN a configured expired token scenario is requested, THE Simulated_Transport SHALL return a 401 response that indicates the token is expired.
 7. WHILE Simulated_Mode is active, THE Simulated_Transport SHALL NOT send any request to the live Events API.
 8. WHERE Simulated_Mode is active, THE Simulated_Transport SHALL enforce the OpenAPI request constraints and SHALL answer 400 when a request breaks them: ReserveSessions and AssociateFavorites need 1 to 10 unique session ids of 1 to 128 characters, and personal time needs UTC dates in the form YYYY-MM-DDTHH:MM:00 (no Z or offset), an end after the start in whole 5-minute steps, a title of 1 to 128, a description of 1 to 250 and an optional location of 1 to 255 characters.
+9. WHERE Simulated_Mode is active, THE Simulated_Transport SHALL be marked `simulated: true`, the composition root SHALL log one `SIMULATED MODE: no real data` warning, every object result SHALL carry `simulated: true`, and the catalog read SHALL report `simulated`.
+10. IF Simulated_Mode is requested while NODE_ENV is production, THEN THE composition root SHALL refuse it unless COMPASS_ALLOW_SIMULATED is exactly 1.
+11. IF the simulated fixtures cannot be loaded, THEN THE composition root SHALL fail with a typed error and SHALL NOT fall back to the live Events API.
 
 ### Requirement 19: Fixtures
 
