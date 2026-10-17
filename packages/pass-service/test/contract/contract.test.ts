@@ -26,6 +26,7 @@ import {
   responseContentTypes,
   type ContractOperation,
 } from '../helpers/openapi-reader.js';
+import { validateAgainstContract } from '../helpers/openapi-validator.js';
 import { samplePassFields } from '../helpers/pass-fields.js';
 
 // Contract tests do real work on a machine that may be busy.
@@ -404,6 +405,12 @@ function expectConforms(op: ContractOperation, reply: Reply): void {
   }
   const contentType = result.headers['content-type'];
   expect(declared).toContain(contentType);
+  if (contentType === 'application/problem+json' || contentType === 'application/json') {
+    // Review M3: the body also has to satisfy the OpenAPI schema itself (ajv, nullable on).
+    expect(
+      validateAgainstContract(op.path, op.method, status, contentType, JSON.parse(result.body)),
+    ).toBe('');
+  }
   if (contentType === 'application/problem+json') {
     const problem = ProblemSchema.parse(JSON.parse(result.body));
     expect(Object.keys(JSON.parse(result.body) as object).sort()).toEqual([
@@ -453,6 +460,18 @@ describe('Feature: pass-service, contract conformance', () => {
       }
     },
   );
+
+  test('the ajv check rejects a body that breaks the OpenAPI schema', () => {
+    const check = (body: unknown) =>
+      validateAgainstContract('/api/v1/health', 'get', 200, 'application/json', body);
+    expect(check({ status: 'ok' })).not.toBe('');
+    expect(check('nope')).not.toBe('');
+    expect(
+      validateAgainstContract('/api/v1/passes', 'post', 400, 'application/problem+json', {
+        type: 'about:blank',
+      }),
+    ).not.toBe('');
+  });
 
   test('an unknown route is a 404 Problem', async () => {
     const w = await buildWorld();
