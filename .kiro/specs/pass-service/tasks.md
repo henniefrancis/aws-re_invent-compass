@@ -510,7 +510,7 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [ ] 28.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 29. Final checkpoint - Ensure all tests pass and coverage is complete
+- [x] 29. Final checkpoint - Ensure all tests pass and coverage is complete
   - Ensure all tests pass with 100% lines, branches, functions and statements for `packages/pass-service/src/**` (only `src/lambda-entry/*.ts` excluded), lint, format and typecheck clean, the build produces both zips under 5 MB, ask the user if questions arise.
   - _Requirements: 1.5, 25.1, 25.2_
 
