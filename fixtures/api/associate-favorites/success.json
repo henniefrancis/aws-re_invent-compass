@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "body": {
+    "result": {
+      "successful": ["syn-002"],
+      "failed": []
+    }
+  }
+}
