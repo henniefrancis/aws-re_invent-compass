@@ -51,9 +51,10 @@ variable "table_arn" {
 variable "secret_arns" {
   description = "ARNs of the three Secrets Manager secrets (from the secrets module)."
   type = object({
-    app    = string
-    apple  = string
-    google = string
+    app           = string
+    origin_verify = string
+    apple         = string
+    google        = string
   })
 
   validation {
@@ -80,6 +81,28 @@ variable "api_key_value" {
   validation {
     condition     = length(var.api_key_value) >= 20 && length(var.api_key_value) <= 128
     error_message = "The api_key_value value must be 20 to 128 characters."
+  }
+}
+
+variable "api_reserved_concurrency" {
+  description = "Reserved concurrency of the api Lambda, a cost and abuse ceiling. Use -1 for none. A new account with a low concurrency quota cannot reserve any: set -1 there."
+  type        = number
+  default     = 20
+
+  validation {
+    condition     = var.api_reserved_concurrency == -1 || var.api_reserved_concurrency >= 0
+    error_message = "The api_reserved_concurrency value must be -1 or at least 0."
+  }
+}
+
+variable "passkit_reserved_concurrency" {
+  description = "Reserved concurrency of the passkit Lambda. Use -1 for none."
+  type        = number
+  default     = 10
+
+  validation {
+    condition     = var.passkit_reserved_concurrency == -1 || var.passkit_reserved_concurrency >= 0
+    error_message = "The passkit_reserved_concurrency value must be -1 or at least 0."
   }
 }
 

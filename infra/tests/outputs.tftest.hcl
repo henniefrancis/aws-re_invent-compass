@@ -75,7 +75,7 @@ run "secret_values_are_not_module_outputs" {
   }
 
   assert {
-    condition     = !can(regex("(?m)^output[[:space:]]+\"[a-z_]*(pepper|origin_verify|api_key|password|secret_value)", join("\n", [for m in ["site", "edge", "api", "data", "secrets", "observability"] : file("${path.module}/../../modules/${m}/outputs.tf")])))
+    condition     = !can(regex("(?m)^output[[:space:]]+\"[a-z_]*(pepper|origin_verify_value|origin_verify_secret_value|api_key|password|secret_value)", join("\n", [for m in ["site", "edge", "api", "data", "secrets", "observability"] : file("${path.module}/../../modules/${m}/outputs.tf")])))
     error_message = "No module may output a pepper, origin-verify value, API key or password."
   }
 

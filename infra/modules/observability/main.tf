@@ -111,6 +111,29 @@ resource "aws_cloudwatch_metric_alarm" "apns_push_failures" {
   }
 }
 
+# WAF blocked requests: a burst of blocks is an attack, a mis-set rule or the kill
+# switch being on. The metric of a CLOUDFRONT-scope web ACL lives in us-east-1
+# with the region dimension Global.
+resource "aws_cloudwatch_metric_alarm" "waf_blocked" {
+  alarm_name          = "${local.name_prefix}-waf-blocked-requests"
+  alarm_description   = "The WAF blocked a burst of requests."
+  namespace           = "AWS/WAFV2"
+  metric_name         = "BlockedRequests"
+  statistic           = "Sum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 100
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alarms.arn]
+
+  dimensions = {
+    WebACL = var.web_acl_name
+    Rule   = "ALL"
+    Region = "Global"
+  }
+}
+
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_name          = "${local.name_prefix}-lambda-errors"
   alarm_description   = "A Compass Lambda function failed."

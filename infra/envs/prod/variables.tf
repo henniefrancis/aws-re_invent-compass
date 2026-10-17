@@ -178,3 +178,15 @@ variable "api_key_value" {
     error_message = "The api_key_value value must be 20 to 128 characters."
   }
 }
+
+variable "api_reserved_concurrency" {
+  description = "Reserved concurrency of the api Lambda. Use -1 for none (a new account with a low concurrency quota cannot reserve any)."
+  type        = number
+  default     = 20
+}
+
+variable "passkit_reserved_concurrency" {
+  description = "Reserved concurrency of the passkit Lambda. Use -1 for none."
+  type        = number
+  default     = 10
+}

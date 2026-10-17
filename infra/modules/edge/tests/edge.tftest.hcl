@@ -101,6 +101,25 @@ run "distribution_api_behaviour" {
   }
 }
 
+run "api_behaviour_has_response_headers_and_waf_limits" {
+  command = plan
+
+  assert {
+    condition     = aws_cloudfront_distribution.this.ordered_cache_behavior[0].response_headers_policy_id == "headers-policy-example"
+    error_message = "The API behaviour must attach a response headers policy."
+  }
+
+  assert {
+    condition     = one(one(one(aws_wafv2_web_acl.this.association_config).request_body).cloudfront).default_size_inspection_limit == "KB_64"
+    error_message = "The web ACL must inspect request bodies up to 64 KB."
+  }
+
+  assert {
+    condition     = one([for r in aws_wafv2_web_acl.this.rule : length(one(r.action).block) if r.name == "api-body-size-limit"]) == 1
+    error_message = "The body size rule must block."
+  }
+}
+
 run "web_acl_shape" {
   command = plan
 
@@ -110,12 +129,12 @@ run "web_acl_shape" {
   }
 
   assert {
-    condition     = length(aws_wafv2_web_acl.this.rule) == 6
-    error_message = "The web ACL must contain the five defined rules and the PassKit rate rule."
+    condition     = length(aws_wafv2_web_acl.this.rule) == 7
+    error_message = "The web ACL must contain the five defined rules, the PassKit rate rule and the API body size rule."
   }
 
   assert {
-    condition     = sort([for r in aws_wafv2_web_acl.this.rule : format("%d-%s", r.priority, r.name)]) == tolist(["1-per-ip-rate-limit", "2-aws-managed-common", "3-aws-managed-known-bad-inputs", "4-aws-managed-ip-reputation", "5-kill-switch", "6-passkit-rate-limit"])
+    condition     = sort([for r in aws_wafv2_web_acl.this.rule : format("%d-%s", r.priority, r.name)]) == tolist(["1-per-ip-rate-limit", "2-aws-managed-common", "3-aws-managed-known-bad-inputs", "4-aws-managed-ip-reputation", "5-kill-switch", "6-passkit-rate-limit", "7-api-body-size-limit"])
     error_message = "The rules must be in the defined priority order."
   }
 }
@@ -149,6 +168,28 @@ run "kill_switch_blocks_when_enabled" {
   assert {
     condition     = one([for r in aws_wafv2_web_acl.this.rule : r.priority if r.name == "kill-switch"]) == 5
     error_message = "The kill-switch rule must keep priority 5 when enabled."
+  }
+}
+
+# M2, L1 and L2 are facts about the source: the global per-IP rule is scoped to
+# /api/*, the API headers policy sets nosniff, HSTS and no-referrer, and the body
+# rule uses the 64 KB limit.
+run "waf_and_headers_source_scan" {
+  command = plan
+
+  assert {
+    condition     = can(regex("(?s)name[[:space:]]*=[[:space:]]*\"per-ip-rate-limit\".*?scope_down_statement.*?search_string[[:space:]]*=[[:space:]]*\"/api/\"", file("${path.module}/main.tf")))
+    error_message = "The global per-IP rule must be scoped to /api/*."
+  }
+
+  assert {
+    condition     = can(regex("api_body_limit_bytes[[:space:]]*=[[:space:]]*65536", file("${path.module}/locals.tf"))) && can(regex("default_size_inspection_limit[[:space:]]*=[[:space:]]*\"KB_64\"", file("${path.module}/main.tf")))
+    error_message = "The body limit and the inspection limit must both be 64 KB."
+  }
+
+  assert {
+    condition     = can(regex("(?s)resource[[:space:]]+\"aws_cloudfront_response_headers_policy\"[[:space:]]+\"api\".*?strict_transport_security.*?content_type_options.*?referrer_policy[[:space:]]*=[[:space:]]*\"no-referrer\"", file("${path.module}/main.tf")))
+    error_message = "The API headers policy must set HSTS, nosniff and no-referrer."
   }
 }
 

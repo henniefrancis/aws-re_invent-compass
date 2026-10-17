@@ -58,6 +58,31 @@ resource "aws_cloudfront_response_headers_policy" "site" {
   }
 }
 
+# Headers for API responses: nosniff, HSTS and no referrer. No CSP, which is
+# meaningless for JSON and pass downloads.
+resource "aws_cloudfront_response_headers_policy" "api" {
+  name    = "${local.name_prefix}-api-security-headers"
+  comment = "Security headers for the Compass API."
+
+  security_headers_config {
+    strict_transport_security {
+      access_control_max_age_sec = 63072000
+      include_subdomains         = true
+      preload                    = true
+      override                   = true
+    }
+
+    content_type_options {
+      override = true
+    }
+
+    referrer_policy {
+      referrer_policy = "no-referrer"
+      override        = true
+    }
+  }
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -126,6 +151,8 @@ resource "aws_cloudfront_distribution" "this" {
     compress                 = false
     cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host_header.id
+
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.api.id
   }
 
   restrictions {
@@ -155,6 +182,16 @@ resource "aws_wafv2_web_acl" "this" {
   description = "Compass ${var.env} edge protection."
   scope       = "CLOUDFRONT"
 
+  # Inspect request bodies up to 64 KB. A larger body counts as oversize and the
+  # api-body-size-limit rule blocks it on /api/*.
+  association_config {
+    request_body {
+      cloudfront {
+        default_size_inspection_limit = "KB_64"
+      }
+    }
+  }
+
   default_action {
     allow {}
   }
@@ -171,6 +208,23 @@ resource "aws_wafv2_web_acl" "this" {
       rate_based_statement {
         limit              = local.rate_limit
         aggregate_key_type = "IP"
+
+        # API paths only, so a busy site page load cannot trip the API ceiling.
+        scope_down_statement {
+          byte_match_statement {
+            search_string         = "/api/"
+            positional_constraint = "STARTS_WITH"
+
+            field_to_match {
+              uri_path {}
+            }
+
+            text_transformation {
+              priority = 0
+              type     = "NONE"
+            }
+          }
+        }
       }
     }
 
@@ -335,6 +389,60 @@ resource "aws_wafv2_web_acl" "this" {
     visibility_config {
       cloudwatch_metrics_enabled = true
       metric_name                = "${local.name_prefix}-passkit-rate-limit"
+      sampled_requests_enabled   = false
+    }
+  }
+
+  # Seventh rule: block a request body above 64 KB on /api/*.
+  rule {
+    name     = "api-body-size-limit"
+    priority = 7
+
+    action {
+      block {}
+    }
+
+    statement {
+      and_statement {
+        statement {
+          byte_match_statement {
+            search_string         = "/api/"
+            positional_constraint = "STARTS_WITH"
+
+            field_to_match {
+              uri_path {}
+            }
+
+            text_transformation {
+              priority = 0
+              type     = "NONE"
+            }
+          }
+        }
+
+        statement {
+          size_constraint_statement {
+            comparison_operator = "GT"
+            size                = local.api_body_limit_bytes
+
+            field_to_match {
+              body {
+                oversize_handling = "MATCH"
+              }
+            }
+
+            text_transformation {
+              priority = 0
+              type     = "NONE"
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${local.name_prefix}-api-body-size-limit"
       sampled_requests_enabled   = false
     }
   }

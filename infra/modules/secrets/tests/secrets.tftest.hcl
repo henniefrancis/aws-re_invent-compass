@@ -28,6 +28,15 @@ run "secret_containers" {
   }
 }
 
+run "origin_verify_has_its_own_container" {
+  command = plan
+
+  assert {
+    condition     = aws_secretsmanager_secret.origin_verify.name == "compass/dev/origin-verify"
+    error_message = "The origin-verify secret name is wrong."
+  }
+}
+
 run "prod_names" {
   command = plan
 
@@ -57,13 +66,13 @@ run "source_scan" {
   command = plan
 
   assert {
-    condition     = length(regexall("(?m)^[[:space:]]*prevent_destroy[[:space:]]*=[[:space:]]*true", file("${path.module}/main.tf"))) == 3
-    error_message = "All three secret containers must set prevent_destroy = true."
+    condition     = length(regexall("(?m)^[[:space:]]*prevent_destroy[[:space:]]*=[[:space:]]*true", file("${path.module}/main.tf"))) == 4
+    error_message = "All four secret containers must set prevent_destroy = true."
   }
 
   assert {
-    condition     = length(regexall("(?m)^resource[[:space:]]+\"aws_secretsmanager_secret\"", file("${path.module}/main.tf"))) == 3
-    error_message = "Exactly three secret containers are required."
+    condition     = length(regexall("(?m)^resource[[:space:]]+\"aws_secretsmanager_secret\"", file("${path.module}/main.tf"))) == 4
+    error_message = "Exactly four secret containers are required."
   }
 
   assert {
@@ -72,7 +81,7 @@ run "source_scan" {
   }
 
   assert {
-    condition     = !can(regex("(?m)^output[[:space:]]+\"(pepper|origin_verify)", file("${path.module}/outputs.tf")))
+    condition     = !can(regex("(?m)^output[[:space:]]+\"(pepper|origin_verify|origin_verify_secret_value)\"", file("${path.module}/outputs.tf")))
     error_message = "No output may expose the pepper or the origin-verify value."
   }
 }

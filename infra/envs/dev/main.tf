@@ -24,16 +24,19 @@ module "api" {
   table_arn          = module.data.table_arn
 
   secret_arns = {
-    app    = module.secrets.app_secret_arn
-    apple  = module.secrets.apple_secret_arn
-    google = module.secrets.google_secret_arn
+    app           = module.secrets.app_secret_arn
+    origin_verify = module.secrets.origin_verify_secret_arn
+    apple         = module.secrets.apple_secret_arn
+    google        = module.secrets.google_secret_arn
   }
 
-  permissions_boundary_arn = local.permissions_boundary_arn
-  api_key_value            = var.api_key_value
-  throttle_rate            = var.throttle_rate
-  throttle_burst           = var.throttle_burst
-  route_throttles          = var.route_throttles
+  permissions_boundary_arn     = local.permissions_boundary_arn
+  api_key_value                = var.api_key_value
+  api_reserved_concurrency     = var.api_reserved_concurrency
+  passkit_reserved_concurrency = var.passkit_reserved_concurrency
+  throttle_rate                = var.throttle_rate
+  throttle_burst               = var.throttle_burst
+  route_throttles              = var.route_throttles
 
   public_base_url            = var.public_base_url
   event_timezone             = var.event_timezone
@@ -76,6 +79,7 @@ module "observability" {
   env                 = var.env
   alarm_email         = var.alarm_email
   rest_api_name       = module.api.rest_api_name
+  web_acl_name        = module.edge.web_acl_name
   api_lambda_name     = module.api.api_lambda_name
   passkit_lambda_name = module.api.passkit_lambda_name
 }

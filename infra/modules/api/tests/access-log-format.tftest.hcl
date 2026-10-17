@@ -28,9 +28,10 @@ variables {
   table_name         = "compass-dev"
   table_arn          = "arn:aws:dynamodb:us-east-1:aws:table/compass-dev"
   secret_arns = {
-    app    = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/app-AbCdEf"
-    apple  = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/apple-pass-AbCdEf"
-    google = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/google-wallet-AbCdEf"
+    app           = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/app-AbCdEf"
+    origin_verify = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/origin-verify-AbCdEf"
+    apple         = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/apple-pass-AbCdEf"
+    google        = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/google-wallet-AbCdEf"
   }
   permissions_boundary_arn   = "arn:aws:iam::aws:policy/compass-permissions-boundary"
   api_key_value              = "abcdefghijklmnopqrstuvwxyz0123456789"

@@ -39,3 +39,8 @@ google_wallet_enabled = true
 # docs/runbooks/secrets.md.
 origin_verify_value = "REPLACE_WITH_GENERATED_ORIGIN_VERIFY_VALUE"
 api_key_value       = "REPLACE_WITH_GENERATED_API_KEY_VALUE"
+
+# Reserved concurrency per Lambda, a cost and abuse ceiling. Use -1 for none
+# (needed on a new account whose concurrency quota is too low to reserve any).
+api_reserved_concurrency     = 20
+passkit_reserved_concurrency = 10

@@ -29,10 +29,11 @@ locals {
   # defaults apply.
   common_environment = merge(
     {
-      TABLE_NAME      = var.table_name
-      APP_SECRET_ID   = var.secret_arns.app
-      APPLE_SECRET_ID = var.secret_arns.apple
-      EVENT_TIMEZONE  = var.event_timezone
+      TABLE_NAME              = var.table_name
+      APP_SECRET_ID           = var.secret_arns.app
+      ORIGIN_VERIFY_SECRET_ID = var.secret_arns.origin_verify
+      APPLE_SECRET_ID         = var.secret_arns.apple
+      EVENT_TIMEZONE          = var.event_timezone
     },
     var.public_base_url == "" ? {} : { PUBLIC_BASE_URL = var.public_base_url },
   )
@@ -92,7 +93,7 @@ locals {
       {
         Sid      = "WriteTableItems"
         Effect   = "Allow"
-        Action   = ["dynamodb:DeleteItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
+        Action   = ["dynamodb:BatchWriteItem", "dynamodb:DeleteItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
         Resource = var.table_arn
         Condition = {
           "ForAllValues:StringLike" = { "dynamodb:LeadingKeys" = local.api_write_key_prefixes }
@@ -102,7 +103,7 @@ locals {
         Sid      = "ReadSecrets"
         Effect   = "Allow"
         Action   = "secretsmanager:GetSecretValue"
-        Resource = [var.secret_arns.app, var.secret_arns.apple, var.secret_arns.google]
+        Resource = [var.secret_arns.app, var.secret_arns.origin_verify, var.secret_arns.apple, var.secret_arns.google]
       },
     ]
   })
@@ -138,7 +139,7 @@ locals {
         Sid      = "ReadSecrets"
         Effect   = "Allow"
         Action   = "secretsmanager:GetSecretValue"
-        Resource = [var.secret_arns.app, var.secret_arns.apple]
+        Resource = [var.secret_arns.app, var.secret_arns.origin_verify, var.secret_arns.apple]
       },
     ]
   })

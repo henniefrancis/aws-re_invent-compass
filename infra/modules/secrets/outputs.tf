@@ -1,6 +1,11 @@
 output "app_secret_arn" {
-  description = "ARN of the app secret container (pepper and origin-verify value, loaded by the owner)."
+  description = "ARN of the app secret container (the pepper, loaded by the owner)."
   value       = aws_secretsmanager_secret.app.arn
+}
+
+output "origin_verify_secret_arn" {
+  description = "ARN of the origin-verify secret container (value loaded by the owner)."
+  value       = aws_secretsmanager_secret.origin_verify.arn
 }
 
 output "apple_secret_arn" {

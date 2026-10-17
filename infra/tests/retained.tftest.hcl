@@ -1,7 +1,7 @@
 # Property 5: every retained resource is protected against destruction.
 #
-# For all six Retained_Resources (the CloudFront distribution, the DynamoDB table,
-# the three secrets and the site bucket), prevent_destroy = true sits in the
+# For all seven Retained_Resources (the CloudFront distribution, the DynamoDB table,
+# the four secrets and the site bucket), prevent_destroy = true sits in the
 # resource lifecycle block. Requirements 9.1 to 9.4 and 16.2.
 #
 # prevent_destroy is a lifecycle meta-argument that plan output never shows, and a
@@ -43,7 +43,7 @@ variables {
   id_token_issuer     = "https://issuer.example.invalid"
 }
 
-run "all_six_retained_resources_set_prevent_destroy" {
+run "all_retained_resources_set_prevent_destroy" {
   command = plan
 
   module {
@@ -61,12 +61,13 @@ run "all_six_retained_resources_set_prevent_destroy" {
         { file = "secrets", type = "aws_secretsmanager_secret", name = "apple_pass" },
         { file = "secrets", type = "aws_secretsmanager_secret", name = "google_wallet" },
         { file = "secrets", type = "aws_secretsmanager_secret", name = "app" },
+        { file = "secrets", type = "aws_secretsmanager_secret", name = "origin_verify" },
         ] : length([
           for blk in split("\nresource ", "\n${file("${path.module}/../../modules/${r.file}/main.tf")}") :
           blk if startswith(blk, "\"${r.type}\" \"${r.name}\"") && can(regex("lifecycle[[:space:]]*[{][[:space:]]*prevent_destroy[[:space:]]*=[[:space:]]*true", blk))
       ]) == 1
     ])
-    error_message = "All six retained resources (distribution, table, site bucket, three secrets) must set prevent_destroy = true in their own block."
+    error_message = "All seven retained resources (distribution, table, site bucket, four secrets) must set prevent_destroy = true in their own block."
   }
 }
 
@@ -84,10 +85,10 @@ run "retained_resource_counts" {
       length(regexall("(?m)^resource[[:space:]]+\"aws_cloudfront_distribution\"", file("${path.module}/../../modules/edge/main.tf"))) == 1,
       length(regexall("(?m)^resource[[:space:]]+\"aws_dynamodb_table\"", file("${path.module}/../../modules/data/main.tf"))) == 1,
       length(regexall("(?m)^resource[[:space:]]+\"aws_s3_bucket\"", file("${path.module}/../../modules/site/main.tf"))) == 1,
-      length(regexall("(?m)^resource[[:space:]]+\"aws_secretsmanager_secret\"", file("${path.module}/../../modules/secrets/main.tf"))) == 3,
-      length(regexall("(?m)^[[:space:]]*prevent_destroy[[:space:]]*=[[:space:]]*true", join("\n", [for m in ["edge", "data", "site", "secrets"] : file("${path.module}/../../modules/${m}/main.tf")]))) == 6,
+      length(regexall("(?m)^resource[[:space:]]+\"aws_secretsmanager_secret\"", file("${path.module}/../../modules/secrets/main.tf"))) == 4,
+      length(regexall("(?m)^[[:space:]]*prevent_destroy[[:space:]]*=[[:space:]]*true", join("\n", [for m in ["edge", "data", "site", "secrets"] : file("${path.module}/../../modules/${m}/main.tf")]))) == 7,
     ])
-    error_message = "Exactly six resources must carry prevent_destroy = true."
+    error_message = "Exactly seven resources must carry prevent_destroy = true."
   }
 
   assert {

@@ -29,6 +29,7 @@ variables {
   # Built from parts so no email address literal sits in a committed file.
   alarm_email         = join("@", ["alarms", "example.invalid"])
   rest_api_name       = "compass-dev"
+  web_acl_name        = "compass-dev"
   api_lambda_name     = "compass-dev-api"
   passkit_lambda_name = "compass-dev-passkit"
 }
@@ -86,6 +87,7 @@ run "four_alarms_wired_to_the_topic" {
         aws_cloudwatch_metric_alarm.throttles,
         aws_cloudwatch_metric_alarm.apns_push_failures,
         aws_cloudwatch_metric_alarm.lambda_errors,
+        aws_cloudwatch_metric_alarm.waf_blocked,
       ] : a.alarm_actions == toset([aws_sns_topic.alarms.arn])
     ])
     error_message = "Every alarm must notify the alarm topic in the ALARM state."
@@ -104,6 +106,15 @@ run "four_alarms_wired_to_the_topic" {
   assert {
     condition     = length(aws_cloudwatch_metric_alarm.throttles.metric_query) == 3 && length(aws_cloudwatch_metric_alarm.lambda_errors.metric_query) == 3
     error_message = "The throttle and error alarms must combine both Lambda functions."
+  }
+}
+
+run "waf_blocked_requests_alarm" {
+  command = plan
+
+  assert {
+    condition     = aws_cloudwatch_metric_alarm.waf_blocked.namespace == "AWS/WAFV2" && aws_cloudwatch_metric_alarm.waf_blocked.metric_name == "BlockedRequests" && aws_cloudwatch_metric_alarm.waf_blocked.dimensions["WebACL"] == "compass-dev" && aws_cloudwatch_metric_alarm.waf_blocked.dimensions["Region"] == "Global"
+    error_message = "The WAF alarm must watch BlockedRequests of the web ACL."
   }
 }
 
@@ -157,8 +168,8 @@ run "source_scan" {
   }
 
   assert {
-    condition     = length(regexall("(?m)^resource[[:space:]]+\"aws_cloudwatch_metric_alarm\"", file("${path.module}/main.tf"))) == 4 && length(regexall("(?m)^resource[[:space:]]+\"aws_budgets_budget\"", file("${path.module}/main.tf"))) == 1
-    error_message = "Exactly four alarms and one budget are required."
+    condition     = length(regexall("(?m)^resource[[:space:]]+\"aws_cloudwatch_metric_alarm\"", file("${path.module}/main.tf"))) == 5 && length(regexall("(?m)^resource[[:space:]]+\"aws_budgets_budget\"", file("${path.module}/main.tf"))) == 1
+    error_message = "Exactly five alarms and one budget are required."
   }
 
   assert {

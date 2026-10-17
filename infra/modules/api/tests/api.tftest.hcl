@@ -67,9 +67,10 @@ variables {
   table_name         = "compass-dev"
   table_arn          = "arn:aws:dynamodb:us-east-1:aws:table/compass-dev"
   secret_arns = {
-    app    = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/app-AbCdEf"
-    apple  = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/apple-pass-AbCdEf"
-    google = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/google-wallet-AbCdEf"
+    app           = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/app-AbCdEf"
+    origin_verify = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/origin-verify-AbCdEf"
+    apple         = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/apple-pass-AbCdEf"
+    google        = "arn:aws:secretsmanager:us-east-1:aws:secret:compass/dev/google-wallet-AbCdEf"
   }
   permissions_boundary_arn   = "arn:aws:iam::aws:policy/compass-permissions-boundary"
   api_key_value              = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -106,6 +107,33 @@ run "rest_api_from_contract" {
   assert {
     condition     = strcontains(aws_api_gateway_rest_api.this.body, "x-amazon-apigateway-binary-media-types") && strcontains(aws_api_gateway_rest_api.this.body, "application/vnd.apple.pkpass")
     error_message = "The contract must supply the binary media types."
+  }
+}
+
+run "api_key_gates_every_method" {
+  command = plan
+
+  # Every operation in the rendered contract requires the api_key scheme, so API
+  # Gateway rejects a call without the x-api-key header that CloudFront injects.
+  assert {
+    condition = alltrue(flatten([
+      for path, item in yamldecode(aws_api_gateway_rest_api.this.body).paths : [
+        for method, op in item :
+        anytrue([for sec in op.security : contains(keys(sec), "api_key")])
+        if contains(["get", "put", "post", "delete", "patch", "head", "options"], method)
+      ]
+    ]))
+    error_message = "Every operation must require the api_key security scheme."
+  }
+
+  assert {
+    condition     = length(flatten([for path, item in yamldecode(aws_api_gateway_rest_api.this.body).paths : [for method, op in item : method if contains(["get", "put", "post", "delete", "patch", "head", "options"], method)]])) == 15
+    error_message = "The contract must still define its 15 operations."
+  }
+
+  assert {
+    condition     = yamldecode(aws_api_gateway_rest_api.this.body).components.securitySchemes.api_key.name == "x-api-key" && yamldecode(aws_api_gateway_rest_api.this.body)["x-amazon-apigateway-api-key-source"] == "HEADER"
+    error_message = "The api_key scheme must read the x-api-key header."
   }
 }
 
@@ -207,7 +235,7 @@ run "lambda_environment_matches_the_pass_service" {
 
   assert {
     condition = alltrue([
-      for k in ["TABLE_NAME", "APP_SECRET_ID", "APPLE_SECRET_ID", "EVENT_TIMEZONE"] :
+      for k in ["TABLE_NAME", "APP_SECRET_ID", "ORIGIN_VERIFY_SECRET_ID", "APPLE_SECRET_ID", "EVENT_TIMEZONE"] :
       contains(keys(one(aws_lambda_function.passkit.environment).variables), k)
     ])
     error_message = "The passkit Lambda must receive the variables the pass-service reads."
@@ -215,7 +243,7 @@ run "lambda_environment_matches_the_pass_service" {
 
   assert {
     condition = alltrue([
-      for k in ["TABLE_NAME", "APP_SECRET_ID", "APPLE_SECRET_ID", "GOOGLE_SECRET_ID", "EVENT_TIMEZONE", "EVENT_WINDOW_START", "EVENT_WINDOW_END", "ID_TOKEN_VERIFIER", "ID_TOKEN_ISSUER", "APNS_ENABLED", "GOOGLE_WALLET_ENABLED", "GOOGLE_WALLET_CLASS_SUFFIX", "SERVICE_VERSION"] :
+      for k in ["TABLE_NAME", "APP_SECRET_ID", "ORIGIN_VERIFY_SECRET_ID", "APPLE_SECRET_ID", "GOOGLE_SECRET_ID", "EVENT_TIMEZONE", "EVENT_WINDOW_START", "EVENT_WINDOW_END", "ID_TOKEN_VERIFIER", "ID_TOKEN_ISSUER", "APNS_ENABLED", "GOOGLE_WALLET_ENABLED", "GOOGLE_WALLET_CLASS_SUFFIX", "SERVICE_VERSION"] :
       contains(keys(one(aws_lambda_function.api.environment).variables), k)
     ])
     error_message = "The api Lambda must receive the variables the pass-service reads."
@@ -251,8 +279,8 @@ run "lambda_role_policies_follow_least_privilege" {
   }
 
   assert {
-    condition     = !strcontains(aws_iam_role_policy.passkit.policy, "dynamodb:UpdateItem") && strcontains(aws_iam_role_policy.api.policy, "dynamodb:UpdateItem") && !strcontains(aws_iam_role_policy.api.policy, "BatchWriteItem")
-    error_message = "Table actions must match what each Lambda needs."
+    condition     = !strcontains(aws_iam_role_policy.passkit.policy, "dynamodb:UpdateItem") && !strcontains(aws_iam_role_policy.passkit.policy, "BatchWriteItem") && strcontains(aws_iam_role_policy.api.policy, "dynamodb:UpdateItem") && strcontains(aws_iam_role_policy.api.policy, "dynamodb:BatchWriteItem")
+    error_message = "Table actions must match what each Lambda needs (forget_me uses BatchWriteItem on the api role only)."
   }
 
   assert {
@@ -271,6 +299,29 @@ run "lambda_role_policies_follow_least_privilege" {
       toset(s.Condition["ForAllValues:StringLike"]["dynamodb:LeadingKeys"]) == toset(["PASS#*", "DEV#*", "HANDOFF#*", "RATE#*"])
     ])
     error_message = "The api role may write only the known key prefixes."
+  }
+}
+
+run "reserved_concurrency_and_trust" {
+  command = plan
+
+  assert {
+    condition     = aws_lambda_function.api.reserved_concurrent_executions == 20 && aws_lambda_function.passkit.reserved_concurrent_executions == 10
+    error_message = "The Lambdas must reserve 20 and 10 concurrent executions by default."
+  }
+
+  # IAM has no condition on the content of a trust document, so the pin to the
+  # Lambda service is asserted here on the document itself (owner review H2).
+  assert {
+    condition = alltrue([
+      for r in [aws_iam_role.api, aws_iam_role.passkit] :
+      length(jsondecode(r.assume_role_policy).Statement) == 1 &&
+      jsondecode(r.assume_role_policy).Statement[0].Effect == "Allow" &&
+      jsondecode(r.assume_role_policy).Statement[0].Action == "sts:AssumeRole" &&
+      jsondecode(r.assume_role_policy).Statement[0].Principal == { Service = "lambda.amazonaws.com" } &&
+      !can(jsondecode(r.assume_role_policy).Statement[0].Condition)
+    ])
+    error_message = "Both Lambda roles must trust lambda.amazonaws.com and nothing else."
   }
 }
 

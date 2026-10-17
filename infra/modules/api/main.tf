@@ -57,14 +57,17 @@ resource "aws_cloudwatch_log_group" "access" {
 # ---------------------------------------------------------------------------
 
 resource "aws_lambda_function" "api" {
-  function_name    = local.api_function_name
-  description      = "Compass API: attendee and hand-off routes."
-  role             = aws_iam_role.api.arn
-  runtime          = "nodejs24.x"
-  architectures    = ["arm64"]
-  handler          = "index.handler"
-  memory_size      = 512
-  timeout          = 10
+  function_name = local.api_function_name
+  description   = "Compass API: attendee and hand-off routes."
+  role          = aws_iam_role.api.arn
+  runtime       = "nodejs24.x"
+  architectures = ["arm64"]
+  handler       = "index.handler"
+  memory_size   = 512
+  timeout       = 10
+
+  reserved_concurrent_executions = var.api_reserved_concurrency
+
   filename         = var.api_lambda_zip
   source_code_hash = filebase64sha256(var.api_lambda_zip)
 
@@ -80,14 +83,17 @@ resource "aws_lambda_function" "api" {
 }
 
 resource "aws_lambda_function" "passkit" {
-  function_name    = local.passkit_function_name
-  description      = "Compass API: Apple PassKit web service routes."
-  role             = aws_iam_role.passkit.arn
-  runtime          = "nodejs24.x"
-  architectures    = ["arm64"]
-  handler          = "index.handler"
-  memory_size      = 512
-  timeout          = 5
+  function_name = local.passkit_function_name
+  description   = "Compass API: Apple PassKit web service routes."
+  role          = aws_iam_role.passkit.arn
+  runtime       = "nodejs24.x"
+  architectures = ["arm64"]
+  handler       = "index.handler"
+  memory_size   = 512
+  timeout       = 5
+
+  reserved_concurrent_executions = var.passkit_reserved_concurrency
+
   filename         = var.passkit_lambda_zip
   source_code_hash = filebase64sha256(var.passkit_lambda_zip)
 

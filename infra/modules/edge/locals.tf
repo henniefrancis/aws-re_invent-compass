@@ -8,6 +8,12 @@ locals {
   # Tighter ceiling for the PassKit web service paths, over the same window.
   passkit_rate_limit = 300
 
+  # Largest request body the API accepts. The contract allows at most 25 passes
+  # of under 1 KB each (about 15 KB) or 80 hand-off ids (about 4 KB), so 64 KB
+  # leaves a wide margin. WAF inspects up to the same limit and a larger body is
+  # blocked on /api/*.
+  api_body_limit_bytes = 65536
+
   site_origin_id = "site"
   api_origin_id  = "api"
 

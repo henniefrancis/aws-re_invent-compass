@@ -34,6 +34,16 @@ variable "rest_api_name" {
   }
 }
 
+variable "web_acl_name" {
+  description = "Name of the WAF web ACL, the WebACL dimension of its metrics (from the edge module)."
+  type        = string
+
+  validation {
+    condition     = length(var.web_acl_name) > 0
+    error_message = "The web_acl_name value must not be empty."
+  }
+}
+
 variable "api_lambda_name" {
   description = "Name of the api Lambda function (from the api module)."
   type        = string

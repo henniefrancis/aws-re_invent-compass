@@ -1,5 +1,6 @@
 # Single table (ADR-012, build plan section 4.2). Retained resource (ADR-015):
-# prevent_destroy plus deletion protection and point-in-time recovery.
+# prevent_destroy plus deletion protection. Point-in-time recovery is off by
+# owner decision (see below).
 #
 # The global secondary indexes use the stable hash_key and range_key arguments,
 # not the key_schema block. In AWS provider 6.x key_schema currently forces GSI
@@ -55,8 +56,9 @@ resource "aws_dynamodb_table" "this" {
     enabled = false
   }
 
-  # Encrypted at rest with the AWS owned key by default; the table holds no
-  # secret material (hashes and opaque identifiers only).
+  # Encrypted at rest with the AWS managed key aws/dynamodb (enabled = true; an
+  # absent block would use the AWS owned key instead). The table holds no secret
+  # material, only hashes and opaque identifiers.
   server_side_encryption {
     enabled = true
   }
