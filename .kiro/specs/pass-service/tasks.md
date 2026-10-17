@@ -168,23 +168,23 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 9.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 10. Implement request and response validation
-  - [ ] 10.1 Implement the request validators
+- [x] 10. Implement request and response validation
+  - [x] 10.1 Implement the request validators
     - Create `src/validation/request-schemas.ts` with `parseJsonBody` (64 KiB cap), `assertKnownKeys` with key shapes taken from the contract (PassFields and its nested objects, IssuePassesRequest, CreateHandoffRequest, DeviceRegistration, LogEntries), `parseIssueRequest` (1 to 2 distinct platforms, 1 to 25 passes, distinct session codes, each through `createPassFieldsSchema(window)`), `parsePassFields`, `parseHandoffRequest` (1 to 80 distinct UUID v4 serials, at least one include flag), `parseRegistrationBody` (1 to 256 hex characters, else 401) and `parseLogBody` (count only); every failure is the same 400 `invalid_request`, and no value is trimmed or normalised
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.6, 7.7, 15.4, 17.5, 18.7_
 
-  - [ ] 10.2 Implement the response schemas
+  - [x] 10.2 Implement the response schemas
     - Create `src/validation/response-schemas.ts`, each schema declared as `z.ZodType<CompassApi['components']['schemas']['<Name>']>` for Health, IssuePassesResponse, UpdatePassResponse, VoidPassResponse, CreateHandoffResponse, HandoffView, ForgetMeResponse and SerialNumbers
     - _Requirements: 2.4_
 
-  - [ ] 10.3 Write property test for request validation
+  - [x] 10.3 Write property test for request validation
     - **Property 10: PassFields acceptance equals the shared schema plus strictness**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7**
 
-  - [ ] 10.4 Commit
+  - [x] 10.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 11. Checkpoint - Ensure all tests pass
+- [x] 11. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 12. Implement the Apple pass builder and signer
