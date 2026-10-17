@@ -427,11 +427,11 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 24.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 25. Write the package README
-  - [ ] 25.1 Write `packages/mcp-server/README.md`
+- [x] 25. Write the package README
+  - [x] 25.1 Write `packages/mcp-server/README.md`
     - Sections per design Component 15; setup for Kiro, Claude Desktop, VS Code and the Kiro CLI, each in that client's documented format with a link to its official MCP documentation that you open and check while writing; hooks are Kiro-only and the server guardrail runs regardless; the four Read_Tools that may be auto-approved and that write tools must never be; simulated mode and `demo`; what leaves the machine; the depth rules
     - _Requirements: 21.1, 21.2, 21.3, 21.4_
-  - [ ] 25.2 Commit
+  - [x] 25.2 Commit
     - After `npx eslint .` and `npx prettier --check .` both pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [x] 26. Integrate the merged S1, S2 and S4 modules
