@@ -91,24 +91,24 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 5.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 6. Checkpoint - internal foundation
+- [x] 6. Checkpoint - internal foundation
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Implement boarding time
-  - [ ] 7.1 Implement `boarding.ts` `computeBoarding`
+- [x] 7. Implement boarding time
+  - [x] 7.1 Implement `boarding.ts` `computeBoarding`
     - Return `closes` at start minus 10 minutes (instant arithmetic, expressed in the event timezone) when reservable with usable start and valid timezone
     - Return `notApplicable` when `isReservable` is false; return `unknown` when start time, reservability flag, or timezone is missing or unrecognised; never substitute a default and never decide reservability from the type name
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
-  - [ ] 7.2 Write property test for boarding closes at start minus ten minutes
+  - [x] 7.2 Write property test for boarding closes at start minus ten minutes
     - **Property 1: Boarding closes at start minus ten minutes**
     - **Validates: Requirements 1.1, 1.7**
-  - [ ] 7.3 Write property test for reservability coming from the flag, not the type name
+  - [x] 7.3 Write property test for reservability coming from the flag, not the type name
     - **Property 2: Reservability comes from the flag, not the type name**
     - **Validates: Requirements 1.2, 1.3, 1.4**
-  - [ ] 7.4 Write boarding example test
+  - [x] 7.4 Write boarding example test
     - Assert one concrete reservable session returns `closes` ten minutes before start in the event timezone
     - _Requirements: 1.1, 1.7_
-  - [ ] 7.5 Run the rules tests, confirm they pass, then commit
+  - [x] 7.5 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 8. Implement connection classification
