@@ -67,8 +67,6 @@ export function createInProcessPassService(deps: PassServiceDeps): InProcessPass
   const passFields = createPassFieldsSchema(deps.eventWindow);
   const passes = new Map<string, StoredPass>();
   const handoffs = new Map<string, { serials: string[]; expiresAt: string }>();
-  const encoder = new TextEncoder();
-
   const respond = (
     status: number,
     body: unknown,
@@ -76,7 +74,7 @@ export function createInProcessPassService(deps: PassServiceDeps): InProcessPass
   ): HttpResponse => ({
     status,
     headers: { 'content-type': contentType },
-    body: encoder.encode(JSON.stringify(body)),
+    body: JSON.stringify(body),
   });
 
   const problem = (status: number, code: string, title: string): HttpResponse =>
@@ -92,10 +90,8 @@ export function createInProcessPassService(deps: PassServiceDeps): InProcessPass
     );
 
   const parseJson = (request: HttpRequest): unknown => {
-    const text =
-      typeof request.body === 'string' ? request.body : new TextDecoder().decode(request.body);
     try {
-      return JSON.parse(text) as unknown;
+      return JSON.parse(request.body ?? '') as unknown;
     } catch {
       return undefined;
     }

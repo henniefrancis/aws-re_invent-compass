@@ -97,9 +97,7 @@ describe('createSimulatedRuntime', () => {
           ],
         }),
       });
-      expect(new TextDecoder().decode(issued.body)).toContain(
-        '00000000-0000-4000-8000-000000000001',
-      );
+      expect(issued.body).toContain('00000000-0000-4000-8000-000000000001');
       expect(guard.attempts).toEqual([]);
     } finally {
       guard.restore();
@@ -138,9 +136,7 @@ describe('createSimulatedRuntime', () => {
         ],
       }),
     };
-    const first = JSON.parse(
-      new TextDecoder().decode((await passService.transport.request(issue)).body),
-    ) as {
+    const first = JSON.parse((await passService.transport.request(issue)).body) as {
       passes: { serialNumber: string }[];
     };
     const serial = String(first.passes[0]?.serialNumber);
@@ -153,8 +149,7 @@ describe('createSimulatedRuntime', () => {
         include: { apple: true, google: false, calendar: false },
       }),
     });
-    const id = (JSON.parse(new TextDecoder().decode(handoff.body)) as { handoffId: string })
-      .handoffId;
+    const id = (JSON.parse(handoff.body) as { handoffId: string }).handoffId;
     expect(id).toMatch(/^[A-Za-z0-9_-]{22}$/);
   });
 });

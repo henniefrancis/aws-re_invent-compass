@@ -82,8 +82,7 @@ function setup() {
         : { body: typeof body === 'string' ? body : JSON.stringify(body) }),
     };
     const response = await service.transport.request(request);
-    const text = new TextDecoder().decode(response.body);
-    return { response, json: JSON.parse(text) as unknown };
+    return { response, json: JSON.parse(response.body) as unknown };
   };
   return { clock, service, send };
 }
@@ -113,15 +112,21 @@ describe('in-process pass service', () => {
     expectProblem(await send('PUT', `/api/v1/passes/${serial}`, fields()), 404);
   });
 
-  test('accepts a byte body and mixed-case header names', async () => {
+  test('accepts mixed-case header names and refuses a request with no body', async () => {
     const { service } = setup();
-    const response = await service.transport.request({
+    const ok = await service.transport.request({
       method: 'POST',
       url: `${BASE}/api/v1/passes`,
       headers: { authorization: 'x' },
-      body: new TextEncoder().encode(JSON.stringify({ platforms: ['apple'], passes: [fields()] })),
+      body: JSON.stringify({ platforms: ['apple'], passes: [fields()] }),
     });
-    expect(response.status).toBe(201);
+    expect(ok.status).toBe(201);
+    const empty = await service.transport.request({
+      method: 'POST',
+      url: `${BASE}/api/v1/passes`,
+      headers: { authorization: 'x' },
+    });
+    expect(empty.status).toBe(400);
   });
 
   test('refuses a missing or empty Authorization header', async () => {

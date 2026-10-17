@@ -35,9 +35,11 @@ describe('fetch transport', () => {
       url: 'https://compass.invalid/api/v1/passes',
       headers: { Authorization: 'Bearer x' },
       body: 'payload',
+      binary: true,
     });
     expect(response.status).toBe(200);
-    expect([...response.body]).toEqual([1, 2, 3]);
+    expect(response.body).toBe('');
+    expect([...(response.bytes ?? [])]).toEqual([1, 2, 3]);
     expect(response.headers['content-type']).toBe('application/vnd.apple.pkpass');
     expect(calls[0]?.init.redirect).toBe('error');
     expect(calls[0]?.init.signal).toBeInstanceOf(AbortSignal);
@@ -79,20 +81,30 @@ describe('fetch transport', () => {
           status: 200,
           headers: new Headers(),
           arrayBuffer: () => Promise.reject(new Error('x')),
+          text: () => Promise.reject(new Error('x')),
         } as unknown as Response),
       timeoutMs: 1000,
     });
-    await expect(
-      brokenBody.request({ method: 'GET', url: 'https://compass.invalid/x', headers: {} }),
-    ).rejects.toSatisfy((e) => codeOf(e) === 'Network');
+    for (const binary of [true, false]) {
+      await expect(
+        brokenBody.request({
+          method: 'GET',
+          url: 'https://compass.invalid/x',
+          headers: {},
+          binary,
+        }),
+      ).rejects.toSatisfy((e) => codeOf(e) === 'Network');
+    }
   });
 
   test('a response over the size cap is refused', async () => {
     const { fn } = recordingFetch(() => new Response(new Uint8Array(MAX_RESPONSE_BYTES + 1)));
     const transport = createFetchTransport({ fetch: fn, timeoutMs: 1000 });
-    await expect(
-      transport.request({ method: 'GET', url: 'https://compass.invalid/x', headers: {} }),
-    ).rejects.toSatisfy((e) => codeOf(e) === 'UnexpectedResponse');
+    for (const binary of [true, false]) {
+      await expect(
+        transport.request({ method: 'GET', url: 'https://compass.invalid/x', headers: {}, binary }),
+      ).rejects.toSatisfy((e) => codeOf(e) === 'UnexpectedResponse');
+    }
   });
 
   test('the default transport uses the global fetch', async () => {
@@ -120,34 +132,51 @@ describe('node app file system', () => {
     await rm(temp, { recursive: true, force: true });
   });
 
-  test('creates directories, writes, reads, renames, removes and reports existence', async () => {
+  test('creates folders, writes, reads, renames, removes and reports modification times', async () => {
     const dir = join(temp, 'a', 'b');
     await fs.ensureDir(dir, 0o700);
-    const file = join(dir, 'one.bin');
-    expect(await fs.exists(file)).toBe(false);
+    const file = join(dir, 'one.txt');
     expect(await fs.readFile(file)).toBeUndefined();
-    await fs.writeFile(file, new Uint8Array([1, 2, 3]));
-    await fs.writeFile(file, 'text');
-    expect(new TextDecoder().decode(await fs.readFile(file))).toBe('text');
-    await fs.createExclusive(join(dir, 'two.txt'), 'x');
-    await expect(fs.createExclusive(join(dir, 'two.txt'), 'y')).rejects.toThrow();
-    await fs.rename(join(dir, 'two.txt'), join(dir, 'three.txt'));
-    expect(await fs.exists(join(dir, 'three.txt'))).toBe(true);
-    await fs.remove(join(dir, 'three.txt'));
-    await fs.remove(join(dir, 'three.txt'));
-    expect(await fs.exists(join(dir, 'three.txt'))).toBe(false);
+    expect(await fs.mtimeMs(file)).toBeUndefined();
+    await fs.writeFile(file, 'first', 0o600);
+    await fs.writeFile(file, 'text', 0o600);
+    expect(await fs.readFile(file)).toBe('text');
+    expect(typeof (await fs.mtimeMs(file))).toBe('number');
+    await fs.rename(file, join(dir, 'two.txt'));
+    expect(await fs.readFile(join(dir, 'two.txt'))).toBe('text');
+    await fs.remove(join(dir, 'two.txt'));
+    await fs.remove(join(dir, 'two.txt'));
+    expect(await fs.readFile(join(dir, 'two.txt'))).toBeUndefined();
   });
 
-  test('other read errors are not swallowed', async () => {
+  test('createExclusive creates once and reports false when the file exists', async () => {
+    const file = join(temp, 'lock.txt');
+    expect(await fs.createExclusive(file, 'one', 0o600)).toBe(true);
+    expect(await fs.createExclusive(file, 'two', 0o600)).toBe(false);
+    expect(await fs.readFile(file)).toBe('one');
+  });
+
+  test('remove deletes a real folder with everything under it', async () => {
+    const dir = join(temp, 'tree');
+    await fs.ensureDir(join(dir, 'inner'), 0o700);
+    await fs.writeFile(join(dir, 'inner', 'f.txt'), 'x', 0o600);
+    await fs.remove(dir);
+    expect(await fs.readFile(join(dir, 'inner', 'f.txt'))).toBeUndefined();
+  });
+
+  test('other read and stat errors are not swallowed', async () => {
     await expect(fs.readFile(temp)).rejects.toThrow();
+    await expect(fs.mtimeMs(`${temp}${String.fromCharCode(0)}bad`)).rejects.toThrow();
+    await expect(fs.remove(`${temp}${String.fromCharCode(0)}bad`)).rejects.toThrow();
+    await expect(fs.createExclusive(join(temp, 'no-such-dir', 'f'), 'x', 0o600)).rejects.toThrow();
   });
 
   test.skipIf(process.platform === 'win32')(
-    'files are 0o600 and directories 0o700 on POSIX',
+    'files are 0o600 and folders 0o700 on POSIX',
     async () => {
       const dir = join(temp, 'modes');
       await fs.ensureDir(dir, 0o700);
-      await fs.writeFile(join(dir, 'f'), 'x');
+      await fs.writeFile(join(dir, 'f'), 'x', 0o600);
       expect((await stat(join(dir, 'f'))).mode & 0o777).toBe(0o600);
       expect((await stat(dir)).mode & 0o777).toBe(0o700);
     },
@@ -158,12 +187,12 @@ describe('node app file system', () => {
     await writeFile(join(temp, 'link-case', 'target.txt'), 'target');
     const linkPath = join(temp, 'link-case', 'link.txt');
     const reportsLink = createNodeAppFileSystem((path) =>
-      Promise.resolve({ isSymbolicLink: () => path === linkPath }),
+      Promise.resolve({ isSymbolicLink: () => path === linkPath, isDirectory: () => false }),
     );
-    await expect(reportsLink.writeFile(linkPath, 'x')).rejects.toSatisfy(
+    await expect(reportsLink.writeFile(linkPath, 'x', 0o600)).rejects.toSatisfy(
       (e) => codeOf(e) === 'UnsafePath',
     );
-    await expect(reportsLink.createExclusive(linkPath, 'x')).rejects.toSatisfy(
+    await expect(reportsLink.createExclusive(linkPath, 'x', 0o600)).rejects.toSatisfy(
       (e) => codeOf(e) === 'UnsafePath',
     );
     await expect(reportsLink.rename(linkPath, join(temp, 'link-case', 'x'))).rejects.toSatisfy(
@@ -174,6 +203,20 @@ describe('node app file system', () => {
     ).rejects.toSatisfy((e) => codeOf(e) === 'UnsafePath');
     expect(await readFile(join(temp, 'link-case', 'target.txt'), 'utf8')).toBe('target');
     const broken = createNodeAppFileSystem(() => Promise.reject(new Error('EIO')));
-    await expect(broken.writeFile(join(temp, 'link-case', 'z'), 'x')).rejects.toThrow('EIO');
+    await expect(broken.writeFile(join(temp, 'link-case', 'z'), 'x', 0o600)).rejects.toThrow('EIO');
+  });
+
+  test('remove unlinks a link and never follows it, even when it points at a folder', async () => {
+    const victim = join(temp, 'victim');
+    await mkdir(victim, { recursive: true });
+    await writeFile(join(victim, 'keep.txt'), 'keep');
+    const linkPath = join(temp, 'link-to-victim');
+    await writeFile(linkPath, 'stand-in for a link');
+    const reportsFolderLink = createNodeAppFileSystem(() =>
+      Promise.resolve({ isSymbolicLink: () => true, isDirectory: () => true }),
+    );
+    await reportsFolderLink.remove(linkPath);
+    expect(await fs.readFile(linkPath)).toBeUndefined();
+    expect(await readFile(join(victim, 'keep.txt'), 'utf8')).toBe('keep');
   });
 });
