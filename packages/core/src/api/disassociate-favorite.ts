@@ -16,7 +16,11 @@ export function disassociateFavorite(ctx: ClientContext, sessionId: string): Pro
     {
       operation: 'DisassociateFavorite',
       method: 'DELETE',
-      path: eventPath(ctx, `/favorites/${segment(sessionId)}`),
+      path: eventPath(
+        ctx,
+        'DisassociateFavorite',
+        `/favorites/${segment('DisassociateFavorite', sessionId)}`,
+      ),
     },
     { units: 1 },
     (response) => {

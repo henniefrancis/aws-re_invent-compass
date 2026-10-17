@@ -7,6 +7,7 @@
 // (Requirements 10.1, 10.2, 10.3). The error names only the operation and the reason
 // category, never echoing the ids, so no id value leaks into an error.
 
+import { assertSafeId } from './event-path.js';
 import { ValidationError } from './errors.js';
 import type { OperationName } from './transport.js';
 
@@ -28,5 +29,8 @@ export function assertBulkInput(operation: OperationName, sessionIds: readonly s
   }
   if (new Set(sessionIds).size !== sessionIds.length) {
     throw new ValidationError(operation, `${operation} requires all session ids to be distinct`);
+  }
+  for (const id of sessionIds) {
+    assertSafeId(operation, id);
   }
 }

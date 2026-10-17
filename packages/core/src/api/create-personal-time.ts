@@ -18,7 +18,7 @@ export function createPersonalTime(ctx: ClientContext, input: PersonalTimeInput)
     {
       operation: 'CreatePersonalTime',
       method: 'POST',
-      path: eventPath(ctx, '/personal-time'),
+      path: eventPath(ctx, 'CreatePersonalTime', '/personal-time'),
       body: input,
     },
     { units: 1 },

@@ -16,7 +16,11 @@ export function deletePersonalTime(ctx: ClientContext, id: string): Promise<void
     {
       operation: 'DeletePersonalTime',
       method: 'DELETE',
-      path: eventPath(ctx, `/personal-time/${segment(id)}`),
+      path: eventPath(
+        ctx,
+        'DeletePersonalTime',
+        `/personal-time/${segment('DeletePersonalTime', id)}`,
+      ),
     },
     { units: 1 },
     (response) => {

@@ -26,7 +26,7 @@ export function associateFavorites(
     {
       operation: 'AssociateFavorites',
       method: 'POST',
-      path: eventPath(ctx, '/favorites'),
+      path: eventPath(ctx, 'AssociateFavorites', '/favorites'),
       body: { sessionIds: [...sessionIds] },
     },
     { units: sessionIds.length },

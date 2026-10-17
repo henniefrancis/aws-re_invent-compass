@@ -22,7 +22,11 @@ export function updatePersonalTime(
     {
       operation: 'UpdatePersonalTime',
       method: 'PUT',
-      path: eventPath(ctx, `/personal-time/${segment(id)}`),
+      path: eventPath(
+        ctx,
+        'UpdatePersonalTime',
+        `/personal-time/${segment('UpdatePersonalTime', id)}`,
+      ),
       body: input,
     },
     { units: 1 },

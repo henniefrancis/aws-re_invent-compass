@@ -16,7 +16,11 @@ export function cancelReservation(ctx: ClientContext, sessionId: string): Promis
     {
       operation: 'CancelReservation',
       method: 'DELETE',
-      path: eventPath(ctx, `/reservations/${segment(sessionId)}`),
+      path: eventPath(
+        ctx,
+        'CancelReservation',
+        `/reservations/${segment('CancelReservation', sessionId)}`,
+      ),
     },
     { units: 1 },
     (response) => {

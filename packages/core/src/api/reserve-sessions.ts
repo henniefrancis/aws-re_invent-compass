@@ -26,7 +26,7 @@ export function reserveSessions(
     {
       operation: 'ReserveSessions',
       method: 'POST',
-      path: eventPath(ctx, '/reservations'),
+      path: eventPath(ctx, 'ReserveSessions', '/reservations'),
       body: { sessionIds: [...sessionIds] },
     },
     { units: sessionIds.length },

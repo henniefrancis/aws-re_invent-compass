@@ -13,7 +13,7 @@ const BULK_OPS: readonly OperationName[] = ['ReserveSessions', 'AssociateFavorit
 
 // A small alphabet of distinct id atoms so fast-check can build both distinct and
 // duplicate lists deterministically.
-const idArb = fc.string({ minLength: 1, maxLength: 8 });
+const idArb = fc.stringMatching(/^[A-Za-z0-9_-]{1,8}$/);
 
 describe('Feature: events-client, Property 18: Bulk input is accepted only when 1 to 10 distinct ids, else rejected before send', () => {
   test('a list of 1 to 10 distinct ids is accepted', () => {

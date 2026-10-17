@@ -30,7 +30,7 @@ export function getSession(
     {
       operation: 'GetSession',
       method: 'GET',
-      path: eventPath(ctx, `/sessions/${segment(sessionId)}`),
+      path: eventPath(ctx, 'GetSession', `/sessions/${segment('GetSession', sessionId)}`),
       query,
     },
     { units: 1 },

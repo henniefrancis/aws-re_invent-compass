@@ -58,7 +58,11 @@ describe('Feature: events-client, the HTTP transport attaches the access token a
       credential: credential(),
       baseUrl: BASE,
     });
-    const req: ClientRequest = { operation: 'GetSchedule', method: 'GET', path: '/schedule' };
+    const req: ClientRequest = {
+      operation: 'GetSchedule',
+      method: 'GET',
+      path: '/events/E1/schedule',
+    };
     const res = await transport.send(req);
 
     expect(res.status).toBe(200);
@@ -81,13 +85,13 @@ describe('Feature: events-client, the HTTP transport attaches the access token a
     const req: ClientRequest = {
       operation: 'ListSessions',
       method: 'GET',
-      path: '/sessions',
+      path: '/events/E1/sessions',
       query: { includeAbstracts: 'false', nextToken: 'abc' },
     };
     await transport.send(req);
 
     const url = captured[0]?.url ?? '';
-    expect(url.startsWith(`${BASE}/sessions?`)).toBe(true);
+    expect(url.startsWith(`${BASE}/events/E1/sessions?`)).toBe(true);
     expect(url).toContain('includeAbstracts=false');
     expect(url).toContain('nextToken=abc');
   });
@@ -102,7 +106,7 @@ describe('Feature: events-client, the HTTP transport attaches the access token a
     const req: ClientRequest = {
       operation: 'ReserveSessions',
       method: 'POST',
-      path: '/reservations',
+      path: '/events/E1/reservations',
       body: { sessionIds: ['s1', 's2'] },
     };
     await transport.send(req);
@@ -128,7 +132,7 @@ describe('Feature: events-client, the HTTP transport attaches the access token a
     const res = await transport.send({
       operation: 'CancelReservation',
       method: 'DELETE',
-      path: '/reservations/s1',
+      path: '/events/E1/reservations/s1',
     });
     expect(res.status).toBe(204);
     expect(res.body).toBeUndefined();
@@ -146,7 +150,7 @@ describe('Feature: events-client, the HTTP transport attaches the access token a
       credential: credential(),
       baseUrl: BASE,
     });
-    const res = await transport.send({ operation: 'GetEvent', method: 'GET', path: '/event' });
+    const res = await transport.send({ operation: 'GetEvent', method: 'GET', path: '/events/E1' });
     expect(res.body).toBe('not json at all');
   });
 

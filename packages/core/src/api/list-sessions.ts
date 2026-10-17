@@ -38,7 +38,12 @@ export function listSessions(
   }
   return executeOperation(
     ctx,
-    { operation: 'ListSessions', method: 'GET', path: eventPath(ctx, '/sessions'), query },
+    {
+      operation: 'ListSessions',
+      method: 'GET',
+      path: eventPath(ctx, 'ListSessions', '/sessions'),
+      query,
+    },
     { units: 1 },
     (response) => validateBody('ListSessions', ListSessionsSchema, response.body),
   );

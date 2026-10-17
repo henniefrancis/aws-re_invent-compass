@@ -12,6 +12,7 @@
 // function and the base URL are injected through deps. The default factory binds
 // the real global fetch.
 
+import { ValidationError } from './errors.js';
 import {
   EVENTS_API_BASE_URL,
   type ClientRequest,
@@ -80,12 +81,26 @@ function buildUrl(baseUrl: string, req: ClientRequest): string {
   const UrlCtor = (
     globalThis as unknown as {
       URL: new (input: string) => {
+        pathname: string;
         searchParams: { set(k: string, v: string): void };
         toString(): string;
       };
     }
   ).URL;
   const url = new UrlCtor(`${baseUrl}${req.path}`);
+  // The final path must be exactly the base path plus the request path, inside the
+  // /events tree. URL parsing collapses "." and ".." segments and treats "?" and "#"
+  // as delimiters, so any difference means the path was altered or is unsafe, and the
+  // request is refused before anything is sent (finding H1).
+  const insideEvents =
+    (req.path === '/events' || req.path.startsWith('/events/')) &&
+    !req.path.slice(1).split('/').includes('');
+  if (!insideEvents || url.pathname !== `${new UrlCtor(baseUrl).pathname}${req.path}`) {
+    throw new ValidationError(
+      req.operation,
+      `${req.operation} has a request path that is not valid`,
+    );
+  }
   if (req.query !== undefined) {
     for (const [key, value] of Object.entries(req.query)) {
       url.searchParams.set(key, value);

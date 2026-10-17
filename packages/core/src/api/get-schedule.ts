@@ -14,7 +14,7 @@ import type { ClientContext } from './transport.js';
 export function getSchedule(ctx: ClientContext): Promise<GetSchedule> {
   return executeOperation(
     ctx,
-    { operation: 'GetSchedule', method: 'GET', path: eventPath(ctx, '/schedule') },
+    { operation: 'GetSchedule', method: 'GET', path: eventPath(ctx, 'GetSchedule', '/schedule') },
     { units: 1 },
     (response) => validateBody('GetSchedule', GetScheduleSchema, response.body),
   );

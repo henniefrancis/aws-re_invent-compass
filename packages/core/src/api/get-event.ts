@@ -5,6 +5,7 @@
 // (Requirements 6.1, 6.3, 6.4, 6.6).
 
 import { executeOperation } from './execute-operation.js';
+import { segment } from './event-path.js';
 import { validateBody } from './validate.js';
 import { GetEventResultSchema, type GetEventResult } from './response-wrappers.js';
 import type { ClientContext } from './transport.js';
@@ -13,7 +14,7 @@ import type { ClientContext } from './transport.js';
 export function getEvent(ctx: ClientContext, eventId: string): Promise<GetEventResult> {
   return executeOperation(
     ctx,
-    { operation: 'GetEvent', method: 'GET', path: `/events/${encodeURIComponent(eventId)}` },
+    { operation: 'GetEvent', method: 'GET', path: `/events/${segment('GetEvent', eventId)}` },
     { units: 0 },
     (response) => validateBody('GetEvent', GetEventResultSchema, response.body),
   );

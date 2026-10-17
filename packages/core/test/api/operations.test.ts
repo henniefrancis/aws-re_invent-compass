@@ -55,9 +55,9 @@ describe('events-client, task 8.1: read operations', () => {
 
   test('getEvent returns the wrapped event and encodes the id in the path', async () => {
     const h = createHarness({ responses: [response(200, { event: sampleEvent })] });
-    const result = await getEvent(h.ctx, 'a b/c');
+    const result = await getEvent(h.ctx, 'a b');
     expect(result.event.eventId).toBe('reinvent2026');
-    expect(h.sent[0]?.path).toBe('/events/a%20b%2Fc');
+    expect(h.sent[0]?.path).toBe('/events/a%20b');
   });
 
   test('listSessions passes nextToken and includeAbstracts as query and validates', async () => {
@@ -72,11 +72,11 @@ describe('events-client, task 8.1: read operations', () => {
 
   test('listSessions sends locale and url-encodes the event id from the context', async () => {
     const h = createHarness({
-      eventId: 'a b/c',
+      eventId: 'a b',
       responses: [response(200, { items: [], totalCount: 0 })],
     });
     await listSessions(h.ctx, { locale: 'en-US' });
-    expect(h.sent[0]?.path).toBe('/events/a%20b%2Fc/sessions');
+    expect(h.sent[0]?.path).toBe('/events/a%20b/sessions');
     expect(h.sent[0]?.query).toEqual({ locale: 'en-US' });
   });
 
@@ -96,10 +96,10 @@ describe('events-client, task 8.1: read operations', () => {
   });
 
   test('getSession encodes the session id and sends locale', async () => {
-    const session = { sessionId: 'a/b', title: 'Deep dive' };
+    const session = { sessionId: 'a b', title: 'Deep dive' };
     const h = createHarness({ responses: [response(200, { session })] });
-    await getSession(h.ctx, 'a/b', { locale: 'ja-JP' });
-    expect(h.sent[0]?.path).toBe('/events/reinvent2026/sessions/a%2Fb');
+    await getSession(h.ctx, 'a b', { locale: 'ja-JP' });
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/sessions/a%20b');
     expect(h.sent[0]?.query).toEqual({ locale: 'ja-JP' });
   });
 
@@ -303,7 +303,7 @@ describe('events-client: the single retry counts against the quota', () => {
 });
 
 describe('Feature: events-client, Property 19: Bulk results pass through successful and failed faithfully', () => {
-  const idArb = fc.string({ minLength: 1, maxLength: 8 });
+  const idArb = fc.stringMatching(/^[A-Za-z0-9_-]{1,8}$/);
   const failureArb = fc.record({
     sessionId: idArb,
     code: fc.constantFrom('sessionFull', 'scheduleConflict', 'alreadyScheduled', 'brandNewCode'),

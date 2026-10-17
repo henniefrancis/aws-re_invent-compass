@@ -140,8 +140,8 @@ const cases: Case[] = [
   },
   {
     operation: 'GetSession',
-    expectedParams: { eventId: 'reinvent2026', sessionId: 'S/1' },
-    call: (c) => getSession(c, 'S/1', { locale: 'en-US' }),
+    expectedParams: { eventId: 'reinvent2026', sessionId: 'S 1' },
+    call: (c) => getSession(c, 'S 1', { locale: 'en-US' }),
     reply: response(200, sessionBody),
   },
   {
@@ -158,8 +158,8 @@ const cases: Case[] = [
   },
   {
     operation: 'CancelReservation',
-    expectedParams: { eventId: 'reinvent2026', sessionId: 'S/1' },
-    call: (c) => cancelReservation(c, 'S/1'),
+    expectedParams: { eventId: 'reinvent2026', sessionId: 'S 1' },
+    call: (c) => cancelReservation(c, 'S 1'),
     reply: response(204, undefined),
   },
   {
@@ -170,8 +170,8 @@ const cases: Case[] = [
   },
   {
     operation: 'DisassociateFavorite',
-    expectedParams: { eventId: 'reinvent2026', sessionId: 'S/1' },
-    call: (c) => disassociateFavorite(c, 'S/1'),
+    expectedParams: { eventId: 'reinvent2026', sessionId: 'S 1' },
+    call: (c) => disassociateFavorite(c, 'S 1'),
     reply: response(204, undefined),
   },
   {
@@ -182,14 +182,14 @@ const cases: Case[] = [
   },
   {
     operation: 'UpdatePersonalTime',
-    expectedParams: { eventId: 'reinvent2026', personalTimeId: 'p/1' },
-    call: (c) => updatePersonalTime(c, 'p/1', personalTime),
+    expectedParams: { eventId: 'reinvent2026', personalTimeId: 'p 1' },
+    call: (c) => updatePersonalTime(c, 'p 1', personalTime),
     reply: response(204, undefined),
   },
   {
     operation: 'DeletePersonalTime',
-    expectedParams: { eventId: 'reinvent2026', personalTimeId: 'p/1' },
-    call: (c) => deletePersonalTime(c, 'p/1'),
+    expectedParams: { eventId: 'reinvent2026', personalTimeId: 'p 1' },
+    call: (c) => deletePersonalTime(c, 'p 1'),
     reply: response(204, undefined),
   },
 ];
