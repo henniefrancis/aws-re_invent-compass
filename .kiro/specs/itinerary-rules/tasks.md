@@ -189,17 +189,17 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 13.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 14. Implement the checkReservation guardrail with the count-only overload interface
-  - [ ] 14.1 Implement `check-reservation.ts` `checkReservation`
+- [x] 14. Implement the checkReservation guardrail with the count-only overload interface
+  - [x] 14.1 Implement `check-reservation.ts` `checkReservation`
     - Turn the candidate `NormalisedSession` into a `reservedSession` `Commitment`, find the nearest earlier and later commitments on the same event day, and ignore a candidate already in the schedule for clash checks
     - Compose the lower-level rules (never re-implement them): block on a clash or an impossible adjacent connection; warn on a tight connection, on a meal layover going from present to missing, or on overload going from false to true; skip any rule that cannot be judged, raise the decision to at least warn, and name the skipped rule
     - Call overload only through the single `isOverloaded` interface. For now `isOverloaded` uses the count-only fallback (a day with more than `overloadCountThreshold` commitments is overloaded), so the guardrail works before the full energy formula exists (Req 5.9); do not re-implement it when the full formula lands
     - Return exactly one `Verdict` by precedence (block over warn over allow) with one reason per applied rule; every reason flows through `reasons.ts`
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 8.10, 5.9_
-  - [ ] 14.2 Write property test for the guardrail verdict and precedence
+  - [x] 14.2 Write property test for the guardrail verdict and precedence
     - **Property 14: checkReservation returns one valid Verdict by severity precedence and never blocks on missing data**
     - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9**
-  - [ ] 14.3 Run the rules tests, confirm they pass, then commit
+  - [x] 14.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 15. Wire the public surface and prove purity and browser safety
