@@ -160,6 +160,7 @@ Note: The safe-swap function takes a confirmation schedule as an input parameter
 6. THE Rules_Engine SHALL attach a plain-English reason to each of the three steps and to the overall swap outcome.
 7. WHEN evaluating whether the Repeat clashes, THE Rules_Engine SHALL interpret all commitment times in the Event_Timezone supplied in Context.
 8. IF any other commitment cannot be checked for a clash (its times are missing or bad), THEN THE Rules_Engine SHALL mark the swap outcome as "unknown" with a reason naming that commitment, and SHALL NOT mark the swap safe. A known clash is still reported as unsafe first.
+9. IF the original reservation is missing from the confirmation schedule, or the Repeat has a certainly impossible connection (by the rule in Requirement 8, criterion 3) to its nearest earlier or later commitment other than the original, THEN THE Rules_Engine SHALL mark the swap outcome as "unknown", with a reason, and SHALL NOT mark the swap safe. The original is not counted as a neighbour, because it is about to be cancelled.
 
 ### Requirement 8: checkReservation guardrail
 

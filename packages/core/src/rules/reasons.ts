@@ -372,6 +372,14 @@ export function swapNowUnusable(): string {
   return 'The current time is not usable. The swap cannot be checked. The original stays unchanged.';
 }
 
+export function swapOriginalMissing(): string {
+  return 'The original reservation is not in the schedule that was read back. The swap cannot be judged safe. The original stays unchanged.';
+}
+
+export function swapUnreachable(): string {
+  return 'The repeat cannot be reached in time from a neighbouring commitment. The swap cannot be judged safe. The original stays unchanged.';
+}
+
 export function swapUnknown(): string {
   return 'The repeat has no usable start or end time. The swap cannot be checked. The original stays unchanged.';
 }

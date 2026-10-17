@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import * as fc from 'fast-check';
 import type { Commitment, NormalisedSession } from '@compass/contracts';
 import { planSafeSwap } from '../../src/rules/safe-swap.js';
-import { personal, reserved, scheduleOf, session, testContext } from './helpers.js';
+import { personal, reserved, scheduleOf, session, testContext, testVenueData } from './helpers.js';
 
 // Tests for safe swap planning (itinerary-rules, S2).
 // Requirements: 7.1 to 7.7. All sample data is self-made.
@@ -196,6 +196,111 @@ describe('safe swap examples', () => {
   });
 });
 
+describe('safe swap needs the original and a reachable repeat', () => {
+  const ctx = () => testContext();
+
+  test('unknown, not safe: the original is missing from the schedule that was read back', () => {
+    const confirmation = scheduleOf([repeat]);
+    const result = planSafeSwap(reserved(original), repeat, confirmation, ctx());
+    expect(result.outcome).toBe('unknown');
+    expect(result.reason).toBe(
+      'The original reservation is not in the schedule that was read back. The swap cannot be judged safe. The original stays unchanged.',
+    );
+    expect(result.steps[2].blockedUntilConfirmed).toBe(true);
+    // With the original listed it is safe.
+    expect(
+      planSafeSwap(reserved(original), repeat, scheduleOf([original, repeat]), ctx()).outcome,
+    ).toBe('safe');
+  });
+
+  test('a missing original does not hide a clash or a failed swap', () => {
+    const clash = slot('CLASH', 'c1', 10, 60);
+    expect(
+      planSafeSwap(reserved(original), repeat, scheduleOf([repeat, clash]), ctx()).outcome,
+    ).toBe('unsafe');
+    expect(planSafeSwap(reserved(original), repeat, scheduleOf([]), ctx()).outcome).toBe('failed');
+  });
+
+  test('unknown, not safe: a certainly impossible connection to the repeat', () => {
+    // The repeat runs 09:00 to 10:00. Another session ends 8:55, only 5 minutes before it, in the
+    // same venue (a 5 minute estimate): late even at half the walk against the 10 minute rule.
+    const before = slot('NEAR1', 'n1', -65, -5);
+    const result = planSafeSwap(
+      reserved(original),
+      repeat,
+      scheduleOf([original, repeat, before]),
+      ctx(),
+    );
+    expect(result.outcome).toBe('unknown');
+    expect(result.reason).toBe(
+      'The repeat cannot be reached in time from a neighbouring commitment. The swap cannot be judged safe. The original stays unchanged.',
+    );
+    const after = slot('NEAR2', 'n2', 65, 120);
+    const second = planSafeSwap(
+      reserved(original),
+      repeat,
+      scheduleOf([original, repeat, after]),
+      ctx(),
+    );
+    expect(second.outcome).toBe('unknown');
+    expect(second.reason).toContain('cannot be reached in time');
+  });
+
+  test('a connection that is only tight or likely impossible is still safe', () => {
+    // 13 minutes before the repeat: not impossible at half the walk, so only a warning elsewhere.
+    const before = slot('NEAR1', 'n1', -73, -13);
+    expect(
+      planSafeSwap(reserved(original), repeat, scheduleOf([original, repeat, before]), ctx())
+        .outcome,
+    ).toBe('safe');
+    const far = slot('FAR1', 'f1', 600, 660);
+    expect(
+      planSafeSwap(reserved(original), repeat, scheduleOf([original, repeat, far]), ctx()).outcome,
+    ).toBe('safe');
+  });
+
+  test('a certainly impossible connection on an official walking time is also not safe', () => {
+    const venueData = testVenueData(20);
+    venueData.walkingTimes = venueData.walkingTimes.map((edge) => ({
+      ...edge,
+      source: {
+        kind: 'official' as const,
+        url: 'https://aws.amazon.com/events/reinvent/',
+        retrievedOn: '2026-10-17',
+      },
+    }));
+    const elsewhere = slot('ELSE1', 'e1', -40, -20);
+    (elsewhere as { venue?: string }).venue = 'Beta Tower';
+    const result = planSafeSwap(
+      reserved(original),
+      repeat,
+      scheduleOf([original, repeat, elsewhere]),
+      testContext({ venueData }),
+    );
+    // Ends 20 minutes before; 10 minute boarding rule plus a 30 minute official walk and buffer.
+    expect(result.outcome).toBe('unknown');
+  });
+
+  test('the original is not a neighbour: it is about to be cancelled', () => {
+    const closeOriginal = slot('DAT302', 'orig3', -5, 0);
+    const confirmation = {
+      commitments: [reserved(closeOriginal), reserved(repeat)],
+      sessions: { orig3: closeOriginal, rep: repeat },
+    };
+    expect(planSafeSwap(reserved(closeOriginal), repeat, confirmation, ctx()).outcome).toBe('safe');
+  });
+
+  test('stay-put time before the repeat does not stop a swap from being safe', () => {
+    const restBefore = personal('Rest', iso(BASE - 30 * 60_000), iso(BASE - 5 * 60_000));
+    const confirmation = {
+      commitments: [reserved(original), reserved(repeat), restBefore],
+      sessions: { orig: original, rep: repeat },
+    };
+    // Stay-put with no venue before it is an unknown connection, which does not make the swap unsafe.
+    expect(planSafeSwap(reserved(original), repeat, confirmation, ctx()).outcome).toBe('safe');
+  });
+});
+
 describe('safe swap properties', () => {
   // Feature: itinerary-rules, Property 13: Safe swap produces the three gated steps and an outcome that matches clash and confirmation state
   test('Property 13: three gated steps, and an outcome that matches clash and held state', () => {
@@ -226,7 +331,19 @@ describe('safe swap properties', () => {
             const b = [Date.parse(s.startsAt!), Date.parse(s.endsAt!)] as const;
             return Math.min(a[1], b[1]) - Math.max(a[0], b[0]) >= 1000;
           });
-          const expected = clashing.length > 0 ? 'unsafe' : held ? 'safe' : 'failed';
+          // Without a clash: not held is failed; held needs the original listed and a repeat that
+          // is reachable. The original is about to be cancelled, so it is not a neighbour. The
+          // repeat runs from BASE to BASE + 60 minutes at Alpha Hall, as do all the others (a
+          // 5 minute room-to-room estimate, so the walk is certainly impossible below 12.5 minutes).
+          const repeatStart = 0;
+          const repeatEnd = 60;
+          const ends = otherSpans.map(([st, l]) => st + l).filter((e) => e <= repeatStart);
+          const starts = otherSpans.map(([st]) => st).filter((st) => st >= repeatEnd);
+          const unreachable =
+            (ends.length > 0 && repeatStart - Math.max(...ends) < 12.5) ||
+            (starts.length > 0 && Math.min(...starts) - repeatEnd < 12.5);
+          const safeOutcome = originalListed && !unreachable ? 'safe' : 'unknown';
+          const expected = clashing.length > 0 ? 'unsafe' : held ? safeOutcome : 'failed';
           expect(result.outcome).toBe(expected);
           expect(result.clashesWith.sort()).toEqual(clashing.map((s) => s.code).sort());
           expect(result.steps.map((s) => s.action)).toEqual([

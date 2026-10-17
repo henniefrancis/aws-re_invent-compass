@@ -12,14 +12,17 @@
 // Outcome:
 //   unsafe   the repeat clashes with the original or another commitment; each is named
 //   failed   the confirmation schedule does not show the repeat held
-//   safe     no clash and the repeat is held. "Safe" means only that: nothing overlaps. It does
-//            not say the walks between venues are comfortable, or that seats are available.
+//   safe     no clash, the repeat is held, the original is in the schedule that was read back, and
+//            no neighbouring connection is certainly impossible. "Safe" does not say the walks
+//            between venues are comfortable, or that seats are available.
 //   unknown  the timezone, the current time or the repeat's times are unusable, the repeat is already
-//            over (relative to Context.now), or another commitment has times
+//            over (relative to Context.now), the original is missing from the schedule that was
+//            read back, a neighbouring connection is certainly impossible, or another commitment has times
 //            that cannot be checked, so a clash cannot be ruled out
 import type { Commitment, NormalisedSession } from '@compass/contracts';
 import { findClashes, intervalOf, type ClashReport } from './clashes.js';
 import type { Context } from './context.js';
+import { connectionsAround } from './neighbours.js';
 import * as reason from './reasons.js';
 import {
   resolveCommitment,
@@ -130,7 +133,10 @@ export function planSafeSwap(
       !(commitment.kind === 'reservedSession' && commitment.sessionId === repeat.sessionId),
   );
   const originalKey = commitmentKey(original);
-  if (!others.some((commitment) => commitmentKey(commitment) === originalKey)) {
+  // The original is checked for clashes even when the read-back schedule leaves it out, but a
+  // schedule that leaves it out cannot be judged safe (see below).
+  const originalListed = others.some((commitment) => commitmentKey(commitment) === originalKey);
+  if (!originalListed) {
     others.push(original);
   }
 
@@ -150,6 +156,26 @@ export function planSafeSwap(
   }
   if (!held) {
     return plan('failed', repeat, [], reason.swapFailed());
+  }
+  // Safe needs the original to be in the schedule that was read back: otherwise the caller may
+  // have read the wrong schedule, and cancelling it is not something to bless.
+  if (!originalListed) {
+    return plan('unknown', repeat, [], reason.swapOriginalMissing());
+  }
+  // Safe also needs the repeat to be reachable. The original is about to be cancelled, so it is
+  // not a neighbour. A certainly impossible connection (by the guardrail's own rule) is not safe.
+  const neighbours = others.filter((commitment) => commitmentKey(commitment) !== originalKey);
+  const connections = connectionsAround(
+    resolvedRepeat,
+    repeatInterval,
+    neighbours,
+    sessions,
+    zone.zone,
+    context,
+    new Set(),
+  );
+  if (connections.some((c) => c.classification === 'impossible' && c.certain === true)) {
+    return plan('unknown', repeat, [], reason.swapUnreachable());
   }
   return plan('safe', repeat, [], reason.swapSafe());
 }
