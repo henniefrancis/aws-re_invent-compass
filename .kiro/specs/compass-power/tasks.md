@@ -290,17 +290,17 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 15.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 16. Build cancel_reservation and the swap ledger
-  - [ ] 16.1 Implement the swap ledger
+- [x] 16. Build cancel_reservation and the swap ledger
+  - [x] 16.1 Implement the swap ledger
     - `src/guardrail/swap-ledger.ts` (`createSwapLedger`): in memory only; propose, look up by original, mark refused, clear, clear all
     - _Requirements: 13.1, 13.7_
-  - [ ] 16.2 Implement cancel_reservation
+  - [x] 16.2 Implement cancel_reservation
     - `src/tools/cancel-reservation.ts`: identifier check, fresh schedule, refuse a session that is not reserved, Pending_Swap path through `RulesPort.planSafeSwap` (cancel only when safe; first failed or unsafe call refuses and marks refused; second call drops the swap and cancels), one confirmed `events.cancel`, `cancelled: true` only when the schedule confirms, sync reminder when an issued pass exists, snapshot update
     - _Requirements: 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8_
-  - [ ] 16.3 Write property test for the swap ledger
+  - [x] 16.3 Write property test for the swap ledger
     - **Property 33: The swap ledger never risks both seats**
     - **Validates: Requirements 13.2, 13.3, 13.4, 13.7**
-  - [ ] 16.4 Commit
+  - [x] 16.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 17. Build add_standby, remove_standby and add_layover

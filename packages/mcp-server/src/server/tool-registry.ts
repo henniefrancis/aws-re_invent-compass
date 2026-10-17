@@ -4,6 +4,7 @@
 
 import type { McpToolName } from '@compass/contracts';
 import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
+import { cancelReservation } from '../tools/cancel-reservation.js';
 import { checkItinerary } from '../tools/check-itinerary.js';
 import { findSessions } from '../tools/find-sessions.js';
 import { planWeekTool } from '../tools/plan-week.js';
@@ -48,7 +49,7 @@ export const TOOL_SPECS: { [K in McpToolName]: ToolSpec<K> } = {
   plan_week: spec('plan_week', 'localAction', false, planWeekTool),
   check_itinerary: spec('check_itinerary', 'read', false, checkItinerary),
   reserve_with_guardrails: spec('reserve_with_guardrails', 'write', true, reserveWithGuardrails),
-  cancel_reservation: spec('cancel_reservation', 'write', true, notBuilt),
+  cancel_reservation: spec('cancel_reservation', 'write', true, cancelReservation),
   add_standby: spec('add_standby', 'write', true, notBuilt),
   remove_standby: spec('remove_standby', 'write', true, notBuilt),
   add_layover: spec('add_layover', 'write', true, notBuilt),
