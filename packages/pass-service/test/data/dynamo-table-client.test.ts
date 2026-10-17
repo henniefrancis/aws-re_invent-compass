@@ -133,6 +133,18 @@ describe('Feature: pass-service, DynamoDB table client', () => {
     expect(third.t).toHaveLength(5);
   });
 
+  test('batchDelete sends each key once even when it is named twice', async () => {
+    const { doc, sent } = fakeDoc({});
+    await createDynamoTableClient(doc, 't').batchDelete([
+      { pk: 'A', sk: 'a' },
+      { pk: 'B', sk: 'b' },
+      { pk: 'A', sk: 'a' },
+    ]);
+    const first = sent[0]?.input.RequestItems as Record<string, unknown[]>;
+    expect(sent).toHaveLength(1);
+    expect(first.t).toHaveLength(2);
+  });
+
   test('batchDelete gives up when keys stay unprocessed', async () => {
     const stuck = { UnprocessedItems: { t: [{ DeleteRequest: { Key: { pk: 'A', sk: 'a' } } }] } };
     const { doc, sent } = fakeDoc(stuck);

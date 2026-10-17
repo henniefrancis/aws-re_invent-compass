@@ -134,7 +134,9 @@ export function createDynamoTableClient(doc: DocClient, tableName: string): Tabl
       return out.Attributes !== undefined;
     },
 
-    async batchDelete(keys) {
+    async batchDelete(requested) {
+      // DynamoDB rejects a batch that names the same key twice.
+      const keys = [...new Map(requested.map((key) => [`${key.pk}\u0000${key.sk}`, key])).values()];
       for (let start = 0; start < keys.length; start += BATCH_SIZE) {
         let pending: Key[] = keys.slice(start, start + BATCH_SIZE);
         for (let attempt = 0; attempt < BATCH_ATTEMPTS && pending.length > 0; attempt += 1) {

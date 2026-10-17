@@ -3,6 +3,7 @@
 // `interleave` hook runs before every operation so a test can yield to other callers
 // and so prove that conditional updates stay atomic.
 import type { Item, Key, QueryInput, TableClient } from '../data/table-client.js';
+import { DependencyError } from '../http/problem.js';
 
 export interface MemoryTable extends TableClient {
   /** A copy of every stored item, in key order. */
@@ -95,6 +96,10 @@ export function createMemoryTable(options: MemoryTableOptions = {}): MemoryTable
 
     async batchDelete(keys) {
       await turn();
+      if (new Set(keys.map(mapKey)).size !== keys.length) {
+        // DynamoDB rejects a batch that names the same key twice.
+        throw new DependencyError('dynamodb');
+      }
       for (const key of keys) {
         items.delete(mapKey(key));
       }

@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { DependencyError } from '../../src/http/problem.js';
 import { createMemoryTable } from '../../src/harness/memory-table.js';
 
 const key = (pk: string, sk: string) => ({ pk, sk });
@@ -48,6 +49,15 @@ describe('Feature: pass-service, in-memory table', () => {
     expect(table.snapshot()).toEqual([{ pk: 'A', sk: 'c' }]);
     await table.put({ pk: 'A', sk: 'b' });
     expect(table.snapshot().map((i) => i.sk)).toEqual(['b', 'c']);
+  });
+
+  test('batchDelete rejects a batch that names the same key twice, as DynamoDB does', async () => {
+    const table = createMemoryTable();
+    await table.put({ pk: 'A', sk: 'a' });
+    await expect(table.batchDelete([key('A', 'a'), key('A', 'a')])).rejects.toBeInstanceOf(
+      DependencyError,
+    );
+    expect(table.snapshot()).toHaveLength(1);
   });
 
   test('query reads the table or a GSI with an optional prefix, in byte order', async () => {

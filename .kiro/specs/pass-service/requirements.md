@@ -400,3 +400,11 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 7. THE pass-service SHALL set `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer` on every response except getHealth, SHALL set no CORS header, and SHALL cap reads of one hand-off at 30 (M4).
 8. THE Token_Verifier SHALL use a grace of 0 seconds, SHALL require a string `aud` in `oidc` mode, and the configuration SHALL require the JWKS URI host to equal the issuer host (L2, L3).
 9. THE APNs_Client SHALL attach an `error` listener to every session and stream (L5).
+
+### Requirement 28: Code review amendments
+
+**User Story:** As the owner, I want the code review findings fixed and written down, so that the service behaves as the amended spec says.
+
+#### Acceptance Criteria
+
+1. forget_me and the table adapter SHALL send each key at most once in a BatchWriteItem request, because DynamoDB rejects a batch that names a key twice (C: a registration comes back from both GSI2 and GSI1); the in-memory table rejects such a batch (H1).

@@ -3,6 +3,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { MAX_READ_ROUNDS } from '../../src/handlers/api/forget-me.js';
 import type { Item } from '../../src/data/table-client.js';
 import { createApiFixture, type ApiFixture } from '../helpers/api-fixture.js';
+import { samplePassFields } from '../helpers/pass-fields.js';
 import { makePassRecord, serialOf } from '../helpers/pass-record.js';
 
 const subOf = (n: number) => String(n).repeat(64);
@@ -134,6 +135,30 @@ describe('Feature: pass-service, forget me', () => {
     await forget(fixture, subOf(1));
     const counters = fixture.table.snapshot().filter((item) => item.pk.startsWith('RATE#'));
     expect(counters.map((c) => c.sk.split('#')[0]).sort()).toEqual(['forgetMe', 'passWrites']);
+  });
+
+  test('a registered iPhone: the registration comes back from both indexes and is erased once', async () => {
+    const fixture = createApiFixture();
+    const serial = await fixture.issue(subOf(1), samplePassFields(), ['apple']);
+    const token = await fixture.authToken(serial);
+    const registered = await fixture.callPasskit({
+      method: 'POST',
+      resource:
+        '/api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}',
+      path: {
+        deviceLibraryIdentifier: 'library-0123456789abcdef',
+        passTypeIdentifier: 'pass.test.compass',
+        serialNumber: serial,
+      },
+      headers: { authorization: `ApplePass ${token}` },
+      body: { pushToken: 'aabbccdd' },
+    });
+    expect(registered.result.statusCode).toBe(201);
+    const reply = await forget(fixture, subOf(1));
+    expect(reply.result.statusCode).toBe(202);
+    expect(reply.json).toEqual({ voided: 1, deleted: 2 });
+    expect(fixture.apns.calls.flat()).toHaveLength(1);
+    expect(storedNonCounters(itemsOf(fixture, subOf(1)))).toEqual([]);
   });
 
   test('401 without a token', async () => {

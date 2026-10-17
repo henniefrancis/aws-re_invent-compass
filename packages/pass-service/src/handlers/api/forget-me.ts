@@ -36,18 +36,19 @@ export const forgetMe: Handler<ApiContext> = async (req, ctx) => {
       await ctx.table.query({ index: 'GSI2', pk: `${SUB_PREFIX}${caller.subHash}` })
     ).filter((item) => !isCounter(item));
     empty = found.length === 0 ? empty + 1 : 0;
-    const keys: Key[] = [];
+    const keys = new Map<string, Key>();
     for (const item of found) {
       erased.set(keyOf(item), item);
-      keys.push({ pk: item.pk, sk: item.sk });
+      keys.set(keyOf(item), { pk: item.pk, sk: item.sk });
       if (item.pk.startsWith(PASS_PREFIX)) {
         for (const registration of await ctx.table.query({ index: 'GSI1', pk: item.pk })) {
           erased.set(keyOf(registration), registration);
-          keys.push({ pk: registration.pk, sk: registration.sk });
+          keys.set(keyOf(registration), { pk: registration.pk, sk: registration.sk });
         }
       }
     }
-    await ctx.table.batchDelete(keys);
+    // A registration comes back from both indexes; DynamoDB rejects duplicate keys in a batch.
+    await ctx.table.batchDelete([...keys.values()]);
   }
 
   const items = [...erased.values()];
