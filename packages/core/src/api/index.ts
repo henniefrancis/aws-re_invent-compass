@@ -61,6 +61,23 @@ export {
   type ConfirmedWriteResult,
 } from './confirmed-write.js';
 
+// Shared operation executor (Component 2, operation path).
+export { executeOperation, type ResponseHandler, type QuotaSpec } from './execute-operation.js';
+
+// The twelve Events API operation functions (Component 2), one file each.
+export { listEvents } from './list-events.js';
+export { getEvent } from './get-event.js';
+export { listSessions, type ListSessionsParams } from './list-sessions.js';
+export { getSession } from './get-session.js';
+export { getSchedule } from './get-schedule.js';
+export { reserveSessions } from './reserve-sessions.js';
+export { associateFavorites } from './associate-favorites.js';
+export { cancelReservation } from './cancel-reservation.js';
+export { disassociateFavorite } from './disassociate-favorite.js';
+export { createPersonalTime } from './create-personal-time.js';
+export { updatePersonalTime } from './update-personal-time.js';
+export { deletePersonalTime } from './delete-personal-time.js';
+
 // Retry policy and Retry-After parser (Component 3).
 export {
   createRetryPolicy,

@@ -22,6 +22,7 @@ const BASE = 'https://api.example.test/v1';
 function credential(): EventsApiCredential {
   return {
     getAccessTokenForEventsApi: () => Promise.resolve(ACCESS_TOKEN),
+    forceRefresh: () => Promise.resolve(),
   };
 }
 

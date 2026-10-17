@@ -220,6 +220,9 @@ function refreshNow(store: TokenStore, deps: RefreshDeps): Promise<void>;
 interface EventsApiCredential {
   getAccessTokenForEventsApi(): Promise<string>; // refreshes if within 300s of expiry; refresh keeps the existing
   // refresh token unless the response returns a new one
+  forceRefresh(): Promise<void>; // refresh now regardless of the expiry window; called by the operation path on a
+  // 401 before its single retry (Requirement 8.1) and once by ReserveSessions on a 401 before it fails without
+  // re-sending (Requirement 9.1). Rejects on refresh failure, which the operation path maps to UnauthorizedError.
 }
 // IdTokenProvider is a separate async provider for the passes module only; never on ClientContext.
 interface IdTokenProvider {
@@ -237,7 +240,9 @@ The access token is attached to Events API requests only. The ID token is never 
 
 ### Component 2: Events_Client operations (`core/src/api`)
 
-One file per operation, each exporting one function. Files: `list-events.ts`, `get-event.ts`, `list-sessions.ts`, `get-session.ts`, `get-schedule.ts`, `reserve-sessions.ts`, `cancel-reservation.ts`, `associate-favorites.ts`, `disassociate-favorite.ts`, `create-personal-time.ts`, `update-personal-time.ts`, `delete-personal-time.ts`. Shared machinery: `transport.ts`, `errors.ts`, `retry.ts`, `validate.ts`, `bulk-input.ts`, `bulk-failure-codes.ts`, `confirmed-write.ts`, `quota-tracker.ts`, `response-wrappers.ts`, `index.ts`.
+One file per operation, each exporting one function. Files: `list-events.ts`, `get-event.ts`, `list-sessions.ts`, `get-session.ts`, `get-schedule.ts`, `reserve-sessions.ts`, `cancel-reservation.ts`, `associate-favorites.ts`, `disassociate-favorite.ts`, `create-personal-time.ts`, `update-personal-time.ts`, `delete-personal-time.ts`. Shared machinery: `transport.ts`, `errors.ts`, `retry.ts`, `validate.ts`, `bulk-input.ts`, `bulk-failure-codes.ts`, `confirmed-write.ts`, `quota-tracker.ts`, `response-wrappers.ts`, `execute-operation.ts`, `index.ts`.
+
+The twelve operation functions do not each re-implement the layering. They delegate to a single shared executor `executeOperation(ctx, request, quota, handle)` in `execute-operation.ts`, which is the one place the design's above-the-transport layering is applied: quota gate (raising `QuotaExceededError` before any send), send, the 401 and 429 retry policy, status-to-error mapping, and finally the operation's `handle` (schema validation or the no-body assertion) on a 2xx. `quota` is `{ units }`: session-count for the two bulk operations, 1 for the other metered operations, and 0 for the unmetered ListEvents and GetEvent.
 
 ```ts
 // transport.ts

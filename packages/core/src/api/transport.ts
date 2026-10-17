@@ -95,6 +95,14 @@ export interface EventsApiCredential {
    * it is within the refresh window. Only ever an Events API access token.
    */
   getAccessTokenForEventsApi(): Promise<string>;
+  /**
+   * Force a token refresh now, independently of the expiry window, and resolve when
+   * it completes. Called by the operation path on a 401 before the single retry
+   * (Requirement 8.1) and once by ReserveSessions on a 401 before it fails without
+   * re-sending (Requirement 9.1). Rejects if the refresh fails, which the operation
+   * path maps to a typed unauthorized error. Single-flight is the provider's concern.
+   */
+  forceRefresh(): Promise<void>;
 }
 
 /**

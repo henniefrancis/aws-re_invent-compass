@@ -131,25 +131,25 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
 - [x] 7. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Implement the twelve Events API operation functions
-  - [ ] 8.1 Implement the read operations and bulk pass-through
+- [x] 8. Implement the twelve Events API operation functions
+  - [x] 8.1 Implement the read operations and bulk pass-through
     - Create one file each: `list-events.ts`, `get-event.ts`, `list-sessions.ts`, `get-session.ts`, `get-schedule.ts`, applying quota, retry, validation and wrappers through `ClientContext`
     - Implement `reserve-sessions.ts` and `associate-favorites.ts` reading `result.successful` and `result.failed` from the validated `BulkResult` (including empty cases) and reporting unrecognised codes as refusals
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.6, 10.4, 10.6_
 
-  - [ ] 8.2 Write property test for bulk result pass-through
+  - [x] 8.2 Write property test for bulk result pass-through
     - **Property 19: Bulk results pass through successful and failed faithfully**
     - **Validates: Requirements 10.4**
 
-  - [ ] 8.3 Implement the no-body write operations
+  - [x] 8.3 Implement the no-body write operations
     - Create `cancel-reservation.ts`, `disassociate-favorite.ts`, `create-personal-time.ts`, `update-personal-time.ts`, `delete-personal-time.ts`, treating 204 with an empty body as success with no validation, each applying quota and the non-reserve retry policy
     - _Requirements: 6.1, 6.7_
 
-  - [ ] 8.4 Write unit tests for the no-body operations
+  - [x] 8.4 Write unit tests for the no-body operations
     - Assert 204 success and error-status mapping for each of the five operations
     - _Requirements: 6.7_
 
-  - [ ] 8.5 Commit
+  - [x] 8.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 9. Implement PKCE, the loopback server and the credential provider seam
