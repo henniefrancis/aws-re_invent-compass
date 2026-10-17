@@ -89,6 +89,7 @@ describe('the package README', () => {
       '## How depth is worked out',
       '## Threat model',
       'the local copy risk',
+      'claim the npm package name `reinvent-compass`',
       'No OS keychain is available',
     ]) {
       expect(text).toContain(phrase);

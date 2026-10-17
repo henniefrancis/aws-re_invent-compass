@@ -54,10 +54,10 @@ const host = (): Host => ({
 });
 
 describe('readVersion', () => {
-  test('reads the version from the package.json two folders above the module', async () => {
+  test('reads the version from the package.json in the package root', async () => {
     const dir = join(temp, 'pkg');
-    await mkdir(join(dir, 'src', 'cli'), { recursive: true });
-    const moduleUrl = pathToFileURL(join(dir, 'src', 'cli', 'main.js')).href;
+    await mkdir(dir, { recursive: true });
+    const moduleUrl = new URL('./', pathToFileURL(join(dir, 'x')));
     await writeFile(join(dir, 'package.json'), JSON.stringify({ version: '3.2.1' }));
     expect(await readVersion(moduleUrl)).toBe('3.2.1');
     await writeFile(join(dir, 'package.json'), JSON.stringify({ version: 5 }));
@@ -199,10 +199,35 @@ describe('main with a built package layout', () => {
     await cp(join(repoRoot(), 'fixtures', 'sample-repo'), join(pkg, 'dist', 'sample-repo'), {
       recursive: true,
     });
+    await cp(join(repoRoot(), 'fixtures', 'api'), join(pkg, 'dist', 'fixtures', 'api'), {
+      recursive: true,
+    });
+    await cp(
+      join(repoRoot(), 'fixtures', 'synthetic'),
+      join(pkg, 'dist', 'fixtures', 'synthetic'),
+      { recursive: true },
+    );
     const moduleUrl = pathToFileURL(join(pkg, 'dist', 'cli', 'main.js')).href;
     const version = io(['--version']);
     expect(await main(version, { ...host(), moduleUrl })).toBe(0);
     expect(version.out.join('')).toBe('4.5.6\n');
+    const t = io(['demo']);
+    expect(await main(t, { ...host(), moduleUrl })).toBe(0);
+    expect(t.out.join('')).toContain('The demo finished.');
+  });
+});
+
+describe('main with a package that has no worker and no fixtures folder', () => {
+  test('falls back to the in-thread scan and the default simulated fixtures', async () => {
+    const { cp, mkdir, writeFile } = await import('node:fs/promises');
+    const pkg = join(temp, 'lean');
+    await mkdir(join(pkg, 'dist', 'cli'), { recursive: true });
+    await writeFile(join(pkg, 'package.json'), JSON.stringify({ version: '1.0.0' }));
+    await cp(join(repoRoot(), 'data'), join(pkg, 'dist', 'data'), { recursive: true });
+    await cp(join(repoRoot(), 'fixtures', 'sample-repo'), join(pkg, 'dist', 'sample-repo'), {
+      recursive: true,
+    });
+    const moduleUrl = pathToFileURL(join(pkg, 'dist', 'cli', 'main.js')).href;
     const t = io(['demo']);
     expect(await main(t, { ...host(), moduleUrl })).toBe(0);
     expect(t.out.join('')).toContain('The demo finished.');

@@ -7,13 +7,23 @@
     "reinvent-compass": "dist/bin.js"
   },
   "files": [
-    "dist",
+    "dist/bin.js",
+    "dist/scan-worker.js",
+    "dist/data",
+    "dist/sample-repo",
+    "dist/fixtures",
     "README.md"
   ],
   "engines": {
     "node": ">=24"
   },
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
   "dependencies": {
+    "@napi-rs/keyring": "2.1.1"
+  },
+  "devDependencies": {
     "@compass/contracts": "0.0.0",
     "@compass/core": "0.0.0",
     "@modelcontextprotocol/sdk": "1.32.1",

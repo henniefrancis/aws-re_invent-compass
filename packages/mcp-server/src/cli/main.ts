@@ -13,7 +13,9 @@ import { createRuntime } from '../runtime/create-runtime.js';
 import type { RuntimeEnvironment } from '../runtime/create-runtime.js';
 import {
   findOptionalResource,
+  findPackageRoot,
   findResource,
+  FIXTURES_LOCATION,
   SAMPLE_REPO_LOCATION,
   SCAN_WORKER_LOCATION,
   VENUES_LOCATION,
@@ -37,7 +39,7 @@ export interface Host {
   platform?: string;
   cwd?: string;
   execFile?: ExecFileLike;
-  /** The URL of a module in `src/cli` or `dist/cli`; resources are found relative to it. */
+  /** The URL of a module inside the package; the package root and its resources are found from it. */
   moduleUrl?: string;
   tempRoot?: string;
 }
@@ -55,12 +57,12 @@ const exists = async (url: URL): Promise<boolean> => {
   }
 };
 
-/** The package version, read from the package.json next to `src` or `dist`. */
-export async function readVersion(moduleUrl: string): Promise<string> {
+/** The package version, read from the `package.json` in the package root. */
+export async function readVersion(packageRoot: URL): Promise<string> {
   try {
-    const manifest = JSON.parse(
-      await readFile(new URL('../../package.json', moduleUrl), 'utf8'),
-    ) as { version?: unknown };
+    const manifest = JSON.parse(await readFile(new URL('package.json', packageRoot), 'utf8')) as {
+      version?: unknown;
+    };
     return typeof manifest.version === 'string' ? manifest.version : 'unknown';
   } catch {
     return 'unknown';
@@ -69,10 +71,11 @@ export async function readVersion(moduleUrl: string): Promise<string> {
 
 /** Runs the command line with the real machine behind it and returns the exit code. */
 export async function main(io: MainIo, host: Host = {}): Promise<number> {
-  const moduleUrl = host.moduleUrl ?? import.meta.url;
-  const version = await readVersion(moduleUrl);
+  const root = await findPackageRoot(host.moduleUrl ?? import.meta.url, exists);
+  const version = await readVersion(root);
   const environment = async (): Promise<RuntimeEnvironment> => {
-    const worker = await findOptionalResource(moduleUrl, SCAN_WORKER_LOCATION, exists);
+    const worker = await findOptionalResource(root, SCAN_WORKER_LOCATION, exists);
+    const fixtures = await findOptionalResource(root, FIXTURES_LOCATION, exists);
     return {
       homeDir: host.homeDir ?? homedir(),
       platform: host.platform ?? process.platform,
@@ -80,8 +83,9 @@ export async function main(io: MainIo, host: Host = {}): Promise<number> {
       version,
       stderr: io.stderr,
       execFile: host.execFile ?? defaultExecFile,
-      venuesPath: fileURLToPath(await findResource(moduleUrl, VENUES_LOCATION, exists)),
+      venuesPath: fileURLToPath(await findResource(root, VENUES_LOCATION, exists)),
       ...(worker === undefined ? {} : { scanWorkerPath: fileURLToPath(worker) }),
+      ...(fixtures === undefined ? {} : { fixturesRoot: fileURLToPath(fixtures) }),
     };
   };
   return runCli(
@@ -94,7 +98,7 @@ export async function main(io: MainIo, host: Host = {}): Promise<number> {
       prepareWorkspace: (repoPath) =>
         prepareWorkspace(repoPath, host.tempRoot === undefined ? {} : { tempRoot: host.tempRoot }),
       defaultRepoPath: async () =>
-        fileURLToPath(await findResource(moduleUrl, SAMPLE_REPO_LOCATION, exists)),
+        fileURLToPath(await findResource(root, SAMPLE_REPO_LOCATION, exists)),
     },
   );
 }

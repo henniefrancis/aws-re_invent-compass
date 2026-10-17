@@ -13,7 +13,22 @@ describe('the package manifest and the entry file', () => {
     >;
     expect(manifest.name).toBe('reinvent-compass');
     expect(manifest.bin).toEqual({ 'reinvent-compass': 'dist/bin.js' });
-    expect(manifest.files).toEqual(['dist', 'README.md']);
+    expect(manifest.files).toEqual([
+      'dist/bin.js',
+      'dist/scan-worker.js',
+      'dist/data',
+      'dist/sample-repo',
+      'dist/fixtures',
+      'README.md',
+    ]);
+    expect(manifest.scripts).toEqual({ build: 'node scripts/build.mjs' });
+    expect(manifest.dependencies).toEqual({ '@napi-rs/keyring': '2.1.1' });
+    expect(Object.keys(manifest.devDependencies as object).sort()).toEqual([
+      '@compass/contracts',
+      '@compass/core',
+      '@modelcontextprotocol/sdk',
+      'zod',
+    ]);
     expect(manifest.engines).toEqual({ node: '>=24' });
     expect(manifest.private).toBe(true);
   });

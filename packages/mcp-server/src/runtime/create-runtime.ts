@@ -27,6 +27,7 @@ import { APP_FOLDER_NAME, createAppDataResolver, joinInFolder } from '@compass/c
 import type { HttpTransport } from '@compass/core/passes';
 import { VenueDataSchema } from '@compass/core/rules';
 import { createNodeScanFs, scanInWorker } from '@compass/core/scanner';
+import { createFsFixtureLoader } from '@compass/core/simulated';
 import { createNodeSpecFs } from '@compass/core/spec';
 import { readFile } from 'node:fs/promises';
 import { createFetchTransport } from '../adapters/fetch-transport.js';
@@ -72,6 +73,8 @@ export interface RuntimeEnvironment {
   venuesPath: string;
   /** The bundled scan worker. When it is left out the scan runs in the server's own thread. */
   scanWorkerPath?: string;
+  /** The folder with the simulated fixtures (`api` and `synthetic`). Left out, S1 uses the repository's. */
+  fixturesRoot?: string;
   /** Test seams. Production leaves them out and the real ones are used. */
   store?: TokenStore;
   fetch?: FetchLike;
@@ -153,7 +156,12 @@ export async function createRuntime(
       now: nowMs,
       sleep,
       ...(simulated
-        ? { simulated: { now: () => Date.parse(SIMULATED_NOW) } }
+        ? {
+            simulated: { now: () => Date.parse(SIMULATED_NOW) },
+            ...(environment.fixturesRoot === undefined
+              ? {}
+              : { fixtures: createFsFixtureLoader(environment.fixturesRoot) }),
+          }
         : { store, fetch: eventsFetch, oauthFetch }),
     },
   );

@@ -6,6 +6,7 @@ import type { ExecFileLike } from '../../src/runtime/browser-opener.js';
 import { createRuntime } from '../../src/runtime/create-runtime.js';
 import { createHookDeps } from '../../src/runtime/hook-deps.js';
 import {
+  findPackageRoot,
   findResource,
   SAMPLE_REPO_LOCATION,
   VENUES_LOCATION,
@@ -80,7 +81,7 @@ describe('browser opener', () => {
 
 describe('resources', () => {
   test('prefers the bundled copy and falls back to the repository copy', async () => {
-    const base = 'file:///pkg/dist/cli/main.js';
+    const base = new URL('file:///pkg/');
     const bundled = await findResource(base, VENUES_LOCATION, () => Promise.resolve(true));
     expect(bundled.href).toBe('file:///pkg/dist/data/venues.json');
     const repo = await findResource(base, SAMPLE_REPO_LOCATION, (url) =>
@@ -91,7 +92,7 @@ describe('resources', () => {
 
   test('a missing resource is an internal error', async () => {
     await expect(
-      findResource('file:///pkg/dist/cli/main.js', VENUES_LOCATION, () => Promise.resolve(false)),
+      findResource(new URL('file:///pkg/'), VENUES_LOCATION, () => Promise.resolve(false)),
     ).rejects.toMatchObject({ code: 'Internal' });
   });
 });
@@ -130,6 +131,24 @@ describe('sleep, token expiry and the real loopback bind', () => {
     expect(server.port).toBeGreaterThanOrEqual(8484);
     expect(server.port).toBeLessThanOrEqual(8489);
     server.close();
+  });
+});
+
+describe('the package root', () => {
+  test('is the nearest folder with a package.json above the module, or the module folder when there is none', async () => {
+    const has =
+      (...folders: string[]) =>
+      (url: URL) =>
+        Promise.resolve(folders.some((f) => url.href === `file://${f}package.json`));
+    expect((await findPackageRoot('file:///pkg/dist/cli/main.js', has('/pkg/'))).href).toBe(
+      'file:///pkg/',
+    );
+    expect(
+      (await findPackageRoot('file:///pkg/dist/cli/main.js', has('/pkg/dist/', '/pkg/'))).href,
+    ).toBe('file:///pkg/dist/');
+    expect((await findPackageRoot('file:///pkg/dist/cli/main.js', has())).href).toBe(
+      'file:///pkg/dist/cli/',
+    );
   });
 });
 
@@ -211,7 +230,7 @@ import { textOf } from '../support/connect.js';
 
 describe('the scan worker in the runtime', () => {
   test('an optional resource is found when it exists and is undefined when it does not', async () => {
-    const base = 'file:///pkg/dist/cli/main.js';
+    const base = new URL('file:///pkg/');
     expect(
       (await findOptionalResource(base, SCAN_WORKER_LOCATION, () => Promise.resolve(true)))?.href,
     ).toBe('file:///pkg/dist/scan-worker.js');
