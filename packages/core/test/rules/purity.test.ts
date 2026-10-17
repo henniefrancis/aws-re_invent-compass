@@ -13,9 +13,18 @@ const rulesSrc = resolve(here, '../../src/rules');
 const rulesTests = here;
 const contractsIndex = resolve(here, '../../../contracts/src/index.ts');
 
-const sourceFiles = readdirSync(rulesSrc)
-  .filter((name) => name.endsWith('.ts'))
-  .map((name) => join(rulesSrc, name));
+/** Every .ts file under a folder, at any depth, so a future subfolder is scanned too. */
+function tsFilesUnder(folder: string): string[] {
+  return readdirSync(folder, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory()
+      ? tsFilesUnder(join(folder, entry.name))
+      : entry.name.endsWith('.ts')
+        ? [join(folder, entry.name)]
+        : [],
+  );
+}
+
+const sourceFiles = tsFilesUnder(rulesSrc);
 
 const read = (file: string): string => readFileSync(file, 'utf8');
 
@@ -70,6 +79,16 @@ describe('Node built-in import scan', () => {
         "import { a } from 'fs';\nexport * from \"./x.js\";\nconst b = await import('path');",
       ),
     ).toEqual(['fs', './x.js', 'path']);
+  });
+});
+
+describe('recursive scan', () => {
+  test('finds files at any depth', () => {
+    const found = tsFilesUnder(rulesSrc).map((file) => file.split(/[\\/]/).pop());
+    expect(found).toContain('check-reservation.ts');
+    expect(found.length).toBeGreaterThanOrEqual(15);
+    const here = tsFilesUnder(resolve(rulesSrc, '..'));
+    expect(here.length).toBeGreaterThan(found.length);
   });
 });
 
@@ -157,10 +176,10 @@ describe('test data policy', () => {
   test('no test under test/rules reads from the synthetic fixtures', () => {
     // Built from pieces so this guard does not contain the forbidden path itself.
     const forbiddenPath = ['fixtures', 'synthetic'].join('/');
-    const testFiles = readdirSync(rulesTests).filter((name) => name.endsWith('.ts'));
+    const testFiles = tsFilesUnder(rulesTests);
     expect(testFiles.length).toBeGreaterThan(10);
     for (const name of testFiles) {
-      const text = read(join(rulesTests, name)).replaceAll('\\', '/');
+      const text = read(name).replaceAll('\\', '/');
       expect(text.includes(forbiddenPath), `${name} mentions ${forbiddenPath}`).toBe(false);
     }
   });

@@ -53,6 +53,57 @@ describe('parseInstant and minutesBetween', () => {
   });
 });
 
+describe('parseInstant calendar checks', () => {
+  test('refuses dates that are not real, or are outside 2000 to 2100', () => {
+    for (const bad of [
+      '2026-02-31T10:00:00Z',
+      '2027-02-29T10:00:00Z',
+      '2026-04-31T10:00:00Z',
+      '2026-00-10T10:00:00Z',
+      '1999-12-31T23:59:59Z',
+      '2101-01-01T00:00:00Z',
+      '0000-01-01T00:00:00Z',
+      '9999-12-31T00:00:00Z',
+    ]) {
+      expect(parseInstant(bad), bad).toBeUndefined();
+    }
+  });
+
+  test('refuses an hour of 24, a minute or second of 60, and an offset out of range', () => {
+    for (const bad of [
+      '2026-12-01T24:00:00Z',
+      '2026-12-01T10:60:00Z',
+      '2026-12-01T10:00:60Z',
+      '2026-12-01T10:00:00+24:00',
+      '2026-12-01T10:00:00+05:60',
+    ]) {
+      expect(parseInstant(bad), bad).toBeUndefined();
+    }
+  });
+
+  test('accepts the edges: leap day, the first and last allowed years, 23:59:59 and +23:59', () => {
+    expect(parseInstant('2028-02-29T23:59:59Z')).toBe(Date.parse('2028-02-29T23:59:59Z'));
+    expect(parseInstant('2000-01-01T00:00:00Z')).toBe(Date.parse('2000-01-01T00:00:00Z'));
+    expect(parseInstant('2100-12-31T23:59:59Z')).toBe(Date.parse('2100-12-31T23:59:59Z'));
+    expect(parseInstant('2026-12-01T10:00:00+23:59')).toBe(Date.parse('2026-12-01T10:00:00+23:59'));
+  });
+
+  test('anything that is not text is not a time', () => {
+    for (const value of [undefined, null, 5, {}, [], true, Number.NaN]) {
+      expect(parseInstant(value)).toBeUndefined();
+    }
+  });
+});
+
+describe('checkZone input types', () => {
+  test('a value that is not text is unrecognised, and null is missing', () => {
+    expect(checkZone(null)).toEqual({ ok: false, reason: 'missing' });
+    for (const value of [5, true, {}, [], ['UTC']]) {
+      expect(checkZone(value)).toEqual({ ok: false, reason: 'unrecognised' });
+    }
+  });
+});
+
 describe('checkZone', () => {
   test('accepts recognised IANA names', () => {
     expect(checkZone(LA)).toEqual({ ok: true, zone: LA });

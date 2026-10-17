@@ -14,8 +14,10 @@
 const MS_PER_MINUTE = 60_000;
 const MS_PER_DAY = 86_400_000;
 
-// An ISO 8601 date-time with seconds optional and an offset that is Z or +/-HH:MM.
-const ISO_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/;
+// An ISO 8601 date-time with seconds optional and an offset that is Z or +/-HH:MM. The groups are
+// the date, hour, minute, optional second, and the offset (sign, hour, minute).
+const ISO_PATTERN =
+  /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](\d{2}):(\d{2}))$/;
 const LONG_OFFSET_PATTERN = /GMT([+\-−])(\d{2}):(\d{2})/;
 
 /** Why a timezone cannot be used. */
@@ -35,14 +37,32 @@ export interface WallClock {
 }
 
 /**
- * Parse an ISO 8601 string with an offset to epoch milliseconds. Any other string, or a
- * string that is not a real date, gives undefined.
+ * Parse an ISO 8601 string with an offset to epoch milliseconds. Anything that is not text, any
+ * other kind of string, and any string that is not a real moment gives undefined. The date must
+ * be a real calendar date in the years 2000 to 2100 (2026-02-31 is refused, not rolled forward),
+ * the hour 0 to 23, the minute and second 0 to 59, and the offset hour 0 to 23.
  */
-export function parseInstant(iso: string): number | undefined {
-  if (!ISO_PATTERN.test(iso)) {
+export function parseInstant(iso: unknown): number | undefined {
+  const match = typeof iso === 'string' ? ISO_PATTERN.exec(iso) : null;
+  if (match === null) {
     return undefined;
   }
-  const ms = Date.parse(iso);
+  const [date, hour, minute, second, offsetHour, offsetMinute] = [
+    match[1] as string,
+    Number(match[2]),
+    Number(match[3]),
+    Number(match[4] ?? '0'),
+    Number(match[5] ?? '0'),
+    Number(match[6] ?? '0'),
+  ];
+  const real =
+    isCalendarDate(date) &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    offsetHour <= 23 &&
+    offsetMinute <= 59;
+  const ms = real ? Date.parse(iso as string) : Number.NaN;
   return Number.isNaN(ms) ? undefined : ms;
 }
 
@@ -78,16 +98,16 @@ export function minutesBetween(startMs: number, endMs: number): number {
 }
 
 /**
- * Validate an IANA timezone name. A missing or empty value is "missing". A value that
- * starts with + or - is rejected as "unrecognised", even though some Intl versions
+ * Validate an IANA timezone name. An absent, null or empty value is "missing". A value that is
+ * not text, or that starts with + or -, is rejected as "unrecognised", even though some Intl versions
  * accept fixed offsets. A name that Intl refuses (a thrown RangeError) is "unrecognised".
  * No default timezone is ever substituted.
  */
-export function checkZone(zone: string | undefined): ZoneCheck {
-  if (!zone) {
+export function checkZone(zone: unknown): ZoneCheck {
+  if (zone === undefined || zone === null || zone === '') {
     return { ok: false, reason: 'missing' };
   }
-  if (zone.startsWith('+') || zone.startsWith('-')) {
+  if (typeof zone !== 'string' || zone.startsWith('+') || zone.startsWith('-')) {
     return { ok: false, reason: 'unrecognised' };
   }
   try {

@@ -247,3 +247,4 @@ Note: The safe-swap function takes a confirmation schedule as an input parameter
 6. IF a schedule has more than 200 commitments, THEN THE checkReservation function SHALL return "warn" with a reason that the schedule is too large.
 7. THE checkReservation function SHALL NOT throw. IF anything unexpected goes wrong, THEN it SHALL return a Verdict with decision "block" and a fixed internal-error reason. Consumers SHALL treat a throw from any caller path as a block.
 8. THE checkReservation function SHALL judge a schedule of 200 commitments in under 500 milliseconds.
+9. THE Rules_Engine SHALL accept a time only when it is a real calendar date in the years 2000 to 2100 with an hour 0 to 23 and a minute and second 0 to 59, and SHALL treat any other value, including a value that is not text, as missing. An eventTimezone that is not text SHALL be treated as unrecognised.

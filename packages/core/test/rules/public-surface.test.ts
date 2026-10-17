@@ -193,6 +193,34 @@ describe('browser-safe execution (no I/O)', () => {
   });
 });
 
+describe('no clock, randomness, performance timer or network at run time', () => {
+  test('checkReservation and the rules run with every such source made to throw', () => {
+    const boom = (): never => {
+      throw new Error('forbidden at run time');
+    };
+    const dateNow = vi.spyOn(Date, 'now').mockImplementation(boom);
+    const random = vi.spyOn(Math, 'random').mockImplementation(boom);
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(boom);
+    vi.stubGlobal('performance', new Proxy({}, { get: boom }));
+    try {
+      // A throw anywhere inside checkReservation would be caught and turned into a block, so the
+      // verdict itself proves nothing was called. The other functions are called directly.
+      const s = sample();
+      const verdict = rules.checkReservation(s.candidate, s.schedule, s.context);
+      expect(verdict.reasons.join(' ')).not.toContain('internal error');
+      expect(() => callAll(s)).not.toThrow();
+      expect(dateNow).not.toHaveBeenCalled();
+      expect(random).not.toHaveBeenCalled();
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+      dateNow.mockRestore();
+      random.mockRestore();
+      fetchSpy.mockRestore();
+    }
+  });
+});
+
 describe('determinism and purity', () => {
   test('calling each exported function twice on deeply equal inputs gives deeply equal results', () => {
     expect(callAll(sample())).toEqual(callAll(sample()));
