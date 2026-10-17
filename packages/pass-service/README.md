@@ -182,7 +182,12 @@ EVENT_TIMEZONE=... EVENT_WINDOW_START=... EVENT_WINDOW_END=... ID_TOKEN_ISSUER=.
 node packages/pass-service/scripts/run.mjs packages/pass-service/scripts/local-harness.ts
 ```
 
-Optional: `HARNESS_HOST` (default `0.0.0.0`), `HARNESS_PORT` (default `8443`),
+Optional: `HARNESS_HOST` (default `127.0.0.1`: a host beyond loopback, for example the LAN address a phone
+needs, prints a warning and a random per-run access token once, and then every route, including
+`/harness/*`, needs it: send it as `?harness_token=<token>` once (kept in a cookie), as the
+`x-harness-token` header, or, for the PassKit routes, it is already in the pass `webServiceURL` path),
+`HARNESS_PORT` (default `8443`), `HARNESS_ENABLE_APNS=true` and `HARNESS_ENABLE_GOOGLE=true` (both are off
+by default, so a first run cannot push or call Google),
 `HARNESS_SIGNER_KEY_PASSPHRASE` when the key file is encrypted, `HARNESS_GOOGLE_KEY_FILE` and
 `HARNESS_GOOGLE_ISSUER_ID` plus `GOOGLE_SECRET_ID` and `GOOGLE_WALLET_CLASS_SUFFIX` for the Google
 spike (set `GOOGLE_WALLET_ENABLED=false` otherwise). It serves both Lambdas on `node:http` with an

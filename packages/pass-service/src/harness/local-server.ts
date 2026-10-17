@@ -26,7 +26,7 @@ import { createGoogleWalletClient } from '../google/google-wallet-client.js';
 import { createGoogleTokenSource } from '../google/token-source.js';
 import type { ProxyEvent, ProxyResult } from '../http/event.js';
 import { ProblemError } from '../http/problem.js';
-import { subHash } from '../security/hashing.js';
+import { constantTimeEqualHex, subHash } from '../security/hashing.js';
 import { createSecretsProvider, type SecretSource } from '../credentials/secrets-provider.js';
 import { systemClock, systemRandom } from '../seams.js';
 import { createMemoryTable } from './memory-table.js';
@@ -52,12 +52,16 @@ export interface HarnessOptions {
   secrets: HarnessSecrets;
   /** Receives "listening" and Request_Logger lines. Defaults to stdout. */
   log?: (line: string) => void;
+  /** APNs and Google are off unless asked for (review N2). */
+  enable?: { apns?: boolean; google?: boolean };
   /** Test seams: replace the real APNs and Google clients. */
   overrides?: Partial<Pick<ApiDeps, 'apns' | 'google'>>;
 }
 
 export interface HarnessHandle {
   port: number;
+  /** Set only when the harness listens beyond loopback: required on every request. */
+  accessToken: string | undefined;
   close(): Promise<void>;
 }
 
@@ -157,15 +161,50 @@ async function readBody(request: IncomingMessage): Promise<string | null> {
   return chunks.length === 0 ? null : Buffer.concat(chunks).toString('utf8');
 }
 
-function send(response: ServerResponse, result: ProxyResult): void {
-  response.writeHead(result.statusCode, result.headers);
+const HARNESS_COOKIE = 'harness_token';
+
+/** The harness is for one owner on one machine: only a loopback bind needs no access token. */
+export function isLoopbackHost(host: string): boolean {
+  return host === 'localhost' || host === '::1' || host.startsWith('127.');
+}
+
+function cookieValue(header: string | undefined, name: string): string | undefined {
+  return (header ?? '')
+    .split(';')
+    .map((part) => part.trim().split('='))
+    .find(([key]) => key === name)?.[1];
+}
+
+function sameText(given: string | string[] | undefined, expected: string): boolean {
+  return typeof given === 'string' && constantTimeEqualHex(given, expected);
+}
+
+function send(
+  response: ServerResponse,
+  result: ProxyResult,
+  extraHeaders: Record<string, string> = {},
+): void {
+  response.writeHead(result.statusCode, { ...result.headers, ...extraHeaders });
   response.end(result.isBase64Encoded ? Buffer.from(result.body, 'base64') : result.body);
 }
 
 export async function startLocalHarness(options: HarnessOptions): Promise<HarnessHandle> {
   const log = options.log ?? ((line: string) => process.stdout.write(`${line}\n`));
-  const config = parseApiConfig(options.env, { allowHttpBaseUrl: true, allowAnyApnsHost: true });
-  const passkitConfig = parsePasskitConfig(options.env, { allowHttpBaseUrl: true });
+  const accessToken = isLoopbackHost(options.host)
+    ? undefined
+    : randomBytes(24).toString('base64url');
+  const env: Record<string, string> = {
+    ...options.env,
+    APNS_ENABLED: options.enable?.apns === true ? 'true' : 'false',
+    GOOGLE_WALLET_ENABLED: options.enable?.google === true ? 'true' : 'false',
+    // Apple's device sends no token of its own, so beyond loopback the pass carries it in the path.
+    ...(accessToken === undefined
+      ? {}
+      : { PASSKIT_WEB_SERVICE_PATH: `/api/passkit/${accessToken}` }),
+  };
+  const parseOptions = { allowHttpBaseUrl: true, allowAnyApnsHost: true };
+  const config = parseApiConfig(env, parseOptions);
+  const passkitConfig = parsePasskitConfig(env, parseOptions);
   const table = createMemoryTable();
   const source = fileSecretSource(options.secrets, [
     config.appSecretId,
@@ -260,22 +299,47 @@ export async function startLocalHarness(options: HarnessOptions): Promise<Harnes
     void (async () => {
       const url = new URL(request.url!, 'http://harness.local');
       const method = request.method!;
-      if (method === 'GET' && url.pathname === '/') {
-        send(response, {
-          statusCode: 200,
-          headers: { 'content-type': 'text/html; charset=utf-8' },
-          body: PAGE,
-          isBase64Encoded: false,
-        });
+      let pathname = url.pathname;
+      let setCookie: Record<string, string> = {};
+      if (accessToken !== undefined) {
+        const given = [
+          request.headers['x-harness-token'],
+          cookieValue(request.headers.cookie, HARNESS_COOKIE),
+          url.searchParams.get('harness_token') ?? undefined,
+        ];
+        const inPath = /^\/api\/passkit\/([^/]+)(\/.*)$/.exec(pathname);
+        const viaPath = inPath !== null && sameText(inPath[1], accessToken);
+        if (viaPath) {
+          pathname = `/api/passkit${inPath[2]}`;
+        } else if (given.some((value) => sameText(value, accessToken))) {
+          setCookie = {
+            'set-cookie': `${HARNESS_COOKIE}=${accessToken}; HttpOnly; SameSite=Strict; Path=/`,
+          };
+        } else {
+          send(response, { statusCode: 401, headers: {}, body: '', isBase64Encoded: false });
+          return;
+        }
+      }
+      if (method === 'GET' && pathname === '/') {
+        send(
+          response,
+          {
+            statusCode: 200,
+            headers: { 'content-type': 'text/html; charset=utf-8' },
+            body: PAGE,
+            isBase64Encoded: false,
+          },
+          setCookie,
+        );
         return;
       }
-      const repeat = /^\/harness\/repeat-insert\/([0-9a-f-]{36})$/.exec(url.pathname);
+      const repeat = /^\/harness\/repeat-insert\/([0-9a-f-]{36})$/.exec(pathname);
       if (method === 'POST' && repeat !== null) {
         send(response, await repeatInsert(String(repeat[1])));
         return;
       }
       for (const route of routes) {
-        const match = route.method === method ? route.pattern.exec(url.pathname) : null;
+        const match = route.method === method ? route.pattern.exec(pathname) : null;
         if (match !== null) {
           const headers: Record<string, string> = { 'x-origin-verify': origin };
           for (let i = 0; i + 1 < request.rawHeaders.length; i += 2) {
@@ -296,7 +360,7 @@ export async function startLocalHarness(options: HarnessOptions): Promise<Harnes
             isBase64Encoded: false,
             requestContext: { requestId: randomUUID() },
           };
-          send(response, await (route.passkit ? passkitApp : apiApp)(event));
+          send(response, await (route.passkit ? passkitApp : apiApp)(event), setCookie);
           return;
         }
       }
@@ -307,7 +371,17 @@ export async function startLocalHarness(options: HarnessOptions): Promise<Harnes
   });
   await new Promise<void>((resolve) => server.listen(options.port, options.host, resolve));
   log('listening');
+  if (accessToken !== undefined) {
+    log(
+      `WARNING: listening on ${options.host}, which is not loopback. Anyone on this network who has the access token can issue and void passes here.`,
+    );
+    log(`Access token for this run (shown once): ${accessToken}`);
+    log(
+      'Open the page once with ?harness_token=<token> added to the address; it is then kept in a cookie.',
+    );
+  }
   return {
+    accessToken,
     port: (server.address() as AddressInfo).port,
     close: () =>
       new Promise<void>((resolve) => {

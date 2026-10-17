@@ -71,6 +71,7 @@ async function start(encrypted = true, log: string[] = []) {
     env: { ...BASE_ENV, PUBLIC_BASE_URL: `http://127.0.0.1:${port}` },
     secrets: writeFiles(encrypted),
     log: (line) => log.push(line),
+    enable: { apns: true, google: true },
     overrides: { apns, google: fake.google },
   });
   handles.push(handle);
