@@ -10,6 +10,7 @@ import { cancelReservation } from '../tools/cancel-reservation.js';
 import { checkItinerary } from '../tools/check-itinerary.js';
 import { exportCalendar } from '../tools/export-calendar.js';
 import { findSessions } from '../tools/find-sessions.js';
+import { forgetMe } from '../tools/forget-me.js';
 import { issueBoardingPasses } from '../tools/issue-boarding-passes.js';
 import { planWeekTool } from '../tools/plan-week.js';
 import { refreshCatalog } from '../tools/refresh-catalog.js';
@@ -22,13 +23,6 @@ import { signOut } from '../tools/sign-out.js';
 import { syncPasses } from '../tools/sync-passes.js';
 import { DESCRIPTIONS, TITLES } from './descriptions.js';
 import type { ToolClass, ToolOutcome, ToolSpec } from './types.js';
-
-/** The message returned by a handler that is not built yet. */
-export const NOT_BUILT_MESSAGE = 'This tool is not built yet.';
-
-function notBuilt(): Promise<{ ok: false; message: string }> {
-  return Promise.resolve({ ok: false, message: NOT_BUILT_MESSAGE });
-}
 
 function spec<K extends McpToolName>(
   name: K,
@@ -46,7 +40,7 @@ function spec<K extends McpToolName>(
   };
 }
 
-/** Every tool, keyed by name. Handlers are replaced by the real ones in later tasks. */
+/** Every tool, keyed by name. */
 export const TOOL_SPECS: { [K in McpToolName]: ToolSpec<K> } = {
   sign_in: spec('sign_in', 'localAction', false, signIn),
   sign_out: spec('sign_out', 'localAction', false, signOut),
@@ -64,7 +58,7 @@ export const TOOL_SPECS: { [K in McpToolName]: ToolSpec<K> } = {
   send_to_phone: spec('send_to_phone', 'write', false, sendToPhone),
   sync_passes: spec('sync_passes', 'write', false, syncPasses),
   export_calendar: spec('export_calendar', 'localAction', false, exportCalendar),
-  forget_me: spec('forget_me', 'write', false, notBuilt),
+  forget_me: spec('forget_me', 'write', false, forgetMe),
 };
 
 /** The MCP annotations for a tool class. */

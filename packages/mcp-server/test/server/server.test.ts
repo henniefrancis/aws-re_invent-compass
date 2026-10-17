@@ -15,7 +15,7 @@ import {
   SCHEDULE_WRITE_SENTENCE,
   SYNC_SENTENCE,
 } from '../../src/server/descriptions.js';
-import { NOT_BUILT_MESSAGE, TOOL_SPECS, annotationsFor } from '../../src/server/tool-registry.js';
+import { TOOL_SPECS, annotationsFor } from '../../src/server/tool-registry.js';
 import { runStdioServer } from '../../src/server/create-server.js';
 import type { ToolContext } from '../../src/server/types.js';
 import { connect, textOf } from '../support/connect.js';
@@ -109,14 +109,6 @@ describe('registry', () => {
     expect(fake.snapshot.writes).toEqual([]);
     await connection.close();
   });
-
-  test('a stub handler returns the fixed not-built error', async () => {
-    const connection = await connect(createFakeRuntime().runtime);
-    const result = await connection.call('forget_me', { confirm: true });
-    expect(result.isError).toBe(true);
-    expect(textOf(result)).toBe(NOT_BUILT_MESSAGE);
-    await connection.close();
-  });
 });
 
 describe('handler wrapping', () => {
@@ -135,6 +127,15 @@ describe('handler wrapping', () => {
     expect(JSON.stringify(result)).not.toContain('person@example.com');
     expect(fake.stderr.join('')).not.toContain('person@example.com');
     expect(fake.stderr.join('')).toContain('code=unexpected');
+    await connection.close();
+  });
+
+  test('a failure outcome becomes an error result with its message', async () => {
+    vi.spyOn(TOOL_SPECS.sign_in, 'handler').mockResolvedValue({ ok: false, message: 'Not today.' });
+    const connection = await connect(createFakeRuntime().runtime);
+    const result = await connection.call('sign_in');
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toBe('Not today.');
     await connection.close();
   });
 

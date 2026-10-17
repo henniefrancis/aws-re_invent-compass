@@ -343,17 +343,17 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 18.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 19. Build forget_me
-  - [ ] 19.1 Implement forget_me
+- [x] 19. Build forget_me
+  - [x] 19.1 Implement forget_me
     - `src/tools/forget-me.ts`: `confirm: true` from the contract, `passes.forgetMe()`, then on success only delete the snapshot and clear the scan and swaps; success text says passes were voided and will expire; failure text says nothing was deleted
     - _Requirements: 16.1, 16.2, 16.3_
-  - [ ] 19.2 Write unit tests for forget_me
+  - [x] 19.2 Write unit tests for forget_me
     - Success removes local state; failure keeps it; copy never claims phone deletion
     - _Requirements: 16.1, 16.2, 16.3_
-  - [ ] 19.3 Commit
+  - [x] 19.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 20. Checkpoint: ensure all tests pass
+- [x] 20. Checkpoint: ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 21. Write the cross-cutting contract and security tests
