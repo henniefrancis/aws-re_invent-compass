@@ -30,6 +30,16 @@ Milestones: contract lock and day-1 spikes **16 Oct**; first dev deploy **21 Oct
 
 **Contract lock (ADR-025, 16 Oct):** S0 tasks 1 to 7 (scaffold, dependencies, all shared schemas and the Compass API contract) were merged into `develop` early, so the other streams start now. S0 tasks 8 to 15 (scanners, synthetic catalog, spikes, CI, hooks, examples) finish on `feature/foundation-contracts` and merge later. Until the synthetic catalog lands, a stream that needs sample sessions creates a few made-up ones in its own `test/` folder from the `SessionWire` schema, and switches to `fixtures/synthetic/` once it is merged. Because engineer 1 is still finishing S0, **S1 starts in its own Kiro session**.
 
+**Builders from 17 Oct.** The owner's Kiro credits ran out on 17 Oct. Kiro wrote the S0, S1, S2, S4 and S6 specs and built S0 and S1 tasks 1 to 8. From then on, Claude's dev-team agents build from the same Kiro specs, one agent per worktree, under the same steering, ownership and review gates. S1 continues from task 9, S4 from task 1, and S2 and S6 from task 1. The S3, S5 and S7 specs are written by Claude in Kiro's format (requirements, design, tasks), with the spike fallbacks built in. Kiro can pick any stream back up when credits renew: the specs, `tasks.md` checkboxes and `design.md` stay the single record of what is done.
+
+**Lessons for any builder, Kiro or agent:**
+
+- Give the full ownership folders from the build plan (section 9.1, File ownership). A narrower list stalls the work.
+- Take every URL, path, parameter and field name from the committed contracts (`packages/contracts/events-api.openapi.json`, `contracts/compass-api.openapi.yaml`). Never write a test that asserts a value the contract does not contain. S1 task 8 invented paths without `/events/{eventId}`, and its tests passed because they checked the invented paths.
+- Any change from `design.md` goes into `design.md` in the same commit.
+- Report in this fixed short form only: DONE, COMMITS, CHECKS, DESIGN CHANGES, ISSUES. Do not narrate between steps.
+- Commits name the owner as sole author, with no co-author trailer.
+
 **Contracts are frozen.** Never edit `packages/contracts/**` or `contracts/**` from a stream. If a contract must change, stop and ask the integrator.
 
 ---
