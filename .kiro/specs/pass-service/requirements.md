@@ -280,7 +280,7 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 
 #### Acceptance Criteria
 
-1. WHEN getSerialNumbers receives a request for a DeviceHash with Device_Registrations for the configured `passTypeIdentifier`, THE Passkit_Lambda SHALL return 200 with `serialNumbers` listing every registered pass that is before its Expires_At and whose Last_Updated is later than `passesUpdatedSince`, and `lastUpdated` set to the latest Last_Updated among those passes, as decimal epoch milliseconds.
+1. WHEN getSerialNumbers receives a request for a DeviceHash with Device_Registrations for the configured `passTypeIdentifier`, THE Passkit_Lambda SHALL return 200 with `serialNumbers` listing every registered pass that is before its Expires_At and whose millisecond update tag is at or after `passesUpdatedSince` (Requirement 28.3; the pass at the tag may be listed again and its fetch answers 304), and `lastUpdated` set to the latest update tag among those passes, as decimal epoch milliseconds.
 2. IF no registered pass matches, the device is unknown, or the `passTypeIdentifier` differs from the configured one, THEN THE Passkit_Lambda SHALL return 204 with no body.
 3. IF `passesUpdatedSince` is absent or is not a decimal integer, THEN THE Passkit_Lambda SHALL treat it as absent and consider every registered pass, as Apple's guidance asks for a request with no tag.
 4. WHEN getLatestPass is authorised per Requirement 17.1 and the request carries no `If-Modified-Since`, an unparseable one, or one earlier than the pass's Last_Updated at second precision, THE Passkit_Lambda SHALL return 200 with the latest signed Apple_Pass, `Content-Type: application/vnd.apple.pkpass` and a `Last-Modified` header equal to Last_Updated as an HTTP date.

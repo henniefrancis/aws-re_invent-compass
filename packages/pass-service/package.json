@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "build:lambda": "node scripts/run.mjs scripts/build.ts"
+  },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.1152.0",
     "@aws-sdk/client-secrets-manager": "3.1152.0",
