@@ -126,6 +126,7 @@ const builders: Array<[string, fc.Arbitrary<string>]> = [
   ['swapSafe', fc.constant(reasons.swapSafe())],
   ['swapUnsafe', fc.array(freeText, { maxLength: 5 }).map((refs) => reasons.swapUnsafe(refs))],
   ['swapFailed', fc.constant(reasons.swapFailed())],
+  ['swapZoneProblem', zone.map((z) => reasons.swapZoneProblem(z))],
   ['swapUnknown', fc.constant(reasons.swapUnknown())],
   ['guardMealLost', freeText.map((d) => reasons.guardMealLost(d))],
   [

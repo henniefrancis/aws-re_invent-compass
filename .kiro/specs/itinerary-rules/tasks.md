@@ -178,15 +178,15 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 12.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 13. Implement safe swap
-  - [ ] 13.1 Implement `safe-swap.ts` `planSafeSwap`
+- [x] 13. Implement safe swap
+  - [x] 13.1 Implement `safe-swap.ts` `planSafeSwap`
     - Produce three ordered steps (reserve repeat, confirm held, cancel original) with the cancel step blocked until the confirmation schedule shows the repeat held
     - Outcome is unsafe naming every clashing commitment when the repeat clashes, failed when the confirmation schedule does not show it held, and safe otherwise, leaving the original and all inputs unchanged; all clash checks use the event timezone and `Context.now`; no I/O
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7_
-  - [ ] 13.2 Write property test for safe swap steps and outcome
+  - [x] 13.2 Write property test for safe swap steps and outcome
     - **Property 13: Safe swap produces the three gated steps and an outcome that matches clash and confirmation state**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
-  - [ ] 13.3 Run the rules tests, confirm they pass, then commit
+  - [x] 13.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 14. Implement the checkReservation guardrail with the count-only overload interface

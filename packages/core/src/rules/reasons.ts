@@ -299,6 +299,10 @@ export function swapFailed(): string {
   return 'The schedule does not show the repeat as held. The swap cannot be completed. The original stays unchanged.';
 }
 
+export function swapZoneProblem(problem: ZoneProblem): string {
+  return `${zoneProblem(problem)} The swap cannot be checked. The original stays unchanged.`;
+}
+
 export function swapUnknown(): string {
   return 'The repeat has no usable start or end time. The swap cannot be checked. The original stays unchanged.';
 }
