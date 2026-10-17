@@ -338,20 +338,20 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 17.8 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 18. Implement forget_me and health
-  - [ ] 18.1 Implement the forgetMe and getHealth handlers
+- [x] 18. Implement forget_me and health
+  - [x] 18.1 Implement the forgetMe and getHealth handlers
     - Create `src/handlers/api/forget-me.ts` (verify; GSI2 query for `SUB#<subHash>`; `voidRecord` for each live active pass; delete every returned item and every registration found through GSI1 for those passes; 202 `{voided, deleted}`) and `src/handlers/api/health.ts` (origin check only, 200 `{status: 'ok', version}`, no table and no other secret); register both routes
     - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5, 23.1, 23.2_
 
-  - [ ] 18.2 Write property test for forget_me
+  - [x] 18.2 Write property test for forget_me
     - **Property 33: forget_me removes exactly the caller's items**
     - **Validates: Requirements 20.1, 20.2, 20.3, 20.4, 20.5**
 
-  - [ ] 18.3 Write unit tests for health
+  - [x] 18.3 Write unit tests for health
     - 200 body shape and version; no table access and no apple or google secret read
     - _Requirements: 23.1, 23.2_
 
-  - [ ] 18.4 Commit
+  - [x] 18.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 19. Implement the PassKit web service

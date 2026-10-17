@@ -2,10 +2,12 @@
 // voidPass, createHandoff, getHandoff, getHandoffAppleBundle, getHandoffCalendar,
 // forgetMe). Handlers are registered here as their tasks land.
 import { createHandoff } from '../handlers/api/create-handoff.js';
+import { forgetMe } from '../handlers/api/forget-me.js';
 import { getApplePass } from '../handlers/api/get-apple-pass.js';
 import { getHandoff } from '../handlers/api/get-handoff.js';
 import { getHandoffAppleBundle } from '../handlers/api/get-handoff-apple-bundle.js';
 import { getHandoffCalendar } from '../handlers/api/get-handoff-calendar.js';
+import { getHealth } from '../handlers/api/health.js';
 import { issuePasses } from '../handlers/api/issue-passes.js';
 import { updatePass } from '../handlers/api/update-pass.js';
 import { voidPass } from '../handlers/api/void-pass.js';
@@ -18,6 +20,8 @@ import type { ApiDeps } from './deps.js';
 import { createPipeline } from './pipeline.js';
 
 const routes: Partial<Record<RouteKey, Handler<ApiContext>>> = {
+  'GET /api/v1/health': getHealth,
+  'DELETE /api/v1/me': forgetMe,
   'POST /api/v1/passes': issuePasses,
   'GET /api/v1/passes/{serialNumber}/apple': getApplePass,
   'PUT /api/v1/passes/{serialNumber}': updatePass,

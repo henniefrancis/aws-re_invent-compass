@@ -93,13 +93,17 @@ export interface Reply {
 export interface FixtureOptions {
   env?: Record<string, string | undefined>;
   secrets?: FakeSecretsInit;
+  /** Runs before every table operation (to count or to interleave). */
+  interleave?: () => Promise<void>;
   signer?: (secrets: FakeSecrets) => PassSigner;
 }
 
 export function createApiFixture(options: FixtureOptions = {}): ApiFixture {
   const env = { ...BASE_ENV, ...options.env };
   const config = parseApiConfig(env);
-  const table = createMemoryTable();
+  const table = createMemoryTable(
+    options.interleave === undefined ? {} : { interleave: options.interleave },
+  );
   const clock = createFakeClock(Date.parse('2026-11-29T00:00:00Z'));
   const secrets = createFakeSecrets(options.secrets);
   const capture = createCapture();

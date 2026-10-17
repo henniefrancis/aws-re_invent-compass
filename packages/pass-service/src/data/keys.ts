@@ -12,8 +12,9 @@ export function ttlOf(expiresAtMs: number): number {
 }
 
 /** Expiry is code: every read treats an item at or past its expiry as absent. */
-export function isLive(item: Record<string, unknown>, now: number): boolean {
-  return typeof item.expiresAtMs === 'number' && now < item.expiresAtMs;
+export function isLive(item: object, now: number): boolean {
+  const expiresAtMs = (item as { expiresAtMs?: unknown }).expiresAtMs;
+  return typeof expiresAtMs === 'number' && now < expiresAtMs;
 }
 
 export const PASS_PREFIX = 'PASS#';

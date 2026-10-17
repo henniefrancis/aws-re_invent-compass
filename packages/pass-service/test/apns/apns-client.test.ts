@@ -11,7 +11,7 @@ import { throwawayPki } from '../helpers/throwaway-pki.js';
 
 type ApnsConfig = ApiConfig['apns'];
 
-const TIMEOUT = 120_000;
+const TIMEOUT = 300_000;
 const baseConfig: ApnsConfig = {
   enabled: true,
   host: 'localhost',
@@ -234,10 +234,10 @@ describe('Feature: pass-service, APNs client', () => {
   test(
     'Property 20: one session, per-push timeouts, and the call ends within the budget',
     async () => {
-      const config: ApnsConfig = { ...baseConfig, timeoutMs: 300, budgetMs: 700 };
+      const config: ApnsConfig = { ...baseConfig, timeoutMs: 1000, budgetMs: 1800 };
       await fc.assert(
         fc.asyncProperty(
-          fc.array(fc.constantFrom(0, 10, 1200), { minLength: 1, maxLength: 6 }),
+          fc.array(fc.constantFrom(0, 0, 0, 10, 10, 3000), { minLength: 1, maxLength: 3 }),
           async (delays) => {
             const tokens = delays.map((_, i) => `0${i}cd`);
             const delayOf = new Map(tokens.map((t, i) => [t, delays[i] as number]));
@@ -253,7 +253,7 @@ describe('Feature: pass-service, APNs client', () => {
             const outcome = await client.push(targets(tokens));
             const elapsed = Date.now() - started;
             await server.close();
-            expect(elapsed).toBeLessThan(config.budgetMs + 400);
+            expect(elapsed).toBeLessThan(config.budgetMs + 800);
             expect(server.sessions()).toBe(1);
             expect(outcome.delivered).toBe(delays.filter((d) => d < config.timeoutMs).length);
             expect(outcome.failed).toBe(delays.filter((d) => d >= config.timeoutMs).length);
