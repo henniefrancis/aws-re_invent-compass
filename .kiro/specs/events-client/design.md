@@ -371,12 +371,12 @@ interface Unconfirmed<W> {
 }
 type ConfirmedWriteResult<W> = Confirmed<W> | Unconfirmed<W>;
 function confirmedWrite<W>(
-  ctx: ClientContext,
   write: () => Promise<W>,
+  getSchedule: () => Promise<GetSchedule>,
 ): Promise<ConfirmedWriteResult<W>>;
 ```
 
-On a successful write it calls `GetSchedule` exactly once and returns both results. If the write errors, it returns that error and never calls `GetSchedule`. If the write succeeds but `GetSchedule` errors, it returns `confirmed: false` and never re-sends the write (Requirement 11).
+The write and the `GetSchedule` reader are both injected as thunks, so this helper stays independent of the operation functions (wired in task 8) and is unit-testable on its own. On a successful write it calls the injected `getSchedule` exactly once and returns both results. If the write errors, that error propagates and `getSchedule` is never called. If the write succeeds but `getSchedule` errors, it returns `confirmed: false` and never re-sends the write (Requirement 11).
 
 ### Component 7: Quota tracker (`core/src/api/quota-tracker.ts`)
 
