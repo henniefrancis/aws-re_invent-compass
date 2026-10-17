@@ -143,20 +143,20 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - [x] 6. Checkpoint: ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Build the week planner
-  - [ ] 7.1 Implement the planner
+- [x] 7. Build the week planner
+  - [x] 7.1 Implement the planner
     - Create `packages/core/src/spec/planner.ts` with `planWeek(input, rules)` and `eventDay` per design Component 2: usable-time filter with the excluded count, documented ranking and tie-break, day cap, guardrail via the injected `PlannerRules`, reasons of 1 to 200 characters, one standby at most, walk-up marking, layover suggestions, commitments that parse with `CommitmentSchema`; no write port exists
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10_
-  - [ ] 7.2 Write property test for day cap, guardrail and usable times
+  - [x] 7.2 Write property test for day cap, guardrail and usable times
     - **Property 16: Planned picks respect the day cap, the guardrail and usable times**
     - **Validates: Requirements 5.1, 5.3, 5.4, 5.10**
-  - [ ] 7.3 Write property test for determinism and ranking
+  - [x] 7.3 Write property test for determinism and ranking
     - **Property 17: Planning is deterministic and ranked as documented**
     - **Validates: Requirements 5.2**
-  - [ ] 7.4 Write property test for reasons, standby and walk-up
+  - [x] 7.4 Write property test for reasons, standby and walk-up
     - **Property 18: Every pick carries a valid reason, at most one standby and the walk-up mark**
     - **Validates: Requirements 5.5, 5.7, 5.8**
-  - [ ] 7.5 Commit
+  - [x] 7.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [x] 8. Build the week spec renderer
@@ -505,6 +505,7 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 
 - **Change requests to other streams (raised, not blocking):** S0 for `add_layover` update and delete and optional `scan_repo` level and reasoning fields (Open Questions 3 and 4); S2 to export `resolveCommitment` (or a connections helper) and `withContextDefaults` (Open Question 5); S4 to return `boardUrl` and `expiresAt` with the hand-off renders (Open Question 6).
 
+- **Integrator notes:** the production transport and node:fs adapters (task 12.4) implement `rename`, `createExclusive` and symlink refusal and use `redirect: 'error'`; `sync_passes` (task 18.2) previews what it would void and elicits confirmation for an empty or bulk void (more than 5), see design deviation 11.
 - **CTO review amendments (apply with the affected task):** H1 `sync_passes` is a Write_Tool and the passes adapter uses a narrowing store view (tasks 11.4, 18.2, 24.2, 25.1, 26.1); H2 no `awsevents` in `power/mcp.json` until ADR-024 (tasks 24.1, 24.3, 29.1); H3 the triple A = syn-096, A-R = syn-009, B = syn-082 with an early existence test (tasks 1.3, 27); M1 elicited or five-minute second cancel (16.2, 16.3); M2 exactly-once wording (17.3, 26.2); M3 plan_week target folder, lstat, `wx`, symlink refusal (9.2, 14.3); M4 elicited confirmation for Schedule_Write_Tools (15.3, 16.2, 17.1, 17.2); M5 `ProbeWrite` probe, case-insensitive `identifyTool`, matcher `.*(...)$` (22.1, 24.1, design SP1 checklist); M6 wire-services filter in the adapter (13.1, 26.1); M7 pinned simulated instant (12.3); M8 S2 `connectionsForDay` and `energyForDay` (26.1); M11 GitHub import step (design SP1 checklist, 25.1); L1 handler throw test (11.6); L2 negative and non-integer refusals (13.1, 14.3); L3 npx local-copy risk (25.1); L5 injected platform (all `src`).
 
 ## Task Dependency Graph
