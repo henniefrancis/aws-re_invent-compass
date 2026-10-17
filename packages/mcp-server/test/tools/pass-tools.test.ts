@@ -209,7 +209,7 @@ describe('sync_passes', () => {
     );
     const call = fake.passes.calls.find((c) => c.method === 'sync');
     expect(call?.args[0]).toEqual([TRIPLE.aRepeat]);
-    expect(call?.args[1]).toEqual([TRIPLE.aRepeat]);
+    expect(call?.args[1]).toEqual(['ANT163-R']);
   });
 
   test('voiding more than five passes needs an elicited confirmation and sets allowBulkVoid', async () => {
@@ -331,10 +331,20 @@ describe('export_calendar', () => {
     const commitments: Commitment[] = [
       { kind: 'reservedSession', sessionId: TRIPLE.a, startsAt: 'x', endsAt: 'y' },
       { kind: 'personalTime', title: 'Lunch', startsAt: 'x', endsAt: 'y' },
+      {
+        kind: 'personalTime',
+        title: 'Rest',
+        startsAt: 'x',
+        endsAt: 'y',
+        personalTimeId: 'p1',
+        location: 'Cafe',
+      },
+      { kind: 'reservedSession', sessionId: 'ghost', startsAt: 'x', endsAt: 'y' },
     ];
     const outcome = await exportCalendar({ commitments }, ctx);
     expect(outcome.ok && outcome.structured).toEqual({ ics: 'BEGIN:VCALENDAR\nEND:VCALENDAR' });
-    expect(fake.events.calls).toEqual([]);
+    expect(fake.events.calls.map((c) => c.method)).toEqual(['catalog']);
+    expect(fake.passes.calls.find((c) => c.method === 'exportCalendar')?.args[0]).toBe(3);
   });
 
   test('builds from the confirmed schedule when none are given', async () => {

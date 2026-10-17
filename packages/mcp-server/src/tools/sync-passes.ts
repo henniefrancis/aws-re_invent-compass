@@ -11,7 +11,9 @@ import { CompassError } from '../ports/errors.js';
 import { checkIdentifiers } from '../safety/identifiers.js';
 import { labelUntrusted } from '../safety/labelled-data.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
-import { ensureSignedIn, readFreshSchedule } from './common.js';
+import type { SyncScope } from '../ports/passes-port.js';
+import { describeTargets } from '../safety/targets.js';
+import { ensureSignedIn, readFreshSchedule, scheduleViewOf } from './common.js';
 import { VOID_NOTE } from './pass-text.js';
 
 /** More than this many voids in one sync needs explicit confirmation. */
@@ -37,7 +39,19 @@ export async function syncPasses(
       return entry === undefined ? [] : [entry.session];
     });
 
-  const plan = await passes.previewSync(resolved, narrow);
+  const scope: SyncScope = {
+    resolved,
+    schedule: scheduleViewOf(schedule, catalog),
+    idByCode: new Map([...catalog.byId.values()].map((e) => [e.session.code, e.session.sessionId])),
+    ...(narrow === undefined
+      ? {}
+      : {
+          narrowCodes: new Set(
+            describeTargets([...narrow], catalog).sessions.map((session) => session.code),
+          ),
+        }),
+  };
+  const plan = await passes.previewSync(scope);
   const emptyVoid = resolved.length === 0 && plan.toVoid.length > 0;
   const bulkVoid = plan.toVoid.length > BULK_VOID_THRESHOLD;
   const titles = new Map([...catalog.byId.values()].map((e) => [e.session.code, e.session.title]));
@@ -65,11 +79,7 @@ export async function syncPasses(
     throw new CompassError('BulkVoidRefused');
   }
 
-  const result = await passes.sync(resolved, {
-    ...(narrow === undefined ? {} : { narrowTo: narrow }),
-    confirmEmpty: emptyVoid,
-    allowBulkVoid: bulkVoid,
-  });
+  const result = await passes.sync({ ...scope, confirmEmpty: emptyVoid, allowBulkVoid: bulkVoid });
   return {
     ok: true,
     structured: result,

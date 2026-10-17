@@ -1,6 +1,7 @@
 // Helpers shared by the tool handlers.
 
 import type { Commitment, NormalisedSession, ScheduleWire } from '@compass/contracts';
+import type { ScheduleView } from '@compass/core/passes';
 import { CompassError } from '../ports/errors.js';
 import type { CatalogView, EventWindow } from '../ports/events-port.js';
 import type { ToolContext } from '../server/types.js';
@@ -104,4 +105,51 @@ export function confirmMessage(
  */
 export async function humanConfirms(ctx: ToolContext, message: string): Promise<boolean> {
   return ctx.elicit === undefined || (await ctx.elicit({ message })) === 'accept';
+}
+
+/**
+ * The confirmed schedule as S4 sees it: the reserved sessions the catalog knows (a refreshed
+ * session replaces the cached one) and the personal time.
+ */
+export function scheduleViewOf(
+  schedule: ScheduleWire,
+  lookup: CatalogView,
+  refreshed: readonly NormalisedSession[] = [],
+): ScheduleView {
+  const newer = new Map(refreshed.map((session) => [session.sessionId, session]));
+  return {
+    sessions: schedule.reserved.flatMap((id) => {
+      const session = newer.get(id) ?? lookup.byId.get(id)?.session;
+      return session === undefined ? [] : [session];
+    }),
+    personalTime: schedule.personalTime,
+  };
+}
+
+/** A schedule view built from commitments the caller gave (export_calendar). */
+export function scheduleViewFromCommitments(
+  commitments: readonly Commitment[],
+  lookup: CatalogView,
+): ScheduleView {
+  return {
+    sessions: commitments.flatMap((c) => {
+      const session =
+        c.kind === 'reservedSession' ? lookup.byId.get(c.sessionId)?.session : undefined;
+      return session === undefined ? [] : [session];
+    }),
+    personalTime: commitments.flatMap((c, index) =>
+      c.kind === 'personalTime'
+        ? [
+            {
+              personalTimeId: c.personalTimeId ?? `layover-${String(index + 1)}`,
+              startDateTime: c.startsAt,
+              endDateTime: c.endsAt,
+              title: c.title,
+              description: '',
+              ...(c.location === undefined ? {} : { location: c.location }),
+            },
+          ]
+        : [],
+    ),
+  };
 }

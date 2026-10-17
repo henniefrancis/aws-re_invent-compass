@@ -11,10 +11,10 @@ import { describeTargets } from '../safety/targets.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
 import {
   confirmMessage,
-  confirmedCommitments,
   ensureSignedIn,
   humanConfirms,
   readFreshSchedule,
+  scheduleViewOf,
 } from './common.js';
 import { PASS_DISCLAIMER } from './pass-text.js';
 
@@ -67,7 +67,7 @@ export async function issueBoardingPasses(
   for (const id of reservedIds) {
     sessions.push(await events.getSession(id));
   }
-  const issued = await passes.issue(sessions, confirmedCommitments(schedule, catalog));
+  const issued = await passes.issue(sessions, scheduleViewOf(schedule, catalog, sessions));
   return {
     ok: true,
     structured: {

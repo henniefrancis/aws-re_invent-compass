@@ -3,10 +3,16 @@
 // booked or changed.
 
 import type { Commitment } from '@compass/contracts';
+import type { ScheduleView } from '@compass/core/passes';
 import { CompassError } from '../ports/errors.js';
 import { checkIdentifiers } from '../safety/identifiers.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
-import { confirmedCommitments, ensureSignedIn, readFreshSchedule } from './common.js';
+import {
+  ensureSignedIn,
+  readFreshSchedule,
+  scheduleViewFromCommitments,
+  scheduleViewOf,
+} from './common.js';
 
 /** export_calendar. */
 export async function exportCalendar(
@@ -14,12 +20,14 @@ export async function exportCalendar(
   ctx: ToolContext,
 ): Promise<ToolOutcome<'export_calendar'>> {
   const { events, passes } = ctx.runtime;
-  let commitments: Commitment[];
+  let view: ScheduleView;
+  let entries: number;
   if (input.commitments === undefined) {
     await ensureSignedIn(ctx);
     const catalog = await events.catalog();
     const { schedule } = await readFreshSchedule(ctx);
-    commitments = confirmedCommitments(schedule, catalog);
+    view = scheduleViewOf(schedule, catalog);
+    entries = view.sessions.length + view.personalTime.length;
   } else {
     const ids = input.commitments.flatMap((c) =>
       c.kind === 'reservedSession' ? [c.sessionId] : [],
@@ -27,12 +35,13 @@ export async function exportCalendar(
     if (!checkIdentifiers(ids).ok) {
       throw new CompassError('IdentifierRejected');
     }
-    commitments = input.commitments;
+    view = scheduleViewFromCommitments(input.commitments, await events.catalog());
+    entries = view.sessions.length + view.personalTime.length;
   }
-  const calendar = await passes.exportCalendar(commitments);
+  const calendar = await passes.exportCalendar(view);
   return {
     ok: true,
     structured: { ics: calendar.ics },
-    text: `Built a calendar with ${commitments.length} entries. Import the .ics text into your calendar app. A copy was saved at ${calendar.path}.`,
+    text: `Built a calendar with ${entries} entries. Import the .ics text into your calendar app. A copy was saved at ${calendar.path}.`,
   };
 }

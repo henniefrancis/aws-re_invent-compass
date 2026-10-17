@@ -1,6 +1,6 @@
-import type { Commitment, NormalisedSession } from '@compass/contracts';
+import type { NormalisedSession } from '@compass/contracts';
 import { CompassError } from '../../src/ports/errors.js';
-import type { PassesPort, SyncPlan } from '../../src/ports/passes-port.js';
+import type { PassesPort, ScheduleView, SyncPlan, SyncScope } from '../../src/ports/passes-port.js';
 import type { RecordedCall } from './fake-events.js';
 
 /** Calls that create, change or void a pass, or delete data. */
@@ -64,13 +64,16 @@ export class FakePasses implements PassesPort {
 
   issue(
     sessions: readonly NormalisedSession[],
-    itinerary: readonly Commitment[],
+    schedule: ScheduleView,
   ): Promise<{ sessionId: string; serialNumber: string }[]> {
-    return this.run('issue', [sessions.map((s) => s.sessionId), itinerary.length], () =>
-      sessions.map((session) => ({
-        sessionId: session.sessionId,
-        serialNumber: this.seed(session.sessionId, session.code),
-      })),
+    return this.run(
+      'issue',
+      [sessions.map((s) => s.sessionId), schedule.sessions.length + schedule.personalTime.length],
+      () =>
+        sessions.map((session) => ({
+          sessionId: session.sessionId,
+          serialNumber: this.seed(session.sessionId, session.code),
+        })),
     );
   }
 
@@ -82,48 +85,49 @@ export class FakePasses implements PassesPort {
     return this.run('handoff', [serials], () => this.handoffResult);
   }
 
-  private plan(resolved: readonly NormalisedSession[], narrowTo?: ReadonlySet<string>): SyncPlan {
-    const scope = this.entries.filter((e) => narrowTo === undefined || narrowTo.has(e.sessionId));
-    const resolvedIds = new Set(resolved.map((s) => s.sessionId));
-    const issuedIds = new Set(scope.map((e) => e.sessionId));
+  private plan(scope: SyncScope): SyncPlan {
+    const inScope = this.entries.filter(
+      (e) => scope.narrowCodes === undefined || scope.narrowCodes.has(e.sessionCode),
+    );
+    const resolvedIds = new Set(scope.resolved.map((s) => s.sessionId));
+    const issuedIds = new Set(inScope.map((e) => e.sessionId));
     return {
-      toIssue: resolved.filter((s) => !issuedIds.has(s.sessionId)).map((s) => s.sessionId),
-      toUpdate: resolved.filter((s) => issuedIds.has(s.sessionId)).map((s) => s.sessionId),
-      toVoid: scope
+      toIssue: scope.resolved.filter((s) => !issuedIds.has(s.sessionId)).map((s) => s.sessionId),
+      toUpdate: scope.resolved.filter((s) => issuedIds.has(s.sessionId)).map((s) => s.sessionId),
+      toVoid: inScope
         .filter((e) => !resolvedIds.has(e.sessionId))
         .map(({ sessionCode, serialNumber }) => ({ sessionCode, serialNumber })),
     };
   }
 
-  previewSync(
-    resolved: readonly NormalisedSession[],
-    narrowTo?: ReadonlySet<string>,
-  ): Promise<SyncPlan> {
+  previewSync(scope: SyncScope): Promise<SyncPlan> {
     return this.run(
       'previewSync',
-      [resolved.map((s) => s.sessionId), narrowTo === undefined ? undefined : [...narrowTo]],
-      () => this.plan(resolved, narrowTo),
+      [
+        scope.resolved.map((s) => s.sessionId),
+        scope.narrowCodes === undefined ? undefined : [...scope.narrowCodes],
+      ],
+      () => this.plan(scope),
     );
   }
 
   sync(
-    resolved: readonly NormalisedSession[],
-    options: { narrowTo?: ReadonlySet<string>; confirmEmpty: boolean; allowBulkVoid: boolean },
+    scope: SyncScope & { confirmEmpty: boolean; allowBulkVoid: boolean },
   ): Promise<{ issued: string[]; updated: string[]; voided: string[] }> {
     return this.run(
       'sync',
       [
-        resolved.map((s) => s.sessionId),
-        options.narrowTo === undefined ? undefined : [...options.narrowTo],
-        options.confirmEmpty,
-        options.allowBulkVoid,
+        scope.resolved.map((s) => s.sessionId),
+        scope.narrowCodes === undefined ? undefined : [...scope.narrowCodes],
+        scope.confirmEmpty,
+        scope.allowBulkVoid,
       ],
       () => {
-        const plan = this.plan(resolved, options.narrowTo);
-        if (resolved.length === 0 && plan.toVoid.length > 0 && !options.confirmEmpty) {
+        const plan = this.plan(scope);
+        if (scope.resolved.length === 0 && plan.toVoid.length > 0 && !scope.confirmEmpty) {
           throw new CompassError('PassError', { summary: 'confirmEmpty is required' });
         }
-        if (plan.toVoid.length > 5 && !options.allowBulkVoid) {
+        if (plan.toVoid.length > 5 && !scope.allowBulkVoid) {
           throw new CompassError('PassError', { summary: 'allowBulkVoid is required' });
         }
         const voidedSerials = new Set(plan.toVoid.map((v) => v.serialNumber));
@@ -133,7 +137,7 @@ export class FakePasses implements PassesPort {
         this.voidedSerials.push(...voidedSerials);
         this.entries = this.entries.filter((e) => !voidedSerials.has(e.serialNumber));
         for (const id of plan.toIssue) {
-          const session = resolved.find((s) => s.sessionId === id);
+          const session = scope.resolved.find((s) => s.sessionId === id);
           if (session !== undefined) this.seed(id, session.code);
         }
         return { issued: plan.toIssue, updated: plan.toUpdate, voided: voidedIds };
@@ -141,11 +145,15 @@ export class FakePasses implements PassesPort {
     );
   }
 
-  exportCalendar(commitments: readonly Commitment[]): Promise<{ ics: string; path: string }> {
-    return this.run('exportCalendar', [commitments.length], () => ({
-      ics: 'BEGIN:VCALENDAR\nEND:VCALENDAR',
-      path: 'calendar.ics',
-    }));
+  exportCalendar(schedule: ScheduleView): Promise<{ ics: string; path: string }> {
+    return this.run(
+      'exportCalendar',
+      [schedule.sessions.length + schedule.personalTime.length],
+      () => ({
+        ics: 'BEGIN:VCALENDAR\nEND:VCALENDAR',
+        path: 'calendar.ics',
+      }),
+    );
   }
 
   forgetMe(): Promise<{ ok: true } | { ok: false; summary: string }> {
