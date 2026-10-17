@@ -223,20 +223,20 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 11.7 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 12. Build the in-process pass service and the simulated runtime shell
-  - [ ] 12.1 Implement the in-process pass service
+- [x] 12. Build the in-process pass service and the simulated runtime shell
+  - [x] 12.1 Implement the in-process pass service
     - Create `src/simulated/in-process-pass-service.ts` serving issue, update, void, hand-off create and forget me over the S4 `HttpTransport` shape, typed against `CompassApi`, validating pass fields with `createPassFieldsSchema`, `randomUUID` serials, 16-byte base64url hand-off ids, 15-minute expiry, board URL `https://compass.invalid/board#h=<id>`, idempotent void, problem+json errors, no socket
     - _Requirements: 22.2, 22.3, 22.4_
-  - [ ] 12.2 Write property test for the pass service
+  - [x] 12.2 Write property test for the pass service
     - **Property 42: The in-process pass service keeps the contract's invariants**
     - **Validates: Requirements 22.2, 22.3, 22.4**
-  - [ ] 12.3 Implement the simulated runtime factory over ports
+  - [x] 12.3 Implement the simulated runtime factory over ports
     - Create `src/simulated/simulated-runtime.ts` that composes a `Runtime` from injected port implementations, the pass service and the `simulated/` app-data subfolder; the real S1, S2 and S4 adapters are plugged in at task 26
     - _Requirements: 16.5, 22.1, 23.1_
-  - [ ] 12.4 Implement the production transport and file system adapters
+  - [x] 12.4 Implement the production transport and file system adapters
     - `src/adapters/fetch-transport.ts` (https only, timeout, `redirect: 'error'`, binary bodies, `fetch` injected) and `src/adapters/node-fs-adapter.ts` (files `0o600`, directories `0o700`, POSIX modes ignored on Windows and documented), with unit tests
     - _Requirements: 17.2, 22.1, 23.1_
-  - [ ] 12.5 Commit
+  - [x] 12.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 13. Build the session and catalog tools

@@ -34,6 +34,8 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
   LayoverInvalid:
     'The layover times are not valid. Give a start and an end with time zone offsets, inside the event dates, with the end after the start.',
   NoPassesIssued: 'No boarding passes have been issued yet. Run issue_boarding_passes first.',
+  Network: 'Compass could not reach the service. Check your connection, then try again.',
+  UnsafePath: 'Compass will not write through a symbolic link, so it wrote nothing.',
   Internal: INTERNAL_MESSAGE,
 };
 

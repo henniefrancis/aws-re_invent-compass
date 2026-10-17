@@ -27,6 +27,8 @@ export type CompassErrorCode =
   | 'MaxPerDayRange'
   | 'LayoverInvalid'
   | 'NoPassesIssued'
+  | 'Network'
+  | 'UnsafePath'
   | 'Internal';
 
 /** Optional, non-sensitive details a code may carry. */
