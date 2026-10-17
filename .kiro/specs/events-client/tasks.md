@@ -352,12 +352,12 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 14.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 15. Create fixtures for every operation and error path
-  - [ ] 15.1 Create success and error fixtures for all twelve operations
+- [x] 15. Create fixtures for every operation and error path
+  - [x] 15.1 Create success and error fixtures for all twelve operations
     - Create `fixtures/api/<operation>/<scenario>.json` with kebab-case folders, drawing all session data from the S0 synthetic catalog at `fixtures/synthetic/catalog.json` (read-only, do not invent sessions and do not edit that file), with at least one success fixture per operation and at least one error fixture per status condition (400, 401, 403, 404, 409, 429, 500 to 599), a 401 expired-token fixture, a two-or-more-page catalog set (non-final page carries `nextToken`, final omits it), and a ReserveSessions or AssociateFavorites fixture with at least one unknown `BulkFailureCode`
     - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 19.6, 19.7_
 
-  - [ ] 15.2 Commit
+  - [x] 15.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 16. Wire the subpath exports and the structural checks

@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "body": {
+    "schedule": {
+      "reserved": ["syn-001"],
+      "favorites": ["syn-002"],
+      "personalTime": [
+        {
+          "personalTimeId": "pt-1",
+          "startDateTime": "2026-12-01T12:00:00-08:00",
+          "endDateTime": "2026-12-01T13:00:00-08:00",
+          "title": "Lunch",
+          "description": "Break for food and water"
+        }
+      ]
+    }
+  }
+}

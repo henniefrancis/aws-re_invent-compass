@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "body": {
+    "session": {
+      "abbreviation": "CMP436",
+      "abstract": "A made-up abstract for Cost optimisation: Hands on workshop. Synthetic data for testing only.",
+      "isAllDaySession": false,
+      "isReservable": true,
+      "level": "100",
+      "room": "Room 115",
+      "seatAvailability": "unavailable",
+      "services": ["networking"],
+      "sessionId": "syn-001",
+      "sessionTime": {
+        "date": "2026-11-30",
+        "length": "120",
+        "time": "14:30",
+        "timezone": "America/Los_Angeles"
+      },
+      "speakers": [
+        {
+          "name": "Alex Gupta"
+        }
+      ],
+      "title": "Cost optimisation: Hands on workshop",
+      "type": "Chalk talk",
+      "venue": "Encore"
+    }
+  }
+}
