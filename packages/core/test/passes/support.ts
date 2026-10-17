@@ -3,7 +3,7 @@
 // fast-check generators the property tests share.
 import fc from 'fast-check';
 import type { Commitment, NormalisedSession } from '@compass/contracts';
-import type { ConnectionProvider } from '../../src/passes/interfaces.js';
+import type { Clock, ConnectionProvider } from '../../src/passes/interfaces.js';
 import type { EventWindow } from '../../src/passes/models.js';
 
 /** The event window used by every test: a fixed, made-up week in Pacific time. */
@@ -136,3 +136,16 @@ export const hostileTextArb: fc.Arbitrary<string> = fc
     maxLength: 12,
   })
   .map((parts) => parts.join(' '));
+
+/** A deterministic clock: now is fixed, and sleep records the requested waits. */
+export function fakeClock(nowIso = '2026-12-01T08:00:00.000Z'): Clock & { sleeps: number[] } {
+  const sleeps: number[] = [];
+  return {
+    sleeps,
+    now: () => new Date(nowIso),
+    sleep(ms: number): Promise<void> {
+      sleeps.push(ms);
+      return Promise.resolve();
+    },
+  };
+}

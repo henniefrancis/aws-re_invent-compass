@@ -45,3 +45,29 @@ export { fieldsHash } from './field-hash.js';
 // Pass_Builder: builds validated PassFields from a confirmed session.
 export { buildPass } from './pass-builder.js';
 export type { BuildPassInput, BuildPassResult, BuildPassDeps } from './pass-builder.js';
+
+// Compass_Client and the contract-typed response schemas.
+export { createCompassClient, CompassError } from './compass-client.js';
+export type {
+  CompassClient,
+  CompassClientOptions,
+  UpdatePassResult,
+  VoidPassResult,
+  ForgetMeResult,
+} from './compass-client.js';
+export {
+  IssuePassesResponseSchema,
+  UpdatePassResponseSchema,
+  VoidPassResponseSchema,
+  CreateHandoffResponseSchema,
+  ForgetMeResponseSchema,
+} from './compass-api-schemas.js';
+export type {
+  IssuePassesRequest,
+  IssuePassesResponse,
+  UpdatePassResponse,
+  VoidPassResponse,
+  CreateHandoffRequest,
+  CreateHandoffResponse,
+  ForgetMeResponse,
+} from './compass-api-schemas.js';

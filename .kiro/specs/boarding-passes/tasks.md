@@ -64,7 +64,7 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Pass_Builder with text normalisation and adjacency" -m "Pure buildPass derives walk fields, truncates titles with ASCII ellipsis, applies safe fallbacks and validates against the window schema."`
 
-- [ ] 3. Implement Compass_Client and the response schemas
+- [x] 3. Implement Compass_Client and the response schemas
   - Implement the owned response schemas in `packages/core/src/passes/compass-api-schemas.ts`, each declared as a `z.ZodType<...>` of the matching generated `CompassApi` response type so a schema that drifts from the contract fails to compile. Do not edit `packages/contracts/**`; import the generated types only.
   - Implement the `CompassClient` over the injected `HttpTransport`, `IdTokenProvider` and `Clock`: `issuePasses`, `getApplePass`, `updatePass`, `voidPass`, `createHandoff`, `forgetMe`.
   - Attach `Authorization: Bearer <idToken>` on every attendee route, fetching the token fresh per call and never storing it.
@@ -73,23 +73,23 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
   - Treat a 404 on `updatePass` or `voidPass` as the serial being already gone (signal the caller to drop the entry), and treat a repeat void success as the completed state.
   - Build the in-memory and/or `node:http` mock transport from `contracts/compass-api.openapi.yaml` for the tests (read-only use of the contract file; never edit it).
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10, 2.11, 2.12_
-  - [ ] 3.1 Write property test: ID token attached as Bearer on every attendee route
+  - [x] 3.1 Write property test: ID token attached as Bearer on every attendee route
     - **Property 8: ID token attached as Bearer on every attendee route**
     - **Validates: Requirements 2.8**
-  - [ ] 3.2 Write property test: Problem bodies parse and surface without request input
+  - [x] 3.2 Write property test: Problem bodies parse and surface without request input
     - **Property 10: Problem bodies parse and surface without request input**
     - **Validates: Requirements 2.9**
-  - [ ] 3.3 Write property test: single retry only on 429 with a usable Retry-After
+  - [x] 3.3 Write property test: single retry only on 429 with a usable Retry-After
     - **Property 11: Single retry only on 429 with a usable Retry-After**
     - **Validates: Requirements 2.10, 2.11**
-  - [ ] 3.4 Write property test: response validation gate
+  - [x] 3.4 Write property test: response validation gate
     - **Property 12: Response validation gate**
     - **Validates: Requirements 2.1, 2.3, 2.4, 2.6, 2.12**
-  - [ ] 3.5 Write example tests for byte pass-through, void idempotence and the 404 drop signal
+  - [x] 3.5 Write example tests for byte pass-through, void idempotence and the 404 drop signal
     - `getApplePass` returns the Apple pass body bytes (2.2); voiding a serial twice against a success response yields the completed state and no error both times (2.5, former Property 9); a 404 on update or void signals the serial is already gone.
     - All Compass_Client tests run against the mock server built from `contracts/compass-api.openapi.yaml` (Requirement 9.4).
     - _Requirements: 2.2, 2.5, 9.4_
-  - [ ] 3.6 Run this task's tests, then commit locally
+  - [x] 3.6 Run this task's tests, then commit locally
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Compass_Client and contract-typed response schemas" -m "Typed client validates every response with zod, attaches the Bearer ID token, retries 429 once on Retry-After and treats 404 on write as already gone."`
 

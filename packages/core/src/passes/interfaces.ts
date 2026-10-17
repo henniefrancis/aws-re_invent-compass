@@ -64,23 +64,29 @@ export interface FileSystem {
  * One HTTP request the Compass_Client sends through the transport seam. The shape is
  * deliberately free of any credential-bearing convenience field: the Authorization
  * header is set explicitly by the client per call. body is a JSON string when present.
+ * binary is set only on the Apple pass download: it asks the transport to return the
+ * response body as raw bytes in HttpResponse.bytes, because a signed pass is a zip
+ * archive that a text body would corrupt.
  */
 export interface HttpRequest {
   method: 'GET' | 'PUT' | 'POST' | 'DELETE';
   url: string;
   headers: Record<string, string>;
   body?: string;
+  binary?: boolean;
 }
 
 /**
  * One HTTP response the transport seam returns. Header names are lower-cased, so the
  * client reads retry-after directly. body is the raw response body, parsed and
- * validated against its contract schema by the client.
+ * validated against its contract schema by the client. When the request asked for a
+ * binary body, bytes carries the raw response body and body is the empty string.
  */
 export interface HttpResponse {
   status: number;
   headers: Record<string, string>;
   body: string;
+  bytes?: Uint8Array;
 }
 
 /**
