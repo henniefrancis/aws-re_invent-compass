@@ -61,20 +61,20 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 2.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 3. Implement the secrets provider
-  - [ ] 3.1 Implement the secrets provider and the AWS source
+- [x] 3. Implement the secrets provider
+  - [x] 3.1 Implement the secrets provider and the AWS source
     - Create `src/secrets/secret-shapes.ts` (zod schemas for the app, apple-pass and google-wallet JSON keys in the design's secrets table) and `src/secrets/secrets-provider.ts` (`createSecretsProvider` with a per-secret cache of `SECRETS_CACHE_TTL_SECONDS`, single-flight refresh, failures not cached, `DependencyError('secret')` without any value) and `awsSecretSource` over `GetSecretValueCommand` (SecretString only)
     - _Requirements: 21.1, 21.2, 21.3, 21.6_
 
-  - [ ] 3.2 Write property test for the secrets cache
+  - [x] 3.2 Write property test for the secrets cache
     - **Property 34: Secrets are fetched once per period and never leak**
     - **Validates: Requirements 21.1, 21.2, 21.3**
 
-  - [ ] 3.3 Write unit tests for the AWS secret source
+  - [x] 3.3 Write unit tests for the AWS secret source
     - Mock `SecretsManagerClient.send` only (never a real client call); assert the command input, SecretString handling, and that a missing SecretString becomes a `DependencyError` with no value
     - _Requirements: 21.1, 21.3, 21.5_
 
-  - [ ] 3.4 Commit
+  - [x] 3.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 4. Implement the hashing and capability helpers
