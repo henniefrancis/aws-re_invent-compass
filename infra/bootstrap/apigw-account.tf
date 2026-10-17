@@ -11,6 +11,10 @@ resource "aws_iam_role" "apigateway_cloudwatch" {
       Effect    = "Allow"
       Action    = "sts:AssumeRole"
       Principal = { Service = "apigateway.amazonaws.com" }
+      Condition = {
+        StringEquals = { "aws:SourceAccount" = local.account_id }
+        ArnLike      = { "aws:SourceArn" = "arn:aws:apigateway:${local.region}::/restapis/*" }
+      }
     }]
   })
 }

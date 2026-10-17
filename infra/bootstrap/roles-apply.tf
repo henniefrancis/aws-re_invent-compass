@@ -1,23 +1,25 @@
-# Apply roles, one per environment, and the permissions boundary they impose.
+# Apply roles, one per environment, the boundaries they impose, and the boundary
+# the roles themselves carry.
 #
 # Scoping (Requirement 2.6):
-#   - create actions require aws:RequestTag/project, later actions require
-#     aws:ResourceTag/project, wherever the service supports the condition key;
+#   - create actions require the project and environment request tags, later
+#     actions require both resource tags, wherever the service supports the
+#     condition keys, so a dev role cannot touch a prod resource;
 #   - resource types that cannot be scoped by tag are scoped by name-prefix ARN;
+#   - IAM role writes name the two exact Lambda role ARNs of the environment and
+#     nothing else, so the apply phase cannot create, widen or delete the plan or
+#     apply roles, and an unconditional deny repeats that (H1);
 #   - iam:PassRole is limited to the two Lambda execution roles;
-#   - iam:CreateRole is allowed only with the project permissions boundary.
+#   - iam:CreateRole is allowed only with the per-environment permissions boundary.
 #
-# The policy is split into managed policies by area so each stays under the
-# 6,144 character limit. API Gateway and most CloudFront types have no resource
-# name in their ARN, so they are scoped by ARN type and, where supported, by tag.
+# The policy is split into managed policies by area so each stays under the 6,144
+# character limit. API Gateway and most CloudFront types have no resource name in
+# their ARN, so they are scoped by ARN type and, where supported, by tag.
 
 locals {
-  # Names that every project role and resource carries, per environment.
   name_scope = {
     for e in local.envs : e => {
-      role_arn_pattern     = "arn:aws:iam::${local.account_id}:role/compass-${e}-*"
       lambda_arn_pattern   = "arn:aws:lambda:${local.region}:${local.account_id}:function:compass-${e}-*"
-      lambda_role_arns     = ["arn:aws:iam::${local.account_id}:role/compass-${e}-api-lambda", "arn:aws:iam::${local.account_id}:role/compass-${e}-passkit-lambda"]
       log_group_patterns   = ["arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/lambda/compass-${e}-*", "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/apigateway/compass-${e}-*"]
       table_arns           = ["arn:aws:dynamodb:${local.region}:${local.account_id}:table/compass-${e}", "arn:aws:dynamodb:${local.region}:${local.account_id}:table/compass-${e}/index/*"]
       secret_pattern       = "arn:aws:secretsmanager:${local.region}:${local.account_id}:secret:compass/${e}/*"
@@ -25,11 +27,12 @@ locals {
       alarm_pattern        = "arn:aws:cloudwatch:${local.region}:${local.account_id}:alarm:compass-${e}-*"
       budget_pattern       = "arn:aws:budgets::${local.account_id}:budget/compass-${e}-*"
       kms_alias_pattern    = "arn:aws:kms:${local.region}:${local.account_id}:alias/compass-${e}-*"
-      bucket_patterns      = ["arn:aws:s3:::compass-${e}-site-*", "arn:aws:s3:::compass-${e}-site-*/*"]
       bucket_arn_pattern   = "arn:aws:s3:::compass-${e}-site-*"
       web_acl_pattern      = "arn:aws:wafv2:${local.region}:${local.account_id}:global/webacl/compass-${e}/*"
       cf_function_pattern  = "arn:aws:cloudfront::${local.account_id}:function/compass-${e}-*"
       cf_distribution_arns = "arn:aws:cloudfront::${local.account_id}:distribution/*"
+      apigw_restapis       = ["arn:aws:apigateway:${local.region}::/restapis", "arn:aws:apigateway:${local.region}::/restapis/*"]
+      apigw_keys_plans     = ["arn:aws:apigateway:${local.region}::/apikeys", "arn:aws:apigateway:${local.region}::/apikeys/*", "arn:aws:apigateway:${local.region}::/usageplans", "arn:aws:apigateway:${local.region}::/usageplans/*"]
     }
   }
 
@@ -37,21 +40,22 @@ locals {
 
   # ---- area: identity (IAM, Lambda, logs) --------------------------------
   apply_identity = {
-    for e in local.envs : e => [
+    for e in local.envs : e => concat(local.hcp_identity_deny, [
       {
-        Sid      = "CreateBoundedRoles"
+        Sid      = "CreateTheTwoLambdaRolesBounded"
         Effect   = "Allow"
         Action   = ["iam:CreateRole"]
-        Resource = local.name_scope[e].role_arn_pattern
+        Resource = local.lambda_role_arns[e]
         Condition = {
           StringEquals = {
-            "aws:RequestTag/project"  = local.project_tag
-            "iam:PermissionsBoundary" = local.boundary_policy_arn
+            "aws:RequestTag/project"     = local.project_tag
+            "aws:RequestTag/environment" = e
+            "iam:PermissionsBoundary"    = local.boundary_policy_arns[e]
           }
         }
       },
       {
-        Sid    = "ManageProjectRoles"
+        Sid    = "ManageTheTwoLambdaRoles"
         Effect = "Allow"
         Action = [
           "iam:DeleteRole",
@@ -63,20 +67,29 @@ locals {
           "iam:UpdateRole",
           "iam:UpdateRoleDescription",
         ]
-        Resource  = local.name_scope[e].role_arn_pattern
-        Condition = local.tag_on_manage
+        Resource  = local.lambda_role_arns[e]
+        Condition = local.tag_on_manage[e]
       },
       {
-        Sid      = "KeepTheBoundary"
+        Sid      = "KeepTheLambdaBoundary"
+        Effect   = "Allow"
+        Action   = ["iam:PutRolePermissionsBoundary"]
+        Resource = local.lambda_role_arns[e]
+        Condition = {
+          StringEquals = { "iam:PermissionsBoundary" = local.boundary_policy_arns[e] }
+        }
+      },
+      {
+        Sid      = "NeverRemoveTheLambdaBoundary"
         Effect   = "Deny"
         Action   = ["iam:DeleteRolePermissionsBoundary"]
-        Resource = local.name_scope[e].role_arn_pattern
+        Resource = local.lambda_role_arns[e]
       },
       {
         Sid      = "PassOnlyTheLambdaRoles"
         Effect   = "Allow"
         Action   = ["iam:PassRole"]
-        Resource = local.name_scope[e].lambda_role_arns
+        Resource = local.lambda_role_arns[e]
         Condition = {
           StringEquals = { "iam:PassedToService" = "lambda.amazonaws.com" }
         }
@@ -86,45 +99,45 @@ locals {
         Effect    = "Allow"
         Action    = ["lambda:CreateFunction", "lambda:TagResource"]
         Resource  = local.name_scope[e].lambda_arn_pattern
-        Condition = local.tag_on_create
+        Condition = local.tag_on_create[e]
       },
       {
         Sid    = "ManageLambdaFunctions"
         Effect = "Allow"
         Action = [
+          "lambda:AddPermission",
           "lambda:DeleteFunction",
+          "lambda:DeleteFunctionConcurrency",
+          "lambda:PutFunctionConcurrency",
+          "lambda:RemovePermission",
           "lambda:TagResource",
           "lambda:UntagResource",
           "lambda:UpdateFunctionCode",
           "lambda:UpdateFunctionConfiguration",
         ]
         Resource  = local.name_scope[e].lambda_arn_pattern
-        Condition = local.tag_on_manage
-      },
-      {
-        Sid      = "ManageLambdaInvokePermissions"
-        Effect   = "Allow"
-        Action   = ["lambda:AddPermission", "lambda:RemovePermission"]
-        Resource = local.name_scope[e].lambda_arn_pattern
+        Condition = local.tag_on_manage[e]
       },
       {
         Sid       = "CreateLogGroups"
         Effect    = "Allow"
         Action    = ["logs:CreateLogGroup", "logs:TagResource"]
         Resource  = local.name_scope[e].log_group_patterns
-        Condition = local.tag_on_create
+        Condition = local.tag_on_create[e]
       },
       {
         Sid       = "ManageLogGroups"
         Effect    = "Allow"
         Action    = ["logs:DeleteLogGroup", "logs:PutRetentionPolicy", "logs:TagResource", "logs:UntagResource"]
         Resource  = local.name_scope[e].log_group_patterns
-        Condition = local.tag_on_manage
+        Condition = local.tag_on_manage[e]
       },
-    ]
+    ])
   }
 
   # ---- area: data (DynamoDB, secrets, SNS, KMS, alarms, budget) ------------
+  # secretsmanager:PutSecretValue is deliberately absent: Terraform never writes
+  # a secret value (L6).
   apply_data = {
     for e in local.envs : e => [
       {
@@ -132,7 +145,7 @@ locals {
         Effect    = "Allow"
         Action    = ["dynamodb:CreateTable", "dynamodb:TagResource"]
         Resource  = local.name_scope[e].table_arns
-        Condition = local.tag_on_create
+        Condition = local.tag_on_create[e]
       },
       {
         Sid    = "ManageTable"
@@ -146,35 +159,34 @@ locals {
           "dynamodb:UpdateTimeToLive",
         ]
         Resource  = local.name_scope[e].table_arns
-        Condition = local.tag_on_manage
+        Condition = local.tag_on_manage[e]
       },
       {
         Sid       = "CreateSecrets"
         Effect    = "Allow"
         Action    = ["secretsmanager:CreateSecret", "secretsmanager:TagResource"]
         Resource  = local.name_scope[e].secret_pattern
-        Condition = local.tag_on_create
+        Condition = local.tag_on_create[e]
       },
       {
         Sid    = "ManageSecrets"
         Effect = "Allow"
         Action = [
           "secretsmanager:DeleteSecret",
-          "secretsmanager:PutSecretValue",
           "secretsmanager:RestoreSecret",
           "secretsmanager:TagResource",
           "secretsmanager:UntagResource",
           "secretsmanager:UpdateSecret",
         ]
         Resource  = local.name_scope[e].secret_pattern
-        Condition = local.tag_on_manage
+        Condition = local.tag_on_manage[e]
       },
       {
         Sid       = "CreateTopic"
         Effect    = "Allow"
         Action    = ["sns:CreateTopic", "sns:TagResource"]
         Resource  = local.name_scope[e].topic_arn
-        Condition = local.tag_on_create
+        Condition = local.tag_on_create[e]
       },
       {
         Sid    = "ManageTopic"
@@ -188,14 +200,14 @@ locals {
           "sns:UntagResource",
         ]
         Resource  = local.name_scope[e].topic_arn
-        Condition = local.tag_on_manage
+        Condition = local.tag_on_manage[e]
       },
       {
         Sid       = "CreateKey"
         Effect    = "Allow"
         Action    = ["kms:CreateKey", "kms:TagResource"]
         Resource  = "*"
-        Condition = local.tag_on_create
+        Condition = local.tag_on_create[e]
       },
       {
         Sid    = "ManageKey"
@@ -212,7 +224,7 @@ locals {
           "kms:UpdateKeyDescription",
         ]
         Resource  = local.kms_key_arn_pattern
-        Condition = local.tag_on_manage
+        Condition = local.tag_on_manage[e]
       },
       {
         Sid      = "ManageKeyAlias"
@@ -225,14 +237,14 @@ locals {
         Effect    = "Allow"
         Action    = ["cloudwatch:PutMetricAlarm", "cloudwatch:TagResource"]
         Resource  = local.name_scope[e].alarm_pattern
-        Condition = local.tag_on_create
+        Condition = local.tag_on_create[e]
       },
       {
         Sid       = "ManageAlarms"
         Effect    = "Allow"
         Action    = ["cloudwatch:DeleteAlarms", "cloudwatch:UntagResource"]
         Resource  = local.name_scope[e].alarm_pattern
-        Condition = local.tag_on_manage
+        Condition = local.tag_on_manage[e]
       },
       {
         Sid      = "ManageBudget"
@@ -265,7 +277,7 @@ locals {
         Effect    = "Allow"
         Action    = ["cloudfront:CreateDistributionWithTags", "cloudfront:TagResource"]
         Resource  = "*"
-        Condition = local.tag_on_create
+        Condition = local.tag_on_create[e]
       },
       {
         Sid    = "ManageDistribution"
@@ -277,7 +289,7 @@ locals {
           "cloudfront:UpdateDistribution",
         ]
         Resource  = local.name_scope[e].cf_distribution_arns
-        Condition = local.tag_on_manage
+        Condition = local.tag_on_manage[e]
       },
       {
         Sid    = "ManageCloudFrontFunction"
@@ -291,6 +303,8 @@ locals {
         Resource = local.name_scope[e].cf_function_pattern
       },
       {
+        # Origin access controls and response headers policies cannot carry tags
+        # or be named in an ARN, so they are scoped by ARN type only.
         Sid    = "ManageCloudFrontPolicies"
         Effect = "Allow"
         Action = [
@@ -311,7 +325,7 @@ locals {
         Effect    = "Allow"
         Action    = ["wafv2:CreateWebACL", "wafv2:TagResource"]
         Resource  = [local.name_scope[e].web_acl_pattern, "arn:aws:wafv2:${local.region}:${local.account_id}:global/managedruleset/*/*"]
-        Condition = local.tag_on_create
+        Condition = local.tag_on_create[e]
       },
       {
         Sid    = "ManageWebAcl"
@@ -325,7 +339,7 @@ locals {
           "wafv2:UpdateWebACL",
         ]
         Resource  = [local.name_scope[e].web_acl_pattern, "arn:aws:wafv2:${local.region}:${local.account_id}:global/managedruleset/*/*"]
-        Condition = local.tag_on_manage
+        Condition = local.tag_on_manage[e]
       },
       {
         Sid      = "CheckWafCapacity"
@@ -334,25 +348,24 @@ locals {
         Resource = "*"
       },
       {
-        Sid       = "CreateRestApi"
+        Sid       = "CreateRestApiKeyAndUsagePlan"
         Effect    = "Allow"
         Action    = ["apigateway:POST"]
-        Resource  = "arn:aws:apigateway:${local.region}::/restapis"
-        Condition = local.tag_on_create
+        Resource  = [local.name_scope[e].apigw_restapis[0], local.name_scope[e].apigw_keys_plans[0], local.name_scope[e].apigw_keys_plans[2]]
+        Condition = local.tag_on_create[e]
       },
       {
-        Sid    = "ManageRestApi"
-        Effect = "Allow"
-        Action = [
-          "apigateway:DELETE",
-          "apigateway:PATCH",
-          "apigateway:POST",
-          "apigateway:PUT",
-        ]
-        Resource = [
-          "arn:aws:apigateway:${local.region}::/restapis/*",
-          "arn:aws:apigateway:${local.region}::/tags/*",
-        ]
+        Sid       = "ManageRestApiKeysAndUsagePlans"
+        Effect    = "Allow"
+        Action    = ["apigateway:DELETE", "apigateway:PATCH", "apigateway:POST", "apigateway:PUT"]
+        Resource  = [local.name_scope[e].apigw_restapis[1], local.name_scope[e].apigw_keys_plans[1], local.name_scope[e].apigw_keys_plans[3]]
+        Condition = local.tag_on_manage[e]
+      },
+      {
+        Sid      = "TagApiGatewayResources"
+        Effect   = "Allow"
+        Action   = ["apigateway:DELETE", "apigateway:PUT"]
+        Resource = "arn:aws:apigateway:${local.region}::/tags/*"
       },
     ]
   }
@@ -366,7 +379,7 @@ locals {
         Action   = local.read_actions
         Resource = "*"
       },
-      local.secret_value_deny[e],
+      local.secret_value_deny,
     ]
   }
 
@@ -395,6 +408,7 @@ resource "aws_iam_role" "apply" {
   name                 = "compass-${each.key}-hcp-apply"
   description          = "HCP Terraform apply phase for the ${each.key} environment. Scoped to project resources."
   assume_role_policy   = local.trust_policies["apply"][each.key]
+  permissions_boundary = aws_iam_policy.hcp_boundary.arn
   max_session_duration = 3600
 }
 
@@ -413,12 +427,50 @@ resource "aws_iam_role_policy_attachment" "apply" {
   policy_arn = aws_iam_policy.apply[each.key].arn
 }
 
-# The boundary caps every role the apply phase creates. A Lambda role can never
-# do more than write its own logs, use the Compass tables and read the Compass
-# secrets, whatever its own policy says.
+# The boundary of the plan and apply roles themselves. Whatever their identity
+# policies say, they stay inside the services this project uses, can never read a
+# secret value, and can never write IAM on the HCP roles or on the boundaries.
+resource "aws_iam_policy" "hcp_boundary" {
+  name        = local.hcp_boundary_name
+  description = "Permissions boundary for the HCP Terraform plan and apply roles."
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = concat([
+      {
+        Sid    = "AllowProjectServices"
+        Effect = "Allow"
+        Action = [
+          "apigateway:*",
+          "budgets:*",
+          "cloudfront:*",
+          "cloudwatch:*",
+          "dynamodb:*",
+          "iam:*",
+          "kms:*",
+          "lambda:*",
+          "logs:*",
+          "s3:*",
+          "secretsmanager:*",
+          "sns:*",
+          "tag:*",
+          "wafv2:*",
+        ]
+        Resource = "*"
+      },
+      local.secret_value_deny,
+    ], local.hcp_identity_deny)
+  })
+}
+
+# Per-environment boundaries for the two Lambda roles. A Lambda role of one
+# environment can write only its own logs, use only its own table and indexes,
+# and read only its own secrets, whatever its own policy says (H2).
 resource "aws_iam_policy" "boundary" {
-  name        = local.boundary_policy_name
-  description = "Permissions boundary for roles created by the apply phase."
+  for_each = local.envs
+
+  name        = local.boundary_policy_names[each.key]
+  description = "Permissions boundary for the ${each.key} Lambda roles."
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -427,10 +479,10 @@ resource "aws_iam_policy" "boundary" {
         Sid      = "WriteLogs"
         Effect   = "Allow"
         Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
-        Resource = "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/lambda/compass-*:*"
+        Resource = "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/lambda/compass-${each.key}-*:*"
       },
       {
-        Sid    = "UseCompassTables"
+        Sid    = "UseTheTable"
         Effect = "Allow"
         Action = [
           "dynamodb:BatchWriteItem",
@@ -440,16 +492,13 @@ resource "aws_iam_policy" "boundary" {
           "dynamodb:Query",
           "dynamodb:UpdateItem",
         ]
-        Resource = [
-          "arn:aws:dynamodb:${local.region}:${local.account_id}:table/compass-*",
-          "arn:aws:dynamodb:${local.region}:${local.account_id}:table/compass-*/index/*",
-        ]
+        Resource = local.name_scope[each.key].table_arns
       },
       {
-        Sid      = "ReadCompassSecrets"
+        Sid      = "ReadTheSecrets"
         Effect   = "Allow"
         Action   = ["secretsmanager:GetSecretValue"]
-        Resource = "arn:aws:secretsmanager:${local.region}:${local.account_id}:secret:compass/*"
+        Resource = local.name_scope[each.key].secret_pattern
       },
     ]
   })

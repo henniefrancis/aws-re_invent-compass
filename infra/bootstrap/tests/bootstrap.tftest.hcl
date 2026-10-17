@@ -1,13 +1,14 @@
 # Plan-only assertions for the bootstrap configuration (Requirements 2.2 to 2.8).
-# The aws provider is mocked, so nothing here reaches AWS or HCP Terraform.
-# The owner-only checks (a second apply shows no changes) are in the runbooks.
+# The aws and tfe providers are mocked, so nothing here reaches AWS or HCP
+# Terraform. The owner-only checks (a second apply shows no changes) are in the
+# runbooks.
 
 mock_provider "aws" {
   override_during = plan
 
   mock_data "aws_caller_identity" {
     defaults = {
-      account_id = "example"
+      account_id = "aws"
     }
   }
 
@@ -20,6 +21,22 @@ mock_provider "aws" {
   mock_resource "aws_iam_role" {
     defaults = {
       arn = "arn:aws:iam::aws:role/example"
+    }
+  }
+
+  mock_resource "aws_iam_policy" {
+    defaults = {
+      arn = "arn:aws:iam::aws:policy/example"
+    }
+  }
+}
+
+mock_provider "tfe" {
+  override_during = plan
+
+  mock_data "tfe_project" {
+    defaults = {
+      id = "prj-example"
     }
   }
 }
@@ -56,23 +73,15 @@ run "four_roles_trust_their_own_workspace_and_phase" {
   }
 
   assert {
-    condition     = jsondecode(aws_iam_role.plan["dev"].assume_role_policy).Statement[0].Condition.StringEquals["app.terraform.io:sub"] == "organization:example-org:project:reinvent-compass:workspace:example-dev:run_phase:plan"
-    error_message = "The dev plan role must trust the dev workspace in the plan phase."
-  }
-
-  assert {
-    condition     = jsondecode(aws_iam_role.plan["prod"].assume_role_policy).Statement[0].Condition.StringEquals["app.terraform.io:sub"] == "organization:example-org:project:reinvent-compass:workspace:example-prod:run_phase:plan"
-    error_message = "The prod plan role must trust the prod workspace in the plan phase."
-  }
-
-  assert {
-    condition     = jsondecode(aws_iam_role.apply["dev"].assume_role_policy).Statement[0].Condition.StringEquals["app.terraform.io:sub"] == "organization:example-org:project:reinvent-compass:workspace:example-dev:run_phase:apply"
-    error_message = "The dev apply role must trust the dev workspace in the apply phase."
-  }
-
-  assert {
-    condition     = jsondecode(aws_iam_role.apply["prod"].assume_role_policy).Statement[0].Condition.StringEquals["app.terraform.io:sub"] == "organization:example-org:project:reinvent-compass:workspace:example-prod:run_phase:apply"
-    error_message = "The prod apply role must trust the prod workspace in the apply phase."
+    condition = alltrue([
+      for pair in [
+        { role = aws_iam_role.plan["dev"], sub = "organization:example-org:project:reinvent-compass:workspace:example-dev:run_phase:plan" },
+        { role = aws_iam_role.plan["prod"], sub = "organization:example-org:project:reinvent-compass:workspace:example-prod:run_phase:plan" },
+        { role = aws_iam_role.apply["dev"], sub = "organization:example-org:project:reinvent-compass:workspace:example-dev:run_phase:apply" },
+        { role = aws_iam_role.apply["prod"], sub = "organization:example-org:project:reinvent-compass:workspace:example-prod:run_phase:apply" },
+      ] : jsondecode(pair.role.assume_role_policy).Statement[0].Condition.StringEquals["app.terraform.io:sub"] == pair.sub
+    ])
+    error_message = "Each role must trust its own workspace and run phase."
   }
 
   assert {
@@ -83,9 +92,17 @@ run "four_roles_trust_their_own_workspace_and_phase" {
     ])
     error_message = "Every role must require the HCP audience and web identity federation."
   }
+
+  assert {
+    condition = alltrue([
+      for r in concat(values(aws_iam_role.plan), values(aws_iam_role.apply)) :
+      r.permissions_boundary == aws_iam_policy.hcp_boundary.arn
+    ])
+    error_message = "The plan and apply roles must carry the HCP permissions boundary."
+  }
 }
 
-run "plan_role_is_read_only_and_cannot_read_apple_or_google_secrets" {
+run "plan_role_is_read_only_and_cannot_read_secret_values" {
   command = plan
 
   assert {
@@ -97,18 +114,18 @@ run "plan_role_is_read_only_and_cannot_read_apple_or_google_secrets" {
   }
 
   assert {
-    condition     = !anytrue([for a in jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[0].Action : can(regex("(s3:GetObject|dynamodb:GetItem|terraform|states)", a))])
-    error_message = "The plan role must have no data reads and no state permissions."
+    condition     = !anytrue([for a in jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[0].Action : can(regex("(s3:GetObject|dynamodb:GetItem|terraform|states|iam:Get[*]|iam:List[*]|secretsmanager:Get[*]|GetSecretValue)", a))])
+    error_message = "No data reads, no state permissions and no broad iam or secret reads."
+  }
+
+  assert {
+    condition     = contains(jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[0].Action, "iam:GetRole") && contains(jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[0].Action, "iam:GetRolePolicy")
+    error_message = "The plan role needs the specific IAM role reads."
   }
 
   assert {
     condition     = jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[1].Effect == "Deny" && jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[1].Action == "secretsmanager:GetSecretValue" && jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[1].Resource == "*"
     error_message = "The plan role must deny reading every secret value."
-  }
-
-  assert {
-    condition     = !contains(jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[0].Action, "secretsmanager:Get*") && !contains(jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[0].Action, "secretsmanager:GetSecretValue")
-    error_message = "The read list must not allow secret values."
   }
 }
 
@@ -124,7 +141,7 @@ run "apply_role_scoping" {
     condition = anytrue([
       for s in jsondecode(aws_iam_policy.apply["dev-identity"].policy).Statement :
       contains(try(tolist(s.Action), [s.Action]), "iam:PassRole") &&
-      toset(s.Resource) == toset(["arn:aws:iam::example:role/compass-dev-api-lambda", "arn:aws:iam::example:role/compass-dev-passkit-lambda"])
+      toset(s.Resource) == toset(["arn:aws:iam::aws:role/compass-dev-api-lambda", "arn:aws:iam::aws:role/compass-dev-passkit-lambda"])
     ])
     error_message = "iam:PassRole must be limited to the two Lambda execution roles."
   }
@@ -132,22 +149,24 @@ run "apply_role_scoping" {
   assert {
     condition = anytrue([
       for s in jsondecode(aws_iam_policy.apply["dev-identity"].policy).Statement :
-      contains(try(tolist(s.Action), [s.Action]), "iam:CreateRole") &&
-      s.Condition.StringEquals["iam:PermissionsBoundary"] == "arn:aws:iam::example:policy/compass-permissions-boundary" &&
-      s.Condition.StringEquals["aws:RequestTag/project"] == "reinvent-compass"
+      s.Effect == "Allow" && contains(try(tolist(s.Action), [s.Action]), "iam:CreateRole") &&
+      toset(s.Resource) == toset(["arn:aws:iam::aws:role/compass-dev-api-lambda", "arn:aws:iam::aws:role/compass-dev-passkit-lambda"]) &&
+      s.Condition.StringEquals["iam:PermissionsBoundary"] == "arn:aws:iam::aws:policy/compass-dev-boundary" &&
+      s.Condition.StringEquals["aws:RequestTag/project"] == "reinvent-compass" &&
+      s.Condition.StringEquals["aws:RequestTag/environment"] == "dev"
     ])
-    error_message = "iam:CreateRole must require the project boundary and the project tag."
+    error_message = "iam:CreateRole must name the two exact Lambda roles and require the per-environment boundary and both tags."
   }
 
   assert {
     condition = anytrue([
       for s in jsondecode(aws_iam_policy.apply["prod-data"].policy).Statement :
-      try(s.Condition.StringEquals["aws:RequestTag/project"], "") == "reinvent-compass" && contains(try(tolist(s.Action), [s.Action]), "dynamodb:CreateTable")
+      try(s.Condition.StringEquals["aws:RequestTag/project"], "") == "reinvent-compass" && try(s.Condition.StringEquals["aws:RequestTag/environment"], "") == "prod" && contains(try(tolist(s.Action), [s.Action]), "dynamodb:CreateTable")
       ]) && anytrue([
       for s in jsondecode(aws_iam_policy.apply["prod-data"].policy).Statement :
-      try(s.Condition.StringEquals["aws:ResourceTag/project"], "") == "reinvent-compass" && contains(try(tolist(s.Action), [s.Action]), "dynamodb:UpdateTable")
+      try(s.Condition.StringEquals["aws:ResourceTag/project"], "") == "reinvent-compass" && try(s.Condition.StringEquals["aws:ResourceTag/environment"], "") == "prod" && contains(try(tolist(s.Action), [s.Action]), "dynamodb:UpdateTable")
     ])
-    error_message = "Create actions must require the request tag and later actions the resource tag."
+    error_message = "Create actions must require both request tags and later actions both resource tags, for the role's own environment."
   }
 
   assert {
@@ -158,23 +177,109 @@ run "apply_role_scoping" {
   }
 
   assert {
-    condition     = !anytrue([for s in jsondecode(aws_iam_policy.apply["dev-edge"].policy).Statement : s.Effect == "Allow" && contains(try(tolist(s.Action), [s.Action]), "*")])
+    condition = alltrue([
+      for k, p in aws_iam_policy.apply : !anytrue([
+        for s in jsondecode(p.policy).Statement :
+        s.Effect == "Allow" && contains(try(tolist(s.Action), [s.Action]), "*")
+      ])
+    ])
     error_message = "No statement may allow every action."
   }
 
   assert {
-    condition     = alltrue([for k, p in aws_iam_policy.apply : !strcontains(p.policy, "compass/prod") || startswith(k, "prod-")])
-    error_message = "A dev policy must never reference prod resources."
+    condition     = alltrue([for k, p in aws_iam_policy.apply : !strcontains(p.policy, "compass/prod") || startswith(k, "prod-")]) && alltrue([for k, p in aws_iam_policy.apply : !strcontains(p.policy, "compass/dev") || startswith(k, "dev-")])
+    error_message = "A policy must never reference the other environment."
+  }
+
+  assert {
+    condition     = alltrue([for k, p in aws_iam_policy.apply : !strcontains(p.policy, "PutSecretValue") && !strcontains(p.policy, "iam:Get*") && !strcontains(p.policy, "iam:List*")])
+    error_message = "The apply role must not write secret values or hold broad iam reads."
   }
 }
 
-run "boundary_policy_and_account_role" {
+# H1: no Allow in any apply policy can match the apply or plan role ARNs. An Allow
+# on an IAM write action (anything but Get and List) must name exact resources with no wildcard, and none of them
+# may be an hcp role; and every other Allow must not name an hcp role at all.
+run "no_apply_allow_can_reach_the_hcp_roles" {
   command = plan
 
   assert {
-    condition     = aws_iam_policy.boundary.name == "compass-permissions-boundary"
-    error_message = "The boundary policy name must match the one the environment roots compute."
+    condition = alltrue(flatten([
+      for k, p in aws_iam_policy.apply : [
+        for s in jsondecode(p.policy).Statement :
+        s.Effect != "Allow" ||
+        !anytrue([for a in try(tolist(s.Action), [s.Action]) : startswith(a, "iam:") && !startswith(a, "iam:Get") && !startswith(a, "iam:List")]) ||
+        alltrue([for r in try(tolist(s.Resource), [s.Resource]) : !strcontains(r, "*") && !strcontains(r, "-hcp-")])
+      ]
+    ]))
+    error_message = "An Allow on an IAM action must name exact resources, none of them an hcp role."
   }
+
+  assert {
+    condition = alltrue(flatten([
+      for k, p in aws_iam_policy.apply : [
+        for s in jsondecode(p.policy).Statement :
+        s.Effect != "Allow" || alltrue([for r in try(tolist(s.Resource), [s.Resource]) : !strcontains(r, "-hcp-")])
+      ]
+    ]))
+    error_message = "No Allow may name an hcp role or policy."
+  }
+
+  assert {
+    condition = alltrue([
+      for e in ["dev", "prod"] :
+      anytrue([
+        for s in jsondecode(aws_iam_policy.apply["${e}-identity"].policy).Statement :
+        s.Effect == "Deny" && s.Sid == "DenyIamWritesOnHcpRoles" && s.Resource == "arn:aws:iam::aws:role/compass-*-hcp-*" && contains(s.Action, "iam:AttachRolePolicy") && contains(s.Action, "iam:PutRolePolicy") && contains(s.Action, "iam:UpdateAssumeRolePolicy")
+      ])
+    ])
+    error_message = "The identity policies must deny every IAM write on the hcp roles."
+  }
+
+  assert {
+    condition = alltrue([
+      for e in ["dev", "prod"] :
+      anytrue([
+        for s in jsondecode(aws_iam_policy.apply["${e}-identity"].policy).Statement :
+        s.Effect == "Deny" && s.Sid == "DenyBoundaryChangesOutsideTheLambdaRoles" && length(s.NotResource) == 4
+      ])
+    ])
+    error_message = "A boundary change must be denied on every role except the Lambda roles."
+  }
+
+  assert {
+    condition = anytrue([
+      for s in jsondecode(aws_iam_policy.hcp_boundary.policy).Statement :
+      s.Effect == "Deny" && s.Sid == "DenyIamWritesOnHcpRoles"
+      ]) && anytrue([
+      for s in jsondecode(aws_iam_policy.hcp_boundary.policy).Statement :
+      s.Effect == "Deny" && s.Sid == "DenySecretValues"
+    ])
+    error_message = "The HCP boundary must repeat the IAM write and secret value denies."
+  }
+}
+
+run "lambda_boundaries_are_per_environment" {
+  command = plan
+
+  assert {
+    condition     = aws_iam_policy.boundary["dev"].name == "compass-dev-boundary" && aws_iam_policy.boundary["prod"].name == "compass-prod-boundary"
+    error_message = "Each environment needs its own boundary policy, named as the environment roots compute."
+  }
+
+  assert {
+    condition     = !strcontains(aws_iam_policy.boundary["dev"].policy, "prod") && !strcontains(aws_iam_policy.boundary["prod"].policy, "dev")
+    error_message = "A boundary must not reference the other environment."
+  }
+
+  assert {
+    condition     = strcontains(aws_iam_policy.boundary["dev"].policy, "table/compass-dev") && strcontains(aws_iam_policy.boundary["dev"].policy, "secret:compass/dev/*") && !strcontains(aws_iam_policy.boundary["dev"].policy, "compass-*") && !strcontains(aws_iam_policy.boundary["dev"].policy, "compass/*")
+    error_message = "The dev boundary must name only the dev table and the dev secrets."
+  }
+}
+
+run "account_api_gateway_role_and_workspaces" {
+  command = plan
 
   assert {
     condition     = jsondecode(aws_iam_role.apigateway_cloudwatch.assume_role_policy).Statement[0].Principal.Service == "apigateway.amazonaws.com"
@@ -182,9 +287,61 @@ run "boundary_policy_and_account_role" {
   }
 
   assert {
+    condition     = jsondecode(aws_iam_role.apigateway_cloudwatch.assume_role_policy).Statement[0].Condition.StringEquals["aws:SourceAccount"] == "aws" && startswith(jsondecode(aws_iam_role.apigateway_cloudwatch.assume_role_policy).Statement[0].Condition.ArnLike["aws:SourceArn"], "arn:aws:apigateway:us-east-1::/restapis/")
+    error_message = "The API Gateway role trust must carry aws:SourceAccount and aws:SourceArn."
+  }
+
+  assert {
     condition     = aws_api_gateway_account.this.cloudwatch_role_arn == aws_iam_role.apigateway_cloudwatch.arn
     error_message = "The account setting must use the API Gateway CloudWatch role."
   }
+
+  assert {
+    condition = alltrue([
+      for w in values(tfe_workspace.env) :
+      w.auto_apply == false && w.speculative_enabled == false && w.queue_all_runs == false
+    ])
+    error_message = "The workspaces must stay CLI-driven: no auto-apply, no speculative plans, no queued runs."
+  }
+
+  assert {
+    condition     = alltrue([for s in values(tfe_workspace_settings.env) : s.execution_mode == "remote"])
+    error_message = "The environment workspaces run remotely."
+  }
+
+  assert {
+    condition     = alltrue([for v in values(tfe_variable.plan_role_arn) : v.sensitive]) && alltrue([for v in values(tfe_variable.apply_role_arn) : v.sensitive])
+    error_message = "The role ARN variables must be sensitive."
+  }
+}
+
+run "workspace_variables_are_created_from_the_input" {
+  command = plan
+
+  variables {
+    workspace_variables = {
+      dev  = { event_timezone = "America/Los_Angeles" }
+      prod = {}
+    }
+  }
+
+  assert {
+    condition     = length(tfe_variable.terraform) == 1 && tfe_variable.terraform["dev/event_timezone"].category == "terraform"
+    error_message = "A non-sensitive variable must be created for the workspace."
+  }
+}
+
+run "sensitive_workspace_variables_are_refused" {
+  command = plan
+
+  variables {
+    workspace_variables = {
+      dev  = { api_key_value = "x" }
+      prod = {}
+    }
+  }
+
+  expect_failures = [var.workspace_variables]
 }
 
 run "empty_organization_is_rejected" {
@@ -232,5 +389,15 @@ run "source_scan" {
   assert {
     condition     = can(regex("(?m)^[[:space:]]*cloud[[:space:]]*[{][[:space:]]*[}]", file("${path.module}/versions.tf")))
     error_message = "The bootstrap must use an empty cloud block that reads its names from the environment."
+  }
+
+  assert {
+    condition     = !can(regex("(?m)^[^#]*role/compass-[$][{]e[}]-[*]", file("${path.module}/roles-apply.tf")))
+    error_message = "No apply role statement may name the compass-<env>-* role pattern."
+  }
+
+  assert {
+    condition     = !can(regex("(?m)^[^#]*(sensitive_value|value[[:space:]]*=[[:space:]]*var[.]alarm_email|origin_verify_value|api_key_value)", file("${path.module}/workspaces.tf")))
+    error_message = "The workspaces file must not set a sensitive variable."
   }
 }

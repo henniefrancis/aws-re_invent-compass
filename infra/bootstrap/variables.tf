@@ -36,3 +36,23 @@ variable "hcp_workspaces" {
     error_message = "The dev and prod workspaces must have different names."
   }
 }
+
+variable "workspace_variables" {
+  description = "Non-sensitive Terraform variables to set on each environment workspace, for example event_timezone, event_window_start, event_window_end and id_token_issuer. Sensitive values are never set here: scripts/set-workspace-secrets.sh sets them through the HCP API."
+  type = object({
+    dev  = map(string)
+    prod = map(string)
+  })
+  default = {
+    dev  = {}
+    prod = {}
+  }
+
+  validation {
+    condition = alltrue([
+      for k in concat(keys(var.workspace_variables.dev), keys(var.workspace_variables.prod)) :
+      !contains(["alarm_email", "origin_verify_value", "api_key_value"], k)
+    ])
+    error_message = "alarm_email, origin_verify_value and api_key_value are sensitive and must not be set through Terraform."
+  }
+}

@@ -6,10 +6,15 @@ locals {
   project_tag = "reinvent-compass"
   envs        = toset(["dev", "prod"])
 
-  # Shared permissions boundary. Every role the apply phase creates must carry
-  # it, and the environment roots compute the same ARN from this name.
-  boundary_policy_name = "compass-permissions-boundary"
-  boundary_policy_arn  = "arn:aws:iam::${local.account_id}:policy/${local.boundary_policy_name}"
+  # Permissions boundaries (owner review H1 and H2).
+  #   - One boundary per environment caps the two Lambda roles of that
+  #     environment: logs, that environment table and its indexes, and that
+  #     environment secrets. The environment roots compute the same ARN.
+  #   - One boundary caps the plan and apply roles themselves, so even a bug in
+  #     their identity policies cannot reach IAM administration or secret values.
+  boundary_policy_names = { for e in local.envs : e => "compass-${e}-boundary" }
+  boundary_policy_arns  = { for e in local.envs : e => "arn:aws:iam::${local.account_id}:policy/compass-${e}-boundary" }
+  hcp_boundary_name     = "compass-hcp-boundary"
 
   oidc_host     = "app.terraform.io"
   oidc_audience = "aws.workload.identity"
@@ -30,17 +35,32 @@ locals {
 
   # ---- shared policy fragments ------------------------------------------
 
+  # Create actions need the project and the environment tag on the request;
+  # later actions need both on the resource, so the dev role can never touch a
+  # prod resource (M3). Used wherever the service supports the condition keys.
   tag_on_create = {
-    StringEquals = { "aws:RequestTag/project" = local.project_tag }
+    for e in local.envs : e => {
+      StringEquals = {
+        "aws:RequestTag/project"     = local.project_tag
+        "aws:RequestTag/environment" = e
+      }
+    }
   }
 
   tag_on_manage = {
-    StringEquals = { "aws:ResourceTag/project" = local.project_tag }
+    for e in local.envs : e => {
+      StringEquals = {
+        "aws:ResourceTag/project"     = local.project_tag
+        "aws:ResourceTag/environment" = e
+      }
+    }
   }
 
-  # Read-only actions for the plan phase and for refresh during apply. Only
-  # describe, get and list actions: no data-plane reads (no s3:GetObject, no
-  # dynamodb:GetItem, no log events). apigateway:GET is the API Gateway read.
+  # Read-only actions for the plan phase and for refresh during apply. Describe,
+  # get and list only, with no data-plane reads (no s3:GetObject, no
+  # dynamodb:GetItem, no log events) and the specific IAM reads Terraform needs
+  # instead of iam:Get* and iam:List* (M4). apigateway:GET is the API Gateway
+  # read; it includes the API key read that the key resource refresh needs.
   read_actions = [
     "apigateway:GET",
     "cloudfront:Describe*",
@@ -53,8 +73,12 @@ locals {
     "budgets:View*",
     "dynamodb:Describe*",
     "dynamodb:List*",
-    "iam:Get*",
-    "iam:List*",
+    "iam:GetRole",
+    "iam:GetRolePolicy",
+    "iam:ListAttachedRolePolicies",
+    "iam:ListInstanceProfilesForRole",
+    "iam:ListRolePolicies",
+    "iam:ListRoleTags",
     "kms:Describe*",
     "kms:Get*",
     "kms:List*",
@@ -84,11 +108,84 @@ locals {
   # and the owner loads the values. The deny is explicit so a later broadening of
   # the read list cannot expose the Apple, Google, pepper or origin-verify values.
   secret_value_deny = {
-    for e in local.envs : e => {
-      Sid      = "DenySecretValues"
-      Effect   = "Deny"
-      Action   = "secretsmanager:GetSecretValue"
-      Resource = "*"
-    }
+    Sid      = "DenySecretValues"
+    Effect   = "Deny"
+    Action   = "secretsmanager:GetSecretValue"
+    Resource = "*"
   }
+
+  # The two Lambda execution roles of each environment. These exact ARNs are the
+  # only roles the apply phase may create, change or pass (H1).
+  lambda_role_arns = {
+    for e in local.envs : e => [
+      "arn:aws:iam::${local.account_id}:role/compass-${e}-api-lambda",
+      "arn:aws:iam::${local.account_id}:role/compass-${e}-passkit-lambda",
+    ]
+  }
+
+  # Every IAM write action on the plan and apply roles and on the boundary and
+  # HCP policies is denied outright, whatever any Allow says. The apply phase
+  # therefore cannot widen, reattach or delete its own permissions (H1).
+  hcp_role_arn_pattern = "arn:aws:iam::${local.account_id}:role/compass-*-hcp-*"
+  hcp_policy_arn_patterns = [
+    "arn:aws:iam::${local.account_id}:policy/compass-*-boundary",
+    "arn:aws:iam::${local.account_id}:policy/compass-hcp-*",
+    "arn:aws:iam::${local.account_id}:policy/compass-*-hcp-*",
+  ]
+
+  hcp_identity_deny = [
+    {
+      Sid    = "DenyIamWritesOnHcpRoles"
+      Effect = "Deny"
+      Action = [
+        "iam:AttachRolePolicy",
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:DeleteRolePermissionsBoundary",
+        "iam:DeleteRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:PutRolePermissionsBoundary",
+        "iam:PutRolePolicy",
+        "iam:TagRole",
+        "iam:UntagRole",
+        "iam:UpdateAssumeRolePolicy",
+        "iam:UpdateRole",
+        "iam:UpdateRoleDescription",
+      ]
+      Resource = local.hcp_role_arn_pattern
+    },
+    {
+      Sid    = "DenyIamWritesOnBoundariesAndHcpPolicies"
+      Effect = "Deny"
+      Action = [
+        "iam:CreatePolicyVersion",
+        "iam:DeletePolicy",
+        "iam:DeletePolicyVersion",
+        "iam:SetDefaultPolicyVersion",
+        "iam:TagPolicy",
+        "iam:UntagPolicy",
+      ]
+      Resource = local.hcp_policy_arn_patterns
+    },
+    {
+      Sid         = "DenyBoundaryChangesOutsideTheLambdaRoles"
+      Effect      = "Deny"
+      Action      = ["iam:PutRolePermissionsBoundary"]
+      NotResource = flatten([for e in local.envs : local.lambda_role_arns[e]])
+    },
+    {
+      Sid    = "DenyIdentityAndFederationAdministration"
+      Effect = "Deny"
+      Action = [
+        "iam:CreateAccessKey",
+        "iam:CreateLoginProfile",
+        "iam:CreateOpenIDConnectProvider",
+        "iam:CreateSAMLProvider",
+        "iam:CreateUser",
+        "iam:DeleteOpenIDConnectProvider",
+        "iam:UpdateOpenIDConnectProviderThumbprint",
+      ]
+      Resource = "*"
+    },
+  ]
 }
