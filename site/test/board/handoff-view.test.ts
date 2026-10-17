@@ -26,17 +26,22 @@ describe('validateHandoffView examples', () => {
       expiresAtMs: Date.parse('2026-11-30T10:15:00-08:00'),
       sessions: exampleBody().sessions,
       appleBundles: [{ path: `/api/v1/handoffs/${FIXED_ID}/apple/0`, number: 1, of: 1 }],
-      googleSaveUrl: `${GOOGLE_SAVE_PREFIX}abc.def-ghi_jkl`,
+      googleSaveUrl: `${GOOGLE_SAVE_PREFIX}eyJhbGciOiJSUzI1NiJ9.abc-def.ghi_jkl`,
       calendarPath: `/api/v1/handoffs/${FIXED_ID}/calendar.ics`,
     });
   });
 
-  test('accepts no bundles, no Google and no calendar', () => {
-    const body = { ...exampleBody(), apple: { bundlePaths: [] }, google: null, calendarPath: null };
+  test('accepts no bundles and no Google when there is a calendar', () => {
+    const body = {
+      ...exampleBody(),
+      apple: { bundlePaths: [] },
+      google: null,
+      calendarPath: `/api/v1/handoffs/${FIXED_ID}/calendar.ics`,
+    };
     const result = validateHandoffView(body, FIXED_ID);
     expect(result?.appleBundles).toEqual([]);
     expect(result?.googleSaveUrl).toBeNull();
-    expect(result?.calendarPath).toBeNull();
+    expect(result?.calendarPath).toBe(`/api/v1/handoffs/${FIXED_ID}/calendar.ics`);
   });
 
   test('the contract and the accepted shape match', () => {
@@ -82,6 +87,59 @@ describe('validateHandoffView examples', () => {
       apple: { bundlePaths: [`/api/v1/handoffs/${other}/apple/0`] },
     };
     expect(validateHandoffView(body, FIXED_ID)).toBeNull();
+  });
+
+  test('a hand-off with no action at all is refused', () => {
+    const none = { ...exampleBody(), apple: { bundlePaths: [] }, google: null, calendarPath: null };
+    expect(validateHandoffView(none, FIXED_ID)).toBeNull();
+    for (const withOne of [
+      { ...none, calendarPath: `/api/v1/handoffs/${FIXED_ID}/calendar.ics` },
+      { ...none, google: exampleBody().google },
+      { ...none, apple: { bundlePaths: [`/api/v1/handoffs/${FIXED_ID}/apple/0`] } },
+    ]) {
+      expect(validateHandoffView(withOne, FIXED_ID)).not.toBeNull();
+    }
+  });
+
+  test('the Google token must look like a JWT of at most 4 KB', () => {
+    const jwt = 'eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ4In0.c2ln-_bmF0dXJl';
+    const urlOf = (token: string) => ({
+      ...exampleBody(),
+      google: { saveUrl: `${GOOGLE_SAVE_PREFIX}${token}` },
+    });
+    expect(validateHandoffView(urlOf(jwt), FIXED_ID)).not.toBeNull();
+    const bad = [
+      'abc',
+      'eyJabc',
+      'eyJabc.def',
+      'xyJabc.def.ghi',
+      'eyJabc.def.ghi.jkl',
+      'eyJabc..ghi',
+      'eyJabc.def.',
+      'eyJabc.def.gh%20i',
+      `eyJ${'a'.repeat(4094)}.b.c`,
+    ];
+    for (const token of bad) {
+      expect(validateHandoffView(urlOf(token), FIXED_ID), token.slice(0, 20)).toBeNull();
+    }
+    expect(validateHandoffView(urlOf(`eyJ${'a'.repeat(4000)}.b.c`), FIXED_ID)).not.toBeNull();
+  });
+
+  test('the title and the session code have length caps', () => {
+    const base = exampleBody();
+    const first = base.sessions[0] as WireBody['sessions'][number];
+    const withSession = (patch: Partial<typeof first>) => ({
+      ...base,
+      sessions: [{ ...first, ...patch }],
+    });
+    expect(validateHandoffView(withSession({ title: 'x'.repeat(80) }), FIXED_ID)).not.toBeNull();
+    expect(validateHandoffView(withSession({ title: 'x'.repeat(81) }), FIXED_ID)).toBeNull();
+    expect(validateHandoffView(withSession({ title: '' }), FIXED_ID)).toBeNull();
+    expect(
+      validateHandoffView(withSession({ sessionCode: 'A'.repeat(20) }), FIXED_ID),
+    ).not.toBeNull();
+    expect(validateHandoffView(withSession({ sessionCode: 'A'.repeat(21) }), FIXED_ID)).toBeNull();
+    expect(validateHandoffView(withSession({ sessionCode: '' }), FIXED_ID)).toBeNull();
   });
 
   test('Google links must be the exact https pay.google.com save prefix', () => {

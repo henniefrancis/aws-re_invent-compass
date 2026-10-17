@@ -6,7 +6,7 @@ import { fetchHandoff } from '../../src/lib/board/handoff-client';
 import { reduceBoard } from '../../src/lib/board/board-state';
 import { validateHandoffView } from '../../src/lib/board/handoff-view';
 import { SITE_ROOT } from '../support/source-files';
-import { FIXED_ID, makeTimers } from '../support/handoff-data';
+import { FIXED_ID, makeTimers, response } from '../support/handoff-data';
 
 interface Fixture {
   status: number;
@@ -25,6 +25,7 @@ describe('hand-off fixtures', () => {
     expect(readdirSync(DIR).sort()).toEqual([
       'foreign-google-host.json',
       'malformed.json',
+      'no-action.json',
       'not-found.json',
       'rate-limited.json',
       'ready-apple-only.json',
@@ -32,6 +33,7 @@ describe('hand-off fixtures', () => {
       'ready-three-bundles.json',
       'server-error.json',
       'wrong-bundle-path.json',
+      'wrong-content-type.json',
     ]);
   });
 
@@ -61,7 +63,7 @@ describe('hand-off fixtures', () => {
   });
 
   test('every negative 200 fixture is rejected', () => {
-    for (const name of ['wrong-bundle-path', 'foreign-google-host']) {
+    for (const name of ['wrong-bundle-path', 'foreign-google-host', 'no-action']) {
       expect(validateHandoffView(load(name).body, FIXED_ID), name).toBeNull();
     }
     expect(() => {
@@ -75,6 +77,8 @@ describe('hand-off fixtures', () => {
       'rate-limited': 'rateLimited',
       'server-error': 'unavailable',
       malformed: 'unavailable',
+      'no-action': 'unavailable',
+      'wrong-content-type': 'unavailable',
       'wrong-bundle-path': 'unavailable',
       'foreign-google-host': 'unavailable',
       'ready-one-bundle': 'ready',
@@ -83,8 +87,7 @@ describe('hand-off fixtures', () => {
       const fixture = load(name);
       const timers = makeTimers();
       const outcome = await fetchHandoff(FIXED_ID, {
-        fetch: () =>
-          Promise.resolve({ status: fixture.status, text: () => Promise.resolve(text(fixture)) }),
+        fetch: () => Promise.resolve(response(fixture.status, text(fixture), fixture.contentType)),
         timeoutMs: 10_000,
         setTimer: timers.setTimer,
         clearTimer: timers.clearTimer,

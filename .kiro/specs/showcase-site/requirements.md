@@ -281,6 +281,9 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 5. THE Board_Page SHALL accept `calendarPath` only WHEN it is null or exactly `/api/v1/handoffs/{handoffId}/calendar.ics` for the same Hand_Off_Id, and SHALL accept `google` only WHEN it is null or its `saveUrl` is an `https` URL on host `pay.google.com` with a path that starts with `/gp/v/save/`, no user info and no port.
 6. IF any rule in criteria 3 to 5 fails, THEN THE Board_Page SHALL reject the whole response, show the Unavailable state, and SHALL NOT render any part of the body.
 7. THE Board_Page SHALL NOT display any text from an error response body.
+8. THE Board_Page SHALL parse a 200 response only WHEN its Content-Type is application/json (parameters allowed), and otherwise SHALL show the Unavailable state without reading the body.
+9. THE Board_Page SHALL treat a hand-off that offers no action at all (no Apple bundle, no calendar and no Google link) as Unavailable.
+10. THE Board_Page SHALL accept a Google save link only WHEN its token looks like a JWT (three base64url segments, the first starting eyJ, at most 4096 characters), a title only WHEN it has 1 to 80 characters, and a session code only WHEN it has 1 to 20 characters.
 
 ### Requirement 18: Board actions and states
 

@@ -62,7 +62,11 @@ export const PASSES_PER_BUNDLE = 10;
 export const GOOGLE_SAVE_PREFIX = 'https://pay.google.com/gp/v/save/';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const GOOGLE_TOKEN = /^[A-Za-z0-9._-]+$/;
+/** A JWT: three base64url segments, the first starting eyJ (a JSON header). */
+const GOOGLE_TOKEN = /^eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+export const MAX_GOOGLE_TOKEN = 4096;
+export const MAX_TITLE_LENGTH = 80;
+export const MAX_CODE_LENGTH = 20;
 
 type PlainObject = Record<string, unknown>;
 
@@ -88,7 +92,11 @@ function readSession(value: unknown): BoardSession | null {
     typeof serialNumber === 'string' &&
     UUID.test(serialNumber) &&
     typeof sessionCode === 'string' &&
+    sessionCode.length >= 1 &&
+    sessionCode.length <= MAX_CODE_LENGTH &&
     typeof title === 'string' &&
+    title.length >= 1 &&
+    title.length <= MAX_TITLE_LENGTH &&
     typeof startsAt === 'string' &&
     parseIsoWithOffset(startsAt) !== null;
   return valid ? { serialNumber, sessionCode, title, startsAt } : null;
@@ -132,6 +140,7 @@ function readGoogle(value: unknown): Optional<string> {
   const valid =
     typeof saveUrl === 'string' &&
     saveUrl.startsWith(GOOGLE_SAVE_PREFIX) &&
+    saveUrl.length - GOOGLE_SAVE_PREFIX.length <= MAX_GOOGLE_TOKEN &&
     GOOGLE_TOKEN.test(saveUrl.slice(GOOGLE_SAVE_PREFIX.length));
   return valid ? { ok: true, value: saveUrl } : { ok: false };
 }
@@ -166,7 +175,9 @@ export function validateHandoffView(body: unknown, id: HandoffId): ValidatedHand
     sessions === null ||
     bundles === null ||
     !google.ok ||
-    !calendar.ok
+    !calendar.ok ||
+    // A hand-off with nothing to add is of no use: treat it as unavailable.
+    (bundles.length === 0 && google.value === null && calendar.value === null)
   ) {
     return null;
   }

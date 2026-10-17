@@ -2,15 +2,20 @@
 //
 // One same-origin GET to the hand-off route, with the id only in the path. The function calls
 // fetch exactly once, never retries, and always settles: a 10 second timer aborts the request
-// and wins the race when fetch never answers. The body of a response is read only for a 200,
+// and wins the race when fetch never answers. The body of a response is read only for a 200
+// whose content type is application/json,
 // and error bodies are never read at all, so no server text can reach the page.
 
 import type { HandoffId } from './fragment';
 
 export const HANDOFF_TIMEOUT_MS = 10_000;
 
+/** The media type of the answer must be application/json, with or without parameters. */
+const JSON_TYPE = /^\s*application\/json\s*(?:;|$)/i;
+
 export interface ResponseLike {
   readonly status: number;
+  readonly headers: { get(name: string): string | null };
   text(): Promise<string>;
 }
 
@@ -62,6 +67,10 @@ async function attempt(request: HandoffRequest, fetchFn: FetchLike): Promise<Han
     const response = await fetchFn(request.url, request.init);
     if (response.status !== 200) {
       return { kind: 'status', status: response.status };
+    }
+    // Only a JSON answer is parsed. Anything else (a proxy error page, say) is not.
+    if (!JSON_TYPE.test(response.headers.get('content-type') ?? '')) {
+      return { kind: 'notJson' };
     }
     const text = await response.text();
     try {

@@ -65,7 +65,14 @@ test.describe('board states from the fixtures', () => {
   test('every refused or failed answer is the unavailable state and shows nothing from the body', async ({
     page,
   }) => {
-    for (const name of ['server-error', 'malformed', 'wrong-bundle-path', 'foreign-google-host']) {
+    for (const name of [
+      'server-error',
+      'malformed',
+      'wrong-bundle-path',
+      'foreign-google-host',
+      'no-action',
+      'wrong-content-type',
+    ]) {
       await page.unrouteAll();
       await mockHandoff(page, name);
       await openBoard(page);

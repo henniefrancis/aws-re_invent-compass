@@ -7,7 +7,7 @@ import {
   type FetchLike,
   type HandoffOutcome,
 } from '../../src/lib/board/handoff-client';
-import { FIXED_ID, idArb, makeTimers } from '../support/handoff-data';
+import { FIXED_ID, idArb, makeTimers, response } from '../support/handoff-data';
 
 function deps(fetchFn: FetchLike) {
   const timers = makeTimers();
@@ -23,9 +23,13 @@ function deps(fetchFn: FetchLike) {
 }
 
 const respond =
-  (status: number, text: () => Promise<string>): FetchLike =>
+  (
+    status: number,
+    text: () => Promise<string>,
+    contentType: string | null = 'application/json',
+  ): FetchLike =>
   () =>
-    Promise.resolve({ status, text });
+    Promise.resolve({ ...response(status, '', contentType), text });
 
 describe('buildHandoffRequest', () => {
   test('is a relative GET with credentials omitted and no cache or redirect', () => {
@@ -54,6 +58,41 @@ describe('fetchHandoff outcomes', () => {
     expect(await fetchHandoff(FIXED_ID, value)).toEqual({ kind: 'ok', body: { a: 1 } });
     expect(timers.pending.size).toBe(0);
     expect(timers.cleared).toHaveLength(1);
+  });
+
+  test('a 200 without a JSON content type is notJson and its body is not parsed', async () => {
+    for (const type of [
+      null,
+      'text/html',
+      'text/plain; charset=utf-8',
+      'application/jsonp',
+      'application/problem+json',
+    ]) {
+      let read = false;
+      const { value } = deps(
+        respond(
+          200,
+          () => {
+            read = true;
+            return Promise.resolve('{"a":1}');
+          },
+          type,
+        ),
+      );
+      expect(await fetchHandoff(FIXED_ID, value), String(type)).toEqual({ kind: 'notJson' });
+      expect(read).toBe(false);
+    }
+  });
+
+  test('a JSON content type with parameters or capitals is accepted', async () => {
+    for (const type of [
+      'application/json; charset=utf-8',
+      'Application/JSON',
+      ' application/json ',
+    ]) {
+      const { value } = deps(respond(200, () => Promise.resolve('{"a":1}'), type));
+      expect(await fetchHandoff(FIXED_ID, value), type).toEqual({ kind: 'ok', body: { a: 1 } });
+    }
   });
 
   test('a 200 that is not JSON is notJson', async () => {
@@ -126,10 +165,7 @@ describe('Property 3: The hand-off request is one same-origin GET carrying the i
           if (behaviour === 'never') {
             return new Promise(() => undefined);
           }
-          return Promise.resolve({
-            status: behaviour === 'resolve' ? 200 : 503,
-            text: () => Promise.resolve('{}'),
-          });
+          return Promise.resolve(response(behaviour === 'resolve' ? 200 : 503, '{}'));
         };
         const { value, timers } = deps(fetchFn);
         const result = fetchHandoff(id, value);

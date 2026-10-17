@@ -53,7 +53,8 @@ export const sessionArb = fc.record({
   startsAt: isoArb,
 });
 
-const tokenArb = fc.stringMatching(/^[A-Za-z0-9._-]{10,60}$/);
+const segment = fc.stringMatching(/^[A-Za-z0-9_-]{3,30}$/);
+const tokenArb = fc.tuple(segment, segment, segment).map(([a, b, c]) => `eyJ${a}.${b}.${c}`);
 
 /** A body that satisfies every rule of Requirement 17 for this id. */
 export function bodyArb(id: HandoffId): fc.Arbitrary<WireBody> {
@@ -72,7 +73,11 @@ export function bodyArb(id: HandoffId): fc.Arbitrary<WireBody> {
           ),
         },
         google: withGoogle ? { saveUrl: `${GOOGLE_SAVE_PREFIX}${token}` } : null,
-        calendarPath: withCalendar ? `/api/v1/handoffs/${id}/calendar.ics` : null,
+        // A hand-off needs at least one action, so a body with none gets the calendar.
+        calendarPath:
+          withCalendar || (bundles === 0 && !withGoogle)
+            ? `/api/v1/handoffs/${id}/calendar.ics`
+            : null,
       }));
     });
 }
@@ -96,7 +101,7 @@ export function exampleBody(id: HandoffId = FIXED_ID): WireBody {
       },
     ],
     apple: { bundlePaths: [`/api/v1/handoffs/${id}/apple/0`] },
-    google: { saveUrl: `${GOOGLE_SAVE_PREFIX}abc.def-ghi_jkl` },
+    google: { saveUrl: `${GOOGLE_SAVE_PREFIX}eyJhbGciOiJSUzI1NiJ9.abc-def.ghi_jkl` },
     calendarPath: `/api/v1/handoffs/${id}/calendar.ics`,
   };
 }
@@ -107,6 +112,19 @@ export function validated(body: WireBody, id: HandoffId = FIXED_ID): ValidatedHa
     throw new Error('The test body should be valid.');
   }
   return result;
+}
+
+/** A response like fetch gives, with a content type (JSON by default). */
+export function response(
+  status: number,
+  text: string,
+  contentType: string | null = 'application/json',
+): { status: number; headers: { get(name: string): string | null }; text(): Promise<string> } {
+  return {
+    status,
+    headers: { get: (name) => (name.toLowerCase() === 'content-type' ? contentType : null) },
+    text: () => Promise.resolve(text),
+  };
 }
 
 /** Fake timers: record callbacks and fire them on demand. */

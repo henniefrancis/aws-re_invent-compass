@@ -9,7 +9,14 @@ import {
 } from '../../src/lib/board/board-controller';
 import { parseBoardFragment } from '../../src/lib/board/fragment';
 import type { FetchLike } from '../../src/lib/board/handoff-client';
-import { FIXED_ID, bodyArb, exampleBody, idArb, makeTimers } from '../support/handoff-data';
+import {
+  FIXED_ID,
+  bodyArb,
+  exampleBody,
+  idArb,
+  makeTimers,
+  response,
+} from '../support/handoff-data';
 
 interface Rig {
   readonly events: string[];
@@ -27,7 +34,7 @@ function rig(options: { hash: string; fetch?: FetchLike; now?: number }): Rig {
   let now = options.now ?? Date.parse('2026-11-30T10:00:00-08:00');
   let fetchCalls = 0;
   const defaultFetch: FetchLike = () =>
-    Promise.resolve({ status: 200, text: () => Promise.resolve(JSON.stringify(exampleBody())) });
+    Promise.resolve(response(200, JSON.stringify(exampleBody())));
   const inner = options.fetch ?? defaultFetch;
   const deps: BoardControllerDeps = {
     readHash: () => {
@@ -94,7 +101,7 @@ describe('board controller flow', () => {
     let status = 429;
     const r = rig({
       hash: `#h=${FIXED_ID}`,
-      fetch: () => Promise.resolve({ status, text: () => Promise.resolve('server text') }),
+      fetch: () => Promise.resolve(response(status, 'server text')),
     });
     await r.controller.start();
     expect(r.controller.state().kind).toBe('rateLimited');
@@ -113,7 +120,7 @@ describe('board controller flow', () => {
   test('a rejected body is unavailable', async () => {
     const r = rig({
       hash: `#h=${FIXED_ID}`,
-      fetch: () => Promise.resolve({ status: 200, text: () => Promise.resolve('{"expiresAt":1}') }),
+      fetch: () => Promise.resolve(response(200, '{"expiresAt":1}')),
     });
     await r.controller.start();
     expect(r.controller.state().kind).toBe('unavailable');
@@ -148,20 +155,16 @@ describe('board controller flow', () => {
     const far = rig({
       hash: `#h=${FIXED_ID}`,
       fetch: () =>
-        Promise.resolve({
-          status: 200,
-          text: () =>
-            Promise.resolve(
-              JSON.stringify({ ...exampleBody(), expiresAt: '2099-01-01T00:00:00Z' }),
-            ),
-        }),
+        Promise.resolve(
+          response(200, JSON.stringify({ ...exampleBody(), expiresAt: '2099-01-01T00:00:00Z' })),
+        ),
     });
     await far.controller.start();
     expect(expiryTimers(far)[0]?.ms).toBe(MAX_TIMER_MS);
   });
 
   test('dispose clears the timer and ignores a late answer', async () => {
-    let answer: (value: { status: number; text: () => Promise<string> }) => void = () => undefined;
+    let answer: (value: ReturnType<typeof response>) => void = () => undefined;
     const r = rig({
       hash: `#h=${FIXED_ID}`,
       fetch: () =>
@@ -171,7 +174,7 @@ describe('board controller flow', () => {
     });
     const started = r.controller.start();
     r.controller.dispose();
-    answer({ status: 200, text: () => Promise.resolve(JSON.stringify(exampleBody())) });
+    answer(response(200, JSON.stringify(exampleBody())));
     await started;
     expect(r.controller.state().kind).toBe('loading');
     expect(r.states.map((s) => s.kind)).toEqual(['loading']);
@@ -221,11 +224,7 @@ describe('Property 2: An invalid link never sends a request', () => {
           let status = 500;
           const r = rig({
             hash: `#h=${id}`,
-            fetch: () =>
-              Promise.resolve({
-                status,
-                text: () => Promise.resolve(JSON.stringify(body)),
-              }),
+            fetch: () => Promise.resolve(response(status, JSON.stringify(body))),
           });
           await r.controller.start();
           expect(r.events.slice(0, 3)).toEqual(['readHash', 'replaceState:/board', 'fetch']);
