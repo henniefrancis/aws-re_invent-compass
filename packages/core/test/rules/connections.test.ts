@@ -181,6 +181,25 @@ describe('connection unknowns', () => {
   });
 });
 
+describe('connection hardening', () => {
+  test('a tuning value that makes the spare time infinite or NaN is unknown, never a verdict', () => {
+    for (const bufferMinutes of [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NaN]) {
+      const result = classify(item(), next(60), testContext({ bufferMinutes }));
+      expect(result.classification).toBe('unknown');
+      expect(result.reason).toBe(
+        'The spare time could not be worked out. The connection is unknown.',
+      );
+    }
+  });
+
+  test('a first commitment whose end is not after its start is unknown and names it', () => {
+    const from = item({ ref: 'BADFROM', missing: ['order'] });
+    const result = classify(from, next(60));
+    expect(result.classification).toBe('unknown');
+    expect(result.reason).toContain('end time of BADFROM is not after its start time');
+  });
+});
+
 describe('connection properties', () => {
   // Feature: itinerary-rules, Property 5: Connection classification follows spare time against the due time, with walking minutes and a naming reason
   test('Property 5: the class follows spare time and the reason names venues and minutes', () => {

@@ -45,6 +45,85 @@ describe('withContextDefaults', () => {
   });
 });
 
+describe('withContextDefaults ignores undefined values', () => {
+  test('an undefined tuning value never replaces a default', () => {
+    const context = withContextDefaults({
+      ...input,
+      bufferMinutes: undefined,
+      tightMarginMinutes: undefined,
+      maxStretchMinutes: undefined,
+      overloadThreshold: undefined,
+      overloadCountThreshold: undefined,
+      mealWindow: undefined,
+      eventTimezone: undefined,
+    });
+    expect(context).toEqual({ ...CONTEXT_DEFAULTS, ...input });
+    expect(ContextSchema.safeParse(context).success).toBe(true);
+    expect('eventTimezone' in context).toBe(false);
+  });
+
+  test('present but invalid values are kept as given, so ContextSchema can refuse them', () => {
+    const context = withContextDefaults({ ...input, bufferMinutes: Number.NaN });
+    expect(context.bufferMinutes).toBeNaN();
+    expect(ContextSchema.safeParse(context).success).toBe(false);
+  });
+});
+
+describe('ContextSchema limits', () => {
+  const base = withContextDefaults(input);
+  const mealWindow = (overrides: object) => ({ ...base.mealWindow, ...overrides });
+  const bad: Array<[string, object]> = [
+    ['NaN buffer', { bufferMinutes: Number.NaN }],
+    ['infinite buffer', { bufferMinutes: Number.POSITIVE_INFINITY }],
+    ['negative buffer', { bufferMinutes: -1 }],
+    ['buffer above 120', { bufferMinutes: 121 }],
+    ['negative margin', { tightMarginMinutes: -0.5 }],
+    ['margin above 60', { tightMarginMinutes: 61 }],
+    ['infinite margin', { tightMarginMinutes: Number.POSITIVE_INFINITY }],
+    ['zero stretch', { maxStretchMinutes: 0 }],
+    ['stretch above a day', { maxStretchMinutes: 1441 }],
+    ['infinite stretch', { maxStretchMinutes: Number.POSITIVE_INFINITY }],
+    ['zero overload threshold', { overloadThreshold: 0 }],
+    ['negative overload threshold', { overloadThreshold: -5 }],
+    ['infinite overload threshold', { overloadThreshold: Number.POSITIVE_INFINITY }],
+    ['NaN overload threshold', { overloadThreshold: Number.NaN }],
+    ['zero count threshold', { overloadCountThreshold: 0 }],
+    ['infinite count threshold', { overloadCountThreshold: Number.POSITIVE_INFINITY }],
+    [
+      'meal window ends before it starts',
+      { mealWindow: mealWindow({ start: '14:00', end: '11:30' }) },
+    ],
+    ['meal window of no length', { mealWindow: mealWindow({ start: '12:00', end: '12:00' }) }],
+    ['negative meal minutes', { mealWindow: mealWindow({ requiredFreeMinutes: -1 }) }],
+    [
+      'infinite meal minutes',
+      { mealWindow: mealWindow({ requiredFreeMinutes: Number.POSITIVE_INFINITY }) },
+    ],
+    ['meal minutes above a day', { mealWindow: mealWindow({ requiredFreeMinutes: 1441 }) }],
+    ['timezone that is not text', { eventTimezone: 42 }],
+  ];
+
+  test.each(bad)('rejects %s', (_name, override) => {
+    expect(ContextSchema.safeParse({ ...base, ...override }).success).toBe(false);
+  });
+
+  test('accepts the edges of every range', () => {
+    const edges = {
+      ...base,
+      bufferMinutes: 120,
+      tightMarginMinutes: 60,
+      maxStretchMinutes: 1,
+      overloadThreshold: 0.5,
+      overloadCountThreshold: 1,
+      mealWindow: mealWindow({ start: '00:00', end: '00:01', requiredFreeMinutes: 0 }),
+    };
+    expect(ContextSchema.safeParse(edges).success).toBe(true);
+    expect(
+      ContextSchema.safeParse({ ...edges, bufferMinutes: 0, tightMarginMinutes: 0 }).success,
+    ).toBe(true);
+  });
+});
+
 describe('ContextSchema', () => {
   test('accepts a complete context and a missing timezone', () => {
     expect(ContextSchema.safeParse(withContextDefaults(input)).success).toBe(true);

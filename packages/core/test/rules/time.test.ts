@@ -6,6 +6,8 @@ import {
   dayBounds,
   dayKey,
   formatLocal,
+  formatterCacheSize,
+  isCalendarDate,
   formatOffset,
   instantAt,
   minutesBetween,
@@ -233,5 +235,52 @@ describe('offset change stability', () => {
       ),
       { numRuns: 200 },
     );
+  });
+});
+
+describe('isCalendarDate', () => {
+  test('accepts real dates from 2000 to 2100, including leap days', () => {
+    for (const day of ['2026-12-01', '2000-01-01', '2100-12-31', '2028-02-29', '2024-02-29']) {
+      expect(isCalendarDate(day), day).toBe(true);
+    }
+  });
+
+  test('refuses impossible dates, out of range years and other text', () => {
+    for (const day of [
+      '2026-02-31',
+      '2027-02-29',
+      '2026-13-01',
+      '2026-00-10',
+      '2026-04-31',
+      '1999-12-31',
+      '2101-01-01',
+      '2026-1-1',
+      '26-12-01',
+      '2026-12-01T00:00:00Z',
+      '',
+    ]) {
+      expect(isCalendarDate(day), day).toBe(false);
+    }
+  });
+});
+
+describe('formatter cache', () => {
+  test('reuses formatters, gives the same answers, and stays bounded', () => {
+    const ms = Date.parse('2026-12-02T03:30:45Z');
+    const first = wallClock(ms, LA);
+    expect(wallClock(ms, LA)).toEqual(first);
+    expect(offsetMinutes(ms, LA)).toBe(offsetMinutes(ms, LA));
+    // Far more distinct zones than the bound never grow the cache past it.
+    for (const zone of Intl.supportedValuesOf('timeZone').slice(0, 150)) {
+      wallClock(ms, zone);
+      expect(formatterCacheSize()).toBeLessThanOrEqual(64);
+    }
+    expect(wallClock(ms, LA)).toEqual(first);
+  });
+
+  test('a refused timezone is never cached', () => {
+    const before = formatterCacheSize();
+    expect(checkZone('Not/A_Zone_Cache')).toEqual({ ok: false, reason: 'unrecognised' });
+    expect(formatterCacheSize()).toBe(before);
   });
 });

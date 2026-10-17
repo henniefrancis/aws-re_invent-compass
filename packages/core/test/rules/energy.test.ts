@@ -132,6 +132,22 @@ describe('scoreEnergy examples', () => {
     expect(scoreEnergy([noVenue], testContext()).missingDataNotes).toHaveLength(1);
   });
 
+  test('a commitment whose end is not after its start is counted but left out, and named', () => {
+    const day = [
+      item('A1', 'Alpha Hall', 9 * 60, 10 * 60),
+      item('BAD', 'Beta Tower', 11 * 60, 11 * 60, { missing: ['order'] }),
+    ];
+    const result = scoreEnergy(day, testContext());
+    expect(result).toMatchObject({
+      commitmentCount: 2,
+      totalWalkingMinutes: 0,
+      venueChangeCount: 0,
+    });
+    expect(result.missingDataNotes).toEqual([
+      'Data was missing for BAD. It is left out of walking and venue totals.',
+    ]);
+  });
+
   test('a walk with no known time adds no minutes and is named', () => {
     const day = [
       item('A1', 'Alpha Hall', 9 * 60, 10 * 60),

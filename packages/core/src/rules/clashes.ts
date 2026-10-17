@@ -50,7 +50,7 @@ const LAST_SECOND_OF_DAY = 23 * 60 + 59;
 export function intervalOf(
   resolved: ResolvedCommitment,
   zone: string,
-): Interval | { missing: 'start' | 'end' } {
+): Interval | { missing: reason.TimeProblem } {
   if (resolved.startsAt === undefined) {
     return { missing: 'start' };
   }
@@ -62,13 +62,27 @@ export function intervalOf(
   if (resolved.endsAt === undefined) {
     return { missing: 'end' };
   }
-  return { start, end: parseInstant(resolved.endsAt) as number };
+  const end = parseInstant(resolved.endsAt) as number;
+  // An end that is not after the start is bad data, so it is "invalid", not a clash candidate.
+  return end <= start ? { missing: 'order' } : { start, end };
 }
 
-/** Do two intervals clash: identical, or overlapping by one second or more? */
+const insidePoint = (point: Interval, other: Interval): boolean =>
+  point.start === point.end && other.start < point.start && point.start < other.end;
+
+/**
+ * Do two intervals clash: identical, overlapping by one second or more, or a zero-length point
+ * strictly inside the other? (A zero-length commitment never reaches this function from
+ * findClashes, because it is bad data there, but the rule is kept for callers with raw intervals.)
+ */
 export function intervalsClash(a: Interval, b: Interval): boolean {
   const identical = a.start === b.start && a.end === b.end;
-  return identical || Math.min(a.end, b.end) - Math.max(a.start, b.start) >= 1000;
+  return (
+    identical ||
+    Math.min(a.end, b.end) - Math.max(a.start, b.start) >= 1000 ||
+    insidePoint(a, b) ||
+    insidePoint(b, a)
+  );
 }
 
 /** Find every pair of clashing commitments in a schedule. */
@@ -83,6 +97,7 @@ export function findClashes(schedule: ScheduleInput, context: Context): ClashRep
   const intervals = resolved.map((item) => intervalOf(item, zone.zone));
 
   const unknown: ClashUnknown[] = [];
+  const usable: Array<{ index: number; interval: Interval }> = [];
   intervals.forEach((interval, index) => {
     if ('missing' in interval) {
       const item = resolved[index] as ResolvedCommitment;
@@ -91,30 +106,41 @@ export function findClashes(schedule: ScheduleInput, context: Context): ClashRep
         index,
         reason: reason.clashTimeMissing(item.ref, interval.missing),
       });
+    } else {
+      usable.push({ index, interval });
     }
   });
 
-  const clashes: ClashPair[] = [];
-  for (let i = 0; i < intervals.length; i += 1) {
-    for (let j = i + 1; j < intervals.length; j += 1) {
-      const a = intervals[i] as Interval | { missing: 'start' | 'end' };
-      const b = intervals[j] as Interval | { missing: 'start' | 'end' };
-      if ('missing' in a || 'missing' in b || !intervalsClash(a, b)) {
+  // Sweep by start time: an item can only clash with later items that start before it ends,
+  // so the inner loop stops at the first one that starts at or after the end.
+  usable.sort((a, b) => a.interval.start - b.interval.start || a.index - b.index);
+  const found: ClashPair[] = [];
+  for (let i = 0; i < usable.length; i += 1) {
+    const first = usable[i] as { index: number; interval: Interval };
+    for (let j = i + 1; j < usable.length; j += 1) {
+      const second = usable[j] as { index: number; interval: Interval };
+      if (second.interval.start >= first.interval.end) {
+        break;
+      }
+      if (!intervalsClash(first.interval, second.interval)) {
         continue;
       }
-      const from = formatLocal(Math.max(a.start, b.start), zone.zone);
-      const to = formatLocal(Math.min(a.end, b.end), zone.zone);
-      const aRef = (resolved[i] as ResolvedCommitment).ref;
-      const bRef = (resolved[j] as ResolvedCommitment).ref;
-      clashes.push({
+      const [low, high] = first.index < second.index ? [first, second] : [second, first];
+      const from = formatLocal(Math.max(first.interval.start, second.interval.start), zone.zone);
+      const to = formatLocal(Math.min(first.interval.end, second.interval.end), zone.zone);
+      const aRef = (resolved[low.index] as ResolvedCommitment).ref;
+      const bRef = (resolved[high.index] as ResolvedCommitment).ref;
+      found.push({
         a: aRef,
         b: bRef,
-        aIndex: i,
-        bIndex: j,
+        aIndex: low.index,
+        bIndex: high.index,
         overlap: `${from} to ${to}`,
         reason: reason.clashOverlap(aRef, bRef, from, to),
       });
     }
   }
+  // Report in input order, as a full pair scan would.
+  const clashes = found.sort((x, y) => x.aIndex - y.aIndex || x.bIndex - y.bIndex);
   return { status: 'ok', clashes, unknown };
 }

@@ -29,6 +29,8 @@ export interface SourceNote {
   url?: string;
   /** Optional plain-English basis for an estimate, so the estimate is traceable. */
   basis?: string;
+  /** The day an official page was read, YYYY-MM-DD. Required when kind is "official". */
+  retrievedOn?: string;
 }
 
 /** Walking minutes between one ordered pair of distinct venues. */
@@ -87,11 +89,35 @@ export const CONTEXT_DEFAULTS = {
 
 const CLOCK_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-const MealWindowSchema = z.object({
-  start: z.string().regex(CLOCK_PATTERN),
-  end: z.string().regex(CLOCK_PATTERN),
-  requiredFreeMinutes: z.number().min(0),
-});
+/** The accepted range for each tuning value. Values outside it make a Context invalid. */
+export const CONTEXT_LIMITS = {
+  /** Minutes added to a raw walk. */
+  bufferMinutes: { min: 0, max: 120 },
+  /** Spare minutes below which a connection is tight. */
+  tightMarginMinutes: { min: 0, max: 60 },
+  /** Longest unbroken stretch, in minutes. */
+  maxStretchMinutes: { min: 1, max: 1440 },
+  /** Free minutes the meal window needs. */
+  requiredFreeMinutes: { min: 0, max: 1440 },
+} as const;
+
+const minutesOf = (clock: string): number =>
+  Number(clock.slice(0, 2)) * 60 + Number(clock.slice(3, 5));
+
+const MealWindowSchema = z
+  .object({
+    start: z.string().regex(CLOCK_PATTERN),
+    end: z.string().regex(CLOCK_PATTERN),
+    requiredFreeMinutes: z
+      .number()
+      .finite()
+      .min(CONTEXT_LIMITS.requiredFreeMinutes.min)
+      .max(CONTEXT_LIMITS.requiredFreeMinutes.max),
+  })
+  .refine((window) => minutesOf(window.end) > minutesOf(window.start), {
+    path: ['end'],
+    message: 'the meal window must end after it starts',
+  });
 
 /** Zod schema for a complete Context. now is required; eventTimezone is optional. */
 export const ContextSchema: z.ZodType<Context> = z.object({
@@ -99,18 +125,40 @@ export const ContextSchema: z.ZodType<Context> = z.object({
   eventTimezone: z.string().optional(),
   venueData: VenueDataSchema,
   mealWindow: MealWindowSchema,
-  maxStretchMinutes: z.number().min(0),
-  overloadThreshold: z.number(),
-  overloadCountThreshold: z.number(),
-  tightMarginMinutes: z.number().min(0),
-  bufferMinutes: z.number().min(0),
+  maxStretchMinutes: z
+    .number()
+    .finite()
+    .min(CONTEXT_LIMITS.maxStretchMinutes.min)
+    .max(CONTEXT_LIMITS.maxStretchMinutes.max),
+  overloadThreshold: z.number().finite().gt(0),
+  overloadCountThreshold: z.number().finite().gt(0),
+  tightMarginMinutes: z
+    .number()
+    .finite()
+    .min(CONTEXT_LIMITS.tightMarginMinutes.min)
+    .max(CONTEXT_LIMITS.tightMarginMinutes.max),
+  bufferMinutes: z
+    .number()
+    .finite()
+    .min(CONTEXT_LIMITS.bufferMinutes.min)
+    .max(CONTEXT_LIMITS.bufferMinutes.max),
 });
 
 /**
  * Fill every tuning value the caller left out with its documented default. now and
  * venueData come from the caller. eventTimezone is passed through untouched (it may be
  * absent, and the engine then answers "unknown").
+ *
+ * A value that is present but undefined counts as left out, so an undefined never replaces
+ * a default (and never turns into NaN later). Values that are present are kept exactly as
+ * given, even when invalid: ContextSchema is what rejects them.
  */
 export function withContextDefaults(input: ContextInput): Context {
-  return { ...CONTEXT_DEFAULTS, ...input };
+  const merged: Record<string, unknown> = { ...CONTEXT_DEFAULTS };
+  for (const [key, value] of Object.entries(input)) {
+    if (value !== undefined) {
+      merged[key] = value;
+    }
+  }
+  return merged as unknown as Context;
 }

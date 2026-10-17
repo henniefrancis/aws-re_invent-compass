@@ -47,20 +47,50 @@ describe('clash examples', () => {
     expect(report).toEqual({ status: 'ok', clashes: [], unknown: [] });
   });
 
-  test('identical start and end instants clash, including identical zero-length items', () => {
+  test('identical start and end instants clash', () => {
     expect(clashes([timed('A', 0, 3600), timed('B', 0, 3600)])).toMatchObject({
       clashes: [{ a: 'A', b: 'B' }],
     });
-    const zero = clashes([timed('A', 0, 0), timed('B', 0, 0)]);
-    expect(zero.status === 'ok' && zero.clashes).toHaveLength(1);
   });
 
-  test('an overlap of one second clashes, and a zero-length item inside another does not', () => {
+  test('a commitment whose end is not after its start is bad data: unknown, never a clash', () => {
+    for (const length of [0, -600]) {
+      const report = clashes([timed('BAD', 0, length), timed('OK', -3600, 7200)]);
+      expect(report).toMatchObject({ status: 'ok', clashes: [] });
+      expect(report.status === 'ok' && report.unknown).toEqual([
+        {
+          ref: 'BAD',
+          index: 0,
+          reason:
+            'The end time of BAD is not after its start time. It cannot be checked for clashes.',
+        },
+      ]);
+    }
+    // Two identical zero-length items are bad data too, so they are not reported as a clash.
+    const twins = clashes([timed('A', 0, 0), timed('B', 0, 0)]);
+    expect(twins.status === 'ok' && [twins.clashes.length, twins.unknown.length]).toEqual([0, 2]);
+  });
+
+  test('a zero-length point strictly inside another interval is a clash (raw intervals)', () => {
+    const outer = { start: 0, end: 3_600_000 };
+    expect(intervalsClash(outer, { start: 1_800_000, end: 1_800_000 })).toBe(true);
+    expect(intervalsClash({ start: 1_800_000, end: 1_800_000 }, outer)).toBe(true);
+    // On the edge, or outside, is not inside.
+    expect(intervalsClash(outer, { start: 0, end: 0 })).toBe(false);
+    expect(intervalsClash(outer, { start: 3_600_000, end: 3_600_000 })).toBe(false);
+    expect(intervalsClash(outer, { start: 7_200_000, end: 7_200_000 })).toBe(false);
+    // Two different points never clash; the same point twice is identical.
+    expect(intervalsClash({ start: 5, end: 5 }, { start: 6, end: 6 })).toBe(false);
+    expect(intervalsClash({ start: 5, end: 5 }, { start: 5, end: 5 })).toBe(true);
+  });
+
+  test('an overlap of one second clashes, and less than a second does not', () => {
     expect(clashes([timed('A', 0, 3600), timed('B', 3599, 3600)])).toMatchObject({
       clashes: [{ overlap: '2026-12-01 10:59:59 to 2026-12-01 11:00' }],
     });
-    const inside = clashes([timed('A', 0, 3600), timed('B', 1800, 0)]);
-    expect(inside.status === 'ok' && inside.clashes).toHaveLength(0);
+    const half = personal('A', '2026-12-01T10:00:00.000-08:00', '2026-12-01T11:00:00.500-08:00');
+    const next = personal('B', '2026-12-01T11:00:00.000-08:00', '2026-12-01T12:00:00.000-08:00');
+    expect(clashes([half, next])).toMatchObject({ status: 'ok', clashes: [] });
   });
 
   test('an all-day item occupies 00:00:00 to 23:59:59 of its event day', () => {
@@ -177,10 +207,43 @@ describe('clash examples', () => {
       startsAt: '2026-12-01T10:00:00-08:00',
     };
     expect(intervalOf(resolved, ZONE)).toEqual({ missing: 'end' });
+    expect(intervalOf({ ...resolved, endsAt: '2026-12-01T10:00:00-08:00' }, ZONE)).toEqual({
+      missing: 'order',
+    });
     expect(intervalOf({ ...resolved, startsAt: undefined }, ZONE)).toEqual({ missing: 'start' });
     const x = { start: 0, end: 5000 };
     const y = { start: 4000, end: 9000 };
     expect(intervalsClash(x, y)).toBe(intervalsClash(y, x));
+  });
+});
+
+describe('clash sweep', () => {
+  // Feature: itinerary-rules, Property 7: Clash overlap semantics with all-day expansion and a naming reason
+  test('Property 7: the sweep finds exactly the pairs a full pair scan would, in input order', () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.tuple(fc.integer({ min: 0, max: 7200 }), fc.integer({ min: 1, max: 3600 })), {
+          maxLength: 12,
+        }),
+        (spans) => {
+          const items = spans.map(([s, l], i) => timed(`I${i}`, s, l));
+          const report = clashes(items);
+          const expected: string[] = [];
+          for (let i = 0; i < spans.length; i += 1) {
+            for (let j = i + 1; j < spans.length; j += 1) {
+              const [sa, la] = spans[i];
+              const [sb, lb] = spans[j];
+              const overlap = Math.min(sa + la, sb + lb) - Math.max(sa, sb);
+              if ((sa === sb && la === lb) || overlap >= 1) expected.push(`I${i}+I${j}`);
+            }
+          }
+          expect(report.status === 'ok' && report.clashes.map((c) => `${c.a}+${c.b}`)).toEqual(
+            expected,
+          );
+        },
+      ),
+      { numRuns: 300 },
+    );
   });
 });
 

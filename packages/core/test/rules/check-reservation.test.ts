@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import * as fc from 'fast-check';
 import { VerdictSchema, type NormalisedSession } from '@compass/contracts';
 import { checkReservation } from '../../src/rules/check-reservation.js';
-import { personal, scheduleOf, session, testContext } from './helpers.js';
+import { personal, scheduleOf, session, testContext, testVenueData } from './helpers.js';
 
 // Tests for the checkReservation guardrail (itinerary-rules, S2).
 // Requirements: 8.1 to 8.10. All sample data is self-made.
@@ -376,5 +376,125 @@ describe('guardrail properties', () => {
       ),
       { numRuns: 300 },
     );
+  });
+});
+
+describe('hardening: invalid context, bad data, size and failure', () => {
+  const candidate = () => slot('NEW1', clock(10), clock(11));
+
+  test('an invalid tuning value gives warn with a reason naming it, never allow', () => {
+    const cases: Array<[string, object]> = [
+      ['bufferMinutes', { bufferMinutes: Number.NaN }],
+      ['bufferMinutes', { bufferMinutes: 500 }],
+      ['tightMarginMinutes', { tightMarginMinutes: -1 }],
+      ['overloadThreshold', { overloadThreshold: 0 }],
+      ['overloadCountThreshold', { overloadCountThreshold: Number.POSITIVE_INFINITY }],
+      ['maxStretchMinutes', { maxStretchMinutes: 0 }],
+      ['mealWindow', { mealWindow: { start: '14:00', end: '11:30', requiredFreeMinutes: 30 } }],
+      ['eventTimezone', { eventTimezone: 7 }],
+    ];
+    for (const [setting, override] of cases) {
+      const context = { ...testContext(), ...override };
+      const verdict = checkReservation(candidate(), scheduleOf([]), context);
+      expect(verdict).toEqual({
+        decision: 'warn',
+        reasons: [`The setting "${setting}" is not valid. The reservation could not be checked.`],
+      });
+    }
+  });
+
+  test('a Context that is not an object gives warn, naming the whole context', () => {
+    const verdict = checkReservation(candidate(), scheduleOf([]), null as never);
+    expect(verdict).toEqual({
+      decision: 'warn',
+      reasons: ['The setting "context" is not valid. The reservation could not be checked.'],
+    });
+  });
+
+  test('invalid venue data gives warn, never allow', () => {
+    const venueData = testVenueData();
+    venueData.walkingTimes[0] = { ...venueData.walkingTimes[0], minutes: 0 };
+    const verdict = checkReservation(candidate(), scheduleOf([]), testContext({ venueData }));
+    expect(verdict.decision).toBe('warn');
+    expect(verdict.reasons[0]).toContain('The setting "venueData" is not valid.');
+    const unlisted = testVenueData();
+    unlisted.walkingTimes[0] = { ...unlisted.walkingTimes[0], from: 'Nowhere' };
+    expect(
+      checkReservation(candidate(), scheduleOf([]), testContext({ venueData: unlisted })).decision,
+    ).toBe('warn');
+  });
+
+  test('an undefined tuning value falls back to the default instead of failing open', () => {
+    const context = testContext({ bufferMinutes: undefined, tightMarginMinutes: undefined });
+    const earlier = slot('OLD1', clock(9), clock(10), { venue: 'Beta Tower' });
+    const verdict = check(slot('NEW1', clock(10, 33), clock(11, 33)), [earlier], context);
+    expect(verdict.decision).toBe('warn');
+    expect(verdict.reasons[0]).toContain('Tight connection');
+  });
+
+  test('a candidate whose end is not after its start is bad data: warn, all four rules named', () => {
+    for (const endMin of [clock(10), clock(9)]) {
+      const verdict = check(slot('NEW1', clock(10), endMin), [slot('OLD1', clock(9), clock(11))]);
+      expect(verdict.decision).toBe('warn');
+      expect(verdict.reasons).toHaveLength(4);
+      expect(verdict.reasons[0]).toContain('The end time of NEW1 is not after its start time.');
+    }
+  });
+
+  test('a commitment whose end is not after its start is skipped by the clash check, with a warning', () => {
+    const bad = slot('BAD1', clock(10, 30), clock(10, 30));
+    const verdict = check(slot('NEW1', clock(10), clock(11)), [bad]);
+    expect(verdict.decision).toBe('warn');
+    expect(verdict.reasons[0]).toContain('The clash check could not be judged');
+    expect(verdict.reasons[0]).toContain('end time of BAD1 is not after its start time');
+  });
+
+  test('a schedule of more than 200 commitments gives warn: schedule too large', () => {
+    const many = Array.from({ length: 201 }, (_, i) =>
+      slot(`S${i}`, clock(8), clock(9), { sessionId: `s${i}` }),
+    );
+    const verdict = check(candidate(), many);
+    expect(verdict).toEqual({
+      decision: 'warn',
+      reasons: [
+        'The schedule is too large. It has more than 200 commitments. It could not be checked.',
+      ],
+    });
+    expect(check(candidate(), many.slice(0, 200)).reasons.join(' ')).not.toContain('too large');
+  });
+
+  test('performance: a schedule of 200 commitments is judged in under 500 ms', () => {
+    // Five sessions a day for 40 days, none overlapping.
+    const many = Array.from({ length: 200 }, (_, i) => {
+      const day = Math.floor(i / 5);
+      const start = clock(8) + (i % 5) * 150;
+      return slot(`S${i}`, day * 1440 + start, day * 1440 + start + 60, {
+        sessionId: `s${i}`,
+        venue: 'Alpha Hall',
+      });
+    });
+    const context = testContext();
+    checkReservation(candidate(), scheduleOf(many), context); // warm the formatter cache
+    const started = performance.now();
+    const verdict = checkReservation(candidate(), scheduleOf(many), context);
+    const elapsed = performance.now() - started;
+    expect(VerdictSchema.safeParse(verdict).success).toBe(true);
+    expect(elapsed).toBeLessThan(500);
+  });
+
+  test('it never throws: malformed input fails closed with a fixed internal-error block', () => {
+    const inputs: Array<[unknown, unknown]> = [
+      [candidate(), null],
+      [candidate(), { commitments: null, sessions: {} }],
+      [null, scheduleOf([])],
+      [candidate(), { commitments: [null], sessions: {} }],
+    ];
+    for (const [cand, schedule] of inputs) {
+      const verdict = checkReservation(cand as never, schedule as never, testContext());
+      expect(verdict).toEqual({
+        decision: 'block',
+        reasons: ['An internal error stopped the check. The reservation is blocked to be safe.'],
+      });
+    }
   });
 });

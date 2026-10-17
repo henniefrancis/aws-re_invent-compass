@@ -14,7 +14,11 @@ import {
 // Requirements: 9.1 to 9.9. All sample data is self-made, except the smoke test that
 // reads the owned data/venues.json file itself.
 
-const OFFICIAL = { kind: 'official', url: 'https://aws.amazon.com/events/reinvent/faqs/' } as const;
+const OFFICIAL = {
+  kind: 'official',
+  url: 'https://aws.amazon.com/events/reinvent/faqs/',
+  retrievedOn: '2026-10-17',
+} as const;
 const ESTIMATE = { kind: 'estimate' } as const;
 
 /** A small, valid, complete venue data object with three venues. */
@@ -61,12 +65,12 @@ describe('data/venues.json', () => {
     }
   });
 
-  test('covers every ordered pair with whole minutes from 0 to 240 and a source note', () => {
+  test('covers every ordered pair with whole minutes from 1 to 240 and a source note', () => {
     const data = VenueDataSchema.parse(raw);
     expect(data.walkingTimes).toHaveLength(data.venues.length * (data.venues.length - 1));
     for (const edge of data.walkingTimes) {
       expect(Number.isInteger(edge.minutes)).toBe(true);
-      expect(edge.minutes).toBeGreaterThanOrEqual(0);
+      expect(edge.minutes).toBeGreaterThanOrEqual(1);
       expect(edge.minutes).toBeLessThanOrEqual(240);
       expect(['official', 'estimate']).toContain(edge.source.kind);
       if (edge.source.kind === 'official') {
@@ -99,8 +103,12 @@ describe('VenueDataSchema rules', () => {
     data.walkingTimes[0] = {
       from: 'Alpha Hall',
       to: 'Beta Tower',
-      minutes: 0,
-      source: { kind: 'official', url: 'https://reinvent.awsevents.com/venues' },
+      minutes: 1,
+      source: {
+        kind: 'official',
+        url: 'https://reinvent.awsevents.com/venues',
+        retrievedOn: '2026-10-17',
+      },
     };
     expect(validateVenueData(data)).toEqual({ ok: true, data });
   });
@@ -116,9 +124,18 @@ describe('VenueDataSchema rules', () => {
       'https://example.com/page',
       'http://aws.amazon.com/page',
       'https://evil.aws.amazon.com.example.com/',
+      // Right host, but not an allowlisted path, or a port or user info trick.
+      'https://aws.amazon.com/some/other/page',
+      'https://aws.amazon.com/events/reinventor',
+      'https://aws.amazon.com:8443/events/reinvent/faqs/',
+      'https://reinvent.awsevents.com:8080/venues',
+      'https://reinvent.awsevents.com@evil.example.com/venues',
     ]) {
       const data = sampleData();
-      data.walkingTimes[0] = { ...data.walkingTimes[0], source: { kind: 'official', url } };
+      data.walkingTimes[0] = {
+        ...data.walkingTimes[0],
+        source: { kind: 'official', url, retrievedOn: '2026-10-17' },
+      };
       expect(errorsOf(data).join(' ')).toContain('walkingTimes[0].source');
     }
     const data = sampleData() as unknown as { walkingTimes: Array<{ source: unknown }> };
@@ -126,8 +143,49 @@ describe('VenueDataSchema rules', () => {
     expect(errorsOf(data).join(' ')).toContain('walkingTimes[0].source');
   });
 
-  test('rejects walking times that are fractional, negative or above 240', () => {
-    for (const minutes of [1.5, -1, 241]) {
+  test('accepts official URLs on allowlisted paths, with or without a path, query or fragment', () => {
+    for (const url of [
+      'https://aws.amazon.com/events/reinvent',
+      'https://aws.amazon.com/events/reinvent/faqs/?a=1#top',
+      'https://AWS.amazon.com/resources/analyst-summit/',
+      'https://reinvent.awsevents.com',
+      'https://reinvent.awsevents.com/anything/at/all',
+    ]) {
+      const data = sampleData();
+      data.walkingTimes[0] = {
+        ...data.walkingTimes[0],
+        source: { kind: 'official', url, retrievedOn: '2026-10-17' },
+      };
+      expect(validateVenueData(data).ok, url).toBe(true);
+    }
+  });
+
+  test('an official note needs a real retrieval date between 2000 and 2100', () => {
+    for (const retrievedOn of [
+      '',
+      'yesterday',
+      '2026-02-31',
+      '2026-13-01',
+      '1999-12-31',
+      '2101-01-01',
+    ]) {
+      const data = sampleData();
+      data.walkingTimes[0] = {
+        ...data.walkingTimes[0],
+        source: { kind: 'official', url: 'https://aws.amazon.com/events/reinvent/', retrievedOn },
+      };
+      expect(errorsOf(data).join(' '), retrievedOn).toContain('walkingTimes[0].source.retrievedOn');
+    }
+    const missing = sampleData() as unknown as { walkingTimes: Array<{ source: unknown }> };
+    missing.walkingTimes[0].source = {
+      kind: 'official',
+      url: 'https://aws.amazon.com/events/reinvent/',
+    };
+    expect(errorsOf(missing).join(' ')).toContain('retrievedOn');
+  });
+
+  test('rejects walking times that are fractional, below 1 minute or above 240', () => {
+    for (const minutes of [1.5, -1, 0, 241]) {
       const data = sampleData();
       data.walkingTimes[2] = { ...data.walkingTimes[2], minutes };
       expect(errorsOf(data).join(' ')).toContain('walkingTimes[2].minutes');

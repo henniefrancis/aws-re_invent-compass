@@ -24,7 +24,7 @@ const freeText = fc.oneof(
 const num = fc.integer({ min: -100000, max: 100000 });
 const flag = fc.boolean();
 const zone = fc.constantFrom<'missing' | 'unrecognised'>('missing', 'unrecognised');
-const edge = fc.constantFrom<'start' | 'end'>('start', 'end');
+const edge = fc.constantFrom<'start' | 'end' | 'order'>('start', 'end', 'order');
 const placement = fc.constantFrom<'after' | 'before'>('after', 'before');
 const kind = fc.constantFrom<'meal' | 'rest'>('meal', 'rest');
 const alert = fc.constantFrom<'tight' | 'impossible'>('tight', 'impossible');
@@ -90,6 +90,10 @@ const builders: Array<[string, fc.Arbitrary<string>]> = [
     fc.tuple(freeText, edge).map(([r, e]) => reasons.layoverTimeMissing(r, e)),
   ],
   ['dayViewTimeMissing', freeText.map((r) => reasons.dayViewTimeMissing(r))],
+  ['connectionSpareUnknown', fc.constant(reasons.connectionSpareUnknown())],
+  ['guardContextInvalid', freeText.map((r) => reasons.guardContextInvalid(r))],
+  ['guardScheduleTooLarge', num.map((n) => reasons.guardScheduleTooLarge(n))],
+  ['guardInternalError', fc.constant(reasons.guardInternalError())],
   ['suggestMealBlock', fc.constant(reasons.suggestMealBlock())],
   ['suggestRestBlock', placement.map((p) => reasons.suggestRestBlock(p))],
   ['noPlacement', kind.map((k) => reasons.noPlacement(k))],

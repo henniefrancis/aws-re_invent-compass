@@ -46,6 +46,32 @@ export function parseInstant(iso: string): number | undefined {
   return Number.isNaN(ms) ? undefined : ms;
 }
 
+/** The years the engine accepts in any date. Anything outside is treated as bad data. */
+export const MIN_YEAR = 2000;
+export const MAX_YEAR = 2100;
+
+const DAY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * Is this text a real calendar date, written YYYY-MM-DD, in the years 2000 to 2100? The date is
+ * rebuilt from its parts and compared, so 2026-02-31 is refused rather than rolled forward.
+ */
+export function isCalendarDate(text: string): boolean {
+  const match = DAY_PATTERN.exec(text);
+  if (match === null) {
+    return false;
+  }
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const rebuilt = new Date(Date.UTC(year, month - 1, day));
+  return (
+    year >= MIN_YEAR &&
+    year <= MAX_YEAR &&
+    rebuilt.getUTCFullYear() === year &&
+    rebuilt.getUTCMonth() === month - 1 &&
+    rebuilt.getUTCDate() === day
+  );
+}
+
 /** Elapsed minutes from one instant to another, computed on the absolute instants. */
 export function minutesBetween(startMs: number, endMs: number): number {
   return (endMs - startMs) / MS_PER_MINUTE;
@@ -65,7 +91,7 @@ export function checkZone(zone: string | undefined): ZoneCheck {
     return { ok: false, reason: 'unrecognised' };
   }
   try {
-    new Intl.DateTimeFormat('en-US', { timeZone: zone });
+    cachedFormatter('wall', zone);
   } catch {
     return { ok: false, reason: 'unrecognised' };
   }
@@ -80,18 +106,47 @@ function partValues(formatter: Intl.DateTimeFormat, ms: number): Record<string, 
   return values;
 }
 
+// One Intl.DateTimeFormat per timezone and purpose is built once and reused, because building a
+// formatter is the slow part of every wall-clock read. This is memoisation only: the same input
+// always gives the same output. The cache is bounded, so odd timezone spellings cannot grow it
+// without limit. Only formatters for zones that Intl accepted are stored.
+const MAX_CACHED_FORMATTERS = 64;
+const formatterCache = new Map<string, Intl.DateTimeFormat>();
+
+function cachedFormatter(kind: 'wall' | 'offset', zone: string): Intl.DateTimeFormat {
+  const key = `${kind}|${zone}`;
+  const hit = formatterCache.get(key);
+  if (hit !== undefined) {
+    return hit;
+  }
+  const formatter =
+    kind === 'wall'
+      ? new Intl.DateTimeFormat('en-US', {
+          timeZone: zone,
+          hourCycle: 'h23',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+      : new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'longOffset' });
+  if (formatterCache.size >= MAX_CACHED_FORMATTERS) {
+    formatterCache.clear();
+  }
+  formatterCache.set(key, formatter);
+  return formatter;
+}
+
+/** The number of formatters held in the cache. For tests. */
+export function formatterCacheSize(): number {
+  return formatterCache.size;
+}
+
 /** Read the local wall-clock fields of an instant in a timezone. */
 export function wallClock(ms: number, zone: string): WallClock {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: zone,
-    hourCycle: 'h23',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+  const formatter = cachedFormatter('wall', zone);
   const values = partValues(formatter, ms);
   return {
     year: Number(values.year),
@@ -105,10 +160,7 @@ export function wallClock(ms: number, zone: string): WallClock {
 
 /** The local offset from UTC, in minutes, of a timezone at an instant (longOffset part). */
 export function offsetMinutes(ms: number, zone: string): number {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: zone,
-    timeZoneName: 'longOffset',
-  });
+  const formatter = cachedFormatter('offset', zone);
   const name = partValues(formatter, ms).timeZoneName as string;
   const match = LONG_OFFSET_PATTERN.exec(name) as RegExpExecArray;
   const total = Number(match[2]) * 60 + Number(match[3]);

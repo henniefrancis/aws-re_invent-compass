@@ -69,6 +69,9 @@ export function classifyConnection(
   if (from.endsAt === undefined) {
     return unknown(reason.connectionTimeMissing(from.ref, 'end'));
   }
+  if (from.missing.includes('order')) {
+    return unknown(reason.connectionTimeMissing(from.ref, 'order'));
+  }
   let dueText: string | undefined;
   if (toBoarding.status === 'closes') {
     dueText = toBoarding.at;
@@ -85,6 +88,10 @@ export function classifyConnection(
   const estimate = walk.source.kind === 'estimate';
   const arrival = (parseInstant(from.endsAt) as number) + walkingMinutes * MS_PER_MINUTE;
   const spareMinutes = minutesBetween(arrival, parseInstant(dueText) as number);
+  // A bad tuning value (for example an infinite buffer) must never turn into a verdict.
+  if (!Number.isFinite(spareMinutes)) {
+    return unknown(reason.connectionSpareUnknown());
+  }
 
   if (spareMinutes < 0) {
     return {

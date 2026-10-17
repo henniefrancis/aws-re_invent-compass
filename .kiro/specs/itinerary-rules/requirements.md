@@ -89,12 +89,13 @@ This document uses the airline metaphor from the product steering: boarding clos
 1. WHEN two commitments overlap in time by one second or more in the Event_Timezone, THE Rules_Engine SHALL report a clash between the two commitments.
 2. WHERE a commitment's NormalisedSession.isAllDay is true, THE Rules_Engine SHALL treat the all-day item as occupying from 00:00:00 to 23:59:59 of the event day in the Event_Timezone when checking for clashes.
 3. WHEN a commitment starts on one event day and ends on the next event day in the Event_Timezone, THE Rules_Engine SHALL evaluate the clash across the day boundary using the commitment start and end instants.
-4. WHEN two commitments share the same start instant and the same end instant, THE Rules_Engine SHALL report a clash.
+4. WHEN two commitments share the same start instant and the same end instant, and the end is after the start, THE Rules_Engine SHALL report a clash. A commitment whose end is not after its start is bad data and falls under criterion 10.
 5. WHEN one commitment ends at the same instant that the next commitment starts, THE Rules_Engine SHALL report no clash for that pair.
 6. WHEN evaluating clashes, THE Rules_Engine SHALL interpret all commitment times in the Event_Timezone supplied in Context.
 7. IF a commitment's end time is missing, shown by an absent NormalisedSession.endsAt or by endsAt being named in NormalisedSession.missingFields, THEN THE Rules_Engine SHALL report the clash check result for that commitment as "unknown", SHALL state in the reason that the end time is missing, and SHALL NOT report a clash or no clash for any pair that includes that commitment.
 8. IF the Event_Timezone is absent from Context, THEN THE Rules_Engine SHALL report the clash check result as "unknown" and SHALL state in the reason that the Event_Timezone is missing.
 9. THE Rules_Engine SHALL attach a plain-English reason to every reported clash that names the two clashing commitments and their overlapping time range in the Event_Timezone.
+10. IF a commitment's end time is not after its start time, THEN THE Rules_Engine SHALL treat the commitment as bad data, SHALL report the clash check result for it as "unknown" with a reason saying the end is not after the start, and SHALL NOT report a clash or no clash for any pair that includes it. A zero-length point strictly inside another interval is a clash when intervals are compared directly.
 
 ### Requirement 4: Layovers and personal time
 
@@ -224,8 +225,23 @@ Note: The safe-swap function takes a confirmation schedule as an input parameter
 
 #### Acceptance Criteria
 
-1. THE Rules_Engine test suite SHALL frame the edge cases as property-style tests, running property-based testing over generated inputs, and SHALL cover at least these cases, each asserting the exact verdict the engine returns: a commitment that crosses midnight, an all-day item, a commitment with a missing venue, a commitment with a missing end time, a commitment with identical start and end times, and date arithmetic across a daylight saving time change.
+1. THE Rules_Engine test suite SHALL frame the edge cases as property-style tests, running property-based testing over generated inputs, and SHALL cover at least these cases, each asserting the exact verdict the engine returns: a commitment that crosses midnight, an all-day item, a commitment with a missing venue, a commitment with a missing end time, a commitment with identical start and end times (bad data, so "unknown" and warn), and date arithmetic across a daylight saving time change.
 2. THE Rules_Engine test suite SHALL achieve 100 percent coverage of lines, branches, functions and statements over the source files this spec owns, where the only permitted exclusions are the generated types named in the build plan, and WHERE coverage of any owned file falls below 100 percent on any of those four measures THE test run SHALL fail.
 3. WHEN the test suite runs, THE Rules_Engine test suite SHALL check every reason string and every warning string the engine can produce, and THE test run SHALL fail IF any such string contains an em dash character or an en dash character.
 4. WHEN the test suite runs, THE Rules_Engine test suite SHALL scan the engine source files this spec owns for imports of Node built-in modules, and THE test run SHALL fail IF any such import is found.
 5. THE Rules_Engine test suite SHALL keep all test sample data self-made under packages/core/test/rules, and the tests SHALL NEVER read from fixtures/synthetic, per ADR-025.
+
+### Requirement 13: Input validation and failing closed
+
+**User Story:** As a caller of the guardrail, I want bad settings and bad data to be refused loudly, so that a wrong input never turns into an "allow".
+
+#### Acceptance Criteria
+
+1. THE withContextDefaults function SHALL treat a tuning value that is undefined as left out and use its default, and SHALL keep a present value exactly as given.
+2. THE ContextSchema SHALL require finite numbers, bufferMinutes from 0 to 120, tightMarginMinutes from 0 to 60, maxStretchMinutes from 1 to 1440, overloadThreshold and overloadCountThreshold finite and above 0, requiredFreeMinutes from 0 to 1440, a meal window that ends after it starts, and a text eventTimezone when present.
+3. THE checkReservation function SHALL validate Context with ContextSchema, including the venue data, and IF it is invalid THEN SHALL return a Verdict with decision "warn" and a reason naming the setting, and SHALL NOT return "allow".
+4. THE VenueDataSchema SHALL require at least 1 minute for each pair of distinct venues, and SHALL accept an "official" source note only with an https URL on an allowlisted host and path prefix and a retrievedOn date that is a real calendar date from 2000 to 2100.
+5. IF the spare time of a connection is not a finite number, THEN THE classifyConnection function SHALL return "unknown".
+6. IF a schedule has more than 200 commitments, THEN THE checkReservation function SHALL return "warn" with a reason that the schedule is too large.
+7. THE checkReservation function SHALL NOT throw. IF anything unexpected goes wrong, THEN it SHALL return a Verdict with decision "block" and a fixed internal-error reason. Consumers SHALL treat a throw from any caller path as a block.
+8. THE checkReservation function SHALL judge a schedule of 200 commitments in under 500 milliseconds.

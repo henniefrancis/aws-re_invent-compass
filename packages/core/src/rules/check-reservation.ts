@@ -16,7 +16,7 @@ import type { NormalisedSession, Verdict } from '@compass/contracts';
 import { boardingFor } from './boarding.js';
 import { findClashes, intervalOf, type ClashReport, type Interval } from './clashes.js';
 import { classifyConnection, type ConnectionResult } from './connections.js';
-import type { Context } from './context.js';
+import { ContextSchema, type Context } from './context.js';
 import { isOverloaded } from './energy.js';
 import { checkLayovers, type LayoverReport } from './layovers.js';
 import * as reason from './reasons.js';
@@ -43,17 +43,48 @@ function mealMissingOn(report: OkLayoverReport, day: string): boolean {
   return report.days.find((entry) => entry.day === day)?.mealLayoverMissing ?? false;
 }
 
+/** The most commitments in a schedule that the guardrail will judge in one call. */
+export const MAX_COMMITMENTS = 200;
+
 /**
  * Check whether a candidate session can be reserved, given the current schedule.
  *
  * schedule is the attendee's commitments plus the sessions they refer to. A candidate that is
  * already in the schedule is ignored there, so it never clashes with itself.
+ *
+ * This function never throws. It fails closed: if anything unexpected goes wrong, it returns a
+ * "block" verdict with a fixed internal-error reason. Consumers must still treat a throw (from a
+ * caller bug outside this function) as a block. A Context that is not valid (a bad tuning value
+ * or bad venue data) and a schedule with more than MAX_COMMITMENTS commitments both give "warn"
+ * with a reason, never "allow".
  */
 export function checkReservation(
   candidate: NormalisedSession,
   schedule: ScheduleInput,
   context: Context,
 ): Verdict {
+  try {
+    return judgeReservation(candidate, schedule, context);
+  } catch {
+    return { decision: 'block', reasons: [reason.guardInternalError()] };
+  }
+}
+
+function judgeReservation(
+  candidate: NormalisedSession,
+  schedule: ScheduleInput,
+  context: Context,
+): Verdict {
+  const validation = ContextSchema.safeParse(context);
+  if (!validation.success) {
+    const first = validation.error.issues[0] as { path: PropertyKey[] };
+    const setting = String(first.path[0] ?? 'context');
+    return { decision: 'warn', reasons: [reason.guardContextInvalid(setting)] };
+  }
+  if (schedule.commitments.length > MAX_COMMITMENTS) {
+    return { decision: 'warn', reasons: [reason.guardScheduleTooLarge(MAX_COMMITMENTS)] };
+  }
+
   const blocks: string[] = [];
   const warns: string[] = [];
   const missing: string[] = [];

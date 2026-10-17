@@ -10,16 +10,36 @@
 import { z } from 'zod';
 import { VenueSchema } from '@compass/contracts';
 import type { SourceNote, VenueData } from './context.js';
+import { isCalendarDate } from './time.js';
 
-/** The only hosts an "official" source note may point at. */
-export const OFFICIAL_HOSTS: readonly string[] = ['reinvent.awsevents.com', 'aws.amazon.com'];
+/**
+ * The only places an "official" source note may point at: an exact host and the path prefixes
+ * on it. A path matches a prefix when it equals it or continues it after a slash. A prefix of
+ * "/" allows every path on that host.
+ */
+export const OFFICIAL_SOURCES: Readonly<Record<string, readonly string[]>> = {
+  'aws.amazon.com': ['/events/reinvent', '/resources/analyst-summit'],
+  'reinvent.awsevents.com': ['/'],
+};
 
-// https, then a bare host (no user info, no port), then a path, query, fragment or the end.
-const HTTPS_HOST_PATTERN = /^https:\/\/([^/?#:@\s]+)(?:[/?#]|$)/i;
+/** The hosts an official source note may name. */
+export const OFFICIAL_HOSTS: readonly string[] = Object.keys(OFFICIAL_SOURCES);
+
+// https, then a bare host (no user info, no port), then the rest (path, query, fragment).
+const HTTPS_URL_PATTERN = /^https:\/\/([^/?#:@\s]+)(\/[^?#\s]*)?(?:[?#]\S*)?$/i;
 
 function isOfficialUrl(value: string): boolean {
-  const match = HTTPS_HOST_PATTERN.exec(value);
-  return match !== null && OFFICIAL_HOSTS.includes((match[1] as string).toLowerCase());
+  const match = HTTPS_URL_PATTERN.exec(value);
+  if (match === null) {
+    return false;
+  }
+  const prefixes = Object.hasOwn(OFFICIAL_SOURCES, (match[1] as string).toLowerCase())
+    ? (OFFICIAL_SOURCES[(match[1] as string).toLowerCase()] as readonly string[])
+    : [];
+  const path = match[2] ?? '/';
+  return prefixes.some(
+    (prefix) => prefix === '/' || path === prefix || path.startsWith(`${prefix}/`),
+  );
 }
 
 /** Match venue names after trimming and lowercasing, by exact name only. */
@@ -32,7 +52,10 @@ const SourceNoteSchema = z.discriminatedUnion('kind', [
     kind: z.literal('official'),
     url: z
       .string()
-      .refine(isOfficialUrl, 'an official source needs an https URL on an official AWS host'),
+      .refine(isOfficialUrl, 'an official source needs an https URL on an official AWS page'),
+    retrievedOn: z
+      .string()
+      .refine(isCalendarDate, 'an official source needs the date it was read, as YYYY-MM-DD'),
   }),
   z.object({ kind: z.literal('estimate'), basis: z.string().optional() }),
 ]);
@@ -78,7 +101,7 @@ const WalkingEdgeSchema = z
   .object({
     from: z.string(),
     to: z.string(),
-    minutes: z.number().int().min(0).max(240),
+    minutes: z.number().int().min(1).max(240),
     source: SourceNoteSchema,
   })
   .refine((edge) => normaliseName(edge.from) !== normaliseName(edge.to), {

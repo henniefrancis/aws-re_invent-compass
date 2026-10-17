@@ -50,7 +50,8 @@ function isPlaceable(item: ResolvedCommitment): boolean {
   return (
     item.venue !== undefined &&
     item.startsAt !== undefined &&
-    (item.isAllDay || item.endsAt !== undefined)
+    (item.isAllDay || item.endsAt !== undefined) &&
+    !item.missing.includes('order')
   );
 }
 

@@ -19,8 +19,8 @@ export interface ScheduleInput {
   sessions: SessionsLookup;
 }
 
-/** The fields a resolved commitment can be missing. */
-export type Missing = 'venue' | 'startsAt' | 'endsAt' | 'reservability';
+/** The fields a resolved commitment can be missing, or "order" when its end is not after its start. */
+export type Missing = 'venue' | 'startsAt' | 'endsAt' | 'reservability' | 'order';
 
 /** One commitment with its venue, times and reservability resolved. */
 export interface ResolvedCommitment {
@@ -121,6 +121,15 @@ export function resolveCommitment(
   if (startsAt === undefined) missing.push('startsAt');
   if (endsAt === undefined) missing.push('endsAt');
   if (isReservable === undefined) missing.push('reservability');
+  // An end that is not after the start is bad data. All-day items ignore their end.
+  if (
+    !isAllDay &&
+    startsAt !== undefined &&
+    endsAt !== undefined &&
+    (parseInstant(endsAt) as number) <= (parseInstant(startsAt) as number)
+  ) {
+    missing.push('order');
+  }
   return { ref, venue, startsAt, endsAt, isAllDay, isReservable, missing };
 }
 

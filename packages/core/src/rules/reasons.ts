@@ -60,9 +60,14 @@ export function zoneProblem(reason: ZoneProblem): string {
     : 'The event timezone is not recognised. Times cannot be judged.';
 }
 
-/** A start or end time is missing for a commitment. */
-export function missingTime(ref: string, what: 'start' | 'end'): string {
-  return `The ${what} time of ${label(ref)} is missing.`;
+/** What is wrong with a commitment's times: no start, no end, or an end that is not after the start. */
+export type TimeProblem = 'start' | 'end' | 'order';
+
+/** A start or end time is missing for a commitment, or its end is not after its start. */
+export function missingTime(ref: string, what: TimeProblem): string {
+  return what === 'order'
+    ? `The end time of ${label(ref)} is not after its start time.`
+    : `The ${what} time of ${label(ref)} is missing.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -140,8 +145,12 @@ export function connectionBoardingMissing(ref: string): string {
   return `The boarding time for ${label(ref)} is missing. The connection is unknown.`;
 }
 
-export function connectionTimeMissing(ref: string, what: 'start' | 'end'): string {
+export function connectionTimeMissing(ref: string, what: TimeProblem): string {
   return `${missingTime(ref, what)} The connection is unknown.`;
+}
+
+export function connectionSpareUnknown(): string {
+  return 'The spare time could not be worked out. The connection is unknown.';
 }
 
 /** A guardrail headline placed in front of a connection reason. */
@@ -157,7 +166,7 @@ export function clashOverlap(a: string, b: string, from: string, to: string): st
   return `${label(a)} and ${label(b)} overlap from ${stamp(from)} to ${stamp(to)}.`;
 }
 
-export function clashTimeMissing(ref: string, what: 'start' | 'end'): string {
+export function clashTimeMissing(ref: string, what: TimeProblem): string {
   return `${missingTime(ref, what)} It cannot be checked for clashes.`;
 }
 
@@ -177,7 +186,7 @@ export function longStretch(day: string, minutes: number, maxMinutes: number): s
   return `On ${stamp(day)} you have ${mins(minutes)} without a break. The limit is ${mins(maxMinutes)}.`;
 }
 
-export function layoverTimeMissing(ref: string, what: 'start' | 'end'): string {
+export function layoverTimeMissing(ref: string, what: TimeProblem): string {
   return `${missingTime(ref, what)} It is left out of the break checks.`;
 }
 
@@ -314,6 +323,18 @@ export function swapUnknown(): string {
 // ---------------------------------------------------------------------------
 // Guardrail
 // ---------------------------------------------------------------------------
+
+export function guardContextInvalid(setting: string): string {
+  return `The setting "${label(setting)}" is not valid. The reservation could not be checked.`;
+}
+
+export function guardScheduleTooLarge(limit: number): string {
+  return `The schedule is too large. It has more than ${Math.round(limit)} commitments. It could not be checked.`;
+}
+
+export function guardInternalError(): string {
+  return 'An internal error stopped the check. The reservation is blocked to be safe.';
+}
 
 export function guardMealLost(day: string): string {
   return `This removes your only meal break on ${stamp(day)}.`;

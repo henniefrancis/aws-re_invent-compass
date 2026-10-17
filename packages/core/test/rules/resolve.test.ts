@@ -114,6 +114,26 @@ describe('resolveCommitment, personal time', () => {
   });
 });
 
+describe('end not after start', () => {
+  test('is reported as order, for sessions and personal time, and ignored for all-day items', () => {
+    const same = session({ endsAt: session().startsAt });
+    expect(resolveCommitment(reserved(same), { s1: same }).missing).toEqual(['order']);
+    const before = session({ endsAt: '2026-12-01T09:00:00-08:00' });
+    expect(resolveCommitment(reserved(before), { s1: before }).missing).toEqual(['order']);
+    const rest = personal(
+      'Rest',
+      '2026-12-01T12:00:00-08:00',
+      '2026-12-01T11:00:00-08:00',
+      'Alpha Hall',
+    );
+    expect(resolveCommitment(rest, {}).missing).toEqual(['order']);
+    const allDay = session({ isAllDay: true, endsAt: '2026-12-01T09:00:00-08:00' });
+    expect(resolveCommitment(reserved(allDay), { s1: allDay }).missing).toEqual([]);
+    const ok = session();
+    expect(resolveCommitment(reserved(ok), { s1: ok }).missing).toEqual([]);
+  });
+});
+
 describe('sessionToCommitment', () => {
   test('mirrors the session as a reservedSession commitment', () => {
     const s = session();

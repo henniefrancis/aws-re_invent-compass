@@ -277,6 +277,24 @@ describe('layover scope and unknowns', () => {
     }
   });
 
+  test('a commitment whose end is not after its start is skipped, not counted as free time', () => {
+    const bad = session({ sessionId: 'b', code: 'BAD', endsAt: session().startsAt });
+    const report = checkLayovers(
+      scheduleOf([bad, session({ sessionId: 'z', code: 'FINE' })]),
+      testContext(),
+    );
+    expect(report).toMatchObject({ status: 'ok' });
+    if (report.status === 'ok') {
+      expect(report.skipped).toEqual([
+        {
+          ref: 'BAD',
+          reason:
+            'The end time of BAD is not after its start time. It is left out of the break checks.',
+        },
+      ]);
+    }
+  });
+
   test('a day with only skipped commitments is not reported', () => {
     const noEnd = session({ endsAt: undefined });
     const report = checkLayovers(scheduleOf([noEnd]), testContext());
