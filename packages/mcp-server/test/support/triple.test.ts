@@ -18,7 +18,12 @@ describe('the pinned end-to-end triple exists in the synthetic catalog', () => {
       type: a?.type,
       level: a?.level,
     });
-    expect(b).toMatchObject({ code: TRIPLE.codes.b, isReservable: true });
+    expect(b).toMatchObject({
+      code: TRIPLE.codes.b,
+      title: TRIPLE.titles.b,
+      isReservable: true,
+    });
+    expect(repeat?.title).toBe(TRIPLE.titles.aRepeat);
   });
 
   test('A-R is a true repeat on another day with seats, B clashes with A and not with A-R', () => {

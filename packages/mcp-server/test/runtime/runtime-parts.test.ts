@@ -80,7 +80,7 @@ describe('browser opener', () => {
 
 describe('resources', () => {
   test('prefers the bundled copy and falls back to the repository copy', async () => {
-    const base = 'file:///pkg/dist/bin.js';
+    const base = 'file:///pkg/dist/cli/main.js';
     const bundled = await findResource(base, VENUES_LOCATION, () => Promise.resolve(true));
     expect(bundled.href).toBe('file:///pkg/dist/data/venues.json');
     const repo = await findResource(base, SAMPLE_REPO_LOCATION, (url) =>
@@ -91,7 +91,7 @@ describe('resources', () => {
 
   test('a missing resource is an internal error', async () => {
     await expect(
-      findResource('file:///pkg/dist/bin.js', VENUES_LOCATION, () => Promise.resolve(false)),
+      findResource('file:///pkg/dist/cli/main.js', VENUES_LOCATION, () => Promise.resolve(false)),
     ).rejects.toMatchObject({ code: 'Internal' });
   });
 });

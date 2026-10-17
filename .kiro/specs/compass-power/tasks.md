@@ -400,17 +400,17 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 22.7 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 23. Build the CLI and the demo
-  - [ ] 23.1 Implement runCli and bin.ts
+- [x] 23. Build the CLI and the demo
+  - [x] 23.1 Implement runCli and bin.ts
     - `src/cli/run-cli.ts` with `node:util` `parseArgs`: no arguments starts the stdio server, `demo [--repo <path>]`, `hook <name>` (fixed names, stdin only, no shell, no subprocess, exit 0 or 2), `--version`, `--help`, unknown commands print usage to stderr and exit 1; `src/bin.ts` with only the process wiring and the `#!/usr/bin/env node` line; `src/index.ts` exporting `createCompassServer`, `runCli` and `runDemo`
     - _Requirements: 18.1, 18.4, 18.5, 18.6, 18.7, 18.8_
-  - [ ] 23.2 Implement the demo script
+  - [x] 23.2 Implement the demo script
     - `src/demo/run-demo.ts`: force simulated mode, connect an in-memory MCP client to `createCompassServer`, run the ten steps through real tool calls (scan the sample repo, plan, blocked clash, safe swap, reserve, issue, QR hand-off, cancel, void), print a heading and one plain-English line per step, the block reasons, the swap steps and the terminal QR; exit 0, or print the failing step and exit 1
     - _Requirements: 18.2, 18.3_
-  - [ ] 23.3 Write unit tests for the CLI and the demo with fake runtimes
+  - [x] 23.3 Write unit tests for the CLI and the demo with fake runtimes
     - Every command and exit code; demo step order and failure reporting; `hook` never spawns a process (spy on `node:child_process`)
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7_
-  - [ ] 23.4 Commit
+  - [x] 23.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 24. Build the Kiro Power
