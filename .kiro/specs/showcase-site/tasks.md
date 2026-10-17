@@ -47,23 +47,23 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 1.4 Commit
     - After the commands in execution rule 5 pass with zero errors (the two build checks start in task 5), commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Include `.kiro/specs/showcase-site/` in this first commit. Verify every edit landed. Never push.
 
-- [ ] 2. Design tokens, contrast and global styles
-  - [ ] 2.1 Implement the contrast maths and the design tokens
+- [x] 2. Design tokens, contrast and global styles
+  - [x] 2.1 Implement the contrast maths and the design tokens
     - Create `site/src/lib/design/contrast.ts` with `relativeLuminance`, `contrastRatio`, `interpolateSrgb` and `worstContrast` (256 samples plus every stop)
     - Create `site/src/lib/design/tokens.ts` with `TOKENS`, `GRADIENTS` and `CONTRAST_PAIRS` covering every text, focus, border and graphic pairing the styles use, including text over every gradient; choose an original palette with no AWS brand colour
     - _Requirements: 19.2, 19.3, 6.6_
 
-  - [ ] 2.2 Write property test for contrast maths and token compliance
+  - [x] 2.2 Write property test for contrast maths and token compliance
     - **Property 16: Contrast maths is correct and every token pair passes**
     - Keep the AWS brand colour denylist in this test file
     - **Validates: Requirements 6.6, 19.2, 19.3**
 
-  - [ ] 2.3 Write the global stylesheets
+  - [x] 2.3 Write the global stylesheets
     - Create `site/src/styles/tokens.css` (custom properties equal to `TOKENS` and `GRADIENTS`, every gradient written with `in srgb`), `base.css` (system font stack, focus ring of at least 3:1, 44px minimum block and inline size on buttons and navigation links), `layout.css` (one responsive layout, reflow at 320px, no fixed or sticky positioning), `components.css`, `forced-colors.css` and `motion.css`; import them from `index.css`
     - Write `site/test/design/tokens-css.test.ts` asserting `tokens.css` declares exactly the values in `TOKENS` and `GRADIENTS`, that no stylesheet uses `position: fixed` or `position: sticky`, and that a `forced-colors` and a `prefers-reduced-motion` block exist
     - _Requirements: 4.5, 19.4, 19.5, 19.10, 19.11, 20.2, 21.5_
 
-  - [ ] 2.4 Commit
+  - [x] 2.4 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 3. Time formatting and content modules

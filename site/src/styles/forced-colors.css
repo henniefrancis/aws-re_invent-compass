@@ -1,0 +1,49 @@
+/* Windows high contrast and other forced colour modes: keep every control, border, focus
+   indicator and status visible with system colours. */
+@media (forced-colors: active) {
+  a {
+    color: LinkText;
+  }
+
+  button,
+  .button,
+  button.button--secondary,
+  .button--secondary {
+    border: 2px solid ButtonBorder;
+    background: ButtonFace;
+    color: ButtonText;
+  }
+
+  button:disabled {
+    border-color: GrayText;
+    color: GrayText;
+  }
+
+  :focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .card,
+  .verdict,
+  .pass,
+  .board-panel,
+  .site-header,
+  .site-footer,
+  .hero,
+  table,
+  th,
+  td {
+    border: 1px solid CanvasText;
+  }
+
+  .hero {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .badge {
+    border: 2px solid CanvasText;
+    color: CanvasText;
+  }
+}

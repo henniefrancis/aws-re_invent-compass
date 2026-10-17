@@ -1,0 +1,134 @@
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--target);
+  color: var(--color-ink);
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.site-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--target);
+  min-inline-size: var(--target);
+  padding-inline: var(--space-3);
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+.site-nav a[aria-current='page'] {
+  text-decoration-thickness: 3px;
+}
+
+.footer-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footer-list a,
+.footer-list span {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--target);
+}
+
+.notice {
+  margin-block: 0 var(--space-2);
+  color: var(--color-ink-muted);
+}
+
+.card {
+  padding: var(--space-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.card > :first-child {
+  margin-block-start: 0;
+}
+
+.card > :last-child {
+  margin-block-end: 0;
+}
+
+.hero {
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--gradient-hero);
+  color: var(--color-on-brand);
+}
+
+.hero h1 {
+  margin-block-start: 0;
+}
+
+.source-note {
+  color: var(--color-ink-muted);
+  font-size: 0.9375rem;
+}
+
+.data-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.data-table thead th {
+  background: var(--color-tint);
+}
+
+.live-region {
+  min-block-size: 1.5em;
+  margin-block: var(--space-2);
+}
+
+.command {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.command code {
+  display: block;
+  flex: 1 1 14rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  border: 2px solid currentcolor;
+  border-radius: var(--radius);
+  font-weight: 700;
+}
+
+.badge--ok {
+  color: var(--color-ok);
+}
+
+.badge--warn {
+  color: var(--color-warn);
+}
+
+.badge--block {
+  color: var(--color-block);
+}
