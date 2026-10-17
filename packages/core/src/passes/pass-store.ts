@@ -19,6 +19,7 @@
 // Every failure is a PassError with a fixed sentence: it never names the folder (a path can
 // contain a user name) and never echoes the record.
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { APP_DIR_MODE, joinInFolder, RECORD_FILE_NAME } from './app-data.js';
 import type { AppDataResolver, Clock, FileSystem } from './interfaces.js';
@@ -33,8 +34,11 @@ export const BACKUP_FILE_NAME = `${RECORD_FILE_NAME}.bak`;
 export const TEMP_FILE_NAME = `${RECORD_FILE_NAME}.tmp`;
 /** The cross-process lock file. */
 export const LOCK_FILE_NAME = `${RECORD_FILE_NAME}.lock`;
-/** A lock older than this is taken over: its owner is presumed crashed. */
-export const STALE_LOCK_MS = 2 * 60_000;
+/**
+ * A lock older than this is taken over: its owner is presumed crashed. The owner refreshes the
+ * lock before every API call, so only a stalled or dead process lets it age this far.
+ */
+export const STALE_LOCK_MS = 10 * 60_000;
 /** How long to wait between attempts to take a held lock, and how many attempts to make. */
 const LOCK_RETRY_MS = 100;
 const LOCK_MAX_ATTEMPTS = 100;
@@ -70,6 +74,12 @@ export interface PassStore {
   deleteRecord(): Promise<void>;
   /** Run fn while holding the store lock. Re-entrant for the code running inside fn. */
   withLock<T>(fn: () => Promise<T>): Promise<T>;
+  /**
+   * Refresh the lock timestamp so a long run is not mistaken for a crashed one. Call it before
+   * each API call. Does nothing outside withLock; throws store.lock_lost when another process
+   * has taken the lock over.
+   */
+  heartbeat(): Promise<void>;
 }
 
 /** The dependencies of the store. */
@@ -78,6 +88,8 @@ export interface PassStoreDeps {
   fs: FileSystem;
   /** Supplies now (for the stale-lock check) and sleep (between lock attempts). */
   clock: Clock;
+  /** Makes the random owner token written into the lock. Defaults to a random UUID. */
+  newToken?: () => string;
 }
 
 /** In-process mutex: one queue per record path, shared by every store instance. */
@@ -99,8 +111,15 @@ function runExclusive<T>(key: string, fn: () => Promise<T>): Promise<T> {
   return result;
 }
 
-/** Marks code that already holds the lock, so a nested call does not deadlock on itself. */
-const holding = new AsyncLocalStorage<boolean>();
+/** The lock the running code holds, so a nested call does not deadlock and can heartbeat. */
+interface HeldLock {
+  lockPath: string;
+  token: string;
+}
+const holding = new AsyncLocalStorage<HeldLock>();
+
+/** A lock file holds the owner token, a space and the time it was last refreshed, in ms. */
+const LOCK_CONTENT = /^([A-Za-z0-9-]{8,64}) (\d+)$/;
 
 /** Keep the newest entry per session code (the last in file order), noting the rest. */
 function dedupe(record: IssuedPassRecord): ReadResult {
@@ -120,41 +139,60 @@ function dedupe(record: IssuedPassRecord): ReadResult {
 export function createPassStore(deps: PassStoreDeps): PassStore {
   const { appData, fs, clock } = deps;
 
-  async function acquireFileLock(lockPath: string): Promise<void> {
+  const newToken = deps.newToken ?? randomUUID;
+  const lockFailed = () =>
+    passError('store.lock_failed', 'The issued-pass record could not be locked.');
+  const lockContent = (token: string) => `${token} ${String(clock.now().getTime())}`;
+
+  /** Take the lock for the token, waiting for a live holder and taking over a stale one. */
+  async function acquireFileLock(lockPath: string, token: string): Promise<void> {
     for (let attempt = 0; attempt < LOCK_MAX_ATTEMPTS; attempt += 1) {
       let held: string | undefined;
+      let stale = false;
       try {
-        const created = await fs.createExclusive(
-          lockPath,
-          String(clock.now().getTime()),
-          RECORD_FILE_MODE,
-        );
-        if (created) {
+        if (await fs.createExclusive(lockPath, lockContent(token), RECORD_FILE_MODE)) {
           return;
         }
         held = await fs.readFile(lockPath);
-      } catch {
-        throw passError('store.lock_failed', 'The issued-pass record could not be locked.');
-      }
-      if (held === undefined) {
-        continue; // released between our two calls: try again at once
-      }
-      const takenAt = Number(held);
-      if (!Number.isFinite(takenAt) || clock.now().getTime() - takenAt > STALE_LOCK_MS) {
-        try {
-          await fs.remove(lockPath);
-        } catch {
-          throw passError('store.lock_failed', 'The issued-pass record could not be locked.');
+        if (held !== undefined) {
+          // The time comes from the lock's own content. A lock with no readable content (empty
+          // or garbage) counts as stale only when the file itself is older than the limit.
+          const match = LOCK_CONTENT.exec(held);
+          const touched = match ? Number(match[2]) : await fs.mtimeMs(lockPath);
+          if (touched === undefined) {
+            continue; // it vanished while we looked: try again at once
+          }
+          stale = clock.now().getTime() - touched > STALE_LOCK_MS;
+          if (stale && (await fs.readFile(lockPath)) === held) {
+            // Compare before removing, so a lock refreshed or replaced meanwhile is left alone.
+            await fs.remove(lockPath);
+          }
         }
-        continue;
+      } catch {
+        throw lockFailed();
+      }
+      if (held === undefined || stale) {
+        continue; // released, or just cleared: try again at once
       }
       await clock.sleep(LOCK_RETRY_MS);
     }
     throw passError('store.locked', 'The issued-pass record is in use by another process.');
   }
 
+  /** Remove the lock only if it still holds our token (never somebody else's). */
+  async function releaseFileLock(held: HeldLock): Promise<void> {
+    try {
+      const content = await fs.readFile(held.lockPath);
+      if (content?.startsWith(`${held.token} `)) {
+        await fs.remove(held.lockPath);
+      }
+    } catch {
+      // A lock left behind heals through the stale rule.
+    }
+  }
+
   function withLock<T>(fn: () => Promise<T>): Promise<T> {
-    if (holding.getStore() === true) {
+    if (holding.getStore() !== undefined) {
       return fn();
     }
     const root = appData.resolve();
@@ -162,16 +200,40 @@ export function createPassStore(deps: PassStoreDeps): PassStore {
       try {
         await fs.ensureDir(root, APP_DIR_MODE);
       } catch {
-        throw passError('store.lock_failed', 'The issued-pass record could not be locked.');
+        throw lockFailed();
       }
-      const lockPath = joinInFolder(root, LOCK_FILE_NAME);
-      await acquireFileLock(lockPath);
+      const held: HeldLock = { lockPath: joinInFolder(root, LOCK_FILE_NAME), token: newToken() };
+      await acquireFileLock(held.lockPath, held.token);
       try {
-        return await holding.run(true, fn);
+        return await holding.run(held, fn);
       } finally {
-        await fs.remove(lockPath).catch(() => undefined);
+        await releaseFileLock(held);
       }
     });
+  }
+
+  async function heartbeat(): Promise<void> {
+    const held = holding.getStore();
+    if (held === undefined) {
+      return;
+    }
+    let content: string | undefined;
+    try {
+      content = await fs.readFile(held.lockPath);
+    } catch {
+      throw lockFailed();
+    }
+    if (!content?.startsWith(`${held.token} `)) {
+      throw passError(
+        'store.lock_lost',
+        'The issued-pass record lock was taken over by another process. Nothing more was changed.',
+      );
+    }
+    try {
+      await fs.writeFile(held.lockPath, lockContent(held.token), RECORD_FILE_MODE);
+    } catch {
+      throw lockFailed();
+    }
   }
 
   async function readWithSuperseded(): Promise<ReadResult> {
@@ -250,5 +312,6 @@ export function createPassStore(deps: PassStoreDeps): PassStore {
     },
 
     withLock,
+    heartbeat,
   };
 }

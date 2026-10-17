@@ -192,6 +192,7 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
     }
   };
   const voidChecked = async (serialNumber: string): Promise<void> => {
+    await store.heartbeat();
     const result = await client.voidPass(serialNumber);
     calls += 1;
     if (result.outcome === 'voided' && result.response.serialNumber !== serialNumber) {
@@ -209,6 +210,7 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
   }
 
   for (const group of chunk(added, MAX_ISSUE_CHUNK)) {
+    await store.heartbeat();
     const response = await client.issuePasses({
       platforms,
       passes: group.map((entry) => rebuild(entry.sessionCode)),
@@ -252,6 +254,7 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
       let stuck = 0;
       for (const issued of response.passes) {
         try {
+          await store.heartbeat();
           await client.voidPass(issued.serialNumber);
           calls += 1;
           voided += 1;
@@ -278,6 +281,7 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
   for (const entry of changed) {
     const fields = rebuild(entry.sessionCode);
     const serialNumber = entry.serialNumber as string;
+    await store.heartbeat();
     const result = await client.updatePass(serialNumber, fields);
     calls += 1;
     if (result.outcome === 'updated' && result.response.serialNumber !== serialNumber) {

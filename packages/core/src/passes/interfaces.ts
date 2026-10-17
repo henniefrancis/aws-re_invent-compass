@@ -67,6 +67,8 @@ export interface FileSystem {
    * this call created it and false when it already existed. Used for the cross-process lock.
    */
   createExclusive(path: string, data: string, mode: number): Promise<boolean>;
+  /** The file's last-modified time in milliseconds since the epoch, or undefined when it is absent. */
+  mtimeMs(path: string): Promise<number | undefined>;
 }
 
 /**

@@ -887,3 +887,32 @@ describe('Feature: boarding-passes, one pass per session code and the lock (QA M
     expect(fs.files.has(LOCK_PATH)).toBe(false);
   });
 });
+
+describe('Feature: boarding-passes, the lock is refreshed before every API call (QA N1)', () => {
+  test('one heartbeat per call, and a lock taken over mid-run stops the sync before the next call', async () => {
+    const { store, fs } = await seeded(recordFor(['CODE1'], 1));
+    const { client, calls } = fakeClient();
+    await syncPasses(inputFor(['CODE1', 'CODE2']), depsFor(store, client));
+    expect(calls).toHaveLength(2);
+    expect(fs.ops.filter((op) => op === `writeFile ${LOCK_PATH}`)).toHaveLength(2);
+
+    const rig = await seeded(recordFor(['CODE1'], 1));
+    const stolen = fakeClient({
+      issue: (request) => {
+        rig.fs.files.set(LOCK_PATH, 'taker-token-bbbb 1000050');
+        return Promise.resolve({
+          passes: request.passes.map((pass) => ({
+            serialNumber: issuedSerial(pass.sessionCode),
+            sessionCode: pass.sessionCode,
+            platforms: request.platforms,
+          })),
+        });
+      },
+    });
+    const error = await failureOf(
+      syncPasses(inputFor(['CODE1', 'CODE2']), depsFor(rig.store, stolen.client)),
+    );
+    expect(error.code).toBe('store.lock_lost');
+    expect(stolen.calls.map((call) => call.kind)).toEqual(['issue']);
+  });
+});

@@ -88,7 +88,7 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 5. WHEN the Pass_Store reads an absent Issued_Pass_Record, THE Pass_Store SHALL return an empty record.
 6. THE Pass_Store SHALL exclude the ID_Token and the attendee email from the Issued_Pass_Record.
 7. THE Pass_Store SHALL write the record atomically (a temporary file in the same folder renamed over the record), SHALL keep exactly one `.bak` copy of the previous record, and SHALL create the app-data folder with mode 0700.
-8. THE Pass_Store SHALL serialise a read-modify-write run with an in-process mutex per record path and a cross-process lock file created with exclusive-create semantics, and SHALL take over a lock file older than two minutes.
+8. THE Pass_Store SHALL serialise a read-modify-write run with an in-process mutex per record path and a cross-process lock file created with exclusive-create semantics, and SHALL write a random owner token into the lock file, release it only while it still holds that token, refresh its timestamp before each API call, and take over a lock only when its last refresh (or, for an empty or unreadable lock, its file time) is older than ten minutes, re-reading and comparing the lock before removing it.
 9. WHEN the Pass_Store reads a record that holds more than one entry for a session code, THE Pass_Store SHALL keep the newest and report the older entries so their passes can be voided.
 10. IF the Issued_Pass_Record is corrupt, THEN THE Pass_Store SHALL raise an error that names the recovery step (the forget_me tool, or deleting the record file) without echoing the path or the content.
 
