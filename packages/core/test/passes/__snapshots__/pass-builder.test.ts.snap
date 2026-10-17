@@ -1,0 +1,45 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Feature: boarding-passes, builder snapshots (Requirement 9.1) > a full pass with a previous walk, a next connection and a displayed name 1`] = `
+{
+  "attendeeName": "First Timer",
+  "endsAt": "2026-12-01T11:30:00-08:00",
+  "nextConnection": {
+    "sessionCode": "NET204-R",
+    "startsAt": "2026-12-01T12:00:00-08:00",
+    "venue": "MGM Grand",
+    "walkMinutes": 9,
+  },
+  "room": "Level 2, Lido 3001",
+  "sessionCode": "DVT301",
+  "startsAt": "2026-12-01T10:30:00-08:00",
+  "title": "Build on AWS with the boarding pass pattern",
+  "venue": "Venetian",
+  "walkFromPrevious": {
+    "fromVenue": "Wynn",
+    "minutes": 12,
+  },
+}
+`;
+
+exports[`Feature: boarding-passes, builder snapshots (Requirement 9.1) > a minimal pass with no venue, no room and no adjacency 1`] = `
+{
+  "endsAt": "2026-12-01T11:30:00-08:00",
+  "room": "",
+  "sessionCode": "OPS101",
+  "startsAt": "2026-12-01T10:30:00-08:00",
+  "title": "Build on AWS with the boarding pass pattern",
+  "venue": "",
+}
+`;
+
+exports[`Feature: boarding-passes, builder snapshots (Requirement 9.1) > a pass whose title is normalised, truncated and kept 1`] = `
+{
+  "endsAt": "2026-12-01T11:30:00-08:00",
+  "room": "Level 2, Lido 3001",
+  "sessionCode": "DVT301",
+  "startsAt": "2026-12-01T10:30:00-08:00",
+  "title": "Modern "serverless" patterns - deep dive deep dive deep dive deep dive deep d...",
+  "venue": "Venetian",
+}
+`;
