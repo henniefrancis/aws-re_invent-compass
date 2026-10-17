@@ -354,35 +354,35 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 18.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 19. Implement the PassKit web service
-  - [ ] 19.1 Implement authorisation, register and unregister
+- [x] 19. Implement the PassKit web service
+  - [x] 19.1 Implement authorisation, register and unregister
     - Create `src/handlers/passkit/authorize-apple-pass.ts` (header pattern, configured pass type, UUID v4 serial, live record, constant-time hash comparison with a dummy comparison for unknown serials, one 401), `register-device.ts` (identifier check, push token check, `deviceHash`, `upsert` copying the pass's SubHash and expiry; 201 created, 200 updated) and `unregister-device.ts` (delete if present, 200); register both routes in `createPasskitApp`
     - _Requirements: 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7_
 
-  - [ ] 19.2 Write property test for registration
+  - [x] 19.2 Write property test for registration
     - **Property 29: Registration follows Apple's state machine**
     - **Validates: Requirements 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7**
 
-  - [ ] 19.3 Write property test for the Auth_Token
+  - [x] 19.3 Write property test for the Auth_Token
     - **Property 15: The Auth_Token is derived, verifiable and never stored**
     - **Validates: Requirements 9.9, 17.1, 19.4**
 
-  - [ ] 19.4 Implement serial numbers, latest pass and log
+  - [x] 19.4 Implement serial numbers, latest pass and log
     - Create `get-serial-numbers.ts` (204 for an invalid identifier, unknown device or other pass type; tag absent or not `^\d{1,16}$` treated as 0; 200 `{serialNumbers, lastUpdated}` as decimal epoch milliseconds, or 204), `get-latest-pass.ts` (authorise; `If-Modified-Since` parsed as an HTTP date; 304 when at or after Last_Updated in whole seconds; else sign and return 200 with `Last-Modified`) and `log-messages.ts` (count only, `PasskitLogMessages` metric, 200); register the routes
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7_
 
-  - [ ] 19.5 Write property test for the updatable list
+  - [x] 19.5 Write property test for the updatable list
     - **Property 30: The updatable list is exact**
     - **Validates: Requirements 18.1, 18.2, 18.3**
 
-  - [ ] 19.6 Write property test for If-Modified-Since
+  - [x] 19.6 Write property test for If-Modified-Since
     - **Property 31: The latest pass honours If-Modified-Since**
     - **Validates: Requirements 18.4, 18.5, 18.6**
 
-  - [ ] 19.7 Commit
+  - [x] 19.7 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 20. Checkpoint - Ensure all tests pass
+- [x] 20. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 21. Prove contract conformance

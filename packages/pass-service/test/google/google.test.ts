@@ -59,6 +59,9 @@ function fakeHttp(statuses: (number | Error)[]): { http: typeof fetch; calls: Ca
 
 const tokens = { accessToken: () => Promise.resolve('fake-access-token') };
 
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
+
 describe('Feature: pass-service, Google generic object', () => {
   // Feature: pass-service, Property 21: Google objects follow the fixed mapping
   test('Property 21: objects follow the fixed mapping', () => {

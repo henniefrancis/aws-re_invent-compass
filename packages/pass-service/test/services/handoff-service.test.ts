@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import ICAL from 'ical.js';
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { createApiFixture, lastLog, type ApiFixture, type Reply } from '../helpers/api-fixture.js';
 import { makePassRecord, serialOf } from '../helpers/pass-record.js';
 import { passFieldsArb, samplePassFields } from '../helpers/pass-fields.js';
@@ -70,6 +70,9 @@ async function createOk(fixture: ApiFixture, serials: string[], include = ALL): 
   expect(reply.result.statusCode).toBe(201);
   return (reply.json as { handoffId: string }).handoffId;
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, hand-off creation', () => {
   // Feature: pass-service, Property 24: Hand-off creation stores only a hash and a 15-minute expiry

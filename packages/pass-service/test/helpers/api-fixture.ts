@@ -5,8 +5,10 @@ import type { PassFields } from '@compass/contracts';
 import type { ApnsClient, PushOutcome, PushTarget } from '../../src/apns/apns-client.js';
 import type { PassSigner } from '../../src/apple/pass-signer.js';
 import { createApiApp } from '../../src/app/api-app.js';
+import { createPasskitApp } from '../../src/app/passkit-app.js';
 import type { ApiDeps } from '../../src/app/deps.js';
-import { parseApiConfig, type ApiConfig } from '../../src/config/config.js';
+import { parseApiConfig, parsePasskitConfig, type ApiConfig } from '../../src/config/config.js';
+import { deriveAuthToken } from '../../src/security/auth-token.js';
 import { createHandoffRepository } from '../../src/data/handoff-repository.js';
 import { createPassRepository } from '../../src/data/pass-repository.js';
 import { createRateLimiter } from '../../src/data/rate-limiter.js';
@@ -70,6 +72,10 @@ export interface ApiFixture {
   config: ApiConfig;
   /** Sends a request through the whole app with the right origin header. */
   call: (request: CallOptions) => Promise<Reply>;
+  /** Sends a request to the PassKit Lambda with the right origin header. */
+  callPasskit: (request: CallOptions) => Promise<Reply>;
+  /** The Auth_Token of a stored pass, re-derived the way the service does. */
+  authToken: (serial: string) => Promise<string>;
   /** Issues one pass as `sub` and returns its serial number. */
   issue: (sub: string, fields?: PassFields, platforms?: ('apple' | 'google')[]) => Promise<string>;
 }
@@ -174,8 +180,19 @@ export function createApiFixture(options: FixtureOptions = {}): ApiFixture {
     google,
   };
   const app = createApiApp(deps);
+  const passkitApp = createPasskitApp({
+    clock,
+    random: deps.random,
+    secrets,
+    logSink: capture.sink,
+    console: capture.console,
+    config: parsePasskitConfig(env),
+    passes: deps.passes,
+    registrations: deps.registrations,
+    signer,
+  });
 
-  const call: ApiFixture['call'] = async (request) => {
+  const send = async (run: typeof app, request: CallOptions): Promise<Reply> => {
     const event = buildEvent({
       method: request.method,
       resource: request.resource,
@@ -189,7 +206,7 @@ export function createApiFixture(options: FixtureOptions = {}): ApiFixture {
       query: request.query,
       body: request.body,
     });
-    const result = await app(event);
+    const result = await run(event);
     let parsed: unknown;
     try {
       parsed = result.isBase64Encoded || result.body === '' ? undefined : JSON.parse(result.body);
@@ -198,6 +215,9 @@ export function createApiFixture(options: FixtureOptions = {}): ApiFixture {
     }
     return { result, json: parsed };
   };
+
+  const call: ApiFixture['call'] = (request) => send(app, request);
+  const callPasskit: ApiFixture['callPasskit'] = (request) => send(passkitApp, request);
 
   return {
     deps,
@@ -210,6 +230,11 @@ export function createApiFixture(options: FixtureOptions = {}): ApiFixture {
     capture,
     config,
     call,
+    callPasskit,
+    async authToken(serial) {
+      const rec = await deps.passes.get(serial, clock.now());
+      return deriveAuthToken(secrets.appSecret.pepper, serial, String(rec?.tokenSalt));
+    },
     async issue(sub, fields = samplePassFields(), platforms = ['apple']) {
       const reply = await call({
         method: 'POST',

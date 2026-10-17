@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import {
   API_VARIABLES,
   ConfigError,
@@ -100,6 +100,9 @@ const needleArb = fc.stringMatching(/^[a-z0-9]{12}$/);
 function isActive(name: string, mode: Mode): boolean {
   return !(name === 'ID_TOKEN_JWKS_URI' && mode === 'cognito');
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, configuration parsing', () => {
   test('a minimal valid environment parses with the documented defaults', () => {

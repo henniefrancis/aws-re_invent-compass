@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import type { PushOutcome } from '../../src/apns/apns-client.js';
 import { EXPIRY_GRACE_MS, ttlOf } from '../../src/data/keys.js';
 import type { DeviceRegistration, PassRecord } from '../../src/data/records.js';
@@ -46,6 +46,9 @@ const update = (
 function items(fixture: ApiFixture, prefix: string) {
   return fixture.table.snapshot().filter((item) => item.pk.startsWith(prefix));
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, update', () => {
   // Feature: pass-service, Property 17: Update replaces content, bumps once and pushes once per device

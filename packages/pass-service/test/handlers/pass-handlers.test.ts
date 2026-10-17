@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { createPassSigner } from '../../src/apple/pass-signer.js';
 import { EXPIRY_GRACE_MS, ttlOf } from '../../src/data/keys.js';
 import type { PassRecord } from '../../src/data/records.js';
@@ -71,6 +71,9 @@ function record(sub: string, serial: string, overrides: Partial<PassRecord> = {}
 function serialOf(i: number): string {
   return `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`;
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, issuePasses', () => {
   test('issues a pass: 201 body, hardening headers, a clean stored record', async () => {

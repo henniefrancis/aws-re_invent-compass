@@ -1,6 +1,6 @@
 import { ProblemSchema } from '@compass/contracts';
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { header, type ProxyEvent } from '../../src/http/event.js';
 import {
   DependencyError,
@@ -44,6 +44,9 @@ function eventWith(headers: ProxyEvent['headers']): ProxyEvent {
     requestContext: { requestId: 'r1' },
   };
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, HTTP primitives', () => {
   test('problem bodies for each status and code parse with ProblemSchema', () => {

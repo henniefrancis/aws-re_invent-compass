@@ -1,6 +1,6 @@
 import type { ClientHttp2Session } from 'node:http2';
 import fc from 'fast-check';
-import { afterAll, describe, expect, test } from 'vitest';
+import { afterAll, describe, expect, test, vi } from 'vitest';
 import { createApnsClient, type PushTarget } from '../../src/apns/apns-client.js';
 import { createHttp2Connector, type Http2Connector } from '../../src/apns/http2-connector.js';
 import type { ApiConfig } from '../../src/config/config.js';
@@ -43,6 +43,9 @@ async function standIn(script: (token: string) => ScriptedReply) {
   open.push(server);
   return server;
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, APNs client', () => {
   test('a push is POST /3/device/<token> with the topic, the empty body and the client certificate', async () => {

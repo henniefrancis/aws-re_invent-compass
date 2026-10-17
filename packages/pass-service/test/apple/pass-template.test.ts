@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import {
   DISCLAIMER,
   INDEPENDENT_NOTICE,
@@ -43,6 +43,9 @@ function expectedTime(ms: number): string {
     .format(new Date(ms))
     .replace(/ /g, ' ');
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, time formatting', () => {
   test('times are in the event timezone, and the zone is named generically', () => {

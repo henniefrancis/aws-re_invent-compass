@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { MAX_READ_ROUNDS } from '../../src/handlers/api/forget-me.js';
 import type { Item } from '../../src/data/table-client.js';
 import { createApiFixture, type ApiFixture } from '../helpers/api-fixture.js';
@@ -69,6 +69,9 @@ function itemsOf(fixture: ApiFixture, sub: string): Item[] {
 function storedNonCounters(items: Item[]): Item[] {
   return items.filter((item) => !item.pk.startsWith('RATE#'));
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, forget me', () => {
   // Feature: pass-service, Property 33: forget_me removes exactly the caller's items

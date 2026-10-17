@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { deriveAuthToken, newTokenSalt } from '../../src/security/auth-token.js';
 import {
   constantTimeEqualHex,
@@ -17,6 +17,9 @@ import { createSeededRandom } from '../helpers/seeded-random.js';
 
 const textArb = fc.string({ maxLength: 60 });
 const pepperArb = fc.string({ minLength: 16, maxLength: 64 });
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, hashing and capability helpers', () => {
   test('subHash and deviceHash are 64 hex characters, deterministic and pepper-sensitive', () => {

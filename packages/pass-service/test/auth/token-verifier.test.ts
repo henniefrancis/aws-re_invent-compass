@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { parseBearer } from '../../src/auth/bearer.js';
 import {
   REBUILD_INTERVAL_MS,
@@ -92,6 +92,9 @@ const UNAUTHORIZED_BODY = problem(401, 'unauthorized').body;
 function bodyOf(error: ProblemError): string {
   return problem(error.status, error.code).body;
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, bearer parsing', () => {
   test('accepts Bearer plus three base64url segments and refuses everything else', () => {

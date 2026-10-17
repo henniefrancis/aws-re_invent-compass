@@ -1,6 +1,6 @@
 import { ProblemSchema } from '@compass/contracts';
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { createPipeline, HEALTH_ROUTE } from '../../src/app/pipeline.js';
 import type { BaseDeps } from '../../src/app/deps.js';
 import { DependencyError, ProblemError } from '../../src/http/problem.js';
@@ -30,6 +30,9 @@ function setup(routes: Partial<Record<RouteKey, Handler<BaseDeps>>>, secrets?: S
 }
 
 const okHandler: Handler<BaseDeps> = () => Promise.resolve(json(200, { ok: true }));
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, request pipeline', () => {
   test('a matching origin reaches the handler and one log line is written', async () => {

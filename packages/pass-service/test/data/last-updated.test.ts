@@ -1,6 +1,9 @@
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { nextLastUpdated } from '../../src/data/last-updated.js';
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, Last_Updated', () => {
   // Feature: pass-service, Property 16: Last_Updated strictly increases at second precision

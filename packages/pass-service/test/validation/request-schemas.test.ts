@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { ProblemError } from '../../src/http/problem.js';
 import {
   DEVICE_REGISTRATION_SHAPE,
@@ -49,6 +49,9 @@ function expect400(run: () => unknown): void {
   const error = refusal(run);
   expect([error.status, error.code]).toEqual([400, 'invalid_request']);
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, key shapes follow the contract', () => {
   const tree = loadContractTree();

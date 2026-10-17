@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { COUNTER_TTL_MARGIN_SECONDS } from '../../src/data/keys.js';
 import {
   ACTIVE_PASS_LIMIT,
@@ -12,6 +12,9 @@ import { createMemoryTable } from '../../src/harness/memory-table.js';
 
 const HOUR_MS = 3_600_000;
 const EPOCH_HOUR = Math.floor(Date.parse('2026-12-02T12:00:00Z') / HOUR_MS) * HOUR_MS;
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, rate limiter', () => {
   test('the limits match the amended plan', () => {

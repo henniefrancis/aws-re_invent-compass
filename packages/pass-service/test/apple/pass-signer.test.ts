@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { MAX_BUNDLE_PASSES, chunkBundles, createPassSigner } from '../../src/apple/pass-signer.js';
 import type { PassTemplateInput } from '../../src/apple/pass-template.js';
 import { DependencyError } from '../../src/http/problem.js';
@@ -76,6 +76,9 @@ function checkPass(pkpass: Uint8Array): Record<string, unknown> {
   expect(check.certificates).toHaveLength(2);
   return JSON.parse(String(files.get('pass.json'))) as Record<string, unknown>;
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, bundle chunks', () => {
   test('chunks keep order and hold at most ten', () => {

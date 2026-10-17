@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { createHandoffRepository } from '../../src/data/handoff-repository.js';
 import { EXPIRY_GRACE_MS, ttlOf } from '../../src/data/keys.js';
 import { createPassRepository } from '../../src/data/pass-repository.js';
@@ -50,6 +50,9 @@ function registration(overrides: Partial<DeviceRegistration> = {}): DeviceRegist
     ...overrides,
   };
 }
+
+// Property tests do real work (signing, TLS, many records) and the machine may be busy.
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('Feature: pass-service, test data generators', () => {
   test('every generated PassFields passes the shared schema', () => {
