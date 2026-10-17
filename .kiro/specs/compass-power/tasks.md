@@ -475,7 +475,7 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [ ] 29.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 30. Final checkpoint: ensure all tests pass and coverage is complete
+- [x] 30. Final checkpoint: ensure all tests pass and coverage is complete
   - Ensure all tests pass with 100% lines, branches, functions and statements for S3-owned code with only `packages/mcp-server/src/bin.ts` excluded, lint, format, typecheck and `npm run check:dash` clean, ask the user if questions arise.
   - _Requirements: 25.5, 25.6, 25.9_
 

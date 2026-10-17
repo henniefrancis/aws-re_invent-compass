@@ -289,6 +289,59 @@ describe('schedule reads and writes', () => {
     expect((await events.cancel(TRIPLE.a)).kind).toBe('unconfirmed');
   });
 
+  test('a throttled or expired reserve is retried at most once and never resent beyond that (CTO review M2)', async () => {
+    for (const [scenario, config] of [
+      ['429', { throttleOps: ['ReserveSessions' as const] }],
+      ['401', { expiredTokenOps: ['ReserveSessions' as const] }],
+    ] as const) {
+      const base = createClientContext(
+        { COMPASS_MODE: 'simulated' },
+        {
+          eventId: 'reinvent2026',
+          logger: createRedactingLogger({
+            info: () => undefined,
+            warn: () => undefined,
+            error: () => undefined,
+          }),
+          now: () => NOW,
+          sleep: () => Promise.resolve(),
+          simulated: { now: () => NOW, ...config, scenarioRepeats: 5 },
+        },
+      );
+      const sent: string[] = [];
+      const ctx: ClientContext = {
+        ...base,
+        transport: {
+          ...base.transport,
+          send: (request) => {
+            sent.push(request.operation);
+            return base.transport.send(request);
+          },
+        },
+      };
+      const venues = await readVenues(join(repoRoot(), 'data', 'venues.json'));
+      const events = createEventsAdapter({
+        ctx,
+        auth: {
+          isSignedIn: () => true,
+          expiresAt: () => undefined,
+          signIn: () => Promise.resolve({}),
+          signOut: () => Promise.resolve({ signOutUrl: 'x' }),
+        },
+        catalogDir: dir,
+        catalogFs: realFs,
+        venues: venues.list,
+        now: () => NOW,
+      });
+      await expect(events.reserve([TRIPLE.a]), scenario).rejects.toBeDefined();
+      expect(sent.filter((op) => op === 'ReserveSessions').length, scenario).toBeLessThanOrEqual(2);
+      expect(
+        sent.filter((op) => op === 'GetSchedule'),
+        scenario,
+      ).toEqual([]);
+    }
+  });
+
   test('a bad id is refused before any request', async () => {
     const { events, requests } = await arrange();
     const count = requests.length;

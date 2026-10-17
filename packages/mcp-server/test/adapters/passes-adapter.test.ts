@@ -109,6 +109,30 @@ describe('the passes adapter over the real S4', () => {
     await rm(temp, { recursive: true, force: true });
   });
 
+  test('a 429 on issue is retried once after the wait and never more (CTO review M2)', async () => {
+    const calls: string[] = [];
+    let remaining = 1;
+    const counting: HttpTransport = {
+      request: (request): Promise<HttpResponse> => {
+        calls.push(`${request.method} ${new URL(request.url).pathname}`);
+        if (remaining > 0) {
+          remaining -= 1;
+          return Promise.resolve({ status: 429, headers: { 'retry-after': '1' }, body: '' });
+        }
+        return service.transport.request(request);
+      },
+    };
+    build({ transport: counting });
+    const issued = await adapter.issue([AR], view(AR));
+    expect(issued).toHaveLength(1);
+    expect(calls).toEqual(['POST /api/v1/passes', 'POST /api/v1/passes']);
+
+    calls.length = 0;
+    remaining = 5;
+    await expect(adapter.issue([B], view(B))).rejects.toMatchObject({ code: 'RateLimited' });
+    expect(calls).toEqual(['POST /api/v1/passes', 'POST /api/v1/passes']);
+  });
+
   test('issuing records the passes and never voids passes for other sessions', async () => {
     const first = await adapter.issue([AR, B], view(AR, B));
     expect(first.map((i) => i.sessionId)).toEqual([TRIPLE.aRepeat, TRIPLE.b]);
