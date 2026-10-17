@@ -66,16 +66,16 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 2.4 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 3. Time formatting and content modules
-  - [ ] 3.1 Implement event local time formatting
+- [x] 3. Time formatting and content modules
+  - [x] 3.1 Implement event local time formatting
     - Create `site/src/lib/time/time-format.ts` with `formatWallClock`, `offsetLabel`, `formatInZone`, `dayHeading` and `timezoneNote`
     - _Requirements: 9.5, 18.1_
 
-  - [ ] 3.2 Write property test for time formatting
+  - [x] 3.2 Write property test for time formatting
     - **Property 9: Event local time formatting preserves the wall clock**
     - **Validates: Requirements 9.5, 18.1**
 
-  - [ ] 3.3 Implement the content modules
+  - [x] 3.3 Implement the content modules
     - Create `site/src/lib/content/content-block.ts` and the blocks in `story.ts`, `metaphor.ts`, `acts.ts`, `principles.ts`, `install.ts`, `privacy.ts` and `notice.ts`, each naming its Source_Document and section, with verbatim blocks for the tagline, "Starts 10:30", "Seat released at 10:20", "Unofficial. Your badge is your ticket." and the Notice
     - Use the scanner list from the build plan and product steering (Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3, boto3), not the longer list in `CONCEPT.md` section 3
     - Write the privacy blocks from build plan section 4.2 (what stays, what leaves and for how long, the hand-off, `forget_me`, the responsible party, no remote deletion) and the site's own behaviour
@@ -83,12 +83,12 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
     - Create `site/src/lib/content/links.ts` with `SiteLinks` (repository URL from `CONCEPT.md` section 12, null for the post, the video and the Kiro listing) and `footerItems`
     - _Requirements: 4.2, 4.3, 5.1, 5.2, 5.3, 5.4, 5.5, 5.7, 6.1, 6.2, 6.3, 6.8, 14.1, 14.2, 14.4, 14.5, 15.1, 15.2, 15.3, 15.4, 15.5, 15.6_
 
-  - [ ] 3.4 Write example tests for content provenance and links
+  - [x] 3.4 Write example tests for content provenance and links
     - Every verbatim block occurs exactly in its Source_Document file; every block names an allowed source; the Notice equals the `README.md` sentence; the impersonation denylist appears nowhere in content; no content string contains an em dash or en dash
     - `footerItems` keeps the fixed order and renders a null URL as "coming soon" text with no link
     - _Requirements: 4.2, 4.3, 6.1, 6.2, 6.3, 6.4, 6.7_
 
-  - [ ] 3.5 Commit
+  - [x] 3.5 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 4. Shell, home, install and privacy pages
