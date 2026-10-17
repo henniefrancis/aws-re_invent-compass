@@ -382,6 +382,29 @@ describe('Feature: pass-service, hand-off view and downloads', () => {
   });
 });
 
+describe('Feature: pass-service, hand-off response headers', () => {
+  test('every hand-off response is no-store, and the downloads are attachments with fixed names', async () => {
+    const fixture = createApiFixture();
+    const id = await createOk(fixture, await seed(fixture, 1));
+    const json = await view(fixture, id);
+    const zip = await bundle(fixture, id, '0');
+    const ics = await calendar(fixture, id);
+    for (const reply of [json, zip, ics]) {
+      expect(reply.result.statusCode).toBe(200);
+      expect(reply.result.headers['cache-control']).toBe('no-store');
+      expect(reply.result.headers['x-content-type-options']).toBe('nosniff');
+      expect(reply.result.headers['referrer-policy']).toBe('no-referrer');
+    }
+    expect(json.result.headers['content-disposition']).toBeUndefined();
+    expect(zip.result.headers['content-disposition']).toBe(
+      'attachment; filename="reinvent-passes-1.pkpasses"',
+    );
+    expect(ics.result.headers['content-disposition']).toBe('attachment; filename="reinvent.ics"');
+    const missing = await view(fixture, 'AAAAAAAAAAAAAAAAAAAAAA');
+    expect(missing.result.headers['cache-control']).toBe('no-store');
+  });
+});
+
 describe('Feature: pass-service, hand-off calendar', () => {
   // Feature: pass-service, Property 28: The hand-off calendar is valid RFC 5545
   test('Property 28: the calendar parses and holds one event per active pass with an alarm', async () => {

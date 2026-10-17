@@ -16,5 +16,8 @@ export const getHandoffAppleBundle: Handler<ApiContext> = async (req, ctx) => {
     Number(index),
     req,
   );
-  return binary(200, 'application/vnd.apple.pkpasses', bytes);
+  // A fixed, non-identifying file name (review S7).
+  return binary(200, 'application/vnd.apple.pkpasses', bytes, {
+    'content-disposition': `attachment; filename="reinvent-passes-${Number(index) + 1}.pkpasses"`,
+  });
 };

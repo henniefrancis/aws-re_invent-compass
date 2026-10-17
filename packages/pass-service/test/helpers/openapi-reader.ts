@@ -90,3 +90,17 @@ export function contractOperations(tree: YNode): ContractOperation[] {
   }
   return operations;
 }
+
+/** The media types a response declares. A `$ref` response is one of the shared Problem responses. */
+export function responseContentTypes(
+  tree: YNode,
+  path: string,
+  method: string,
+  status: number,
+): string[] {
+  const response = at(tree, 'paths', path, method, 'responses', String(status));
+  if (response.children.$ref !== undefined) {
+    return ['application/problem+json'];
+  }
+  return Object.keys(response.children.content?.children ?? {});
+}

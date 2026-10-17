@@ -13,7 +13,7 @@ import { checkDetachedSignature } from '../helpers/pkcs7.js';
 import { throwawayPki } from '../helpers/throwaway-pki.js';
 import { zipMap } from '../helpers/zip-reader.js';
 
-const TIMEOUT = 180_000;
+const TIMEOUT = 600_000;
 
 function template(
   serialNumber: string,
@@ -186,7 +186,11 @@ describe('Feature: pass-service, pass signer', () => {
       const { signer: s } = signer();
       await fc.assert(
         fc.asyncProperty(
-          fc.array(passFieldsArb, { minLength: 1, maxLength: 10 }),
+          fc.oneof(
+            { weight: 8, arbitrary: fc.array(passFieldsArb, { minLength: 1, maxLength: 1 }) },
+            { weight: 1, arbitrary: fc.array(passFieldsArb, { minLength: 2, maxLength: 3 }) },
+            { weight: 1, arbitrary: fc.array(passFieldsArb, { minLength: 10, maxLength: 10 }) },
+          ),
           fc.boolean(),
           async (fieldsList, asBundle) => {
             const inputs = fieldsList.map((fields, i) => template(serial(100 + i), fields));

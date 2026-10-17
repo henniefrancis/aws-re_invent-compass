@@ -385,20 +385,20 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - [x] 20. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 21. Prove contract conformance
-  - [ ] 21.1 Type the route tables against the contract and read the YAML
+- [x] 21. Prove contract conformance
+  - [x] 21.1 Type the route tables against the contract and read the YAML
     - Add a compile-time mapping from both route tables onto `CompassApi['paths']` so a missing or extra path or method fails `tsc`, and create `test/helpers/openapi-reader.ts`, a small indentation-based reader of `contracts/compass-api.openapi.yaml` that returns each path, method, `operationId` and response status (no YAML dependency)
     - _Requirements: 2.1, 2.2, 25.7_
 
-  - [ ] 21.2 Write a contract test for every operation
+  - [x] 21.2 Write a contract test for every operation
     - For each of the 15 operations: the router serves exactly the contract's method and path; every listed status except 500 is driven through the app with in-memory dependencies; every JSON body validates against its contract-typed schema; binary responses carry the contract content type
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.8, 25.7_
 
-  - [ ] 21.3 Write property test for contract conformance
+  - [x] 21.3 Write property test for contract conformance
     - **Property 2: Every response conforms to the contract**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.7, 2.8, 25.7**
 
-  - [ ] 21.4 Commit
+  - [x] 21.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 22. Write the security and lifecycle suite
