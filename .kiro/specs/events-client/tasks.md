@@ -91,16 +91,16 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 4.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 5. Implement the quota tracker
-  - [ ] 5.1 Implement the quota tracker
+- [x] 5. Implement the quota tracker
+  - [x] 5.1 Implement the quota tracker
     - Create `src/api/quota-tracker.ts` with `check`, `record`, `note429` over rolling one-minute per-operation windows (limits GetSession 120, ListSessions 120, GetSchedule 60, ReserveSessions 30 counted sessions, AssociateFavorites 30 counted sessions, other writes 30; ListEvents and GetEvent unmetered), raising `QuotaExceededError` before send, resetting on window elapse, and blocking after a 429 until `Retry-After` elapses
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9_
 
-  - [ ] 5.2 Write property test for the quota tracker
+  - [x] 5.2 Write property test for the quota tracker
     - **Property 22: Quota tracker blocks exactly the call that would exceed a per-operation limit**
     - **Validates: Requirements 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9**
 
-  - [ ] 5.3 Commit
+  - [x] 5.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 6. Implement bulk input guard, failure codes and confirmed write

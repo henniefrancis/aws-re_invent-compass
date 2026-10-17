@@ -41,6 +41,9 @@ export {
   type HttpTransportDeps,
 } from './http-transport.js';
 
+// Client-side quota tracker (Component 7).
+export { createQuotaTracker, type QuotaDecision } from './quota-tracker.js';
+
 // Retry policy and Retry-After parser (Component 3).
 export {
   createRetryPolicy,
