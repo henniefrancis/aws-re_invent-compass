@@ -32,12 +32,12 @@ describe('verdict view', () => {
     const view = buildVerdictView(blocked, deps);
     expect(view).toMatchObject({
       kind: 'block',
-      title: 'ARC451 was blocked',
-      reasons: ['ARC451 overlaps CMP327.'],
-      rebook: { message: 'No alternative found for ARC451.', options: [] },
+      title: 'STG487 was blocked',
+      reasons: ['STG487 overlaps ANT163.'],
+      rebook: { message: 'No alternative found for STG487.', options: [] },
     });
     expect(view?.swapOffer?.text).toBe(
-      'Safe swap: move CMP327 to its repeat CMP327-R2. Reserve the repeat first, confirm, then cancel the original.',
+      'Safe swap: move ANT163 to its repeat ANT163-R. Reserve the repeat first, confirm, then cancel the original.',
     );
   });
 
@@ -46,13 +46,13 @@ describe('verdict view', () => {
       ...starter,
       pending: {
         kind: 'block',
-        sessionId: 'syn-059',
+        sessionId: 'syn-118',
         reasons: ['No.'],
         rebook: {
           status: 'ok',
           message: 'Found two.',
           options: [
-            { kind: 'repeat', sessionId: 'syn-117', startsAt: 'a', reason: 'It repeats.' },
+            { kind: 'repeat', sessionId: 'syn-009', startsAt: 'a', reason: 'It repeats.' },
             { kind: 'standby', sessionId: 'other', startsAt: 'b', reason: 'A backup.' },
           ],
         },
@@ -61,7 +61,7 @@ describe('verdict view', () => {
     };
     const view = buildVerdictView(state, deps);
     expect(view?.rebook?.options).toEqual([
-      { sessionId: 'syn-117', text: 'CMP327-R2: It repeats.', canBook: true },
+      { sessionId: 'syn-009', text: 'ANT163-R: It repeats.', canBook: true },
       { sessionId: 'other', text: 'other: A backup.', canBook: false },
     ]);
     expect(view?.swapOffer).toBeNull();
@@ -95,7 +95,7 @@ describe('swap view', () => {
       [2, 'waiting', 'Confirm the schedule'],
       [3, 'waiting', 'Cancel the original'],
     ]);
-    expect(view?.steps[0]?.label).toBe('Reserve CMP327-R2, the repeat (simulated)');
+    expect(view?.steps[0]?.label).toBe('Reserve ANT163-R, the repeat (simulated)');
     expect(view?.message).toBe(DEMO_TEXT.swapIntro);
   });
 
@@ -114,8 +114,8 @@ describe('swap view', () => {
     const view = buildSwapView(done, deps);
     expect(view?.state).toBe('done');
     expect(view?.steps.map((s) => s.status)).toEqual(['done', 'done', 'done']);
-    expect(view?.invite).toEqual({ sessionId: 'syn-059', text: 'Add ARC451' });
-    expect(view?.message).toBe('The swap is done. You can now add ARC451.');
+    expect(view?.invite).toEqual({ sessionId: 'syn-118', text: 'Add STG487' });
+    expect(view?.message).toBe('The swap is done. You can now add STG487.');
   });
 
   test('a stopped swap says so and shows the reasons', () => {
@@ -146,7 +146,7 @@ describe('swap view', () => {
 
 describe('page text', () => {
   test('the guided hint names the session to try', () => {
-    expect(guidedHint(deps)).toContain('ARC451');
+    expect(guidedHint(deps)).toContain('STG487');
     const without = { ...deps, catalog: new Map() };
     expect(guidedHint(without)).toBe(DEMO_TEXT.startSample);
   });
@@ -198,9 +198,9 @@ describe('pass layout', () => {
     const ys = layout.lines.map((l) => l.y);
     expect(ys).toEqual([...ys].sort((a, b) => a - b));
     expect(layout.height).toBeGreaterThan(ys.at(-1) ?? 0);
-    const first = buildSamplePass('syn-047', starter, deps);
+    const first = buildSamplePass('syn-096', starter, deps);
     const firstTexts = layoutPass(first as NonNullable<typeof first>).lines.map((l) => l.text);
     expect(firstTexts).toContain('Walk from the previous session: not known');
-    expect(firstTexts.some((t) => t.startsWith('Next: CMP327 at'))).toBe(true);
+    expect(firstTexts.some((t) => t.startsWith('Next: NET381 at'))).toBe(true);
   });
 });

@@ -10,8 +10,9 @@
 //
 // Scenarios in this set:
 //   - overlap on one day: syn-003 and syn-046 (2026-12-01), syn-096 and syn-118 (2026-12-04);
-//   - a held session with a -R repeat: syn-026 (CMP327) and syn-117 (CMP327-R2), and the pair
-//     syn-096 (ANT163) and syn-009 (ANT163-R);
+//   - a held session with a -R repeat that fits: syn-096 (ANT163, 2026-12-04) and its repeat
+//     syn-009 (ANT163-R, 2026-12-01, seats available). The pair syn-026 (CMP327) and syn-117
+//     (CMP327-R2) is also in the set; its repeat has no seats left, so it shows a refused swap;
 //   - consecutive sessions at different venues: syn-047 (Encore) then syn-026 (MGM Grand);
 //   - sessions that cannot be reserved: syn-120 (keynote) and syn-087 (breakout);
 //   - a missing meal layover: syn-047 then syn-026 fill the meal window on 2026-12-04;
@@ -285,14 +286,20 @@ export const DEMO_SESSIONS: readonly NormalisedSession[] = [
 ];
 
 /** The sessions "Start with a sample week" holds, by sessionId. */
-export const STARTER_WEEK: readonly string[] = ['syn-003', 'syn-002', 'syn-047', 'syn-026'];
+export const STARTER_WEEK: readonly string[] = [
+  'syn-003',
+  'syn-002',
+  'syn-096',
+  'syn-047',
+  'syn-026',
+];
 
 /** The guided path: load the sample week, then try to add the session named here. */
 export const GUIDED_CLASH = {
   /** The session the guided path names. It overlaps clashesWith. */
-  tryAdd: 'syn-059',
+  tryAdd: 'syn-118',
   /** A Starter_Week session that overlaps tryAdd. */
-  clashesWith: 'syn-026',
+  clashesWith: 'syn-096',
   /** The -R repeat of clashesWith. It overlaps no other Starter_Week session. */
-  heldRepeat: 'syn-117',
+  heldRepeat: 'syn-009',
 } as const;

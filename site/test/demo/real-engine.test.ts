@@ -96,11 +96,6 @@ describe('the guided path on the real engine', () => {
       blocked,
     );
     const seen = steps.map((s) => s.swap?.step);
-    if (seen[0] === 'stopped') {
-      // The engine refused the repeat in advance: the week must be untouched.
-      expect(steps.at(-1)?.commitments).toEqual(starter.commitments);
-      return;
-    }
     expect(seen).toEqual(['offered', 'repeatReserved', 'confirmed', 'done']);
     const final = steps.at(-1) as DemoState;
     expect(heldIds(final)).toContain(GUIDED_CLASH.heldRepeat);

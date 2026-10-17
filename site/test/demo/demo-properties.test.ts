@@ -19,8 +19,8 @@ const POPULAR = [
   'syn-002',
   'syn-047',
   'syn-026',
-  'syn-059',
-  'syn-117',
+  'syn-118',
+  'syn-009',
   'syn-009',
   'syn-088',
 ];

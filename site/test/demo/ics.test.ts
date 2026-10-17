@@ -64,12 +64,12 @@ describe('the sample calendar of the starter week', () => {
     expect(text.replace(/\r\n/g, '')).not.toMatch(/[\r\n]/);
     expect(text).toContain('VERSION:2.0\r\n');
     expect(text).toContain(`PRODID:${PRODID}\r\n`);
-    expect(parse(text).getAllSubcomponents('vevent')).toHaveLength(4);
+    expect(parse(text).getAllSubcomponents('vevent')).toHaveLength(5);
   });
 
   test('uses the fixed demo instant and .invalid UIDs', () => {
     expect(text.match(/DTSTAMP:(\S+)/g)).toEqual(
-      Array.from({ length: 4 }, () => 'DTSTAMP:20261201T020000Z'),
+      Array.from({ length: 5 }, () => 'DTSTAMP:20261201T020000Z'),
     );
     for (const event of demoCalendarEvents(starter, deps)) {
       expect(event.uid.endsWith(`@${UID_DOMAIN}`)).toBe(true);

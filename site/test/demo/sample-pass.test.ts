@@ -83,7 +83,7 @@ describe('pass text normalisation', () => {
 
 describe('buildSamplePass examples', () => {
   test('is null for a session that is not in the week or not in the catalog', () => {
-    expect(buildSamplePass('syn-059', starter, deps)).toBeNull();
+    expect(buildSamplePass('syn-118', starter, deps)).toBeNull();
     expect(buildSamplePass('nope', starter, deps)).toBeNull();
     expect(buildSamplePass('syn-003', EMPTY_DEMO, deps)).toBeNull();
   });

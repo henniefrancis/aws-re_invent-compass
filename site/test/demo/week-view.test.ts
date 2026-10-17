@@ -130,7 +130,7 @@ describe('catalog view', () => {
         .filter((s) => s.inWeek)
         .map((s) => s.sessionId)
         .sort(),
-    ).toEqual(['syn-002', 'syn-003', 'syn-026', 'syn-047']);
+    ).toEqual(['syn-002', 'syn-003', 'syn-026', 'syn-047', 'syn-096']);
   });
 
   test('shows nothing for a type or level that is not published', () => {
@@ -175,10 +175,10 @@ describe('week view', () => {
         walk: 'Walk plus buffer: 40 minutes.',
       },
     ]);
-    expect(view[1]?.connections[0]).toMatchObject({
+    expect(view[1]?.connections[1]).toMatchObject({
       classification: 'impossible',
     });
-    expect(view[1]?.connections[0]?.text).toContain(
+    expect(view[1]?.connections[1]?.text).toContain(
       'Impossible: NET381 to CMP327. Walk from Encore to MGM Grand',
     );
   });
