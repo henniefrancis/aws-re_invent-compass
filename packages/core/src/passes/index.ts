@@ -94,3 +94,13 @@ export type { DiffCase, SyncPlanEntry, SyncResult, SyncDeps } from './pass-sync.
 // The forgetMe orchestrator.
 export { forgetMe } from './forget-me.js';
 export type { ForgetMeDeps, ForgetMeOutcome } from './forget-me.js';
+
+// Handoff_Builder: the Board_URL as terminal, chat-text and chat-PNG QR codes.
+export {
+  createHandoffBuilder,
+  renderTerminalQr,
+  renderChatText,
+  QUIET_ZONE,
+  PNG_SCALE,
+} from './handoff-builder.js';
+export type { HandoffBuilder, HandoffBuilderDeps, HandoffRenders } from './handoff-builder.js';

@@ -136,14 +136,14 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add forgetMe orchestrator for local deletion on 202" -m "Composes client, store and filesystem; deletes the record and output files only on a 202 and keeps copy honest about wallet deletion."`
 
-- [ ] 7. Implement Handoff_Builder
+- [x] 7. Implement Handoff_Builder
   - Implement `HandoffBuilder.handoff(serialNumbers, include)`: create the hand-off through the `CompassClient`, obtain the Board_URL, and render it as a terminal QR (ASCII or Unicode blocks), a chat text QR and a chat PNG QR using `qrcode`.
   - Encode the Board_URL exactly as returned with the hand-off id intact in the URL fragment across all three renders, and never write the Board_URL or hand-off id to a log line or error.
   - _Requirements: 5.1, 5.2, 5.3, 5.4_
-  - [ ] 7.1 Write property test: the three QR renders encode the same Board_URL data
+  - [x] 7.1 Write property test: the three QR renders encode the same Board_URL data
     - **Property 18: The three QR renders encode the same Board_URL data**
     - **Validates: Requirements 5.2, 5.3, 5.4**
-  - [ ] 7.2 Run this task's tests, then commit locally
+  - [x] 7.2 Run this task's tests, then commit locally
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Handoff_Builder with three QR renders" -m "Creates the hand-off through the client and renders the Board_URL as terminal, chat-text and chat-PNG QR codes with the fragment intact."`
 
