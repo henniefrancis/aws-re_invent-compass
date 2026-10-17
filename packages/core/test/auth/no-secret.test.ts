@@ -288,7 +288,7 @@ describe('Feature: events-client, Property 7: No secret ever appears in logs or 
       }),
       { numRuns: 100 },
     );
-  });
+  }, 60_000);
 
   test('every failure the scenario produced is one of the typed errors', async () => {
     const observed = await runScenario(

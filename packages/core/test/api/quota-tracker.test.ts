@@ -74,7 +74,7 @@ describe('Feature: events-client, Property 22: Quota tracker blocks exactly the 
     }
   });
 
-  test('unmetered operations are never counted and never blocked', () => {
+  test('unmetered operations are never count-limited, but a 429 blocks them until Retry-After', () => {
     fc.assert(
       fc.property(
         fc.constantFrom(...UNMETERED),
@@ -84,9 +84,10 @@ describe('Feature: events-client, Property 22: Quota tracker blocks exactly the 
           const tracker = createQuotaTracker();
           tracker.record(op, units, T0);
           expect(tracker.check(op, units, T0 + dt)).toBe('allow');
-          // A 429 note on an unmetered op is a no-op: still allowed.
+          // A 429 still blocks an unmetered operation, for Retry-After only (12.9).
           tracker.note429(op, 60, T0);
-          expect(tracker.check(op, 1, T0)).toBe('allow');
+          expect(tracker.check(op, 1, T0)).toBe('blocked-until-reset');
+          expect(tracker.check(op, 1, T0 + 60_000)).toBe('allow');
         },
       ),
       { numRuns: 200 },

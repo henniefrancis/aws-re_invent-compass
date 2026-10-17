@@ -199,7 +199,7 @@ Scope boundary: this stream does not build the guardrails engine (S2 rules), the
 6. IF a ReserveSessions call would raise the counted sessions within the current window to more than 30, THEN THE Quota_Tracker SHALL prevent that ReserveSessions call until the window resets.
 7. IF an AssociateFavorites call would raise the counted sessions within the current window to more than 30, THEN THE Quota_Tracker SHALL prevent that AssociateFavorites call until the window resets.
 8. IF any other write operation call would raise the count for that operation within the current window to more than 30, THEN THE Quota_Tracker SHALL prevent that call until the window resets.
-9. IF the Events API returns a 429 response for an operation, THEN THE Quota_Tracker SHALL prevent the next call of that operation until the duration given by the Retry-After header has elapsed.
+9. IF the Events API returns a 429 response for an operation (any operation, including ReserveSessions and the unmetered ListEvents and GetEvent, and whether or not the call is then retried), THEN THE Quota_Tracker SHALL prevent the next call of that operation until the duration given by the Retry-After header has elapsed, or for 30 seconds when the Retry-After header is missing or invalid.
 
 ### Requirement 13: Catalog pagination
 

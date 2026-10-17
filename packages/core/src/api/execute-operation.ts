@@ -51,10 +51,8 @@ function isSuccess(status: number): boolean {
  * the single 401 or 429 retry, because every send counts against the limit.
  */
 function reserveQuota(ctx: ClientContext, operation: OperationName, units: number): void {
-  // Unmetered operations (ListEvents, GetEvent) pass 0 units and are never blocked.
-  if (units <= 0) {
-    return;
-  }
+  // Unmetered operations (ListEvents, GetEvent) pass 0 units: they have no per-minute
+  // limit, but a 429 still blocks them until its Retry-After has elapsed (12.9).
   if (ctx.quota.check(operation, units, ctx.now()) === 'blocked-until-reset') {
     throw new QuotaExceededError(
       operation,
@@ -62,6 +60,23 @@ function reserveQuota(ctx: ClientContext, operation: OperationName, units: numbe
     );
   }
   ctx.quota.record(operation, units, ctx.now());
+}
+
+/** How long to block an operation after a 429 that carries no usable Retry-After. */
+export const DEFAULT_RATE_LIMIT_BLOCK_SECONDS = 30;
+
+/**
+ * Record a 429 with the quota tracker (Requirement 12.9): the next call of the
+ * operation is blocked until the Retry-After has elapsed, or for a safe default when
+ * the header is missing or invalid. Done for EVERY 429, whether the call is then
+ * retried or fails, and for ReserveSessions too.
+ */
+function noteRateLimit(ctx: ClientContext, operation: OperationName, response: RawResponse): void {
+  ctx.quota.note429(
+    operation,
+    parseRetryAfter(response.headers) ?? DEFAULT_RATE_LIMIT_BLOCK_SECONDS,
+    ctx.now(),
+  );
 }
 
 /**
@@ -82,6 +97,7 @@ export async function executeOperation<T>(
 
   // First attempt.
   let response = await ctx.transport.send(request);
+  let retried = false;
 
   if (response.status === 401) {
     const decision = retryPolicy.onUnauthorized(request);
@@ -95,24 +111,31 @@ export async function executeOperation<T>(
     if (decision === 'refresh-and-retry-once') {
       // The retry is a second send, so its units are checked and recorded again.
       reserveQuota(ctx, operation, quota.units);
+      retried = true;
       response = await ctx.transport.send(request);
     } else {
       // refresh-then-fail (ReserveSessions): never re-send.
       throw errorForStatus(operation, 401);
     }
   } else if (response.status === 429) {
+    noteRateLimit(ctx, operation, response);
     const retryAfter = parseRetryAfter(response.headers);
     const decision = retryPolicy.onRateLimited(request, retryAfter);
     if (decision === 'wait-and-retry-once' && retryAfter !== undefined) {
-      ctx.quota.note429(operation, retryAfter, ctx.now());
       await ctx.sleep(retryAfter * 1000);
       // The retry is a second send, so it is checked and recorded again. note429 and
       // the elapsed wait may leave the operation blocked, which stops the retry.
       reserveQuota(ctx, operation, quota.units);
+      retried = true;
       response = await ctx.transport.send(request);
     } else {
       throw errorForStatus(operation, 429);
     }
+  }
+
+  // A 429 answering the single retry blocks the operation too.
+  if (retried && response.status === 429) {
+    noteRateLimit(ctx, operation, response);
   }
 
   // Map any remaining failure status (including a repeated 401 or 429 after the

@@ -63,11 +63,8 @@ export function createQuotaTracker(): QuotaTracker {
   const windows = new Map<OperationName, WindowState>();
 
   // Return the live state for an operation, resetting the window if the current one
-  // has elapsed. Unmetered operations return undefined (no limit applies).
-  function stateFor(op: OperationName, now: number): WindowState | undefined {
-    if (LIMITS[op] === undefined) {
-      return undefined;
-    }
+  // has elapsed. Unmetered operations have a state too: it carries only the 429 block.
+  function stateFor(op: OperationName, now: number): WindowState {
     let state = windows.get(op);
     if (state === undefined) {
       state = { windowStart: now, count: 0, blockedUntil: 0 };
@@ -83,32 +80,21 @@ export function createQuotaTracker(): QuotaTracker {
   return {
     check(op, units, now) {
       const state = stateFor(op, now);
-      if (state === undefined) {
-        return 'allow';
-      }
       // A prior 429 blocks the next call until its Retry-After has elapsed.
       if (now < state.blockedUntil) {
         return 'blocked-until-reset';
       }
-      const limit = LIMITS[op] as number;
-      if (state.count + units > limit) {
+      // Unmetered operations have no per-minute limit, only the 429 block above.
+      if (state.count + units > (LIMITS[op] ?? Number.POSITIVE_INFINITY)) {
         return 'blocked-until-reset';
       }
       return 'allow';
     },
     record(op, units, now) {
-      const state = stateFor(op, now);
-      if (state === undefined) {
-        return;
-      }
-      state.count += units;
+      stateFor(op, now).count += units;
     },
     note429(op, retryAfterSeconds, now) {
-      const state = stateFor(op, now);
-      if (state === undefined) {
-        return;
-      }
-      state.blockedUntil = now + retryAfterSeconds * 1000;
+      stateFor(op, now).blockedUntil = now + retryAfterSeconds * 1000;
     },
   };
 }

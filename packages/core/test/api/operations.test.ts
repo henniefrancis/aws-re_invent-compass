@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
 import { createHarness, response } from './operation-harness.js';
 import { listEvents } from '../../src/api/list-events.js';
+import { DEFAULT_RATE_LIMIT_BLOCK_SECONDS } from '../../src/api/execute-operation.js';
 import { getEvent } from '../../src/api/get-event.js';
 import { listSessions } from '../../src/api/list-sessions.js';
 import { getSession } from '../../src/api/get-session.js';
@@ -332,5 +333,82 @@ describe('Feature: events-client, Property 19: Bulk results pass through success
     const got = await associateFavorites(h.ctx, ['only']);
     expect(got.result.successful).toEqual([]);
     expect(got.result.failed).toEqual([]);
+  });
+});
+
+describe('events-client, QA H1 (Requirement 12.9): every 429 blocks the next call of that operation', () => {
+  const schedule = response(200, { schedule: { reserved: [], favorites: [], personalTime: [] } });
+
+  test('a 429 that fails the call (no Retry-After) blocks an immediate second call for 30 seconds', async () => {
+    const h = createHarness({ responses: [response(429, undefined), schedule, schedule] });
+    await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(RateLimitedError);
+    expect(h.sent).toHaveLength(1);
+    await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(QuotaExceededError);
+    expect(h.sent).toHaveLength(1);
+  });
+
+  test('the default block is 30 seconds, and an invalid Retry-After uses it too', async () => {
+    for (const header of [undefined, 'abc', '121', '-1']) {
+      const h = createHarness({
+        responses: [
+          response(429, undefined, header === undefined ? {} : { 'retry-after': header }),
+          schedule,
+        ],
+      });
+      await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(RateLimitedError);
+      await h.ctx.sleep(29_999);
+      await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(QuotaExceededError);
+      await h.ctx.sleep(1);
+      await expect(getSchedule(h.ctx)).resolves.toBeDefined();
+    }
+    expect(DEFAULT_RATE_LIMIT_BLOCK_SECONDS).toBe(30);
+  });
+
+  test('ReserveSessions is blocked after its 429 as well, with nothing sent', async () => {
+    const result: BulkResult = { successful: ['S1'], failed: [] };
+    const h = createHarness({
+      responses: [response(429, undefined, { 'retry-after': '10' }), response(200, { result })],
+    });
+    await expect(reserveSessions(h.ctx, ['S1'])).rejects.toBeInstanceOf(RateLimitedError);
+    await expect(reserveSessions(h.ctx, ['S1'])).rejects.toBeInstanceOf(QuotaExceededError);
+    expect(h.sent).toHaveLength(1);
+    await h.ctx.sleep(10_000);
+    await expect(reserveSessions(h.ctx, ['S1'])).resolves.toBeDefined();
+  });
+
+  test('a 429 on an unmetered operation also blocks the next call', async () => {
+    const h = createHarness({
+      responses: [response(429, undefined), response(200, { items: [] })],
+    });
+    await expect(listEvents(h.ctx)).rejects.toBeInstanceOf(RateLimitedError);
+    await expect(listEvents(h.ctx)).rejects.toBeInstanceOf(QuotaExceededError);
+    expect(h.sent).toHaveLength(1);
+  });
+
+  test('a 429 that answers the single retry blocks the next call too', async () => {
+    const h = createHarness({
+      responses: [
+        response(429, undefined, { 'retry-after': '1' }),
+        response(429, undefined, { 'retry-after': '20' }),
+        schedule,
+      ],
+    });
+    await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(RateLimitedError);
+    expect(h.sent).toHaveLength(2);
+    await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(QuotaExceededError);
+    expect(h.sent).toHaveLength(2);
+  });
+
+  test('a 429 that answers the retry after a 401 refresh blocks the next call', async () => {
+    const h = createHarness({
+      responses: [
+        response(401, undefined),
+        response(429, undefined, { 'retry-after': '20' }),
+        schedule,
+      ],
+    });
+    await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(RateLimitedError);
+    await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(QuotaExceededError);
+    expect(h.sent).toHaveLength(2);
   });
 });
