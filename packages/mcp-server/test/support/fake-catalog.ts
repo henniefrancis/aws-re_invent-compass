@@ -156,9 +156,12 @@ export function loadSyntheticWires(): SessionWire[] {
   return (raw as unknown[]).map((item) => SessionWireSchema.parse(item));
 }
 
-/** A CatalogView over the synthetic catalog. */
+let cachedSynthetic: CatalogView | undefined;
+
+/** A CatalogView over the synthetic catalog (built once; the view is never mutated). */
 export function syntheticCatalogView(): CatalogView {
-  return buildCatalogView(loadSyntheticWires());
+  cachedSynthetic ??= buildCatalogView(loadSyntheticWires());
+  return cachedSynthetic;
 }
 
 /** A minimal wire session for tests that need a hand-built catalog. */

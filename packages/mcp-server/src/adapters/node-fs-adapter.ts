@@ -11,7 +11,8 @@ import { CompassError } from '../ports/errors.js';
 
 /** File access for the pass module and the app-data folder. */
 export interface AppFileSystem {
-  mkdirp(path: string): Promise<void>;
+  /** Creates a directory (and parents) with the given mode. */
+  ensureDir(path: string, mode: number): Promise<void>;
   /** Reads a file, or returns undefined when it does not exist. */
   readFile(path: string): Promise<Uint8Array | undefined>;
   /** Writes (replaces) a file with mode 0o600. Refuses a symbolic link. */
@@ -59,8 +60,8 @@ export function createNodeAppFileSystem(linkInfo: LinkInfo = lstat): AppFileSyst
   };
 
   return {
-    mkdirp: async (path) => {
-      await mkdir(path, { recursive: true, mode: 0o700 });
+    ensureDir: async (path, mode) => {
+      await mkdir(path, { recursive: true, mode });
     },
     readFile: async (path) => {
       try {

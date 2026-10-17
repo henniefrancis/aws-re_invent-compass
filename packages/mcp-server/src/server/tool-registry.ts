@@ -4,8 +4,11 @@
 
 import type { McpToolName } from '@compass/contracts';
 import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
+import { checkItinerary } from '../tools/check-itinerary.js';
 import { findSessions } from '../tools/find-sessions.js';
+import { planWeekTool } from '../tools/plan-week.js';
 import { refreshCatalog } from '../tools/refresh-catalog.js';
+import { scanRepoTool } from '../tools/scan-repo.js';
 import { signIn } from '../tools/sign-in.js';
 import { signOut } from '../tools/sign-out.js';
 import { DESCRIPTIONS, TITLES } from './descriptions.js';
@@ -40,9 +43,9 @@ export const TOOL_SPECS: { [K in McpToolName]: ToolSpec<K> } = {
   sign_out: spec('sign_out', 'localAction', false, signOut),
   refresh_catalog: spec('refresh_catalog', 'read', false, refreshCatalog),
   find_sessions: spec('find_sessions', 'read', false, findSessions),
-  scan_repo: spec('scan_repo', 'read', false, notBuilt),
-  plan_week: spec('plan_week', 'localAction', false, notBuilt),
-  check_itinerary: spec('check_itinerary', 'read', false, notBuilt),
+  scan_repo: spec('scan_repo', 'read', false, scanRepoTool),
+  plan_week: spec('plan_week', 'localAction', false, planWeekTool),
+  check_itinerary: spec('check_itinerary', 'read', false, checkItinerary),
   reserve_with_guardrails: spec('reserve_with_guardrails', 'write', true, notBuilt),
   cancel_reservation: spec('cancel_reservation', 'write', true, notBuilt),
   add_standby: spec('add_standby', 'write', true, notBuilt),

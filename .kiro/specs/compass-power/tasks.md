@@ -249,29 +249,29 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 13.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 14. Build scan_repo, plan_week and check_itinerary
-  - [ ] 14.1 Implement scan_repo
+- [x] 14. Build scan_repo, plan_week and check_itinerary
+  - [x] 14.1 Implement scan_repo
     - `src/tools/scan-repo.ts`: run `scanRepo` with `runtime.scanFs`, store the result and taxonomy matches in session state, set the Workspace_Root, map to the contract output (display names, depth 0 to 3), text with depth, level, reasoning and catalog labels
     - _Requirements: 3.7, 4.2, 10.5_
-  - [ ] 14.2 Write property test for the scan_repo output
+  - [x] 14.2 Write property test for the scan_repo output
     - **Property 14: scan_repo output encodes depth as the contract expects**
     - **Validates: Requirements 3.7**
-  - [ ] 14.3 Implement plan_week with the gitignore offer
+  - [x] 14.3 Implement plan_week with the gitignore offer
     - `src/tools/plan-week.ts`: validate `maxPerDay` (1 to 8, default 4), read catalog, fresh schedule and window, `planWeek` with a `PlannerRules` bound from `RulesPort`, connections and energy from `RulesPort`, `renderWeekSpec`, `writeWeekSpec` at the Workspace_Root, then the gitignore offer through `elicit` or text
     - _Requirements: 5.3, 7.1, 7.2, 7.4, 7.5, 7.6, 10.1_
-  - [ ] 14.4 Write property test for gitignore consent
+  - [x] 14.4 Write property test for gitignore consent
     - **Property 25: .gitignore changes only on an explicit accept**
     - **Validates: Requirements 7.4, 7.5, 7.6**
-  - [ ] 14.5 Write property test that nothing from files leaks
+  - [x] 14.5 Write property test that nothing from files leaks
     - **Property 12: No file name, path or content leaves the scanner**
     - **Validates: Requirements 3.5, 6.5, 10.5**
-  - [ ] 14.6 Implement check_itinerary
+  - [x] 14.6 Implement check_itinerary
     - `src/tools/check-itinerary.ts`: identifier checks, fresh schedule, `guardBatch` over the proposed commitments plus the confirmed schedule (written in task 15.1; implement `guardBatch` and `combineVerdicts` here first if needed and keep them in `src/guardrail/`), suggestions on block, text listing ids, codes and catalog titles
     - _Requirements: 10.3, 11.1, 11.4, 12.2_
-  - [ ] 14.7 Write unit tests for the three tools
+  - [x] 14.7 Write unit tests for the three tools
     - Re-run produces the dated file and diff; elicitation present and absent; check_itinerary with clash, tight connection and missing venue
     - _Requirements: 7.2, 7.5, 7.6, 12.2_
-  - [ ] 14.8 Commit
+  - [x] 14.8 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 15. Build the guardrail orchestration and reserve_with_guardrails

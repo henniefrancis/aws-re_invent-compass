@@ -122,7 +122,7 @@ describe('node app file system', () => {
 
   test('creates directories, writes, reads, renames, removes and reports existence', async () => {
     const dir = join(temp, 'a', 'b');
-    await fs.mkdirp(dir);
+    await fs.ensureDir(dir, 0o700);
     const file = join(dir, 'one.bin');
     expect(await fs.exists(file)).toBe(false);
     expect(await fs.readFile(file)).toBeUndefined();
@@ -146,7 +146,7 @@ describe('node app file system', () => {
     'files are 0o600 and directories 0o700 on POSIX',
     async () => {
       const dir = join(temp, 'modes');
-      await fs.mkdirp(dir);
+      await fs.ensureDir(dir, 0o700);
       await fs.writeFile(join(dir, 'f'), 'x');
       expect((await stat(join(dir, 'f'))).mode & 0o777).toBe(0o600);
       expect((await stat(dir)).mode & 0o777).toBe(0o700);

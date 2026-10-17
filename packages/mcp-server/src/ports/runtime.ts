@@ -2,6 +2,7 @@
 // Architecture, Runtime and ports). createRuntime(env) picks live or simulated; tests
 // pass fakes. Nothing in a handler imports another stream directly.
 
+import type { Detector } from '@compass/core/scanner';
 import type { Clock } from './clock.js';
 import type { EventsPort } from './events-port.js';
 import type { ScanFs, SpecFs } from './fs-ports.js';
@@ -23,4 +24,6 @@ export interface Runtime {
   clock: Clock;
   logger: Logger;
   cwd: string;
+  /** Overrides the scanner's detectors. Left out in production, so the defaults apply. */
+  scanDetectors?: readonly Detector[];
 }
