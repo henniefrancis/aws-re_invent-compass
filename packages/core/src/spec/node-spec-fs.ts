@@ -6,10 +6,41 @@
 // a Week_Spec file is refused.
 
 import { constants } from 'node:fs';
-import { lstat, mkdir, open, readFile, stat } from 'node:fs/promises';
+import { lstat, mkdir, open, stat } from 'node:fs/promises';
 import { basename, dirname, sep } from 'node:path';
 import { SpecWriteRefusedError } from './spec-errors.js';
 import type { SpecFs } from './spec-fs.js';
+
+/** The most bytes read from an existing spec document or `.gitignore`: 256 KiB. */
+export const SPEC_READ_LIMIT = 256 * 1024;
+
+/** What the safe read needs to know about a path or an open file. */
+export interface FileInfo {
+  isSymbolicLink(): boolean;
+  isFile(): boolean;
+  nlink: number;
+  size: number;
+  ino: number;
+  dev: number;
+}
+
+/** An open file, as far as the safe read uses it. */
+export interface OpenedFile {
+  stat(): Promise<FileInfo>;
+  read(
+    buffer: Buffer,
+    offset: number,
+    length: number,
+    position: number,
+  ): Promise<{ bytesRead: number }>;
+  close(): Promise<void>;
+}
+
+/** The calls the safe read makes; tests replace them to report anomalies. */
+export interface ReadDeps {
+  stat(path: string): Promise<FileInfo>;
+  open(path: string, flags: number): Promise<OpenedFile>;
+}
 
 const SPEC_FILE = /^(?:requirements|design|tasks)\.md$|^week-\d{4}-\d{2}-\d{2}(?:-\d+)?\.md$/;
 const SPEC_DIRECTORY = ['.kiro', 'specs', 'my-reinvent-week'].join(sep);
@@ -21,6 +52,11 @@ export function hasAllowedShape(path: string): boolean {
     name === '.gitignore' ||
     (SPEC_FILE.test(name) && dirname(path).endsWith(`${sep}${SPEC_DIRECTORY}`))
   );
+}
+
+/** A regular file, not a link, with one name, of a size that may be read. */
+function isPlainFile(info: FileInfo): boolean {
+  return !info.isSymbolicLink() && info.isFile() && info.nlink <= 1 && info.size <= SPEC_READ_LIMIT;
 }
 
 function isMissing(error: unknown): boolean {
@@ -35,7 +71,44 @@ function isMissing(error: unknown): boolean {
  */
 export function createNodeSpecFs(
   linkInfo: (path: string) => Promise<{ isSymbolicLink(): boolean }> = lstat,
+  read: ReadDeps = { stat: lstat, open },
 ): SpecFs {
+  /**
+   * Reads an existing spec document or `.gitignore` safely (security review H2): only a name in the
+   * allowed set, only a regular file that is not a link and has no second hard link, opened without
+   * following a link, checked again through the open handle, and at most 256 KiB. Any anomaly is a
+   * refusal with the fixed text, and nothing is returned.
+   */
+  const safeRead = async (path: string): Promise<string> => {
+    if (!hasAllowedShape(path)) {
+      throw new SpecWriteRefusedError();
+    }
+    let before: FileInfo;
+    let handle: OpenedFile;
+    try {
+      before = await read.stat(path);
+      if (!isPlainFile(before)) {
+        throw new SpecWriteRefusedError();
+      }
+      handle = await read.open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+    } catch {
+      throw new SpecWriteRefusedError();
+    }
+    try {
+      const after = await handle.stat();
+      if (!isPlainFile(after) || after.ino !== before.ino || after.dev !== before.dev) {
+        throw new SpecWriteRefusedError();
+      }
+      const buffer = Buffer.alloc(after.size);
+      const { bytesRead } = await handle.read(buffer, 0, after.size, 0);
+      return buffer.subarray(0, bytesRead).toString('utf8');
+    } catch {
+      throw new SpecWriteRefusedError();
+    } finally {
+      await handle.close();
+    }
+  };
+
   const linkStatus = async (path: string): Promise<'link' | 'other' | 'missing'> => {
     try {
       return (await linkInfo(path)).isSymbolicLink() ? 'link' : 'other';
@@ -60,7 +133,7 @@ export function createNodeSpecFs(
       }
     },
     isSymlink: async (path) => (await linkStatus(path)) === 'link',
-    readText: (path) => readFile(path, 'utf8'),
+    readText: safeRead,
     createExclusive: async (path, text) => {
       if (!hasAllowedShape(path)) {
         throw new SpecWriteRefusedError();

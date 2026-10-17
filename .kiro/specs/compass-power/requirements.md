@@ -415,3 +415,5 @@ These amendments came from the CTO review and take precedence over the criteria 
 These came from the S3 code reviews (QA and security) after the first build. They take precedence over the criteria above where they differ.
 
 R2.1. **Scan limits.** A scan SHALL finish inside 20 seconds in a worker thread that is terminated when the budget is spent, SHALL visit at most 200,000 entries and 40 directory levels, and SHALL use a linear import parser and bounded gitignore patterns (at most 256 characters, 8 stars, 2000 rules per file), so crafted repository content cannot make the server slow.
+
+R2.2. **Safe reads.** The spec writer and the `.gitignore` offer SHALL read an existing file only when it is a regular file with one name that is not a symbolic link, is opened without following a link, is re-checked through the open handle, and is at most 256 KiB; any anomaly SHALL refuse with the fixed write-refused message and no diff.
