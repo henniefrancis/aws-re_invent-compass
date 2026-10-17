@@ -110,3 +110,15 @@ describe('events-client, M3: OAuth calls refuse redirects and have time limits',
     expect(oauth.calls[0]?.signal).toBeInstanceOf(AbortSignal);
   });
 });
+
+describe('events-client, L3: an oversize revoke response does not stop sign-out', () => {
+  test('the tokens are still cleared and the URL returned', async () => {
+    const store = fakeStore(heldTokens());
+    const result = await signOut(store, {
+      fetch: fakeOAuth([{ status: 200, headers: { 'content-length': '65537' } }]).fetch,
+      logger: capturingLogger().logger,
+    });
+    expect(result.signOutUrl).toBe(BUILDER_ID_SIGN_OUT_URL);
+    expect(store.load()).toBeUndefined();
+  });
+});

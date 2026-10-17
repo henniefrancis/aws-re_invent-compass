@@ -12,11 +12,18 @@
 // function is injected through deps; the base URL is fixed (see createHttpTransport).
 
 import { assertAudience } from '../auth/credential-provider.js';
-import { ValidationError } from './errors.js';
+import {
+  BodyTooLargeError,
+  MAX_API_BODY_BYTES,
+  readBodyCapped,
+  type CappableResponse,
+} from './capped-body.js';
+import { ResponseTooLargeError, ValidationError } from './errors.js';
 import {
   EVENTS_API_BASE_URL,
   type ClientRequest,
   type EventsApiCredential,
+  type OperationName,
   type RawResponse,
   type ResponseHeaders,
   type Transport,
@@ -27,7 +34,7 @@ import {
  * headers (read-only accessor) and a text() for the body. Typed structurally so no
  * DOM/undici lib type is needed in the build.
  */
-export interface FetchResponseLike {
+export interface FetchResponseLike extends CappableResponse {
   status: number;
   headers: ResponseHeaders;
   text(): Promise<string>;
@@ -62,8 +69,16 @@ export interface HttpTransportDeps {
  * validation layer above can reject it as a validation error; this transport makes
  * no success/failure judgement of its own.
  */
-async function parseBody(res: FetchResponseLike): Promise<unknown> {
-  const text = await res.text();
+async function parseBody(res: FetchResponseLike, operation: OperationName): Promise<unknown> {
+  let text: string;
+  try {
+    text = await readBodyCapped(res, MAX_API_BODY_BYTES);
+  } catch (error) {
+    if (error instanceof BodyTooLargeError) {
+      throw new ResponseTooLargeError(operation, res.status);
+    }
+    throw error;
+  }
   if (text.length === 0) {
     return undefined;
   }
@@ -145,7 +160,7 @@ export function createHttpTransport(deps: HttpTransportDeps): Transport {
         init.body = JSON.stringify(req.body);
       }
       const res = await deps.fetch(target, init);
-      const body = await parseBody(res);
+      const body = await parseBody(res, req.operation);
       return { status: res.status, headers: res.headers, body };
     },
   };

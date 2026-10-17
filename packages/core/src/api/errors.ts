@@ -114,6 +114,18 @@ export class EventWindowError extends EventsApiError {
   }
 }
 
+/** A response body was larger than the allowed limit. Never carries the body. */
+export class ResponseTooLargeError extends EventsApiError {
+  constructor(operation: OperationName, status?: number) {
+    super(
+      'ResponseTooLargeError',
+      operation,
+      `${operation} received a response larger than the allowed limit`,
+      status,
+    );
+  }
+}
+
 /** A client-side per-operation quota would be exceeded; raised before any send. */
 export class QuotaExceededError extends EventsApiError {
   constructor(operation: OperationName, message: string) {

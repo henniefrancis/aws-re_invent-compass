@@ -69,7 +69,7 @@ export function fakeStore(initial?: TokenSet, kind: StorageKind = 'keychain'): F
 
 /** One scripted reply: a status and body, a thrown error, or a call that never ends. */
 export type Scripted =
-  | { status: number; body?: unknown }
+  | { status: number; body?: unknown; headers?: Record<string, string> }
   | { throws: Error }
   | { hang: true }
   | { deferred: Promise<{ status: number; body?: unknown }> };
@@ -90,9 +90,15 @@ export interface FakeOAuth {
   calls: OAuthCall[];
 }
 
-function reply(status: number, body: unknown): OAuthResponseLike {
+function reply(
+  status: number,
+  body: unknown,
+  headers: Record<string, string> = {},
+): OAuthResponseLike {
+  const lower = new Map(Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v]));
   return {
     status,
+    headers: { get: (name: string) => lower.get(name.toLowerCase()) ?? null },
     text: () =>
       Promise.resolve(
         body === undefined ? '' : typeof body === 'string' ? body : JSON.stringify(body),
@@ -127,7 +133,7 @@ export function fakeOAuth(script: Scripted[]): FakeOAuth {
     if ('deferred' in step) {
       return step.deferred.then((r) => reply(r.status, r.body));
     }
-    return Promise.resolve(reply(step.status, step.body));
+    return Promise.resolve(reply(step.status, step.body, step.headers));
   };
   return { fetch, calls };
 }

@@ -342,3 +342,13 @@ describe('events-client, M3: the sign-in exchange refuses redirects and times ou
     expect(r.oauth.calls[0]?.signal).toBeInstanceOf(AbortSignal);
   });
 });
+
+describe('events-client, L3: an oversize token response is a sign-in failure', () => {
+  test('a declared 64 KB plus one response is refused and nothing is stored', async () => {
+    const r = rig({
+      script: [{ status: 200, body: tokenBody(), headers: { 'content-length': '65537' } }],
+    });
+    await expect(signIn(r.deps)).rejects.toBeInstanceOf(SignInFailedError);
+    expect(r.store.saves).toHaveLength(0);
+  });
+});

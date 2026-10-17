@@ -382,3 +382,15 @@ describe('events-client, M3: token and refresh calls refuse redirects and time o
     }
   });
 });
+
+describe('events-client, L3: an oversize refresh response leaves the tokens alone', () => {
+  test('it is a refresh failure and the stored tokens are unchanged', async () => {
+    const held = heldTokens();
+    const store = fakeStore(held);
+    const oauth = fakeOAuth([
+      { status: 200, body: tokenBody(), headers: { 'content-length': '65537' } },
+    ]);
+    await expect(refreshNow(store, deps(oauth).deps)).rejects.toBeInstanceOf(RefreshFailedError);
+    expect(store.load()).toEqual(held);
+  });
+});

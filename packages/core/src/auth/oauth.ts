@@ -9,6 +9,7 @@
 // a token or a header: a failed call yields only a status and a safe error code.
 
 import { z } from 'zod';
+import { MAX_OAUTH_BODY_BYTES, readBodyCapped, type CappableResponse } from '../api/capped-body.js';
 
 export const AUTHORIZE_ENDPOINT = 'https://oauth.awsevents.com/oauth2/authorize';
 export const TOKEN_ENDPOINT = 'https://oauth.awsevents.com/oauth2/token';
@@ -36,7 +37,7 @@ export interface OAuthFetchInit {
 }
 
 /** The part of a fetch Response the OAuth calls read. */
-export interface OAuthResponseLike {
+export interface OAuthResponseLike extends CappableResponse {
   status: number;
   text(): Promise<string>;
 }
@@ -71,7 +72,7 @@ export async function postForm(
     signal: signal ?? AbortSignal.timeout(OAUTH_REQUEST_TIMEOUT_MS),
   };
   const response = await doFetch(url, init);
-  const text = await response.text();
+  const text = await readBodyCapped(response, MAX_OAUTH_BODY_BYTES);
   let json: unknown;
   try {
     json = JSON.parse(text);
