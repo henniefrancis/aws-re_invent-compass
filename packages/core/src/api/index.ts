@@ -44,6 +44,23 @@ export {
 // Client-side quota tracker (Component 7).
 export { createQuotaTracker, type QuotaDecision } from './quota-tracker.js';
 
+// Bulk input guard and failure classification (Component 5).
+export { assertBulkInput, MIN_BULK_IDS, MAX_BULK_IDS } from './bulk-input.js';
+export {
+  KNOWN_BULK_FAILURE_CODES,
+  classifyFailure,
+  type KnownBulkFailureCode,
+  type FailureClassification,
+} from './bulk-failure-codes.js';
+
+// Confirmed-write helper (Component 6).
+export {
+  confirmedWrite,
+  type Confirmed,
+  type Unconfirmed,
+  type ConfirmedWriteResult,
+} from './confirmed-write.js';
+
 // Retry policy and Retry-After parser (Component 3).
 export {
   createRetryPolicy,

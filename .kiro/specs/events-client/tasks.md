@@ -103,29 +103,29 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 5.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 6. Implement bulk input guard, failure codes and confirmed write
-  - [ ] 6.1 Implement the bulk input guard and failure classification
+- [x] 6. Implement bulk input guard, failure codes and confirmed write
+  - [x] 6.1 Implement the bulk input guard and failure classification
     - Create `src/api/bulk-input.ts` with `assertBulkInput` (1 to 10 distinct ids, else `ValidationError` before send)
     - Create `src/api/bulk-failure-codes.ts` with `KNOWN_BULK_FAILURE_CODES`, the bidirectional compile-time assertion against the generated `EventsApi` `BulkFailureCode` type, and `classifyFailure` returning `known` or `unrecognised-refusal`
     - _Requirements: 10.1, 10.2, 10.3, 10.5, 10.6_
 
-  - [ ] 6.2 Write property test for bulk input validation
+  - [x] 6.2 Write property test for bulk input validation
     - **Property 18: Bulk input is accepted only when 1 to 10 distinct ids, else rejected before send**
     - **Validates: Requirements 10.1, 10.2, 10.3**
 
-  - [ ] 6.3 Write property test for unrecognised failure codes
+  - [x] 6.3 Write property test for unrecognised failure codes
     - **Property 20: Unrecognised failure codes are refusals, never successes**
     - **Validates: Requirements 10.6**
 
-  - [ ] 6.4 Implement the confirmed-write helper
+  - [x] 6.4 Implement the confirmed-write helper
     - Create `src/api/confirmed-write.ts` with `confirmedWrite<W>` that calls `GetSchedule` once after a successful write and returns both; returns the write error without calling `GetSchedule` on write failure; returns `confirmed: false` without re-sending when the write succeeds but `GetSchedule` fails
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
 
-  - [ ] 6.5 Write property test for the confirmed-write helper
+  - [x] 6.5 Write property test for the confirmed-write helper
     - **Property 21: Confirmed-write helper confirms, reports, and never re-sends**
     - **Validates: Requirements 11.1, 11.2, 11.3, 11.4**
 
-  - [ ] 6.6 Commit
+  - [x] 6.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 7. Checkpoint - Ensure all tests pass
