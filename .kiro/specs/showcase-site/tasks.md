@@ -343,19 +343,19 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 15.7 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 16. README and hand-over notes
-  - [ ] 16.1 Write `site/README.md`
+- [x] 16. README and hand-over notes
+  - [x] 16.1 Write `site/README.md`
     - Cover: what the site is; how to build (`npx tsc -b`, then `npx ng build` and both checks from `site/`); unit and browser tests; the output folder for `scripts/release.sh` (`site/dist/site/browser/`); the Required_CSP quoted exactly for S6; the content sources and the verbatim rule; the artwork manifest; the links that change after release (`content/links.ts`)
     - _Requirements: 3.6, 23.4_
 
-  - [ ] 16.2 Write the README consistency test
+  - [x] 16.2 Write the README consistency test
     - Assert `site/README.md` contains `REQUIRED_CSP` exactly and names the output folder
     - _Requirements: 3.6, 23.4_
 
-  - [ ] 16.3 Commit
+  - [x] 16.3 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 17. Final checkpoint - Ensure all tests pass and coverage is complete
+- [x] 17. Final checkpoint - Ensure all tests pass and coverage is complete
   - Ensure all tests pass with 100% lines, branches, functions and statements for Site_Logic and no named exclusion; lint, format, dash check and the Angular build clean; both build checks pass; ask the user if questions arise.
   - _Requirements: 22.1, 22.2_
 
@@ -394,7 +394,9 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 14. **Coverage exclusion ADR (CTO M10).** Record an ADR that `site/src/app/**` is a named coverage exclusion, with the site `vitest.config.ts` coverage scope as the evidence, and add it to the build plan section 11.2 list.
 15. **DONE in this branch after S2 merged into develop (8e1277b): the demo is wired to the real engine and `data/venues.json`.** Kept for the record; the two edits below were made. (a) `site/src/lib/demo/venue-data.ts`: replace the null seam with `import venueFile from '../../../../data/venues.json'; export const DEMO_VENUE_DATA: unknown = venueFile;`. (b) `site/src/lib/demo/rules-port.ts`: replace the namespace import with named imports of the eight functions (so the bundler drops unused engine code and zod), then run `check-budgets` to confirm the Demo_Page chunk stays under 150 kB gzip. `site/test/demo/real-engine.test.ts` runs the guided path and properties against the real engine. Measured with the engine: Demo_Page chunk 120945 bytes gzip of 150000 (the engine's zod schemas are most of it), so watch that chunk when S2 or the contracts change.
 16. **S1 normaliser at merge.** `site/test/demo/demo-catalog.test.ts` compares the demo catalog with a test-local normaliser written from the S1 design (`site/test/support/normalise-wire.ts`). When S1 merges, switch it to `normaliseSession` from `@compass/core/catalog` and confirm the `startsAt` format.
-17. **Slow S0 property test.** `packages/contracts/test/placeholder-safety.test.ts` (Property 9) timed out once on a loaded machine (20 s for one case) and passed on the next run. Consider a longer timeout.
+17. **CSP changes from the requirements (S6 and `site/package.json`).** The Required_CSP uses `base-uri 'self'` instead of `'none'` because the pages carry `<base href="/">` (design deviation 20); `site/README.md` quotes the exact value and `site/scripts/required-csp.mjs` is the single source. Declare `zod` (already pinned at 4.6.7 in the workspace) in `site/package.json`: `site/src/lib/demo/zod-jitless.ts` imports `zod/v4/core` to stop zod's `new Function` probe, which a strict CSP reports as a violation.
+18. **Firefox profile not run here.** The Firefox browser is not installed on the build machine. Run `npx playwright install firefox` and the `desktop-firefox` project before the freeze (`e2e.yml` installs all browsers).
+19. **Tests that time out on a loaded machine.** `packages/contracts/test/placeholder-safety.test.ts` (Property 9, once 20 s for one case), `packages/contracts/test/catalog-deterministic.test.ts` and `packages/core/test/rules/public-surface.test.ts` (5 s limit) each timed out once while the root suite ran next to browser tests, and passed alone or on the next run. Consider a longer timeout.
 
 ## Task Dependency Graph
 
