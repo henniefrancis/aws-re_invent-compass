@@ -91,7 +91,7 @@ export function createPipeline<D extends BaseDeps>(
     const route = handler === undefined ? 'UNMATCHED' : key;
     const finishedAt = deps.clock.now();
     writeRequestLog(deps.logSink, {
-      requestId: event.requestContext.requestId,
+      requestId: event.requestContext?.requestId ?? '',
       route,
       status: result.statusCode,
       latencyMs: Math.max(0, finishedAt - startedAt),

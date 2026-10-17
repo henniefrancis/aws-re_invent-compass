@@ -9,6 +9,7 @@ const SIZES: Record<string, [number, number]> = {
   'icon.png': [29, 29],
   'icon@2x.png': [58, 58],
   'icon@3x.png': [87, 87],
+  'logo.png': [160, 50],
   'logo@2x.png': [320, 100],
   'logo@3x.png': [480, 150],
 };

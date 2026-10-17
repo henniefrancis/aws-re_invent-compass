@@ -190,6 +190,7 @@ export function createHandoffService(deps: HandoffDeps): HandoffService {
       return buildCalendar(
         active.map((rec) => ({ serialNumber: rec.serialNumber, fields: rec.fields })),
         config.eventWindow.timezone,
+        op.now,
       );
     },
   };

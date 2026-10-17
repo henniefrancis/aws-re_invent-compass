@@ -11,6 +11,7 @@ export const ARTWORK_FILES = [
   'icon.png',
   'icon@2x.png',
   'icon@3x.png',
+  'logo.png',
   'logo@2x.png',
   'logo@3x.png',
 ] as const;
@@ -30,6 +31,7 @@ export function renderArtwork(): Record<ArtworkName, Uint8Array> {
     'icon.png': icon(29),
     'icon@2x.png': icon(58),
     'icon@3x.png': icon(87),
+    'logo.png': logo(160, 50),
     'logo@2x.png': logo(320, 100),
     'logo@3x.png': logo(480, 150),
   };

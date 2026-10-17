@@ -19,11 +19,11 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 - **Passkit_Lambda**: The Lambda bundle that serves the five Apple PassKit web service operations: registerDevice, unregisterDevice, getSerialNumbers, getLatestPass and logMessages.
 - **Route_Template**: The API Gateway resource path template of a request (for example `/api/v1/passes/{serialNumber}/void`), read from the proxy event `resource` field. It never contains an identifier value.
 - **Problem_Response**: An `application/problem+json` body of exactly `{type, title, status, code}` that validates against `ProblemSchema` from `@compass/contracts`.
-- **Origin_Guard**: The check that the `x-origin-verify` request header equals the origin-verify value held in Secrets Manager.
+- **Origin_Guard**: The check that the `x-origin-verify` request header equals the origin-verify value held in its own Secrets Manager secret, `compass/<env>/origin-verify` (JSON key `originVerify`, plus `originVerifyPrevious` while rotating).
 - **ID_Token**: The AWS Builder ID ID token (JWT) sent as `Authorization: Bearer <token>` on attendee routes.
 - **Token_Verifier**: The component that verifies an ID_Token with `aws-jwt-verify`.
 - **Verifier_Mode**: The configuration switch that selects `cognito` (CognitoJwtVerifier, the expected SP2 outcome) or `oidc` (the generic JwtVerifier, build plan 5.4 step 2).
-- **Pepper**: The HMAC key held in the `compass/<env>/app` secret.
+- **Pepper**: The input key of the HKDF-SHA256 sub-keys (SubHash, DeviceHash, Auth_Token), held in the `compass/<env>/app` secret together with `pepperId`.
 - **SubHash**: HMAC-SHA256 of the ID_Token `sub` claim with the Pepper, hex encoded. The only identity the service stores.
 - **DeviceHash**: HMAC-SHA256 of Apple's `deviceLibraryIdentifier` with the Pepper, hex encoded.
 - **Serial_Number**: A UUID v4 generated server-side for each pass.
@@ -86,7 +86,7 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 
 #### Acceptance Criteria
 
-1. WHEN a request reaches either Lambda, THE Origin_Guard SHALL compare the `x-origin-verify` header value with the origin-verify value from the `compass/<env>/app` secret in constant time, before any other processing.
+1. WHEN a request reaches either Lambda, THE Origin_Guard SHALL compare the `x-origin-verify` header value with the origin-verify value from the `compass/<env>/origin-verify` secret (named by `ORIGIN_VERIFY_SECRET_ID`) in constant time, before any other processing.
 2. IF the `x-origin-verify` header is absent or does not equal the origin-verify value, THEN THE Lambda SHALL return a 403 Problem_Response with code `forbidden` and SHALL NOT read the request body, verify any token, or read or write DynamoDB.
 3. THE Origin_Guard SHALL apply to every operation of both Lambdas, including getHealth and the PassKit operations.
 
@@ -101,7 +101,7 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 3. WHEN Verifier_Mode is `oidc`, THE Token_Verifier SHALL verify the ID_Token with `JwtVerifier` from `aws-jwt-verify` using the configured issuer, the configured client id as the audience and the configured JWKS URI, and SHALL require a `token_use` claim equal to `id`.
 4. THE Token_Verifier SHALL accept an ID_Token only when its header `alg` is `RS256`, its signature verifies against a key from the issuer JWKS selected by `kid`, its `iss` equals the configured issuer, its `aud` equals the configured client id (default `7vmom55m1qstvq8i71ph127bfq`), its `token_use` equals `id` and its `exp` is in the future.
 5. IF the `Authorization` header is absent or malformed, or the ID_Token has a wrong `aud`, a wrong `iss`, `alg` `none` or any algorithm other than `RS256`, an `exp` in the past, a `kid` not found in the JWKS, a bad signature or a `token_use` other than `id`, THEN THE Lambda SHALL return a 401 Problem_Response with code `unauthorized`, the same body in every case.
-6. THE Token_Verifier SHALL cache the JWKS per `kid` for the lifetime of the Lambda execution environment, and SHALL fetch the JWKS again at most once when a token carries a `kid` that is not in the cached JWKS.
+6. THE Token_Verifier SHALL cache the JWKS per `kid` and SHALL rebuild the verifier and its JWKS cache every hour (and with each new execution environment), and SHALL fetch the JWKS again at most once when a token carries a `kid` that is not in the cached JWKS.
 7. WHEN an ID_Token is verified, THE Token_Verifier SHALL derive the SubHash from the `sub` claim and SHALL NOT read the `email` claim or any other claim apart from those named in criterion 4 and `sub`.
 8. THE Compass_API SHALL NOT store, log or return any ID_Token or `sub` value.
 9. THE Token_Verifier SHALL read the Verifier_Mode, the issuer, the client id and the JWKS URI from configuration only, so that the SP2 result changes configuration and not code.
@@ -307,7 +307,7 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 #### Acceptance Criteria
 
 1. WHEN forgetMe is called with a verified ID_Token, THE Api_Lambda SHALL void every active pass of the caller's SubHash per Requirement 12, including APNs pushes and Google `INACTIVE` patches.
-2. WHEN the voids are done, THE Api_Lambda SHALL delete every Pass_Record, Device_Registration, Handoff_Record and Rate_Counter of the caller's SubHash.
+2. WHEN the voids are done, THE Api_Lambda SHALL delete every Pass_Record, Device_Registration, Handoff_Record and marker item of the caller's SubHash, and SHALL NOT delete any Rate_Counter (counters expire by themselves, so erasure cannot reset a limit).
 3. WHEN the deletions are done, THE Api_Lambda SHALL return 202 with `{voided, deleted}`, where `voided` is the number of passes voided by this call and `deleted` is the number of items deleted.
 4. THE Api_Lambda SHALL NOT read, change or delete any item of a different SubHash during forgetMe.
 5. WHEN forgetMe is called for a SubHash with no items, THE Api_Lambda SHALL return 202 with `{voided: 0, deleted: 0}`.
@@ -318,12 +318,12 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 
 #### Acceptance Criteria
 
-1. THE Secrets_Provider SHALL read the `compass/<env>/apple-pass`, `compass/<env>/google-wallet` and `compass/<env>/app` secrets, named by configuration, through the Lambda execution role with the AWS SDK for JavaScript v3 Secrets Manager client.
+1. THE Secrets_Provider SHALL read the `compass/<env>/apple-pass`, `compass/<env>/google-wallet`, `compass/<env>/app` and `compass/<env>/origin-verify` secrets, named by configuration, through the Lambda execution role with the AWS SDK for JavaScript v3 Secrets Manager client.
 2. THE Secrets_Provider SHALL cache each secret value in memory for a configured time (default 300 seconds) and SHALL call Secrets Manager at most once per secret per cache period, including when requests arrive concurrently.
 3. IF a secret cannot be read or does not hold the documented JSON keys, THEN THE Lambda SHALL return a 500 Problem_Response with code `internal_error`, record the outcome `dependency_error`, and SHALL NOT include any secret value or key material in any log, error or response.
 4. THE pass-service SHALL NOT contain any certificate, private key, password, pepper, issuer id, Team ID or secret value in source code, tests, fixtures, logs or committed files.
 5. THE pass-service tests SHALL NOT read any real secret; they SHALL use Throwaway_PKI and fake secret values generated at test time.
-6. THE Passkit_Lambda SHALL read only the `apple-pass` and `app` secrets.
+6. THE Passkit_Lambda SHALL read only the `apple-pass`, `app` and `origin-verify` secrets.
 
 ### Requirement 22: Logging and metrics
 
@@ -414,3 +414,4 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 5. Every property test SHALL run at least 100 times (M3). The check of every response against the OpenAPI document with ajv waits for the integrator to declare ajv and js-yaml (they are in the lockfile only as transitive dependencies of other tools); until then the responses are checked by the YAML reader and the contract-typed zod schemas.
 6. THE hand-off view SHALL answer 200 with google null and count a GoogleWalletFailure when building the Google link fails (N4); forget_me SHALL count a GoogleWalletFailure for a failed Google INACTIVE patch (N5); no source file SHALL import node-forge (N6); the ID token aud SHALL be a string in both verifier modes (N8); the passkit bundle SHALL contain no Google client and APNS_HOST SHALL be api.push.apple.com or api.sandbox.push.apple.com (a harness-only option allows others) and an APNs reply body SHALL be read to at most 4096 characters (N10).
 7. THE local harness SHALL listen on 127.0.0.1 by default; any other address needs an explicit HARNESS_HOST and prints a loud warning and a random per-run access token once, and then every route, including /harness/*, SHALL require that token (header, cookie set by a ?harness_token= visit, or, for the PassKit routes, the token in the pass web service path); APNs and Google SHALL be off unless HARNESS_ENABLE_APNS or HARNESS_ENABLE_GOOGLE is true (N2).
+8. Duplicate platforms and duplicate serial numbers in a request SHALL be accepted and de-duplicated in order (the bounds apply to the list as sent); a bundle index SHALL be written without leading zeros; the calendar DTSTAMP SHALL come from the injected clock; the API Gateway request context SHALL be read defensively; the pass artwork SHALL include a 1x logo (L1, L2, L3, L5, L9). The requirement text for the origin-verify secret, the counters that forget_me keeps and the hourly JWKS rebuild is updated in place (L7, L8).

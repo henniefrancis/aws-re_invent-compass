@@ -9,7 +9,8 @@ export interface ProxyEvent {
   queryStringParameters: Record<string, string | undefined> | null;
   body: string | null;
   isBase64Encoded: boolean;
-  requestContext: { requestId: string };
+  /** Present on every API Gateway event; read defensively (review L1). */
+  requestContext?: { requestId?: string };
 }
 
 export interface ProxyResult {

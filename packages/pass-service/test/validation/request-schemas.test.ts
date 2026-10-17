@@ -184,7 +184,16 @@ describe('Feature: pass-service, issue request', () => {
   test('platform, list and duplicate rules', () => {
     const one = [pass('AAA101')];
     expect400(() => parseIssueRequest({ platforms: [], passes: one }, TEST_WINDOW));
-    expect400(() => parseIssueRequest({ platforms: ['apple', 'apple'], passes: one }, TEST_WINDOW));
+    // Duplicate platforms are accepted and de-duplicated (review L2).
+    expect(
+      parseIssueRequest({ platforms: ['apple', 'apple'], passes: one }, TEST_WINDOW).platforms,
+    ).toEqual(['apple']);
+    expect(
+      parseIssueRequest(
+        { platforms: ['google', 'apple', 'google'].slice(0, 2), passes: one },
+        TEST_WINDOW,
+      ).platforms,
+    ).toEqual(['google', 'apple']);
     expect400(() =>
       parseIssueRequest({ platforms: ['apple', 'google', 'apple'], passes: one }, TEST_WINDOW),
     );
@@ -221,7 +230,11 @@ describe('Feature: pass-service, hand-off, registration and log bodies', () => {
       include,
     });
     expect400(() => parseHandoffRequest({ serialNumbers: [], include }));
-    expect400(() => parseHandoffRequest({ serialNumbers: [UUID_A, UUID_A], include }));
+    // Duplicate serial numbers are accepted and de-duplicated, keeping their order (review L2).
+    expect(
+      parseHandoffRequest({ serialNumbers: [UUID_B, UUID_A, UUID_B, UUID_A], include })
+        .serialNumbers,
+    ).toEqual([UUID_B, UUID_A]);
     expect400(() => parseHandoffRequest({ serialNumbers: ['nope'], include }));
     expect400(() => parseHandoffRequest({ serialNumbers: [UUID_C.toUpperCase()], include }));
     expect400(() =>
@@ -385,13 +398,15 @@ describe('Feature: pass-service, Property 10', () => {
             platforms.length >= 1 &&
             platforms.length <= 2 &&
             platforms.every((p) => p === 'apple' || p === 'google') &&
-            new Set(platforms).size === platforms.length &&
             list.length >= 1 &&
             list.length <= 25 &&
             new Set(codes).size === codes.length &&
             list.every((p) => passFieldsSchema.safeParse(p).success && !hasUnknown(p));
           if (expected) {
-            expect(parseIssueRequest(request, TEST_WINDOW)).toEqual(request);
+            expect(parseIssueRequest(request, TEST_WINDOW)).toEqual({
+              ...request,
+              platforms: [...new Set(platforms)],
+            });
           } else {
             expect400(() => parseIssueRequest(request, TEST_WINDOW));
           }

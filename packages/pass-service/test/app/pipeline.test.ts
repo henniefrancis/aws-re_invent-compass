@@ -74,6 +74,16 @@ describe('Feature: pass-service, request pipeline', () => {
     expect(result.headers['cache-control']).toBeUndefined();
   });
 
+  test('an event without a request context is still served and logged with an unknown request id', async () => {
+    const { app, fake, capture } = setup({ 'GET /thing': okHandler });
+    const event = {
+      ...buildEvent({ method: 'GET', resource: '/thing', origin: fake.originSecret.originVerify }),
+      requestContext: undefined,
+    };
+    expect((await app(event)).statusCode).toBe(200);
+    expect(JSON.parse(String(capture.lines[0]))).toMatchObject({ requestId: 'unknown' });
+  });
+
   test('a wrong or missing origin is 403 forbidden with a Problem body', async () => {
     const { app, capture } = setup({ 'GET /thing': okHandler });
     for (const origin of [undefined, 'wrong']) {

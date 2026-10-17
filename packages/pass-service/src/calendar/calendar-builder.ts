@@ -12,7 +12,11 @@ export interface CalendarPass {
   fields: PassFields;
 }
 
-export function buildCalendar(passes: readonly CalendarPass[], timezone: string): string {
+export function buildCalendar(
+  passes: readonly CalendarPass[],
+  timezone: string,
+  nowMs: number,
+): string {
   const calendar = ical({ prodId: { company: 're:Invent Compass', product: 'boarding passes' } });
   for (const { serialNumber, fields } of passes) {
     const location = [fields.venue === '' ? NO_VENUE : fields.venue, fields.room]
@@ -20,6 +24,8 @@ export function buildCalendar(passes: readonly CalendarPass[], timezone: string)
       .join(', ');
     const event = calendar.createEvent({
       id: serialNumber,
+      // From the injected clock, so the file is the same every time (review L5).
+      stamp: new Date(nowMs),
       start: new Date(Date.parse(fields.startsAt)),
       end: new Date(Date.parse(fields.endsAt)),
       summary: `${fields.sessionCode} ${fields.title}`,

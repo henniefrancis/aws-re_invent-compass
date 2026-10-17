@@ -139,6 +139,10 @@ function distinct(values: readonly string[]): boolean {
   return new Set(values).size === values.length;
 }
 
+function unique<T>(values: T[]): T[] {
+  return [...new Set(values)];
+}
+
 export interface IssuePassesRequest {
   platforms: ('apple' | 'google')[];
   passes: PassFields[];
@@ -148,11 +152,12 @@ export function parseIssueRequest(body: unknown, window: EventWindow): IssuePass
   assertKnownKeys(body, ISSUE_REQUEST_SHAPE);
   const schema = z
     .object({
+      // Duplicates are accepted and removed, keeping the order (review L2).
       platforms: z
         .array(z.enum(['apple', 'google']))
         .min(1)
         .max(2)
-        .refine(distinct),
+        .transform(unique),
       passes: z.array(passFieldsSchema(window)).min(1).max(25),
     })
     .refine((request) => distinct(request.passes.map((pass) => pass.sessionCode)));
@@ -179,7 +184,7 @@ export interface CreateHandoffRequest {
 
 const handoffSchema = z
   .object({
-    serialNumbers: z.array(z.string().regex(UUID_V4_PATTERN)).min(1).max(80).refine(distinct),
+    serialNumbers: z.array(z.string().regex(UUID_V4_PATTERN)).min(1).max(80).transform(unique),
     include: z.object({ apple: z.boolean(), google: z.boolean(), calendar: z.boolean() }),
   })
   .refine(({ include }) => include.apple || include.google || include.calendar);

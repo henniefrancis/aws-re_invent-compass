@@ -286,7 +286,7 @@ describe('Feature: pass-service, hand-off view and downloads', () => {
   test('a bundle index that is not a number is the same 404', async () => {
     const fixture = createApiFixture();
     const id = await createOk(fixture, await seed(fixture, 1));
-    for (const index of ['x', '-1', '1.5', '', '1234567']) {
+    for (const index of ['x', '-1', '1.5', '', '1234567', '00', '01', '007']) {
       expect((await bundle(fixture, id, index)).result.statusCode).toBe(404);
     }
     const noParams = await fixture.call({
@@ -439,6 +439,18 @@ describe('Feature: pass-service, hand-off calendar', () => {
       }),
       { numRuns: 100 },
     );
+  });
+
+  test('DTSTAMP comes from the injected clock, so the file is the same every time', async () => {
+    const fixture = createApiFixture();
+    const id = await createOk(fixture, await seed(fixture, 1));
+    const read = async () =>
+      Buffer.from((await calendar(fixture, id)).result.body, 'base64').toString('utf8');
+    const first = await read();
+    expect(first).toContain('DTSTAMP:20261129T000000Z');
+    expect(await read()).toBe(first);
+    fixture.clock.advance(5000);
+    expect(await read()).toContain('DTSTAMP:20261129T000005Z');
   });
 
   test('with the calendar disabled the path is null and the route is 404 not_enabled', async () => {

@@ -4,7 +4,8 @@ import { ProblemError } from '../../http/problem.js';
 import { binary } from '../../http/responses.js';
 import type { Handler } from '../../http/router.js';
 
-const INDEX_PATTERN = /^\d{1,6}$/;
+/** No leading zeros: one spelling per index (review L3). */
+const INDEX_PATTERN = /^(0|[1-9]\d{0,5})$/;
 
 export const getHandoffAppleBundle: Handler<ApiContext> = async (req, ctx) => {
   const index = req.event.pathParameters?.bundleIndex ?? '';
