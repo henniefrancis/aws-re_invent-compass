@@ -203,25 +203,25 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit both environment roots with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 1.1, 1.4, 1.5, 1.8, 1.9, 1.10, 10.1, 10.2, 10.3_
 
-- [ ] 12. Implement the cross-cutting invariant tests (`infra/tests/*.tftest.hcl`)
-  - [ ] 12.1 Write property test for required tags on every managed resource
+- [x] 12. Implement the cross-cutting invariant tests (`infra/tests/*.tftest.hcl`)
+  - [x] 12.1 Write property test for required tags on every managed resource
     - **Property 1: Every managed resource carries the required tags**
     - **Validates: Requirements 1.9, 16.4**
 
-  - [ ] 12.2 Write property test for retained-resource destroy protection
+  - [x] 12.2 Write property test for retained-resource destroy protection
     - **Property 5: Every retained resource is protected against destruction**
     - Native plan behaviour assertion plus a static HCL scan asserting `prevent_destroy = true` in the lifecycle block of all six Retained_Resources
     - **Validates: Requirements 9.1, 9.2, 9.3, 9.4, 16.2**
 
-  - [ ] 12.3 Write property test for no secret or identifier in outputs
+  - [x] 12.3 Write property test for no secret or identifier in outputs
     - **Property 6: No Terraform output exposes a secret or identifier**
     - **Validates: Requirements 7.4, 17.1**
 
-  - [ ] 12.4 Write property test for identical module composition across environments
+  - [x] 12.4 Write property test for identical module composition across environments
     - **Property 9: The two environments compose the same modules**
     - **Validates: Requirements 10.1**
 
-  - [ ] 12.5 Run the invariant tests offline and commit them
+  - [x] 12.5 Run the invariant tests offline and commit them
     - Run `terraform test` (mock providers, `command = plan`) and the static scans for tasks 12.1 to 12.4; fix any finding
     - Commit the cross-cutting tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 1.9, 7.4, 9.1, 9.2, 9.3, 9.4, 10.1, 16.2, 16.4, 17.1_
