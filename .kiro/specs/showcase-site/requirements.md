@@ -82,7 +82,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 #### Acceptance Criteria
 
 1. THE built output SHALL contain no inline executable script: every `<script>` element either has a same-origin `src` attribute or has `type="application/json"`.
-2. THE built output SHALL contain no inline event handler attribute (an attribute whose name starts with `on`) and no `javascript:` URL.
+2. THE built output SHALL contain no inline event handler attribute (an attribute whose name starts with `on`) and no `javascript:` URL, however it is spelled with character references, tabs or line breaks, and no meta refresh, no base element other than `<base href="/">`, no object, embed or iframe element, and no svg use element that refers to anything outside the page.
 3. THE Site source SHALL NOT use `eval`, `new Function`, a string argument to `setTimeout` or `setInterval`, `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write` or any Angular `bypassSecurityTrust` method.
 4. THE build configuration SHALL set `optimization.styles.inlineCritical` to `false`, SHALL leave subresource integrity off, and SHALL NOT enable hydration event replay or incremental hydration.
 5. THE Site SHALL load all styles from same-origin stylesheet files: components SHALL declare no `styles` or `styleUrl`, and templates SHALL contain no `style` attribute and no `[style]` binding, so that the built HTML contains no `<style>` element and no `style` attribute.

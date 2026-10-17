@@ -103,6 +103,28 @@ function attr(attributes, name) {
   return attributes.find((a) => a.name === name)?.value;
 }
 
+const NAMED_REFERENCES = { colon: ':', tab: '\t', newline: '\n' };
+
+/**
+ * An attribute value as a browser reads it as a URL: character references decoded (numeric in
+ * decimal or hex, and the named ones that can build a scheme), tabs and line breaks removed
+ * wherever they are, and leading control characters and spaces dropped.
+ *
+ * @param {string} value
+ */
+export function urlAsBrowserReadsIt(value) {
+  const decoded = value
+    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => codePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);?/g, (_, digits) => codePoint(parseInt(digits, 10)))
+    .replace(/&(colon|tab|newline);/gi, (_, name) => NAMED_REFERENCES[name.toLowerCase()]);
+  return decoded.replace(/[\t\n\r]/g, '').replace(/^[\u0000-\u0020]+/, '');
+}
+
+/** The character of a code point, or an empty string when it is not a valid one. @param {number} code */
+function codePoint(code) {
+  return code <= 0x10ffff ? String.fromCodePoint(code) : '';
+}
+
 /** True for an absolute or protocol relative URL. @param {string} value */
 function isCrossOrigin(value) {
   return /^\s*(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(value);
@@ -138,6 +160,27 @@ export function findOutputIssues(html, { file, expectNoindex, requireContent = t
     if (tag.name === 'h1') {
       h1Count += 1;
     }
+    if (
+      tag.name === 'meta' &&
+      attr(tag.attributes, 'http-equiv')?.trim().toLowerCase() === 'refresh'
+    ) {
+      add('meta-refresh', 'a meta refresh can redirect the page');
+    }
+    if (tag.name === 'base' && attr(tag.attributes, 'href') !== '/') {
+      add('base-href', 'the base element must have href="/"');
+    }
+    if (tag.name === 'object' || tag.name === 'embed') {
+      add('object-embed', `an ${tag.name} element is present`);
+    }
+    if (tag.name === 'iframe') {
+      add('iframe', 'an iframe element is present');
+    }
+    if (
+      tag.name === 'use' &&
+      !(attr(tag.attributes, 'href') ?? attr(tag.attributes, 'xlink:href') ?? '#').startsWith('#')
+    ) {
+      add('svg-use-href', 'an svg use element refers to something outside the page');
+    }
     if (tag.name === 'html' && attr(tag.attributes, 'lang') === 'en') {
       langOk = true;
     }
@@ -156,7 +199,7 @@ export function findOutputIssues(html, { file, expectNoindex, requireContent = t
       if (attribute.name === 'style') {
         add('style-attribute', `style attribute on <${tag.name}>`);
       }
-      if (URL_ATTRIBUTES.has(attribute.name) && /^\s*javascript:/i.test(value)) {
+      if (URL_ATTRIBUTES.has(attribute.name) && /^javascript:/i.test(urlAsBrowserReadsIt(value))) {
         add('javascript-url', `javascript: URL in ${attribute.name} on <${tag.name}>`);
       }
       const loadsResource =

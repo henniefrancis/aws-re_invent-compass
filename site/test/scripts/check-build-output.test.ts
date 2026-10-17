@@ -13,7 +13,7 @@ import {
 } from '../../scripts/check-build-output.mjs';
 
 function page(body: string, head = '', lang = 'en'): string {
-  return `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>T</title>${head}</head><body><h1 tabindex="-1">Title</h1>${body}<p>${NOTICE_TEXT}</p></body></html>`;
+  return `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>T</title><base href="/">${head}</head><body><h1 tabindex="-1">Title</h1>${body}<p>${NOTICE_TEXT}</p></body></html>`;
 }
 
 const options: { file: string; expectNoindex: boolean; requireContent?: boolean } = {
@@ -88,6 +88,53 @@ describe('findOutputIssues', () => {
     expect(rules(page('<a title="javascript:x">x</a>'))).toEqual([]);
   });
 
+  test('obfuscated javascript: URLs are found (QA L3)', () => {
+    const tab = String.fromCharCode(9);
+    const newline = String.fromCharCode(10);
+    const forms = [
+      'java' + tab + 'script:alert(1)',
+      'java' + newline + 'script:alert(1)',
+      tab + newline + ' javascript:alert(1)',
+      '&#106;avascript:alert(1)',
+      '&#x6A;avascript:alert(1)',
+      '&#0000106avascript:alert(1)',
+      'javascript&colon;alert(1)',
+      'java&Tab;script:alert(1)',
+      'java&NewLine;script&colon;alert(1)',
+      'JaVaScRiPt:alert(1)',
+    ];
+    for (const value of forms) {
+      expect(rules(page('<a href="' + value + '">x</a>')), value).toEqual(['javascript-url']);
+    }
+    expect(rules(page('<iframe src="&#106;avascript:1"></iframe>'))).toContain('javascript-url');
+    expect(rules(page('<a href="&#999999999;x">x</a>'))).toEqual([]);
+    expect(rules(page('<a href="/java script:x">x</a>'))).toEqual([]);
+    expect(rules(page('<a href="javascripts.html">x</a>'))).toEqual([]);
+  });
+
+  test('meta refresh, other base hrefs, object, embed, iframe and svg use are refused (QA L3)', () => {
+    expect(rules(page('', '<meta http-equiv="refresh" content="0;url=/x">'))).toEqual([
+      'meta-refresh',
+    ]);
+    expect(rules(page('', '<meta http-equiv="Refresh" content="5">'))).toEqual(['meta-refresh']);
+    expect(rules(page('', '<meta http-equiv="content-type" content="text/html">'))).toEqual([]);
+    expect(rules(page('', '<base href="https://evil.invalid/">'))).toEqual(['base-href']);
+    expect(rules(page('', '<base href="/x/">'))).toEqual(['base-href']);
+    expect(rules(page('', '<base target="_blank">'))).toEqual(['base-href']);
+    expect(rules(page('<object data="x.swf"></object>'))).toEqual(['object-embed']);
+    expect(rules(page('<embed src="x.swf">'))).toEqual(['object-embed']);
+    expect(rules(page('<iframe srcdoc="<p>x</p>"></iframe>'))).toEqual(['iframe']);
+    expect(rules(page('<iframe src="/x"></iframe>'))).toEqual(['iframe']);
+    expect(rules(page('<svg><use href="https://evil.invalid/s.svg#a"></use></svg>'))).toEqual([
+      'svg-use-href',
+    ]);
+    expect(rules(page('<svg><use xlink:href="/sprite.svg#a"></use></svg>'))).toEqual([
+      'svg-use-href',
+    ]);
+    expect(rules(page('<svg><use href="#local"></use></svg>'))).toEqual([]);
+    expect(rules(page('<svg><use></use></svg>'))).toEqual([]);
+  });
+
   test('style elements and style attributes', () => {
     expect(rules(page('<style>a{}</style>'))).toEqual(['style-element']);
     expect(rules(page('<p style="color:red">x</p>'))).toEqual(['style-attribute']);
@@ -156,6 +203,8 @@ describe('Property 18: The build output check finds every CSP-breaking construct
     word.map((w) => `<div title="onclick=1 style=2 javascript:x <script> ${w}">${w}</div>`),
     word.map((w) => `<script type="application/json">{"k":"<style>${w}"}</script>`),
     word.map((w) => `<img src="artwork/${w}.svg" alt="${w}" width="1" height="1">`),
+    word.map((w) => `<svg><use href="#${w}"></use></svg>`),
+    word.map((w) => `<div title="javascript:x &#106; http-equiv=refresh <iframe> ${w}">${w}</div>`),
     word.map((w) => `<textarea>&lt;script&gt;${w}</textarea>`),
   );
   const violations: readonly (readonly [string, string])[] = [
@@ -165,6 +214,15 @@ describe('Property 18: The build output check finds every CSP-breaking construct
     ['style-element', '<style>a{color:red}</style>'],
     ['style-attribute', '<p style="color:red">t</p>'],
     ['cross-origin-resource', '<img src="https://evil.invalid/a.png" alt="">'],
+    ['javascript-url', '<a href="&#106;avascript:alert(1)">t</a>'],
+    ['javascript-url', '<a href="java&#x09;script&colon;alert(1)">t</a>'],
+    ['javascript-url', '<a href="java' + String.fromCharCode(9) + 'script:alert(1)">t</a>'],
+    ['meta-refresh', '<meta http-equiv="refresh" content="0;url=/x">'],
+    ['base-href', '<base href="https://evil.invalid/">'],
+    ['object-embed', '<object data="x.swf"></object>'],
+    ['object-embed', '<embed src="x.swf">'],
+    ['iframe', '<iframe srcdoc="<p>x</p>"></iframe>'],
+    ['svg-use-href', '<svg><use href="https://evil.invalid/s.svg#a"></use></svg>'],
   ];
 
   test('a clean document reports nothing', () => {
