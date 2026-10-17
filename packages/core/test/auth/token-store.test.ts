@@ -333,3 +333,16 @@ describe('events-client, M2: the store generation', () => {
     expect(store.load()).toBeUndefined();
   });
 });
+
+describe('events-client, N3: the keychain service name can be overridden', () => {
+  test('entries use the given service, and the default remains reinvent-compass', () => {
+    const custom = fakeKeyring();
+    createTokenStore(custom, 'reinvent-compass-livetest');
+    expect(custom.constructed.map((c) => c.service)).toEqual(
+      Array(3).fill('reinvent-compass-livetest'),
+    );
+    const standard = fakeKeyring();
+    createTokenStore(standard);
+    expect(standard.constructed.map((c) => c.service)).toEqual(Array(3).fill('reinvent-compass'));
+  });
+});

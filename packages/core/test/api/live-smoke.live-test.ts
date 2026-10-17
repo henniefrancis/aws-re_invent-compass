@@ -24,45 +24,34 @@ import { signOut } from '../../src/auth/sign-out.js';
 import { createTokenStore } from '../../src/auth/token-store.js';
 import { defaultOAuthFetch } from '../../src/auth/oauth.js';
 import type { ClientContext } from '../../src/api/transport.js';
+import { LIVE_TEST_KEYCHAIN_SERVICE, isLiveEnabled } from './live-gate.js';
 
-// Owner-gated live smoke tests (events-client, S1, task 18; Requirement 21.2 to 21.5).
+// Owner-gated live smoke tests (events-client, S1, task 18; Requirement 21.2 to 21.5,
+// security finding N3).
 //
 // These tests talk to the REAL Events API and the REAL OAuth endpoints, open a real
-// browser for sign-in and use the real OS keychain. They run ONLY when the owner sets
-// COMPASS_LIVE_TESTS=1 on their own machine, and the owner must also set
-// COMPASS_LIVE_SESSION_ID to a session id they are happy to reserve. Without the flag
-// every live test is reported as skipped (never as passed) and nothing here sends a
-// request: the gate is checked before any setup runs. They are never run by the build,
-// by CI or by an assistant.
+// browser for sign-in and use the real OS keychain, under a SEPARATE keychain service
+// name (reinvent-compass-livetest) so they never touch the owner's real session. This
+// file is NOT in the default test include (it is not named *.test.ts); it runs only
+// through its own config, and only when the owner opts in twice and the run is not CI:
 //
-//   COMPASS_LIVE_TESTS=1 COMPASS_LIVE_SESSION_ID=<id> npx vitest run live-smoke
+//   COMPASS_LIVE_TESTS=1 COMPASS_LIVE_CONFIRM=yes COMPASS_LIVE_SESSION_ID=<id> \
+//     npx vitest run --config packages/core/test/api/vitest.live.config.ts
 //
-// Optional: COMPASS_LIVE_EVENT_ID (default reinvent2026).
+// Optional: COMPASS_LIVE_EVENT_ID (default reinvent2026). Without both opt-ins, or in
+// a CI run, every test here is reported as skipped and nothing is created or sent.
 //
 // What runs, in order: sign-in, catalog (events, event window, full session list),
 // schedule read, a favorite round trip, a personal-time round trip, and exactly ONE
-// reservation (the owner's session id, cancelled again afterwards). Everything the
-// tests create is removed again; a favorite that already existed is left alone.
-
-/** The gate: live tests are enabled only by the exact value 1. */
-export function isLiveEnabled(env: Record<string, string | undefined>): boolean {
-  return env.COMPASS_LIVE_TESTS === '1';
-}
+// reservation (the owner's session id, cancelled again afterwards). Every step that
+// changes the schedule cleans up in a finally block, so a failed assertion cannot leave
+// a favorite, a personal time block or a reservation behind. A favorite that already
+// existed is left alone.
 
 const LIVE = isLiveEnabled(process.env);
 const SESSION_ID = process.env.COMPASS_LIVE_SESSION_ID ?? '';
 const EVENT_ID = process.env.COMPASS_LIVE_EVENT_ID ?? 'reinvent2026';
 const TITLE = 'Compass live smoke test';
-
-describe('events-client, task 18: the live gate', () => {
-  test('is open only when COMPASS_LIVE_TESTS is exactly 1', () => {
-    expect(isLiveEnabled({})).toBe(false);
-    expect(isLiveEnabled({ COMPASS_LIVE_TESTS: '' })).toBe(false);
-    expect(isLiveEnabled({ COMPASS_LIVE_TESTS: '0' })).toBe(false);
-    expect(isLiveEnabled({ COMPASS_LIVE_TESTS: 'true' })).toBe(false);
-    expect(isLiveEnabled({ COMPASS_LIVE_TESTS: '1' })).toBe(true);
-  });
-});
 
 /** Open a URL in the owner's browser without a shell. */
 function openInBrowser(url: string): void {
@@ -75,10 +64,16 @@ function openInBrowser(url: string): void {
   spawn(command, [...args], { detached: true, stdio: 'ignore' }).unref();
 }
 
+/** A UTC YYYY-MM-DDTHH:MM:00 value `hours` after an ISO instant (the documented format). */
+function utcPlusHours(instant: string, hours: number): string {
+  const ms = Date.parse(instant) + hours * 3_600_000;
+  return `${new Date(ms).toISOString().slice(0, 16)}:00`;
+}
+
 describe.skipIf(!LIVE)('events-client, task 18: live smoke tests (owner only)', () => {
   // Nothing is created while the suite is collected (a skipped suite is still
-  // collected): the real keychain entries and the transport are built in beforeAll,
-  // which never runs when the gate is closed.
+  // collected): the keychain entries and the transport are built in beforeAll, which
+  // never runs when the gate is closed.
   let logger: ReturnType<typeof createRedactingLogger>;
   let store: ReturnType<typeof registerStoreSecrets>;
   let ctx: ClientContext;
@@ -87,15 +82,12 @@ describe.skipIf(!LIVE)('events-client, task 18: live smoke tests (owner only)', 
 
   beforeAll(() => {
     logger = createRedactingLogger();
-    store = registerStoreSecrets(createTokenStore(), logger);
+    store = registerStoreSecrets(createTokenStore(undefined, LIVE_TEST_KEYCHAIN_SERVICE), logger);
     const refreshDeps = { fetch: defaultOAuthFetch, logger, now: () => Date.now() };
     const credential = createEventsApiCredential(createCredentialSources(store, refreshDeps));
     ctx = {
       eventId: EVENT_ID,
-      transport: createHttpTransport({
-        credential,
-        fetch: (url, init) => fetch(url, init),
-      }),
+      transport: createHttpTransport({ credential, fetch: (url, init) => fetch(url, init) }),
       accessToken: credential,
       quota: createQuotaTracker(),
       logger,
@@ -143,37 +135,54 @@ describe.skipIf(!LIVE)('events-client, task 18: live smoke tests (owner only)', 
   test('a favorite round trip adds the owner session and removes it again', async () => {
     expect(SESSION_ID, 'set COMPASS_LIVE_SESSION_ID to a session id').not.toBe('');
     const before = (await getSchedule(ctx)).schedule.favorites.includes(SESSION_ID);
-    if (!before) {
-      const { result } = await associateFavorites(ctx, [SESSION_ID]);
-      expect(result.failed).toEqual([]);
+    let added = false;
+    try {
+      if (!before) {
+        const { result } = await associateFavorites(ctx, [SESSION_ID]);
+        added = result.successful.includes(SESSION_ID);
+        expect(result.failed).toEqual([]);
+      }
+      expect((await getSchedule(ctx)).schedule.favorites).toContain(SESSION_ID);
+    } finally {
+      if (added) {
+        await disassociateFavorite(ctx, SESSION_ID);
+      }
     }
-    expect((await getSchedule(ctx)).schedule.favorites).toContain(SESSION_ID);
-    if (!before) {
-      await disassociateFavorite(ctx, SESSION_ID);
+    if (added) {
       expect((await getSchedule(ctx)).schedule.favorites).not.toContain(SESSION_ID);
     }
   });
 
   test('a personal-time round trip creates, updates and deletes a block inside the event window', async () => {
-    const day = window.start.slice(0, 10);
-    const offset = window.start.slice(-6);
+    // The documented format: UTC, YYYY-MM-DDTHH:MM:00, no Z and no offset, 5-minute steps.
     const input = {
-      startDateTime: `${day}T03:00:00${offset}`,
-      endDateTime: `${day}T04:00:00${offset}`,
+      startDateTime: utcPlusHours(window.start, 3),
+      endDateTime: utcPlusHours(window.start, 4),
       title: TITLE,
       description: 'Created by the Compass live smoke test and removed again',
     };
-    await createPersonalTime(ctx, input);
-    const created = (await getSchedule(ctx)).schedule.personalTime.find((p) => p.title === TITLE);
-    expect(created).toBeDefined();
-    const id = created?.personalTimeId ?? '';
-    await updatePersonalTime(ctx, id, { ...input, title: `${TITLE} (updated)` });
+    try {
+      await createPersonalTime(ctx, input);
+      const created = (await getSchedule(ctx)).schedule.personalTime.find((p) => p.title === TITLE);
+      expect(created).toBeDefined();
+      await updatePersonalTime(ctx, created?.personalTimeId ?? '', {
+        ...input,
+        title: `${TITLE} (updated)`,
+      });
+      expect(
+        (await getSchedule(ctx)).schedule.personalTime.some(
+          (p) => p.title === `${TITLE} (updated)`,
+        ),
+      ).toBe(true);
+    } finally {
+      // Remove every block this test may have left, whatever step failed.
+      const { schedule } = await getSchedule(ctx);
+      for (const entry of schedule.personalTime.filter((p) => p.title.startsWith(TITLE))) {
+        await deletePersonalTime(ctx, entry.personalTimeId);
+      }
+    }
     expect(
-      (await getSchedule(ctx)).schedule.personalTime.some((p) => p.title === `${TITLE} (updated)`),
-    ).toBe(true);
-    await deletePersonalTime(ctx, id);
-    expect(
-      (await getSchedule(ctx)).schedule.personalTime.some((p) => p.personalTimeId === id),
+      (await getSchedule(ctx)).schedule.personalTime.some((p) => p.title.startsWith(TITLE)),
     ).toBe(false);
   });
 
@@ -181,14 +190,20 @@ describe.skipIf(!LIVE)('events-client, task 18: live smoke tests (owner only)', 
     expect(SESSION_ID, 'set COMPASS_LIVE_SESSION_ID to a session id').not.toBe('');
     reservationsMade += 1;
     expect(reservationsMade).toBe(1);
-    const { result } = await reserveSessions(ctx, [SESSION_ID]);
-    // A refusal is a valid live answer (full, clash, already reserved); it is reported
-    // either way, and only an actual success needs cleaning up.
-    expect(result.successful.length + result.failed.length).toBe(1);
-    const { schedule } = await getSchedule(ctx);
-    if (result.successful.includes(SESSION_ID)) {
-      expect(schedule.reserved).toContain(SESSION_ID);
-      await cancelReservation(ctx, SESSION_ID);
+    let reserved = false;
+    try {
+      const { result } = await reserveSessions(ctx, [SESSION_ID]);
+      reserved = result.successful.includes(SESSION_ID);
+      // A refusal is a valid live answer (full, clash, already reserved); it is reported
+      // either way, and only an actual success needs cleaning up.
+      expect(result.successful.length + result.failed.length).toBe(1);
+      if (reserved) {
+        expect((await getSchedule(ctx)).schedule.reserved).toContain(SESSION_ID);
+      }
+    } finally {
+      if (reserved) {
+        await cancelReservation(ctx, SESSION_ID);
+      }
     }
   });
 });

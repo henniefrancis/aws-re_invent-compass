@@ -99,10 +99,10 @@ interface Entries {
 }
 
 /** Build the three entries, or undefined when the keychain cannot be used. */
-function buildEntries(keyring: KeyringLike): Entries | undefined {
+function buildEntries(keyring: KeyringLike, service: string): Entries | undefined {
   try {
     const make = (account: string): KeyringEntryLike =>
-      new keyring.Entry(KEYCHAIN_SERVICE, account, ENTRY_OPTIONS);
+      new keyring.Entry(service, account, ENTRY_OPTIONS);
     return {
       access: make(KEYCHAIN_ACCOUNTS.access),
       refresh: make(KEYCHAIN_ACCOUNTS.refresh),
@@ -144,9 +144,16 @@ function deleteAll(entries: Entries): void {
   }
 }
 
-/** Create the token store. The keyring is injected for tests; the default is real. */
-export function createTokenStore(keyring: KeyringLike = realKeyring): TokenStore {
-  const entries = buildEntries(keyring);
+/**
+ * Create the token store. The keyring is injected for tests; the default is real. The
+ * keychain service name defaults to reinvent-compass; the live smoke tests pass a
+ * separate name (reinvent-compass-livetest) so they never touch the real session.
+ */
+export function createTokenStore(
+  keyring: KeyringLike = realKeyring,
+  service: string = KEYCHAIN_SERVICE,
+): TokenStore {
+  const entries = buildEntries(keyring, service);
   let kind: StorageKind = entries === undefined ? 'memory' : 'keychain';
   let memory: TokenSet | undefined;
   let generation = 0;
