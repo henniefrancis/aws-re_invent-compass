@@ -57,7 +57,12 @@ export function memoryFs(initial: Record<string, string> = {}): MemoryFs {
     },
     remove(path) {
       check('remove', path);
-      files.delete(path);
+      // A folder goes with everything under it, as the seam documents.
+      for (const key of [...files.keys()]) {
+        if (key === path || key.startsWith(`${path}/`) || key.startsWith(`${path}\\`)) {
+          files.delete(key);
+        }
+      }
       return Promise.resolve();
     },
     ensureDir(path) {

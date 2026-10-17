@@ -56,6 +56,7 @@ export interface AppDataResolver {
 export interface FileSystem {
   readFile(path: string): Promise<string | undefined>;
   writeFile(path: string, data: string, mode: number): Promise<void>;
+  /** Delete a file, or a folder with everything under it. An absent path is not an error. */
   remove(path: string): Promise<void>;
   ensureDir(path: string): Promise<void>;
 }

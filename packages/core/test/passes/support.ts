@@ -149,3 +149,16 @@ export function fakeClock(nowIso = '2026-12-01T08:00:00.000Z'): Clock & { sleeps
     },
   };
 }
+
+/** base64url of a JSON value, as a JWT segment. */
+function segment(value: unknown): string {
+  return Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
+}
+
+/**
+ * A JWT-shaped ID token whose unverified payload says token_use is id. The label makes the
+ * token unique and is carried in the payload and the signature segment.
+ */
+export function fakeIdToken(label = 'attendee', claims: Record<string, unknown> = {}): string {
+  return `${segment({ alg: 'RS256', typ: 'JWT' })}.${segment({ sub: label, token_use: 'id', ...claims })}.${Buffer.from(label, 'utf8').toString('base64url')}`;
+}

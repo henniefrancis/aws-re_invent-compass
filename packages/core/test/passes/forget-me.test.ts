@@ -11,7 +11,7 @@ import { createPassStore } from '../../src/passes/pass-store.js';
 import { PassError } from '../../src/passes/redaction.js';
 import { memoryFs } from './memory-fs.js';
 import { createContractMock, jsonResponse, problem } from './openapi-mock.js';
-import { fakeClock } from './support.js';
+import { fakeClock, fakeIdToken } from './support.js';
 
 // Tests for the forgetMe orchestrator (boarding-passes, S4, Requirement 2.7). It runs the
 // real client over the contract mock, the real store and an in-memory filesystem.
@@ -25,6 +25,7 @@ const ROOT = appData.resolve();
 const RECORD_PATH = joinInFolder(ROOT, RECORD_FILE_NAME);
 const CALENDAR_PATH = joinInFolder(ROOT, OUTPUT_FOLDER_NAME, 'reinvent.ics');
 const ITINERARY_PATH = joinInFolder(ROOT, OUTPUT_FOLDER_NAME, 'itinerary.html');
+const STRAY_OUTPUT_PATH = joinInFolder(ROOT, OUTPUT_FOLDER_NAME, 'stray-export.txt');
 const UNRELATED_PATH = joinInFolder(ROOT, 'notes.txt');
 
 function rig() {
@@ -33,6 +34,7 @@ function rig() {
     [RECORD_PATH]: '{"passes":[]}',
     [CALENDAR_PATH]: 'BEGIN:VCALENDAR',
     [ITINERARY_PATH]: '<html></html>',
+    [STRAY_OUTPUT_PATH]: 'left behind',
     [UNRELATED_PATH]: 'keep me',
   });
   const store = createPassStore({ appData, fs });
@@ -40,7 +42,7 @@ function rig() {
     baseUrl: 'https://d111111abcdef8.cloudfront.net',
     transport: mock,
     clock: fakeClock(),
-    idToken: { getIdToken: () => Promise.resolve('aaaaaaaa.bbbbbbbb.cccccccc') },
+    idToken: { getIdToken: () => Promise.resolve(fakeIdToken('attendee')) },
   });
   return { mock, fs, deps: { client, store, fs, appData } };
 }
@@ -60,8 +62,8 @@ function expectHonestCopy(copy: string): void {
   expectNoPhoneClaim(copy);
 }
 
-describe('Feature: boarding-passes, forgetMe on a 202', () => {
-  test('the local record and both output files are removed, and nothing else', async () => {
+describe('Feature: boarding-passes, forgetMe cleans up locally when the server accepted or holds nothing', () => {
+  test('a 202 removes the record and the whole output folder, and nothing else', async () => {
     const { mock, fs, deps } = rig();
     mock.enqueue('forgetMe', jsonResponse(202, { voided: 3, deleted: 5 }));
 
@@ -72,6 +74,29 @@ describe('Feature: boarding-passes, forgetMe on a 202', () => {
     expect([...fs.files.keys()]).toEqual([UNRELATED_PATH]);
     expect(outcome.copy).toContain('3 pass(es) were voided');
     expectHonestCopy(outcome.copy);
+  });
+
+  test('a 202 whose body does not match the contract still cleans up', async () => {
+    for (const body of ['not json', JSON.stringify({ voided: 'many' })]) {
+      const { mock, fs, deps } = rig();
+      mock.enqueue('forgetMe', { status: 202, headers: {}, body });
+      const outcome = await forgetMe(deps);
+      expect(outcome.localDataRemoved).toBe(true);
+      expect([...fs.files.keys()]).toEqual([UNRELATED_PATH]);
+      expectHonestCopy(outcome.copy);
+    }
+  });
+
+  test('a 404 or 410 (the server holds nothing) also cleans up, so a retry can finish the job', async () => {
+    for (const response of [problem(404, 'not_found'), { status: 410, headers: {}, body: '' }]) {
+      const { mock, fs, deps } = rig();
+      mock.enqueue('forgetMe', response);
+      const outcome = await forgetMe(deps);
+      expect(outcome.localDataRemoved).toBe(true);
+      expect([...fs.files.keys()]).toEqual([UNRELATED_PATH]);
+      expect(outcome.copy).toContain('holds nothing');
+      expectHonestCopy(outcome.copy);
+    }
   });
 });
 
@@ -118,10 +143,22 @@ describe('Feature: boarding-passes, forgetMe when a local file cannot be removed
     expect(error.code).toBe('forget.local_removal_failed');
     expect(error.message).not.toContain('example.com');
     expect(error.message).not.toContain('/home/ada');
-    expect(fs.ops.filter((op) => op.startsWith('remove '))).toEqual([
-      `remove ${RECORD_PATH}`,
-      `remove ${CALENDAR_PATH}`,
-      `remove ${ITINERARY_PATH}`,
-    ]);
+    const removals = fs.ops.filter((op) => op.startsWith('remove '));
+    expect(removals).toContain(`remove ${RECORD_PATH}`);
+    expect(removals).toContain(`remove ${joinInFolder(ROOT, OUTPUT_FOLDER_NAME)}`);
+  });
+
+  test('a failure removing only the record still tries the output folder', async () => {
+    const { mock, fs, deps } = rig();
+    mock.enqueue('forgetMe', jsonResponse(202, { voided: 0, deleted: 0 }));
+    const store = {
+      read: () => deps.store.read(),
+      write: (record: Parameters<typeof deps.store.write>[0]) => deps.store.write(record),
+      deleteRecord: () => Promise.reject(new Error('locked')),
+    };
+    await expect(forgetMe({ ...deps, store })).rejects.toMatchObject({
+      code: 'forget.local_removal_failed',
+    });
+    expect(fs.files.has(CALENDAR_PATH)).toBe(false);
   });
 });

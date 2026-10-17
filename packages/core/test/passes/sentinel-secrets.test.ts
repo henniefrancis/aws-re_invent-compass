@@ -12,7 +12,7 @@ import { createPassStore } from '../../src/passes/pass-store.js';
 import { syncPasses } from '../../src/passes/pass-sync.js';
 import { memoryFs } from './memory-fs.js';
 import { createContractMock, jsonResponse, problem } from './openapi-mock.js';
-import { WINDOW, fakeClock, fakeConnections, makeSession } from './support.js';
+import { WINDOW, fakeClock, fakeConnections, fakeIdToken, makeSession } from './support.js';
 
 // Property 26: no secret reaches logs or errors on the named failure paths (Requirements 8.1,
 // 8.2, 8.3 and 9.5). The harness injects a known ID token, attendee email, Board_URL and
@@ -33,7 +33,7 @@ const REQUEST_MARKER = 'ConfidentialRequestMarker';
 
 const sentinelsArb: fc.Arbitrary<Sentinels> = fc
   .tuple(
-    fc.stringMatching(/^[A-Za-z0-9_-]{16,30}\.[A-Za-z0-9_-]{16,30}\.[A-Za-z0-9_-]{16,30}$/),
+    fc.stringMatching(/^[A-Za-z0-9_-]{16,30}$/).map((label) => fakeIdToken(label)),
     fc.stringMatching(/^[a-z]{4,10}\.[a-z]{4,10}@[a-z]{4,10}\.com$/),
     fc.stringMatching(/^[A-Za-z0-9_-]{22}$/),
     fc.stringMatching(/^[a-z0-9]{8,14}$/),
@@ -378,7 +378,7 @@ describe('Feature: boarding-passes, Property 26: no secret reaches logs or error
 
   test('the client sends the token only in the Authorization header, never in the URL or body', async () => {
     const s = {
-      token: 'aaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbb.cccccccccccccccc',
+      token: fakeIdToken('aaaaaaaaaaaaaaaa'),
       email: 'first.timer@example.com',
       handoffId: 'Zk3pQ9sLw2VnR8xT5yBc7A',
       boardUrl: 'https://d111111abcdef8.cloudfront.net/board#Zk3pQ9sLw2VnR8xT5yBc7A',

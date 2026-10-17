@@ -13,7 +13,7 @@ import {
 import type { HandoffBuilderDeps } from '../../src/passes/handoff-builder.js';
 import { PassError } from '../../src/passes/redaction.js';
 import { createContractMock, jsonResponse } from './openapi-mock.js';
-import { NUM_RUNS, fakeClock } from './support.js';
+import { NUM_RUNS, fakeClock, fakeIdToken } from './support.js';
 
 // Tests for Handoff_Builder (boarding-passes, S4, Requirement 5). Property 18 compares the
 // three renders with one QRCode.create of the same Board_URL. No QR decoder is used: each
@@ -227,7 +227,7 @@ describe('Feature: boarding-passes, Handoff_Builder example tests', () => {
       baseUrl: 'https://d111111abcdef8.cloudfront.net',
       transport: mock,
       clock: fakeClock(),
-      idToken: { getIdToken: () => Promise.resolve('aaaaaaaa.bbbbbbbb.cccccccc') },
+      idToken: { getIdToken: () => Promise.resolve(fakeIdToken('attendee')) },
     });
     const renders = await createHandoffBuilder({ client }).handoff([SERIAL], INCLUDE);
     expect(mock.requests[0]?.body).toEqual({ serialNumbers: [SERIAL], include: INCLUDE });

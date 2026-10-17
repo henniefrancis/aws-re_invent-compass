@@ -34,8 +34,17 @@ import type {
 } from './interfaces.js';
 import { PassError } from './redaction.js';
 
-/** The longest Retry-After wait the client honours, in milliseconds. */
+/** The longest Retry-After wait the client sits out itself, in milliseconds. A longer wait is surfaced. */
 const MAX_RETRY_WAIT_MS = 60_000;
+/** The only host shape a Compass distribution has. */
+const CLOUDFRONT_HOST = /^[a-z0-9]{8,20}\.cloudfront\.net$/;
+/** Hosts a simulated run may use over plain http. */
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+/** The characters kept in a server-supplied problem title, and the caps on its fields. */
+const TITLE_CHARACTERS = /[A-Za-z0-9 .,:;'"!?()&/+#@_-]/;
+const MAX_TITLE_LENGTH = 80;
+const MAX_CODE_LENGTH = 64;
+const MAX_TYPE_LENGTH = 200;
 /** The longest ID token the client will put in a header. */
 const MAX_TOKEN_LENGTH = 8192;
 /** The characters a JWT (base64url segments and dots) can contain, plus base64 padding. */
@@ -58,12 +67,19 @@ const MAX_HANDOFF_SERIALS = 80;
 export class CompassError extends PassError {
   readonly status?: number;
   readonly problem?: Problem;
+  /** On a 429 whose Retry-After is usable: the server's wait in seconds, never clamped. */
+  readonly retryAfterSeconds?: number;
 
-  constructor(code: string, summary: string, details: { status?: number; problem?: Problem } = {}) {
+  constructor(
+    code: string,
+    summary: string,
+    details: { status?: number; problem?: Problem; retryAfterSeconds?: number } = {},
+  ) {
     super(code, summary);
     this.name = 'CompassError';
     this.status = details.status;
     this.problem = details.problem;
+    this.retryAfterSeconds = details.retryAfterSeconds;
   }
 }
 
@@ -75,16 +91,30 @@ export type UpdatePassResult =
 export type VoidPassResult =
   { outcome: 'voided'; response: VoidPassResponse } | { outcome: 'gone' };
 
-/** The outcome of forget-me: the HTTP status with the validated body. */
+/**
+ * The outcome of forget-me: the HTTP status, and the validated body when there is a usable
+ * one. A 404 or 410 (the server holds nothing for this attendee) and a 202 whose body does
+ * not match the contract both return without a body rather than failing, so the caller can
+ * still clean up locally.
+ */
 export interface ForgetMeResult {
   status: number;
-  response: ForgetMeResponse;
+  response?: ForgetMeResponse;
 }
 
 /** The options for createCompassClient. */
 export interface CompassClientOptions {
-  /** https://<distribution>.cloudfront.net, with an optional path prefix. */
+  /**
+   * https://<distribution>.cloudfront.net, with an optional path prefix. The host must look
+   * like a CloudFront distribution, be listed in allowedHosts, or (with simulated) be local.
+   * The client never sends x-api-key: CloudFront adds it. The transport must be built to
+   * refuse redirects (fetch with redirect 'error'), so the bearer token never follows one.
+   */
   baseUrl: string;
+  /** Exact extra hosts the caller trusts, for example a custom domain in front of the API. */
+  allowedHosts?: readonly string[];
+  /** True only for a simulated run: allows localhost over http. */
+  simulated?: boolean;
   transport: HttpTransport;
   idToken: IdTokenProvider;
   /** Used for the single Retry-After wait and to resolve an HTTP-date. */
@@ -132,14 +162,14 @@ const includeSchema = z.strictObject({
   calendar: z.boolean(),
 });
 
-/** Resolve a Retry-After header to a wait in milliseconds, or undefined when unusable. */
-function retryAfterMs(header: string | undefined, now: Date): number | undefined {
+/** Resolve a Retry-After header to whole seconds, never clamped, or undefined when unusable. */
+function retryAfterSeconds(header: string | undefined, now: Date): number | undefined {
   if (header === undefined) {
     return undefined;
   }
   const value = header.trim();
   if (/^\d+$/.test(value)) {
-    return Math.min(Number(value) * 1000, MAX_RETRY_WAIT_MS);
+    return Number(value);
   }
   if (!HTTP_DATE_PATTERN.test(value)) {
     return undefined;
@@ -148,21 +178,83 @@ function retryAfterMs(header: string | undefined, now: Date): number | undefined
   if (Number.isNaN(at)) {
     return undefined;
   }
-  return Math.min(Math.max(at - now.getTime(), 0), MAX_RETRY_WAIT_MS);
+  return Math.ceil(Math.max(at - now.getTime(), 0) / 1000);
 }
 
-/** Normalise the base URL to an https origin and path with no trailing slash. */
-function normaliseBaseUrl(baseUrl: string): string {
+/** The invalid-config error. It never names the URL. */
+function invalidConfig(): CompassError {
+  return new CompassError('compass.invalid_config', 'The Compass API base URL is not valid.');
+}
+
+/**
+ * Normalise the base URL to an origin and path with no trailing slash, and pin the host:
+ * a CloudFront distribution host, an exact allowed host, or (simulated only) a local host.
+ * Credentials, a query and a fragment are refused. Plain http and a port are local-only.
+ */
+function normaliseBaseUrl(
+  baseUrl: string,
+  allowedHosts: readonly string[],
+  simulated: boolean,
+): string {
   let parsed: URL;
   try {
     parsed = new URL(baseUrl);
   } catch {
-    throw new CompassError('compass.invalid_config', 'The Compass API base URL is not valid.');
+    throw invalidConfig();
   }
-  if (parsed.protocol !== 'https:' || parsed.username !== '' || parsed.password !== '') {
-    throw new CompassError('compass.invalid_config', 'The Compass API base URL is not valid.');
+  const local = simulated && LOCAL_HOSTS.has(parsed.hostname);
+  const hostOk =
+    CLOUDFRONT_HOST.test(parsed.hostname) || allowedHosts.includes(parsed.hostname) || local;
+  const schemeOk = parsed.protocol === 'https:' || (local && parsed.protocol === 'http:');
+  const clean =
+    parsed.username === '' &&
+    parsed.password === '' &&
+    parsed.search === '' &&
+    parsed.hash === '' &&
+    (parsed.port === '' || local);
+  if (!hostOk || !schemeOk || !clean) {
+    throw invalidConfig();
   }
   return `${parsed.origin}${parsed.pathname.replace(/\/+$/, '')}`;
+}
+
+/** True when the token's payload (decoded, not trusted) says it is an ID token. */
+function claimsIdToken(token: string): boolean {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return false;
+  }
+  try {
+    const payload = JSON.parse(
+      Buffer.from(parts[1] as string, 'base64url').toString('utf8'),
+    ) as unknown;
+    return (
+      typeof payload === 'object' &&
+      payload !== null &&
+      (payload as { token_use?: unknown }).token_use === 'id'
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Keep only the allowed characters of a server-supplied string, capped in length. */
+function cleaned(value: string, allowed: RegExp, max: number): string {
+  return Array.from(value)
+    .filter((character) => allowed.test(character))
+    .join('')
+    .slice(0, max)
+    .trim();
+}
+
+/** A parsed Problem with its text fields reduced to a safe character set and length. */
+function sanitisedProblem(problem: Problem): Problem {
+  return {
+    type: cleaned(problem.type, /[A-Za-z0-9:/._~#?&=%+@-]/, MAX_TYPE_LENGTH),
+    title: cleaned(problem.title, TITLE_CHARACTERS, MAX_TITLE_LENGTH),
+    status: problem.status,
+    code: cleaned(problem.code, /[A-Za-z0-9_.-]/, MAX_CODE_LENGTH),
+  };
 }
 
 /** Throw the fixed invalid-input error. */
@@ -181,7 +273,11 @@ function checkSerial(serialNumber: string): string {
 /** Build the Compass_Client over the injected seams. */
 export function createCompassClient(options: CompassClientOptions): CompassClient {
   const { transport, idToken, clock } = options;
-  const baseUrl = normaliseBaseUrl(options.baseUrl);
+  const baseUrl = normaliseBaseUrl(
+    options.baseUrl,
+    options.allowedHosts ?? [],
+    options.simulated ?? false,
+  );
 
   /** Fetch the ID token fresh and refuse anything that is not a plain token. */
   async function bearer(): Promise<string> {
@@ -191,7 +287,7 @@ export function createCompassClient(options: CompassClientOptions): CompassClien
     } catch {
       throw new CompassError('compass.no_id_token', 'No ID token is available. Sign in again.');
     }
-    if (token.length === 0 || token.length > MAX_TOKEN_LENGTH || !TOKEN_PATTERN.test(token)) {
+    if (token.length > MAX_TOKEN_LENGTH || !TOKEN_PATTERN.test(token) || !claimsIdToken(token)) {
       throw new CompassError('compass.no_id_token', 'No ID token is available. Sign in again.');
     }
     return `Bearer ${token}`;
@@ -227,11 +323,11 @@ export function createCompassClient(options: CompassClientOptions): CompassClien
     if (first.status !== 429) {
       return first;
     }
-    const waitMs = retryAfterMs(first.headers['retry-after'], clock.now());
-    if (waitMs === undefined) {
+    const seconds = retryAfterSeconds(first.headers['retry-after'], clock.now());
+    if (seconds === undefined || seconds * 1000 > MAX_RETRY_WAIT_MS) {
       return first;
     }
-    await clock.sleep(waitMs);
+    await clock.sleep(seconds * 1000);
     return attempt(call);
   }
 
@@ -249,14 +345,17 @@ export function createCompassClient(options: CompassClientOptions): CompassClien
           { status: response.status },
         );
       }
-      problem = parsed;
+      problem = sanitisedProblem(parsed);
     }
     const details = { status: response.status, problem };
     if (response.status === 429) {
+      const wait = retryAfterSeconds(response.headers['retry-after'], clock.now());
       return new CompassError(
         'compass.rate_limited',
-        `The Compass API rate limit was hit for ${label}.`,
-        details,
+        wait === undefined
+          ? `The Compass API rate limit was hit for ${label}.`
+          : `The Compass API rate limit was hit for ${label}. Retry after ${String(wait)} seconds.`,
+        { ...details, retryAfterSeconds: wait },
       );
     }
     if (problem) {
@@ -346,7 +445,7 @@ export function createCompassClient(options: CompassClientOptions): CompassClien
         accept: 'application/json',
       };
       const response = await send(call);
-      if (response.status === 404) {
+      if (isGone(response)) {
         return { outcome: 'gone' };
       }
       return { outcome: 'updated', response: validated(response, call, UpdatePassResponseSchema) };
@@ -360,7 +459,7 @@ export function createCompassClient(options: CompassClientOptions): CompassClien
         accept: 'application/json',
       };
       const response = await send(call);
-      if (response.status === 404) {
+      if (isGone(response)) {
         return { outcome: 'gone' };
       }
       return { outcome: 'voided', response: validated(response, call, VoidPassResponseSchema) };
@@ -391,12 +490,34 @@ export function createCompassClient(options: CompassClientOptions): CompassClien
         accept: 'application/json',
       };
       const response = await send(call);
+      if (response.status === 404 || response.status === 410) {
+        return { status: response.status };
+      }
+      if (response.status === 202) {
+        let json: unknown;
+        try {
+          json = JSON.parse(response.body);
+        } catch {
+          json = undefined;
+        }
+        const parsed = ForgetMeResponseSchema.safeParse(json);
+        return parsed.success ? { status: 202, response: parsed.data } : { status: 202 };
+      }
       return {
         status: response.status,
         response: validated(response, call, ForgetMeResponseSchema),
       };
     },
   };
+}
+
+/** True for a 404 that is a real contract Problem, the only 404 that means the serial is gone. */
+function isGone(response: HttpResponse): boolean {
+  return (
+    response.status === 404 &&
+    (response.headers['content-type'] ?? '').toLowerCase().startsWith('application/problem+json') &&
+    parseProblem(response.body) !== undefined
+  );
 }
 
 /** Parse a problem+json body, or undefined when it is not valid JSON or not a Problem. */

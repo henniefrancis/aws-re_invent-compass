@@ -12,7 +12,14 @@ import { diffSchedule, MAX_ISSUE_CHUNK, syncPasses } from '../../src/passes/pass
 import { PassError, passError } from '../../src/passes/redaction.js';
 import { memoryFs } from './memory-fs.js';
 import { createContractMock } from './openapi-mock.js';
-import { NUM_RUNS, WINDOW, fakeClock, fakeConnections, makeSession } from './support.js';
+import {
+  NUM_RUNS,
+  WINDOW,
+  fakeClock,
+  fakeConnections,
+  fakeIdToken,
+  makeSession,
+} from './support.js';
 
 // Tests for Pass_Sync (boarding-passes, S4, Requirement 4). Properties 15, 16 and 17 run
 // through fast-check over a fake CompassClient, so every call is observable. One example
@@ -409,7 +416,7 @@ describe('Feature: boarding-passes, sync end to end over the real builder, clien
       baseUrl: 'https://d111111abcdef8.cloudfront.net',
       transport: mock,
       clock: fakeClock(),
-      idToken: { getIdToken: () => Promise.resolve('aaaaaaaa.bbbbbbbb.cccccccc') },
+      idToken: { getIdToken: () => Promise.resolve(fakeIdToken('attendee')) },
     });
     const { fs, store } = storeWith();
 

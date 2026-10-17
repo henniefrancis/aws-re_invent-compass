@@ -61,6 +61,36 @@ describe('Feature: boarding-passes, redact removes every secret kind', () => {
     expect(out).toBe('handoff [redacted] and [redacted] expired');
   });
 
+  test('standard base64 runs, with plus, slash and padding, are removed', () => {
+    const standard = 'dGhpcy9pcytzdGFuZGFyZC9iYXNlNjQrdG9rZW4=';
+    const padded = 'QUJDREVGR0hJSktMTU5PUFFSU1RV==';
+    const out = redact(`blob ${standard} and ${padded} end`);
+    expect(out).not.toContain(standard);
+    expect(out).not.toContain(padded);
+    expect(out).not.toContain('==');
+    expect(out).toBe('blob [redacted] and [redacted] end');
+  });
+
+  test('key=value and key: value secrets are removed whole', () => {
+    for (const text of [
+      'access_token=abc123',
+      'password: hunter2',
+      'api_key = k-1',
+      'Authorization: Zm9v',
+      'refresh_token=short',
+      'secret:x',
+      'sig=ab',
+    ]) {
+      const out = redact(`failed with ${text} then stopped`);
+      expect(out).toBe('failed with [redacted] then stopped');
+    }
+  });
+
+  test('ordinary words that merely mention a key name are kept', () => {
+    const clean = 'The token was not available and the key store is empty';
+    expect(redact(clean)).toBe(clean);
+  });
+
   test('text with no secret is returned unchanged', () => {
     const clean = 'issue failed: the route template returned a validation error';
     expect(redact(clean)).toBe(clean);

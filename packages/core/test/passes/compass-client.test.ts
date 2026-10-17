@@ -12,14 +12,21 @@ import {
   type ContractMock,
   type MockResponse,
 } from './openapi-mock.js';
-import { NUM_RUNS, WINDOW, fakeClock, fakeConnections, makeSession } from './support.js';
+import {
+  NUM_RUNS,
+  WINDOW,
+  fakeClock,
+  fakeConnections,
+  fakeIdToken,
+  makeSession,
+} from './support.js';
 
 // Tests for Compass_Client (boarding-passes, S4, Requirement 2). Every test runs against
 // the in-memory mock built from contracts/compass-api.openapi.yaml (Requirement 9.4), and
 // each helper checks that the mock saw no contract violation in what the client sent.
 
 const BASE_URL = 'https://d111111abcdef8.cloudfront.net';
-const TOKEN = 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRlbmRlZSJ9.c2lnbmF0dXJlX3ZhbHVl';
+const TOKEN = fakeIdToken('attendee');
 const SERIAL = '3f2b8c1e-5a6d-4e7f-8a9b-0c1d2e3f4a5b';
 const OTHER_SERIAL = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d';
 const SENTINEL_EMAIL = 'first.timer@example.com';
@@ -90,7 +97,7 @@ const CALLS: Record<string, Call> = {
 };
 
 describe('Feature: boarding-passes, Property 8: ID token attached as Bearer on every attendee route', () => {
-  const tokenArb = fc.stringMatching(/^[A-Za-z0-9_-]{8,40}(\.[A-Za-z0-9_-]{8,40}){2}$/);
+  const tokenArb = fc.stringMatching(/^[A-Za-z0-9_-]{8,40}$/).map((label) => fakeIdToken(label));
 
   test('every route carries Authorization equal to Bearer plus the provider token', async () => {
     await fc.assert(
@@ -123,8 +130,8 @@ describe('Feature: boarding-passes, Property 8: ID token attached as Bearer on e
 
 describe('Feature: boarding-passes, Property 10: Problem bodies parse and surface without request input', () => {
   const problemArb = fc.record({
-    type: fc.string({ maxLength: 40 }),
-    title: fc.string({ minLength: 1, maxLength: 40 }),
+    type: fc.stringMatching(/^[a-z:/.-]{0,40}$/),
+    title: fc.stringMatching(/^[A-Za-z0-9 .,'!?()-]{1,40}$/).filter((t) => t.trim() === t),
     status: fc.integer({ min: 400, max: 599 }).filter((status) => status !== 429),
     code: fc.stringMatching(/^[a-z_]{3,20}$/),
   });
@@ -161,9 +168,9 @@ describe('Feature: boarding-passes, Property 10: Problem bodies parse and surfac
 describe('Feature: boarding-passes, Property 11: single retry only on 429 with a usable Retry-After', () => {
   const NOW_MS = Date.parse('2026-12-01T08:00:00.000Z');
 
-  test('delta-seconds: one retry after the wait, capped at 60 seconds', async () => {
+  test('delta-seconds up to 60: one retry after exactly that wait', async () => {
     await fc.assert(
-      fc.asyncProperty(fc.integer({ min: 0, max: 100_000 }), async (seconds) => {
+      fc.asyncProperty(fc.integer({ min: 0, max: 60 }), async (seconds) => {
         const { mock, clock, client } = rig();
         mock.enqueue('forgetMe', {
           status: 429,
@@ -173,22 +180,51 @@ describe('Feature: boarding-passes, Property 11: single retry only on 429 with a
         const result = await client.forgetMe();
         expect(result.status).toBe(202);
         expect(mock.requests).toHaveLength(2);
-        expect(clock.sleeps).toEqual([Math.min(seconds, 60) * 1000]);
+        expect(clock.sleeps).toEqual([seconds * 1000]);
       }),
       { numRuns: NUM_RUNS },
     );
   });
 
-  test('HTTP-date: one retry after the time until that date, capped at 60 seconds', async () => {
+  test('delta-seconds over 60: no early retry, the rate_limited error carries the full wait', async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.integer({ min: 61, max: 10_000_000 }), async (seconds) => {
+        const { mock, clock, client } = rig();
+        mock.enqueue('forgetMe', {
+          status: 429,
+          headers: { 'retry-after': String(seconds) },
+          body: '',
+        });
+        const error = await failureOf(client.forgetMe());
+        expect(error.code).toBe('compass.rate_limited');
+        expect(error.retryAfterSeconds).toBe(seconds);
+        expect(error.message).toContain(`Retry after ${String(seconds)} seconds.`);
+        expect(mock.requests).toHaveLength(1);
+        expect(clock.sleeps).toEqual([]);
+      }),
+      { numRuns: NUM_RUNS },
+    );
+  });
+
+  test('HTTP-date: a wait up to 60 seconds is retried once, a longer one is surfaced in full', async () => {
     await fc.assert(
       fc.asyncProperty(fc.integer({ min: -3600, max: 7200 }), async (offsetSeconds) => {
         const { mock, clock, client } = rig();
         const date = new Date(NOW_MS + offsetSeconds * 1000).toUTCString();
         mock.enqueue('voidPass', { status: 429, headers: { 'retry-after': date }, body: '' });
-        const result = await client.voidPass(SERIAL);
-        expect(result.outcome).toBe('voided');
-        expect(mock.requests).toHaveLength(2);
-        expect(clock.sleeps).toEqual([Math.min(Math.max(offsetSeconds, 0), 60) * 1000]);
+        const wait = Math.max(offsetSeconds, 0);
+        if (wait <= 60) {
+          const result = await client.voidPass(SERIAL);
+          expect(result.outcome).toBe('voided');
+          expect(mock.requests).toHaveLength(2);
+          expect(clock.sleeps).toEqual([wait * 1000]);
+        } else {
+          const error = await failureOf(client.voidPass(SERIAL));
+          expect(error.code).toBe('compass.rate_limited');
+          expect(error.retryAfterSeconds).toBe(wait);
+          expect(mock.requests).toHaveLength(1);
+          expect(clock.sleeps).toEqual([]);
+        }
       }),
       { numRuns: NUM_RUNS },
     );
@@ -368,9 +404,14 @@ describe('Feature: boarding-passes, Property 12: response validation gate', () =
           const bad = rig();
           const broken = mutate(body, kind, pick);
           bad.mock.enqueue(endpoint.operationId, jsonResponse(endpoint.status, broken));
-          const error = await failureOf(endpoint.run(bad.client));
-          expect(error.code).toBe('compass.validation_failed');
-          expect(error.message).not.toContain('retyped');
+          if (endpoint.name === 'forgetMe') {
+            // A 202 with a broken body is not a failure: the caller still cleans up locally.
+            expect(await endpoint.run(bad.client)).toEqual({ status: 202 });
+          } else {
+            const error = await failureOf(endpoint.run(bad.client));
+            expect(error.code).toBe('compass.validation_failed');
+            expect(error.message).not.toContain('retyped');
+          }
           expectConforming(bad.mock);
         }),
         { numRuns: NUM_RUNS },
@@ -385,8 +426,12 @@ describe('Feature: boarding-passes, Property 12: response validation gate', () =
           headers: { 'content-type': 'application/json' },
           body: raw,
         });
-        const error = await failureOf(endpoint.run(client));
-        expect(error.code).toBe('compass.validation_failed');
+        if (endpoint.name === 'forgetMe') {
+          expect(await endpoint.run(client)).toEqual({ status: 202 });
+        } else {
+          const error = await failureOf(endpoint.run(client));
+          expect(error.code).toBe('compass.validation_failed');
+        }
       }
     });
   }
@@ -437,13 +482,35 @@ describe('Feature: boarding-passes, Compass_Client example tests', () => {
     expectConforming(mock);
   });
 
-  test('a 404 on update or void signals that the serial is already gone', async () => {
-    for (const body of [problem(404, 'not_found'), { status: 404, headers: {}, body: '' }]) {
+  test('a 404 problem on update or void signals that the serial is already gone', async () => {
+    const { mock, client } = rig();
+    mock.enqueue('updatePass', problem(404, 'not_found'));
+    mock.enqueue('voidPass', problem(404, 'not_found'));
+    expect(await client.updatePass(SERIAL, FIELDS)).toEqual({ outcome: 'gone' });
+    expect(await client.voidPass(SERIAL)).toEqual({ outcome: 'gone' });
+  });
+
+  test('a 404 that is not a contract Problem is an error, never gone (an error page or a proxy)', async () => {
+    const lookalikes: MockResponse[] = [
+      { status: 404, headers: {}, body: '' },
+      { status: 404, headers: { 'content-type': 'text/html' }, body: '<h1>Not Found</h1>' },
+      { status: 404, headers: { 'content-type': 'application/json' }, body: '{"message":"x"}' },
+      {
+        status: 404,
+        headers: { 'content-type': 'application/problem+json' },
+        body: '{"message":"not a problem"}',
+      },
+    ];
+    for (const response of lookalikes) {
       const { mock, client } = rig();
-      mock.enqueue('updatePass', body);
-      mock.enqueue('voidPass', body);
-      expect(await client.updatePass(SERIAL, FIELDS)).toEqual({ outcome: 'gone' });
-      expect(await client.voidPass(SERIAL)).toEqual({ outcome: 'gone' });
+      mock.enqueue('updatePass', response);
+      mock.enqueue('voidPass', response);
+      const update = await failureOf(client.updatePass(SERIAL, FIELDS));
+      const voided = await failureOf(client.voidPass(SERIAL));
+      for (const error of [update, voided]) {
+        expect(['compass.http_error', 'compass.validation_failed']).toContain(error.code);
+        expect(error.status).toBe(404);
+      }
     }
   });
 
@@ -463,6 +530,20 @@ describe('Feature: boarding-passes, Compass_Client example tests', () => {
     expect(mock.requests[1]?.body).toEqual(ISSUE_REQUEST);
     expect(mock.requests[2]?.body).toEqual(HANDOFF_REQUEST);
     expectConforming(mock);
+  });
+
+  test('forgetMe returns a status without a body for 404, 410 and a 202 with a bad body', async () => {
+    const { mock, client } = rig();
+    mock.enqueue('forgetMe', problem(404, 'not_found'));
+    expect(await client.forgetMe()).toEqual({ status: 404 });
+    mock.enqueue('forgetMe', { status: 410, headers: {}, body: '' });
+    expect(await client.forgetMe()).toEqual({ status: 410 });
+    mock.enqueue('forgetMe', jsonResponse(202, { voided: 'many' }));
+    expect(await client.forgetMe()).toEqual({ status: 202 });
+    mock.enqueue('forgetMe', { status: 202, headers: {}, body: 'not json' });
+    expect(await client.forgetMe()).toEqual({ status: 202 });
+    mock.enqueue('forgetMe', jsonResponse(200, { voided: 'many' }));
+    expect((await failureOf(client.forgetMe())).code).toBe('compass.validation_failed');
   });
 
   test('forgetMe returns the status with the validated body, and a 401 is an error', async () => {
@@ -502,6 +583,29 @@ describe('Feature: boarding-passes, Compass_Client example tests', () => {
     expect(error.message).toBe('The Compass API answered 502 for POST /api/v1/passes.');
   });
 
+  test('a server-supplied Problem is reduced to a safe character set and length', async () => {
+    const { mock, client } = rig();
+    mock.enqueue('issuePasses', {
+      status: 400,
+      headers: { 'content-type': 'application/problem+json' },
+      body: JSON.stringify({
+        type: `https://x.test/p${'q'.repeat(300)}\u{1F4A9}<b>`,
+        title: `Bad <script>alert(1)</script> \u{202E}request ${'z'.repeat(200)}`,
+        status: 400,
+        code: 'bad request!\n<x>'.concat('c'.repeat(100)),
+      }),
+    });
+    const error = await failureOf(client.issuePasses(ISSUE_REQUEST));
+    const problemSeen = error.problem as { type: string; title: string; code: string };
+    expect(problemSeen.title.length).toBeLessThanOrEqual(80);
+    expect(problemSeen.title).not.toMatch(/[<>\u{202E}\n]/u);
+    expect(problemSeen.title.startsWith('Bad scriptalert(1)/script')).toBe(true);
+    expect(problemSeen.code).toMatch(/^[A-Za-z0-9_.-]{1,64}$/);
+    expect(problemSeen.type.length).toBeLessThanOrEqual(200);
+    expect(problemSeen.type).not.toMatch(/[<>\u{1F4A9}]/u);
+    expect(error.message).not.toMatch(/[<>\u{202E}]/u);
+  });
+
   test('a 429 problem body is kept on the rate_limited error', async () => {
     const { mock, client } = rig();
     mock.enqueue('issuePasses', problem(429, 'rate_limited'));
@@ -525,6 +629,14 @@ describe('Feature: boarding-passes, Compass_Client example tests', () => {
       () => Promise.resolve('has a space'),
       () => Promise.resolve('line\r\nbreak'),
       () => Promise.resolve('a'.repeat(9000)),
+      // Not an ID token: no payload, a non-JSON payload, a payload that is not an object,
+      // an access token, an id_token claim that is missing, and the wrong segment count.
+      () => Promise.resolve('aaaaaaaa.bbbbbbbb.cccccccc'),
+      () => Promise.resolve(`aaaaaaaa.${Buffer.from('null').toString('base64url')}.cccccccc`),
+      () => Promise.resolve(`aaaaaaaa.${Buffer.from('"id"').toString('base64url')}.cccccccc`),
+      () => Promise.resolve(fakeIdToken('x', { token_use: 'access' })),
+      () => Promise.resolve(fakeIdToken('x', { token_use: undefined })),
+      () => Promise.resolve('aaaaaaaa.bbbbbbbb'),
     ];
     for (const provider of providers) {
       const { mock, client } = rig(provider);
@@ -583,23 +695,72 @@ describe('Feature: boarding-passes, Compass_Client example tests', () => {
     expect(mock.requests).toHaveLength(0);
   });
 
-  test('the base URL must be an https URL without credentials, and a trailing slash is trimmed', async () => {
-    for (const bad of [
+  test('the base URL host is pinned, and credentials, a query, a fragment and a port are refused', () => {
+    const bad = [
       'not a url',
       'http://d111111abcdef8.cloudfront.net',
-      'https://user:pw@host.test',
-    ]) {
-      expect(() => rig(TOKEN, bad)).toThrow(PassError);
+      'https://user:pw@d111111abcdef8.cloudfront.net',
+      'https://host.test',
+      'https://evil.example/d111111abcdef8.cloudfront.net',
+      'https://d111111abcdef8.cloudfront.net.evil.example',
+      'https://short.cloudfront.net',
+      'https://d111111abcdef8.cloudfront.net/?x=1',
+      'https://d111111abcdef8.cloudfront.net/#frag',
+      'https://d111111abcdef8.cloudfront.net:8443',
+      'https://localhost',
+      'http://localhost:3000',
+    ];
+    for (const url of bad) {
+      let caught: unknown;
       try {
-        rig(TOKEN, bad);
+        rig(TOKEN, url);
       } catch (error) {
-        expect((error as PassError).code).toBe('compass.invalid_config');
-        expect((error as PassError).message).not.toContain('user:pw');
+        caught = error;
       }
+      expect(caught).toBeInstanceOf(PassError);
+      expect((caught as PassError).code).toBe('compass.invalid_config');
+      expect((caught as PassError).message).not.toContain('pw');
     }
+  });
+
+  test('an exact allowed host, and localhost only when simulated, are accepted', async () => {
+    const make = (baseUrl: string, extra: { allowedHosts?: string[]; simulated?: boolean }) =>
+      createCompassClient({
+        baseUrl,
+        transport: createContractMock(),
+        clock: fakeClock(),
+        idToken: { getIdToken: () => Promise.resolve(TOKEN) },
+        ...extra,
+      });
+    await make('https://passes.example.org', { allowedHosts: ['passes.example.org'] }).forgetMe();
+    expect(() =>
+      make('https://passes.example.org', { allowedHosts: ['other.example.org'] }),
+    ).toThrow(PassError);
+    await make('http://localhost:3000', { simulated: true }).forgetMe();
+    await make('http://127.0.0.1:8080/x', { simulated: true }).forgetMe();
+    await make('https://localhost', { simulated: true }).forgetMe();
+    expect(() => make('https://host.test', { simulated: true })).toThrow(PassError);
+    expect(() => make('http://d111111abcdef8.cloudfront.net', { simulated: true })).toThrow(
+      PassError,
+    );
+  });
+
+  test('a trailing slash and a path prefix on the base URL are handled', async () => {
     const { mock, client } = rig(TOKEN, `${BASE_URL}/prefix/`, '/prefix');
     await client.forgetMe();
     expect(mock.requests[0]?.url).toBe(`${BASE_URL}/prefix/api/v1/me`);
+  });
+
+  test('the client never sends an x-api-key header', async () => {
+    const { mock, client } = rig();
+    for (const call of Object.values(CALLS)) {
+      await call(client);
+    }
+    for (const request of mock.requests) {
+      expect(Object.keys(request.headers).map((name) => name.toLowerCase())).not.toContain(
+        'x-api-key',
+      );
+    }
   });
 
   test('a request the contract does not allow is answered with a problem by the mock', async () => {
