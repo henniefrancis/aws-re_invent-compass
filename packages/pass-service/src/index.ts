@@ -1,5 +1,4 @@
-// @compass/pass-service entry point (foundation-contracts, S0).
-// Owned by S5: the Compass API Lambdas (api, passkit) and original pass artwork.
-// Day-1 stub only, kept empty so the solution compiles. S5 fills this with the Lambda
-// handlers (the lambda-entry/*.ts entries are named coverage exclusions, added by S5).
-export {};
+// @compass/pass-service entry point. Owned by S5: the Compass API Lambdas (api, passkit).
+// The Lambda entries in lambda-entry/*.ts are named coverage exclusions.
+export { createApiApp } from './app/api-app.js';
+export { createPasskitApp } from './app/passkit-app.js';
