@@ -67,6 +67,12 @@ jobs:
       - name: Unit tests with coverage
         run: npm test
 
+      - name: Site unit tests with coverage
+        run: npm run test:site
+
+      - name: Site build, output and budget checks
+        run: npm run build:site
+
       - name: Build
         run: npm run build --if-present
 

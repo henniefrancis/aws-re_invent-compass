@@ -31,3 +31,4 @@ One record per architecture decision for re:Invent Compass, mirrored from the pr
 | [ADR-025](ADR-025-early-contract-lock.md)                       | Early contract lock                                      | Accepted |
 | [ADR-026](ADR-026-audit-allowlist.md)                           | Audit allowlist for accepted advisories                  | Accepted |
 | [ADR-027](ADR-027-accepted-residual-risks.md)                   | Accepted residual risks from the stream security reviews | Accepted |
+| [ADR-028](ADR-028-site-component-coverage.md)                   | Site component coverage exclusion                        | Accepted |
