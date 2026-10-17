@@ -32,6 +32,8 @@ export const RECORD_FILE_MODE = 0o600;
 export const BACKUP_FILE_NAME = `${RECORD_FILE_NAME}.bak`;
 /** The temporary file a write goes through before the rename. */
 export const TEMP_FILE_NAME = `${RECORD_FILE_NAME}.tmp`;
+/** Serials whose compensating void failed, to be voided first on the next sync. */
+export const PENDING_VOID_FILE_NAME = '.pending-void';
 /** The cross-process lock file. */
 export const LOCK_FILE_NAME = `${RECORD_FILE_NAME}.lock`;
 /**
@@ -55,6 +57,9 @@ const IssuedPassRecordSchema: z.ZodType<IssuedPassRecord> = z.strictObject({
   ),
 });
 
+/** The pending-void file: serials still to be voided. Strict, and each must be a UUID. */
+const PendingVoidSchema = z.strictObject({ serials: z.array(z.uuid()) });
+
 /** What a read found: the record (one entry per session code) and the older duplicates dropped. */
 export interface ReadResult {
   record: IssuedPassRecord;
@@ -70,7 +75,11 @@ export interface PassStore {
   readWithSuperseded(): Promise<ReadResult>;
   /** Replace the record atomically, creating the file with mode 0600 and keeping one .bak. */
   write(record: IssuedPassRecord): Promise<void>;
-  /** Remove the record file, its backup and any temporary file. */
+  /** The serials whose compensating void failed and still need voiding. Empty when none. */
+  readPendingVoids(): Promise<string[]>;
+  /** Replace the list of serials still to be voided; an empty list removes the file. Mode 0600. */
+  writePendingVoids(serials: string[]): Promise<void>;
+  /** Remove the record file, its backup, the pending-void list and any temporary file. */
   deleteRecord(): Promise<void>;
   /** Run fn while holding the store lock. Re-entrant for the code running inside fn. */
   withLock<T>(fn: () => Promise<T>): Promise<T>;
@@ -298,11 +307,63 @@ export function createPassStore(deps: PassStoreDeps): PassStore {
       });
     },
 
+    async readPendingVoids() {
+      let text: string | undefined;
+      try {
+        text = await fs.readFile(joinInFolder(appData.resolve(), PENDING_VOID_FILE_NAME));
+      } catch {
+        throw passError('store.read_failed', 'The pending-void list could not be read.');
+      }
+      if (text === undefined) {
+        return [];
+      }
+      let json: unknown;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = undefined;
+      }
+      const parsed = PendingVoidSchema.safeParse(json);
+      if (!parsed.success) {
+        throw passError(
+          'store.corrupt_record',
+          `The pending-void list is not valid. Run the forget_me tool, or delete the ${PENDING_VOID_FILE_NAME} file in the reinvent-compass app-data folder.`,
+        );
+      }
+      return parsed.data.serials;
+    },
+
+    writePendingVoids(serials) {
+      const parsed = PendingVoidSchema.safeParse({ serials: [...new Set(serials)] });
+      if (!parsed.success) {
+        return Promise.reject(
+          passError('store.invalid_record', 'The pending-void list is not valid.'),
+        );
+      }
+      return withLock(async () => {
+        const path = joinInFolder(appData.resolve(), PENDING_VOID_FILE_NAME);
+        try {
+          if (parsed.data.serials.length === 0) {
+            await fs.remove(path);
+          } else {
+            await fs.writeFile(path, `${JSON.stringify(parsed.data)}\n`, RECORD_FILE_MODE);
+          }
+        } catch {
+          throw passError('store.write_failed', 'The pending-void list could not be written.');
+        }
+      });
+    },
+
     deleteRecord() {
       return withLock(async () => {
         const root = appData.resolve();
         try {
-          for (const name of [RECORD_FILE_NAME, BACKUP_FILE_NAME, TEMP_FILE_NAME]) {
+          for (const name of [
+            RECORD_FILE_NAME,
+            BACKUP_FILE_NAME,
+            TEMP_FILE_NAME,
+            PENDING_VOID_FILE_NAME,
+          ]) {
             await fs.remove(joinInFolder(root, name));
           }
         } catch {

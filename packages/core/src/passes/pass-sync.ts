@@ -115,11 +115,14 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-/** Throw the fixed identity error: the server answered for something that was not asked. */
-function identityMismatch(): never {
+/**
+ * Throw the fixed identity error: the server answered for something that was not asked. After an
+ * issue, passes may have been created that are not recorded, so the copy points to forget_me.
+ */
+function identityMismatch(afterIssue = false): never {
   throw passError(
     'sync.identity_mismatch',
-    'The server answered for a different pass than the one asked about, so nothing was recorded.',
+    `The server answered for a different pass than the one asked about, so nothing was recorded.${afterIssue ? ' Run the forget_me tool to clean up any passes that may have been issued.' : ''}`,
   );
 }
 
@@ -157,6 +160,7 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
   }
 
   const { record, superseded } = await store.readWithSuperseded();
+  let pending = await store.readPendingVoids();
   const plan = diffSchedule(input, record, rebuild);
   const added = plan.filter((entry) => entry.diffCase === 'added');
   const changed = plan.filter((entry) => entry.diffCase === 'changed');
@@ -175,12 +179,37 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
       `This sync would void ${String(voidTotal)} passes, more than ${String(MAX_UNCONFIRMED_VOIDS)} at once. Confirm a bulk void to continue.`,
     );
   }
+
+  let calls = 0;
+  const voidChecked = async (serialNumber: string): Promise<void> => {
+    await store.heartbeat();
+    const result = await client.voidPass(serialNumber);
+    calls += 1;
+    if (result.outcome === 'voided' && result.response.serialNumber !== serialNumber) {
+      identityMismatch();
+    }
+  };
+
+  // Compensating voids that failed on an earlier run come first. Each serial leaves the list
+  // only once its void has gone through, so a failure here keeps the rest for the next run.
+  for (const serial of [...pending]) {
+    await voidChecked(serial);
+    pending = pending.filter((candidate) => candidate !== serial);
+    try {
+      await store.writePendingVoids(pending);
+    } catch {
+      throw passError(
+        'sync.store_failed',
+        'The pending-void list could not be saved. The next sync repeats the step.',
+      );
+    }
+  }
+
   if (added.length + changed.length + cancelled.length + superseded.length === 0) {
-    return { plan, calls: 0, record };
+    return { plan, calls, record };
   }
 
   let passes = [...record.passes];
-  let calls = 0;
   const persist = async (): Promise<void> => {
     try {
       await store.write({ passes });
@@ -191,15 +220,6 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
       );
     }
   };
-  const voidChecked = async (serialNumber: string): Promise<void> => {
-    await store.heartbeat();
-    const result = await client.voidPass(serialNumber);
-    calls += 1;
-    if (result.outcome === 'voided' && result.response.serialNumber !== serialNumber) {
-      identityMismatch();
-    }
-  };
-
   // Older duplicates for a session code first, before anything is written: a write would drop
   // them from the record, so their passes must be voided while they are still recorded.
   for (const old of superseded) {
@@ -228,7 +248,7 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
         answered.has(issued.sessionCode) ||
         serials.has(issued.serialNumber)
       ) {
-        identityMismatch();
+        identityMismatch(true);
       }
       answered.add(issued.sessionCode);
       serials.add(issued.serialNumber);
@@ -251,7 +271,7 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
       // The passes exist on the server but the record does not hold them. Void them again
       // at once so none is orphaned, and say how that went.
       let voided = 0;
-      let stuck = 0;
+      const stuck: string[] = [];
       for (const issued of response.passes) {
         try {
           await store.heartbeat();
@@ -259,12 +279,22 @@ async function runSync(input: SyncInput, deps: SyncDeps): Promise<SyncResult> {
           calls += 1;
           voided += 1;
         } catch {
-          stuck += 1;
+          stuck.push(issued.serialNumber);
+        }
+      }
+      // A void that failed is written to the pending-void list, so the next sync retries it.
+      let queued = false;
+      if (stuck.length > 0) {
+        try {
+          await store.writePendingVoids([...pending, ...stuck]);
+          queued = true;
+        } catch {
+          // Reported below: the retry could not be queued.
         }
       }
       throw passError(
         'sync.store_failed',
-        `The issued-pass record could not be saved after issuing. ${String(voided)} just-issued pass(es) were voided again${stuck > 0 ? `, and ${String(stuck)} could not be voided` : ''}.`,
+        `The issued-pass record could not be saved after issuing. ${String(voided)} just-issued pass(es) were voided again${stuck.length > 0 ? `, and ${String(stuck.length)} could not be voided and ${queued ? 'will be retried on the next sync' : 'could not be queued for a retry'}` : ''}.`,
       );
     }
     if (response.passes.length < group.length) {

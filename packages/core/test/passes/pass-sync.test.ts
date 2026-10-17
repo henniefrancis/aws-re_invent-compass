@@ -19,7 +19,11 @@ import type {
 import { fieldsHash } from '../../src/passes/field-hash.js';
 import type { IssuedPass, IssuedPassRecord } from '../../src/passes/models.js';
 import { buildPass } from '../../src/passes/pass-builder.js';
-import { createPassStore, LOCK_FILE_NAME } from '../../src/passes/pass-store.js';
+import {
+  createPassStore,
+  LOCK_FILE_NAME,
+  PENDING_VOID_FILE_NAME,
+} from '../../src/passes/pass-store.js';
 import { diffSchedule, MAX_ISSUE_CHUNK, syncPasses } from '../../src/passes/pass-sync.js';
 import { PassError, passError } from '../../src/passes/redaction.js';
 import { memoryFs } from './memory-fs.js';
@@ -691,7 +695,7 @@ describe('Feature: boarding-passes, no orphaned pass when the record cannot be s
     const error = await failureOf(syncPasses(inputFor(['CODE1', 'CODE2']), depsFor(store, client)));
     expect(error.code).toBe('sync.store_failed');
     expect(error.message).toContain(
-      '1 just-issued pass(es) were voided again, and 1 could not be voided.',
+      '1 just-issued pass(es) were voided again, and 1 could not be voided and will be retried on the next sync.',
     );
     expect(error.message).not.toContain('network down');
   });
@@ -721,6 +725,7 @@ describe('Feature: boarding-passes, the sync does not trust the identity in a re
     const { client, calls } = fakeClient({ issue: () => Promise.resolve(answer) });
     const error = await failureOf(syncPasses(inputFor(['CODE1', 'CODE2']), depsFor(store, client)));
     expect(error.code).toBe('sync.identity_mismatch');
+    expect(error.message).toContain('forget_me');
     expect(writesIn(fs.ops)).toBe(0);
     expect(calls.map((call) => call.kind)).toEqual(['issue']);
     expect((await store.read()).passes).toEqual(record.passes);
@@ -917,5 +922,128 @@ describe('Feature: boarding-passes, the lock is refreshed before every API call 
     );
     expect(error.code).toBe('store.lock_lost');
     expect(stolen.calls.map((call) => call.kind)).toEqual(['issue']);
+  });
+});
+
+describe('Feature: boarding-passes, a failed compensating void is queued and retried first (QA N2, N3)', () => {
+  const PENDING_PATH = joinInFolder(APP_DATA.resolve(), PENDING_VOID_FILE_NAME);
+
+  /** An issue whose record save fails, with the first compensating void failing too. */
+  async function leaveOnePending() {
+    const rig = await seeded({ passes: [] });
+    rig.fs.failing.add('rename');
+    const first = fakeClient({
+      voidPass: (serial) =>
+        serial === issuedSerial('CODE1')
+          ? Promise.reject(new Error('network down'))
+          : Promise.resolve({
+              outcome: 'voided' as const,
+              response: { serialNumber: serial, status: 'voided' as const },
+            }),
+    });
+    const error = await failureOf(
+      syncPasses(inputFor(['CODE1', 'CODE2']), depsFor(rig.store, first.client)),
+    );
+    rig.fs.failing.clear();
+    return { ...rig, error };
+  }
+
+  test('the serial whose void failed is written to the pending-void file with mode 0600', async () => {
+    const { fs, error, store } = await leaveOnePending();
+    expect(error.message).toContain('1 could not be voided and will be retried on the next sync');
+    expect(JSON.parse(fs.files.get(PENDING_PATH) ?? '{}')).toEqual({
+      serials: [issuedSerial('CODE1')],
+    });
+    expect(fs.modes.get(PENDING_PATH)).toBe(0o600);
+    expect(await store.readPendingVoids()).toEqual([issuedSerial('CODE1')]);
+  });
+
+  test('the next sync voids the pending serial first, clears the file, then carries on', async () => {
+    const { fs, store } = await leaveOnePending();
+    const { client, calls } = fakeClient();
+    const result = await syncPasses(inputFor(['CODE1']), depsFor(store, client));
+    expect(calls.map((call) => call.kind)).toEqual(['void', 'issue']);
+    expect(calls[0]).toEqual({ kind: 'void', serial: issuedSerial('CODE1') });
+    expect(fs.files.has(PENDING_PATH)).toBe(false);
+    expect(result.record.passes.map((pass) => pass.sessionCode)).toEqual(['CODE1']);
+  });
+
+  test('with nothing else to do, the pending void is still retried and counted', async () => {
+    const { store } = await leaveOnePending();
+    const { client, calls } = fakeClient();
+    const result = await syncPasses(inputFor([]), depsFor(store, client));
+    expect(result.calls).toBe(1);
+    expect(calls).toEqual([{ kind: 'void', serial: issuedSerial('CODE1') }]);
+    expect(await store.readPendingVoids()).toEqual([]);
+  });
+
+  test('a pending void that fails again, or answers for another serial, stays queued', async () => {
+    const { fs, store } = await leaveOnePending();
+    const failing = fakeClient({ voidPass: () => Promise.reject(new Error('still down')) });
+    await expect(syncPasses(inputFor([]), depsFor(store, failing.client))).rejects.toThrow();
+    expect(fs.files.has(PENDING_PATH)).toBe(true);
+    const wrong = fakeClient({
+      voidPass: () =>
+        Promise.resolve({
+          outcome: 'voided' as const,
+          response: { serialNumber: issuedSerial('CODE9'), status: 'voided' as const },
+        }),
+    });
+    expect((await failureOf(syncPasses(inputFor([]), depsFor(store, wrong.client)))).code).toBe(
+      'sync.identity_mismatch',
+    );
+    expect(await store.readPendingVoids()).toEqual([issuedSerial('CODE1')]);
+  });
+
+  test('a pending list that cannot be updated after a void is a fixed store error', async () => {
+    const { fs, store } = await leaveOnePending();
+    const realRemove = fs.remove.bind(fs);
+    fs.remove = (path) =>
+      path === PENDING_PATH
+        ? Promise.reject(new Error('disk full at secret.user@example.com'))
+        : realRemove(path);
+    const { client } = fakeClient();
+    const error = await failureOf(syncPasses(inputFor([]), depsFor(store, client)));
+    expect(error.code).toBe('sync.store_failed');
+    expect(error.message).not.toContain('example.com');
+  });
+
+  test('when the retry cannot even be queued, the error says so', async () => {
+    const rig = await seeded({ passes: [] });
+    rig.fs.failing.add('rename');
+    const realWrite = rig.fs.writeFile.bind(rig.fs);
+    rig.fs.writeFile = (path, data, mode) =>
+      path === PENDING_PATH ? Promise.reject(new Error('disk full')) : realWrite(path, data, mode);
+    const { client } = fakeClient({ voidPass: () => Promise.reject(new Error('network down')) });
+    const error = await failureOf(syncPasses(inputFor(['CODE1']), depsFor(rig.store, client)));
+    expect(error.code).toBe('sync.store_failed');
+    expect(error.message).toContain('1 could not be voided and could not be queued for a retry');
+  });
+
+  test('pending voids already on file stay queued when the first retry fails', async () => {
+    const rig = await seeded({ passes: [] });
+    rig.fs.files.set(PENDING_PATH, JSON.stringify({ serials: [issuedSerial('CODE7')] }));
+    const { client } = fakeClient({ voidPass: () => Promise.reject(new Error('down')) });
+    await expect(syncPasses(inputFor(['CODE1']), depsFor(rig.store, client))).rejects.toThrow();
+    expect(await rig.store.readPendingVoids()).toEqual([issuedSerial('CODE7')]);
+  });
+
+  test('new stuck serials are added to the ones already waiting', async () => {
+    // A pending serial that voids fine is removed; the new stuck one is then the only entry.
+    const rig = await seeded({ passes: [] });
+    rig.fs.files.set(PENDING_PATH, JSON.stringify({ serials: [issuedSerial('CODE7')] }));
+    rig.fs.failing.add('rename');
+    const { client } = fakeClient({
+      voidPass: (serial) =>
+        serial === issuedSerial('CODE7')
+          ? Promise.resolve({
+              outcome: 'voided' as const,
+              response: { serialNumber: serial, status: 'voided' as const },
+            })
+          : Promise.reject(new Error('down')),
+    });
+    const error = await failureOf(syncPasses(inputFor(['CODE1']), depsFor(rig.store, client)));
+    expect(error.code).toBe('sync.store_failed');
+    expect(await rig.store.readPendingVoids()).toEqual([issuedSerial('CODE1')]);
   });
 });

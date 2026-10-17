@@ -110,6 +110,8 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 10. IF the Issued_Pass_Record cannot be written after an issue, THEN THE Pass_Sync SHALL void the just-issued passes again and raise `sync.store_failed`; IF an issue response lacks a requested session code, THEN THE Pass_Sync SHALL record what came back and raise `sync.partial_issue`.
 11. THE Pass_Sync SHALL refuse a response that answers for a different serial on update or void, and an issue response that answers for an unrequested code, repeats a code, or repeats a serial already recorded, recording nothing for it; and SHALL match record entries on both session code and serial.
 12. THE Pass_Sync SHALL void every older duplicate entry for a session code before any other change, and every serial of a cancelled code.
+13. IF a compensating void fails, THEN THE Pass_Sync SHALL persist its serial to a `.pending-void` file in the store folder (mode 0600, under the store lock) and SHALL retry the pending serials first on the next sync, removing each only after its void succeeds.
+14. IF an issue response fails the identity checks, THEN THE Pass_Sync SHALL raise an error whose copy tells the user to run the forget_me tool to clean up any passes that may have been issued.
 
 ### Requirement 5: Hand off passes with a QR code
 
