@@ -25,8 +25,8 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 
 ## Tasks
 
-- [ ] 1. Scaffold the Angular workspace and the site test harness
-  - [ ] 1.1 Create the Angular workspace configuration and the page skeleton
+- [x] 1. Scaffold the Angular workspace and the site test harness
+  - [x] 1.1 Create the Angular workspace configuration and the page skeleton
     - In a scratch directory outside the repository, run the workspace's own CLI (`npx ng new reference --ssr --style=css --skip-install --skip-git`) only to read the configuration Angular 22.2.3 generates; copy what applies into `site/` and do not touch `site/package.json`
     - Create `site/angular.json` per design Component 1 (`@angular/build:application`, `browser: src/main.ts`, `server: src/main.server.ts`, `outputMode: "static"`, `styles: ["src/styles/index.css"]`, `optimization.styles.inlineCritical: false`, `subresourceIntegrity: false`, `namedChunks: true`, `statsJson: true`, raw-size budgets as an early warning)
     - Create `site/tsconfig.json` and `site/tsconfig.app.json` (CLI defaults plus `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `verbatimModuleSyntax`, `resolveJsonModule`, `lib: ["ES2024", "DOM"]`, `customConditions: ["@compass/source"]`; include `src`, `test`, `e2e` and the config files)
@@ -35,16 +35,16 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
     - Create `site/src/styles/index.css` as an empty import list and `site/.gitignore` (`.angular/`, `dist/`, `test-results/`, `playwright-report/`)
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.7, 3.4, 4.6_
 
-  - [ ] 1.2 Create the site vitest harness and the static source checks
+  - [x] 1.2 Create the site vitest harness and the static source checks
     - Create `site/vitest.config.ts`: `include: ['test/**/*.test.ts']`, environment `node`, `resolve.conditions: ['@compass/source']`, v8 coverage over `src/lib/**/*.ts` and `scripts/**/*.mjs` with 100% thresholds for lines, branches, functions and statements and no exclusions
     - Create `site/test/static/source-rules.test.ts` with every static source check from the design (no storage APIs, no `console.`, no `innerHTML` or sanitiser bypass, no `eval` or `new Function`, no component styles or style bindings, no `NgModule`, no `zone.js`, `@compass/core/` only as `@compass/core/rules` and only in `rules-port.ts`, `fetch(` only in `handoff-client.ts`, absolute `http` URLs only in `links.ts` and `handoff-view.ts`, no clock under `src/lib/demo/`, no `fetch(`, `switch (`, `JSON.parse` or regular expression literal under `src/app/`); files that do not exist yet are skipped by the scan, not by the rule
     - _Requirements: 2.2, 2.3, 2.4, 3.3, 3.5, 22.1, 22.6_
 
-  - [ ] 1.3 Verify the scaffold builds and prerenders
+  - [x] 1.3 Verify the scaffold builds and prerenders
     - Run `npx tsc -b`, then `npx ng build` from `site/`, and confirm `site/dist/site/browser/` holds `index.html`, `demo/index.html`, `install/index.html`, `privacy/index.html` and `board/index.html`
     - _Requirements: 1.3, 1.5_
 
-  - [ ] 1.4 Commit
+  - [x] 1.4 Commit
     - After the commands in execution rule 5 pass with zero errors (the two build checks start in task 5), commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Include `.kiro/specs/showcase-site/` in this first commit. Verify every edit landed. Never push.
 
 - [ ] 2. Design tokens, contrast and global styles
@@ -389,6 +389,9 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 10. **S5 contract confirmation.** Confirm `bundlePaths` and `calendarPath` are root-relative paths matching the route templates, and that `boardUrl` is `https://<distribution>.cloudfront.net/board#h=<id>` (design Open Questions 11).
 11. **S0 catalog (only if needed).** If the synthetic catalog lacks a demo scenario in Requirement 7 criterion 3, add one through an S0 change; the site never invents sessions.
 12. **Links after release.** The Builder Center post and video URLs ship in a one-file `hotfix/1.0.1` change to `site/src/lib/content/links.ts` after submission (design Open Questions 6).
+13. **Root ESLint and `.html` files.** The root `eslint.config.js` lints `site/**/*.html` with the type-aware rules, which the Angular template parser cannot satisfy, so `npx eslint .` fails on any template or on `site/src/index.html`. Add `extends: [tseslint.configs.disableTypeChecked]` to the root `site/**/*.html` block. Until then `site/eslint.config.mjs` does this for the site; delete it afterwards (design deviation 2).
+14. **Coverage exclusion ADR (CTO M10).** Record an ADR that `site/src/app/**` is a named coverage exclusion, with the site `vitest.config.ts` coverage scope as the evidence, and add it to the build plan section 11.2 list.
+15. **Slow S0 property test.** `packages/contracts/test/placeholder-safety.test.ts` (Property 9) timed out once on a loaded machine (20 s for one case) and passed on the next run. Consider a longer timeout.
 
 ## Task Dependency Graph
 
