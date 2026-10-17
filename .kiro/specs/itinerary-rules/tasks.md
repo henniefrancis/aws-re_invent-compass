@@ -129,19 +129,19 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 8.5 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 9. Implement clash detection
-  - [ ] 9.1 Implement `clashes.ts` `findClashes`
+- [x] 9. Implement clash detection
+  - [x] 9.1 Implement `clashes.ts` `findClashes`
     - Report a clash when two commitments overlap by one second or more in the event timezone; identical intervals clash; touching at a single instant does not
     - Expand an all-day item to 00:00:00 to 23:59:59 of its event day; evaluate cross-midnight commitments on their instants
     - Return `unknown` for any pair including a commitment with a missing end time, and `unknown` when the timezone is missing; every clash reason names both commitments and the overlapping range
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9_
-  - [ ] 9.2 Write property test for clash overlap semantics
+  - [x] 9.2 Write property test for clash overlap semantics
     - **Property 7: Clash overlap semantics with all-day expansion and a naming reason**
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.9**
-  - [ ] 9.3 Write clash example tests
+  - [x] 9.3 Write clash example tests
     - Assert a clash across midnight and a touching-at-one-instant no-clash pair
     - _Requirements: 3.3, 3.5_
-  - [ ] 9.4 Run the rules tests, confirm they pass, then commit
+  - [x] 9.4 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 10. Implement layovers and personal time
