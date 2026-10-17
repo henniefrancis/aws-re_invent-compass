@@ -345,7 +345,7 @@ describe('Feature: pass-service, Property 10', () => {
         fc.integer({ min: 0, max: mutations.length - 1 }),
         fc.nat(100),
         (fields, which, n) => {
-          const candidate = mutations[which]({ ...fields }, n);
+          const candidate = mutations[which]!({ ...fields }, n);
           const expected = passFieldsSchema.safeParse(candidate).success && !hasUnknown(candidate);
           if (expected) {
             expect(parsePassFields(candidate, TEST_WINDOW)).toEqual(candidate);

@@ -13,7 +13,7 @@ describe('Feature: pass-service, in-memory table', () => {
     item.nested.n = 99;
     const read = await table.get(key('A', 'a'));
     expect(read).toEqual({ pk: 'A', sk: 'a', nested: { n: 1 } });
-    (read as { nested: { n: number } }).nested.n = 5;
+    (read as unknown as { nested: { n: number } }).nested.n = 5;
     expect(await table.get(key('A', 'a'))).toEqual({ pk: 'A', sk: 'a', nested: { n: 1 } });
     await table.put({ pk: 'A', sk: 'a', replaced: true });
     expect(await table.get(key('A', 'a'))).toEqual({ pk: 'A', sk: 'a', replaced: true });

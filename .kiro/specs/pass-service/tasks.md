@@ -187,32 +187,32 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - [x] 11. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Implement the Apple pass builder and signer
-  - [ ] 12.1 Create the original artwork
+- [x] 12. Implement the Apple pass builder and signer
+  - [x] 12.1 Create the original artwork
     - Check Apple's current Wallet design guidance for icon and logo image sizes, then create `src/artwork/png.ts` (a small PNG encoder over `node:zlib`) and `src/artwork/draw.ts` (an original compass-rose glyph and "Compass" wordmark in an original palette with at least 4.5 to 1 text contrast, no AWS logo, colour or wording), and `scripts/make-artwork.ts`, which writes `src/apple/artwork.ts` holding `icon.png`, `icon@2x.png`, `icon@3x.png`, `logo@2x.png` and `logo@3x.png` as base64 constants; run it once and commit the generated module
     - _Requirements: 1.6, 9.10_
 
-  - [ ] 12.2 Create the throwaway PKI helper
+  - [x] 12.2 Create the throwaway PKI helper
     - Create `test/helpers/throwaway-pki.ts` that generates in memory, once per test run, with `node-forge`: a CA certificate standing in for WWDR, a Pass Type ID signer certificate issued by it, and the signer key encrypted with a random passphrase, all as PEM strings; plus a Google service account key pair from `node:crypto`; nothing is written to the repository
     - _Requirements: 21.4, 21.5, 25.8_
 
-  - [ ] 12.3 Implement the pass template
+  - [x] 12.3 Implement the pass template
     - Create `src/apple/pass-template.ts` (`buildPassJson`, `relevantInterval`, `boardingClosesAt`) and `src/apple/format-time.ts` (`formatEventTime` with `Intl` in the event timezone, timezone named once on the back) per the design's template table: `boardingPass` with `PKTransitTypeGeneric`, the disclaimer on front and back, no barcode, `sharingProhibited: true`, `formatVersion: 1`, `expirationDate` and `voided`, the relevant interval, "Venue not published", `webServiceURL`, `authenticationToken`, attendee name only when sent
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.11_
 
-  - [ ] 12.4 Write property test for the pass template
+  - [x] 12.4 Write property test for the pass template
     - **Property 13: Every Apple pass.json follows the fixed template**
     - **Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.11**
 
-  - [ ] 12.5 Implement the signer and the bundle builder
+  - [x] 12.5 Implement the signer and the bundle builder
     - Create `src/apple/pass-signer.ts` (`createPassSigner`: in-memory buffers for `pass.json` and the artwork, `new PKPass(buffers, {wwdr, signerCert, signerKey, signerKeyPassphrase}, props)`, `setBarcodes(null)`, `setExpirationDate`, `setRelevantDates`, `getAsBuffer`; `signBundle` with `PKPass.pack`; every call inside the console guard) and `chunkBundles` (chunks of at most 10 in order); if `passkit-generator` refuses a past `expirationDate` for a voided pass, record how it was resolved under "Implementation deviations" in design.md
     - _Requirements: 9.1, 9.10, 10.1, 10.2, 16.2, 16.3, 22.5_
 
-  - [ ] 12.6 Write property test for signed passes and bundles
+  - [x] 12.6 Write property test for signed passes and bundles
     - **Property 14: Signed passes and bundles are intact**
     - **Validates: Requirements 9.1, 9.10, 10.1, 16.3**
 
-  - [ ] 12.7 Commit
+  - [x] 12.7 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 13. Implement the APNs client

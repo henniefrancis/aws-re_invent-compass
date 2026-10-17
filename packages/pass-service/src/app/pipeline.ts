@@ -66,8 +66,8 @@ export function createPipeline<D extends BaseDeps>(
     metrics: MetricsCollector,
   ): Promise<Finished> {
     try {
-      const app = await deps.secrets.app();
-      if (!checkOrigin(event, app)) {
+      const origin = await deps.secrets.origin();
+      if (!checkOrigin(event, origin)) {
         throw new ProblemError(403, 'forbidden');
       }
       if (handler === undefined) {

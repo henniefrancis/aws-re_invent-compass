@@ -224,6 +224,7 @@ describe.each(['cognito', 'oidc'] as const)(
       const { primary } = sharedKeys();
       const failing: SecretsProvider = {
         app: () => Promise.reject(new DependencyError('secret')),
+        origin: () => Promise.reject(new DependencyError('secret')),
         apple: () => Promise.reject(new DependencyError('secret')),
         google: () => Promise.reject(new DependencyError('secret')),
       };

@@ -4,7 +4,7 @@
 // being rotated, the previous value is accepted as well. Both comparisons always run.
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { header, type ProxyEvent } from '../http/event.js';
-import type { AppSecret } from '../secrets/secret-shapes.js';
+import type { OriginSecret } from '../secrets/secret-shapes.js';
 
 function digest(value: string): Buffer {
   return createHash('sha256').update(value, 'utf8').digest();
@@ -20,7 +20,7 @@ function matches(presented: Buffer, expected: string | undefined): boolean {
 
 export function checkOrigin(
   event: ProxyEvent,
-  secret: Pick<AppSecret, 'originVerify' | 'originVerifyPrevious'>,
+  secret: Pick<OriginSecret, 'originVerify' | 'originVerifyPrevious'>,
 ): boolean {
   const value = header(event, 'x-origin-verify');
   if (value === undefined) {

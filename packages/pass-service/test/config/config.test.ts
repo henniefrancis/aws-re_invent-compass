@@ -16,6 +16,7 @@ const COGNITO_ISSUER = 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Ab
 const cognitoEnv: Env = {
   TABLE_NAME: 'compass-dev',
   APP_SECRET_ID: 'compass/dev/app',
+  ORIGIN_VERIFY_SECRET_ID: 'compass/dev/origin-verify',
   APPLE_SECRET_ID: 'compass/dev/apple-pass',
   GOOGLE_SECRET_ID: 'compass/dev/google-wallet',
   GOOGLE_WALLET_CLASS_SUFFIX: 'compass-boarding',
@@ -41,6 +42,7 @@ type Mode = 'cognito' | 'oidc';
 const invalidValues: Record<string, (n: string, mode: Mode) => (string | undefined)[]> = {
   TABLE_NAME: (n) => [undefined, '', `bad name ${n}`],
   APP_SECRET_ID: (n) => [undefined, `bad name ${n}`],
+  ORIGIN_VERIFY_SECRET_ID: (n) => [undefined, `bad name ${n}`],
   APPLE_SECRET_ID: (n) => [undefined, `bad name ${n}`],
   GOOGLE_WALLET_ENABLED: (n) => [`yes${n}`, 'TRUE'],
   GOOGLE_SECRET_ID: (n) => [undefined, `bad name ${n}`],
@@ -88,6 +90,10 @@ const invalidValues: Record<string, (n: string, mode: Mode) => (string | undefin
   SECRETS_CACHE_TTL_SECONDS: (n) => ['0', '3601', `x${n}`],
   SERVICE_VERSION: (n) => [undefined, `v 1 ${n}`],
 };
+
+function invalidFor(name: string, needle: string, mode: Mode): (string | undefined)[] {
+  return invalidValues[name]?.(needle, mode) ?? [];
+}
 
 const needleArb = fc.stringMatching(/^[a-z0-9]{12}$/);
 
@@ -190,6 +196,7 @@ describe('Feature: pass-service, configuration parsing', () => {
     const cfg = parsePasskitConfig({
       TABLE_NAME: 'compass-dev',
       APP_SECRET_ID: 'compass/dev/app',
+      ORIGIN_VERIFY_SECRET_ID: 'compass/dev/origin-verify',
       APPLE_SECRET_ID: 'compass/dev/apple-pass',
       PUBLIC_BASE_URL: 'https://host.example',
       EVENT_TIMEZONE: 'Africa/Johannesburg',
@@ -197,6 +204,7 @@ describe('Feature: pass-service, configuration parsing', () => {
     expect(cfg).toEqual({
       tableName: 'compass-dev',
       appSecretId: 'compass/dev/app',
+      originVerifySecretId: 'compass/dev/origin-verify',
       appleSecretId: 'compass/dev/apple-pass',
       publicBaseUrl: 'https://host.example',
       passkitPath: '/api/passkit',
@@ -211,7 +219,7 @@ describe('Feature: pass-service, configuration parsing', () => {
         if (!isActive(name, mode)) {
           continue;
         }
-        for (const value of invalidValues[name]('needle', mode)) {
+        for (const value of invalidFor(name, 'needle', mode)) {
           const env: Env = { ...(mode === 'cognito' ? cognitoEnv : oidcEnv), [name]: value };
           let caught: unknown;
           try {
@@ -252,7 +260,7 @@ describe('Feature: pass-service, configuration parsing', () => {
           const base = mode === 'cognito' ? cognitoEnv : oidcEnv;
           const env: Env = { ...base };
           for (const name of mutated) {
-            const choices = invalidValues[name](needle, mode);
+            const choices = invalidFor(name, needle, mode);
             env[name] = choices[pick % choices.length];
           }
           const expectedFirst = API_VARIABLES.find((v) => mutated.includes(v) && isActive(v, mode));
@@ -287,7 +295,7 @@ describe('Feature: pass-service, configuration parsing', () => {
         (needle, mutated, pick) => {
           const env: Env = { ...cognitoEnv };
           for (const name of mutated) {
-            const choices = invalidValues[name](needle, 'cognito');
+            const choices = invalidFor(name, needle, 'cognito');
             env[name] = choices[pick % choices.length];
           }
           const expectedFirst = PASSKIT_VARIABLES.find((v) => mutated.includes(v));

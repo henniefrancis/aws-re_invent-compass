@@ -25,7 +25,7 @@ describe('Feature: pass-service, app factories', () => {
       };
       const app = create(deps);
       const result = await app(
-        buildEvent({ method: 'GET', resource: '/nope', origin: secrets.appSecret.originVerify }),
+        buildEvent({ method: 'GET', resource: '/nope', origin: secrets.originSecret.originVerify }),
       );
       expect(result.statusCode).toBe(404);
       expect(JSON.parse(String(capture.lines[0]))).toMatchObject({ Function: name });

@@ -41,7 +41,7 @@ describe('Feature: pass-service, request pipeline', () => {
       },
     });
     const result = await app(
-      buildEvent({ method: 'GET', resource: '/thing', origin: fake.appSecret.originVerify }),
+      buildEvent({ method: 'GET', resource: '/thing', origin: fake.originSecret.originVerify }),
     );
     expect(result.statusCode).toBe(200);
     expect(result.headers['cache-control']).toBe('no-store');
@@ -65,7 +65,7 @@ describe('Feature: pass-service, request pipeline', () => {
       buildEvent({
         method: 'GET',
         resource: '/api/v1/health',
-        origin: fake.appSecret.originVerify,
+        origin: fake.originSecret.originVerify,
       }),
     );
     expect(result.headers['cache-control']).toBeUndefined();
@@ -90,7 +90,7 @@ describe('Feature: pass-service, request pipeline', () => {
       buildEvent({
         method: 'GET',
         resource: '/secret/path/NEEDLE',
-        origin: fake.appSecret.originVerify,
+        origin: fake.originSecret.originVerify,
       }),
     );
     expect(result.statusCode).toBe(404);
@@ -106,7 +106,7 @@ describe('Feature: pass-service, request pipeline', () => {
       },
     });
     const result = await app(
-      buildEvent({ method: 'POST', resource: '/limited', origin: fake.appSecret.originVerify }),
+      buildEvent({ method: 'POST', resource: '/limited', origin: fake.originSecret.originVerify }),
     );
     expect(result.statusCode).toBe(429);
     expect(result.headers['retry-after']).toBe('30');
@@ -119,7 +119,7 @@ describe('Feature: pass-service, request pipeline', () => {
       },
     });
     const result = await app(
-      buildEvent({ method: 'GET', resource: '/dep', origin: fake.appSecret.originVerify }),
+      buildEvent({ method: 'GET', resource: '/dep', origin: fake.originSecret.originVerify }),
     );
     expect(result.statusCode).toBe(500);
     expect(JSON.parse(result.body)).toMatchObject({ code: 'internal_error' });
@@ -133,7 +133,7 @@ describe('Feature: pass-service, request pipeline', () => {
       },
     });
     const result = await app(
-      buildEvent({ method: 'GET', resource: '/boom', origin: fake.appSecret.originVerify }),
+      buildEvent({ method: 'GET', resource: '/boom', origin: fake.originSecret.originVerify }),
     );
     expect(result.statusCode).toBe(500);
     expect(result.body).not.toContain('NEEDLE');
@@ -144,6 +144,7 @@ describe('Feature: pass-service, request pipeline', () => {
   test('a secret failure while checking the origin is a 500 dependency_error', async () => {
     const failing: SecretsProvider = {
       app: () => Promise.reject(new DependencyError('secret')),
+      origin: () => Promise.reject(new DependencyError('secret')),
       apple: () => Promise.reject(new DependencyError('secret')),
       google: () => Promise.reject(new DependencyError('secret')),
     };
@@ -168,7 +169,7 @@ describe('Feature: pass-service, request pipeline', () => {
         buildEvent({
           method: 'GET',
           resource: `/${path}`,
-          origin: fake.appSecret.originVerify,
+          origin: fake.originSecret.originVerify,
         }),
       );
     }
@@ -190,17 +191,17 @@ describe('Feature: pass-service, request pipeline', () => {
       },
     });
     await app(
-      buildEvent({ method: 'GET', resource: '/noisy', origin: fake.appSecret.originVerify }),
+      buildEvent({ method: 'GET', resource: '/noisy', origin: fake.originSecret.originVerify }),
     );
     expect(capture.consoleCalls).toEqual([]);
   });
 
   test('origin rotation accepts the previous value, and only the two configured values', async () => {
     const previous = randomValue();
-    const fake = createFakeSecrets({ app: { originVerifyPrevious: previous } });
+    const fake = createFakeSecrets({ origin: { originVerifyPrevious: previous } });
     const { app } = setup({ 'GET /thing': okHandler }, fake);
     for (const [origin, expected] of [
-      [fake.appSecret.originVerify, 200],
+      [fake.originSecret.originVerify, 200],
       [previous, 200],
       [`${previous}x`, 403],
     ] as const) {
@@ -212,7 +213,7 @@ describe('Feature: pass-service, request pipeline', () => {
   // Feature: pass-service, Property 3: The Origin_Guard admits exactly the matching header
   test('Property 3: the guard admits exactly the matching header and nothing else runs on refusal', async () => {
     const secretsArb = fc.constantFrom(
-      createFakeSecrets({ app: { originVerify: 'origin-value-0123456789abcdef' } }),
+      createFakeSecrets({ origin: { originVerify: 'origin-value-0123456789abcdef' } }),
     );
     const headerArb = fc.oneof(
       fc.constant(undefined),
@@ -245,7 +246,7 @@ describe('Feature: pass-service, request pipeline', () => {
         });
         const result = await app(event);
         const admitted = value === 'origin-value-0123456789abcdef';
-        expect(checkOrigin(event, secrets.appSecret)).toBe(admitted);
+        expect(checkOrigin(event, secrets.originSecret)).toBe(admitted);
         expect(result.statusCode).toBe(admitted ? 200 : 403);
         expect(handlerCalls).toBe(admitted ? 1 : 0);
         if (!admitted) {

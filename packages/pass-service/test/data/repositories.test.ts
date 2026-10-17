@@ -68,7 +68,7 @@ describe('Feature: pass-service, pass repository', () => {
     const repo = createPassRepository(table);
     const rec = passRecord({ ttl: 1 });
     await repo.create(rec);
-    const stored = table.snapshot()[0];
+    const stored = table.snapshot()[0]!;
     expect(stored).toMatchObject({
       pk: `PASS#${rec.serialNumber}`,
       sk: 'PASS',
@@ -156,7 +156,7 @@ describe('Feature: pass-service, registration repository', () => {
     expect(await repo.upsert(registration({ pushToken: 'ccdd' }), NOW)).toBe('updated');
     expect((await repo.get('dev-1', registration().serialNumber, NOW))?.pushToken).toBe('ccdd');
     expect(await repo.upsert(registration(), NOW + 5000)).toBe('created');
-    const stored = table.snapshot()[0];
+    const stored = table.snapshot()[0]!;
     expect(stored).toMatchObject({
       pk: 'DEV#dev-1',
       sk: `REG#${registration().serialNumber}`,
@@ -225,7 +225,7 @@ describe('Feature: pass-service, handoff repository', () => {
       ttl: 0,
     };
     await repo.create(rec);
-    const stored = table.snapshot()[0];
+    const stored = table.snapshot()[0]!;
     expect(stored).toMatchObject({
       pk: `HANDOFF#${'h'.repeat(64)}`,
       gsi2pk: 'SUB#sub-a',

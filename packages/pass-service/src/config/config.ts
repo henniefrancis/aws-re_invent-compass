@@ -21,6 +21,7 @@ export type IdTokenConfig =
 export interface ApiConfig {
   tableName: string;
   appSecretId: string;
+  originVerifySecretId: string;
   appleSecretId: string;
   googleSecretId?: string; // required when google.enabled
   publicBaseUrl: string; // origin only: scheme, host and optional port
@@ -44,6 +45,7 @@ export type PasskitConfig = Pick<
   ApiConfig,
   | 'tableName'
   | 'appSecretId'
+  | 'originVerifySecretId'
   | 'appleSecretId'
   | 'publicBaseUrl'
   | 'passkitPath'
@@ -63,6 +65,7 @@ type Env = Readonly<Record<string, string | undefined>>;
 export const API_VARIABLES = [
   'TABLE_NAME',
   'APP_SECRET_ID',
+  'ORIGIN_VERIFY_SECRET_ID',
   'APPLE_SECRET_ID',
   'GOOGLE_WALLET_ENABLED',
   'GOOGLE_SECRET_ID',
@@ -90,6 +93,7 @@ export const API_VARIABLES = [
 export const PASSKIT_VARIABLES = [
   'TABLE_NAME',
   'APP_SECRET_ID',
+  'ORIGIN_VERIFY_SECRET_ID',
   'APPLE_SECRET_ID',
   'PUBLIC_BASE_URL',
   'PASSKIT_WEB_SERVICE_PATH',
@@ -297,6 +301,7 @@ function apns(env: Env): ApiConfig['apns'] {
 export function parseApiConfig(env: Env, opts: ParseOptions = {}): ApiConfig {
   const tableName = matching(env, 'TABLE_NAME', NAME_PATTERN);
   const appSecretId = matching(env, 'APP_SECRET_ID', NAME_PATTERN);
+  const originVerifySecretId = matching(env, 'ORIGIN_VERIFY_SECRET_ID', NAME_PATTERN);
   const appleSecretId = matching(env, 'APPLE_SECRET_ID', NAME_PATTERN);
   const googleEnabled = boolean(env, 'GOOGLE_WALLET_ENABLED', true);
   const googleSecretId = googleEnabled
@@ -317,6 +322,7 @@ export function parseApiConfig(env: Env, opts: ParseOptions = {}): ApiConfig {
   return {
     tableName,
     appSecretId,
+    originVerifySecretId,
     appleSecretId,
     ...(googleSecretId === undefined ? {} : { googleSecretId }),
     publicBaseUrl,
@@ -336,6 +342,7 @@ export function parsePasskitConfig(env: Env, opts: ParseOptions = {}): PasskitCo
   return {
     tableName: matching(env, 'TABLE_NAME', NAME_PATTERN),
     appSecretId: matching(env, 'APP_SECRET_ID', NAME_PATTERN),
+    originVerifySecretId: matching(env, 'ORIGIN_VERIFY_SECRET_ID', NAME_PATTERN),
     appleSecretId: matching(env, 'APPLE_SECRET_ID', NAME_PATTERN),
     publicBaseUrl: baseUrl(env, opts.allowHttpBaseUrl === true),
     passkitPath: passkitPath(env),

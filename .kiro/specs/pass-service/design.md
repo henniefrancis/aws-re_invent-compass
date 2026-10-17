@@ -744,44 +744,46 @@ interface RateCounter {
 
 ### Secrets (S6 creates the containers; the owner loads the Apple and Google values)
 
-| Secret id (configuration)                          | JSON keys                                                                                                 | Read by      |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------ |
-| `compass/<env>/app` (`APP_SECRET_ID`)              | `pepper`, `originVerify`                                                                                  | api, passkit |
-| `compass/<env>/apple-pass` (`APPLE_SECRET_ID`)     | `passTypeIdentifier`, `teamIdentifier`, `signerCertPem`, `signerKeyPem`, `signerKeyPassphrase`, `wwdrPem` | api, passkit |
-| `compass/<env>/google-wallet` (`GOOGLE_SECRET_ID`) | `issuerId`, `serviceAccount` (the downloaded key JSON; `client_email` and `private_key` are read)         | api          |
+| Secret id (configuration)                                 | JSON keys                                                                                                 | Read by      |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------ |
+| `compass/<env>/app` (`APP_SECRET_ID`)                     | `pepper`, `pepperId`                                                                                      | api, passkit |
+| `compass/<env>/origin-verify` (`ORIGIN_VERIFY_SECRET_ID`) | `originVerify`, optional `originVerifyPrevious` while rotating                                            | api, passkit |
+| `compass/<env>/apple-pass` (`APPLE_SECRET_ID`)            | `passTypeIdentifier`, `teamIdentifier`, `signerCertPem`, `signerKeyPem`, `signerKeyPassphrase`, `wwdrPem` | api, passkit |
+| `compass/<env>/google-wallet` (`GOOGLE_SECRET_ID`)        | `issuerId`, `serviceAccount` (the downloaded key JSON; `client_email` and `private_key` are read)         | api          |
 
 The Apple `.p12` is not stored as such: `passkit-generator` takes PEM, so the owner converts it once (for example `openssl pkcs12 -in <file>.p12 -clcerts -nokeys` for the certificate and `-nocerts` for the encrypted key, plus the WWDR G4 certificate converted from DER with `openssl x509 -inform der`), and `scripts/load-secrets.sh` (S6) puts the PEM values into the secret without echoing them. The same certificate and key authenticate the APNs connection (Apple's rule above), so there is no separate APNs key. Team ID and Pass Type ID are account-specific, so they live in the secret, not in the repository or Terraform variables.
 
 ### Environment variables (S6 sets them)
 
-| Variable                                 | Lambda       | Required            | Default                      | Meaning                                                      |
-| ---------------------------------------- | ------------ | ------------------- | ---------------------------- | ------------------------------------------------------------ |
-| `TABLE_NAME`                             | api, passkit | yes                 |                              | DynamoDB table `compass-<env>`                               |
-| `APP_SECRET_ID`                          | api, passkit | yes                 |                              | id of the app secret                                         |
-| `APPLE_SECRET_ID`                        | api, passkit | yes                 |                              | id of the apple-pass secret                                  |
-| `GOOGLE_SECRET_ID`                       | api          | when Google enabled |                              | id of the google-wallet secret                               |
-| `PUBLIC_BASE_URL`                        | api, passkit | yes                 |                              | `https://<distribution>.cloudfront.net`                      |
-| `PASSKIT_WEB_SERVICE_PATH`               | api, passkit | no                  | `/api/passkit`               | joined to the base URL as `webServiceURL` (SP3)              |
-| `EVENT_TIMEZONE`                         | api, passkit | yes                 |                              | IANA zone from GetEvent                                      |
-| `EVENT_WINDOW_START`, `EVENT_WINDOW_END` | api          | yes                 |                              | ISO 8601 with offset, from GetEvent                          |
-| `ID_TOKEN_VERIFIER`                      | api          | no                  | `cognito`                    | `cognito` or `oidc` (SP2)                                    |
-| `ID_TOKEN_ISSUER`                        | api          | yes                 |                              | exact `iss` (SP2)                                            |
-| `ID_TOKEN_CLIENT_ID`                     | api          | no                  | `7vmom55m1qstvq8i71ph127bfq` | expected `aud`                                               |
-| `ID_TOKEN_JWKS_URI`                      | api          | in `oidc` mode      |                              | `jwks_uri` from discovery (SP2)                              |
-| `APNS_ENABLED`                           | api          | no                  | `true`                       | SP3 fallback switch                                          |
-| `APNS_HOST`                              | api          | no                  | `api.push.apple.com`         | APNs production host                                         |
-| `APNS_PUSH_TYPE`                         | api          | no                  | unset                        | `alert` or `background`, sent only when set (SP3)            |
-| `APNS_TIMEOUT_MS`, `APNS_BUDGET_MS`      | api          | no                  | `2000`, `4000`               | per push and per request                                     |
-| `GOOGLE_WALLET_ENABLED`                  | api          | no                  | `true`                       | cut-list item 10 switch (SP4)                                |
-| `GOOGLE_WALLET_CLASS_SUFFIX`             | api          | when Google enabled |                              | class id suffix created by `scripts/google-wallet-class.mjs` |
-| `HANDOFF_CALENDAR_ENABLED`               | api          | no                  | `true`                       | cut-list item 5 switch                                       |
-| `SECRETS_CACHE_TTL_SECONDS`              | api, passkit | no                  | `300`                        | secret cache period                                          |
-| `SERVICE_VERSION`                        | api          | yes                 |                              | returned by getHealth                                        |
+| Variable                                 | Lambda       | Required            | Default                      | Meaning                                                        |
+| ---------------------------------------- | ------------ | ------------------- | ---------------------------- | -------------------------------------------------------------- |
+| `TABLE_NAME`                             | api, passkit | yes                 |                              | DynamoDB table `compass-<env>`                                 |
+| `APP_SECRET_ID`                          | api, passkit | yes                 |                              | id of the app secret (pepper, pepperId)                        |
+| `ORIGIN_VERIFY_SECRET_ID`                | api, passkit | yes                 |                              | id of the origin-verify secret (its own secret, rotates alone) |
+| `APPLE_SECRET_ID`                        | api, passkit | yes                 |                              | id of the apple-pass secret                                    |
+| `GOOGLE_SECRET_ID`                       | api          | when Google enabled |                              | id of the google-wallet secret                                 |
+| `PUBLIC_BASE_URL`                        | api, passkit | yes                 |                              | `https://<distribution>.cloudfront.net`                        |
+| `PASSKIT_WEB_SERVICE_PATH`               | api, passkit | no                  | `/api/passkit`               | joined to the base URL as `webServiceURL` (SP3)                |
+| `EVENT_TIMEZONE`                         | api, passkit | yes                 |                              | IANA zone from GetEvent                                        |
+| `EVENT_WINDOW_START`, `EVENT_WINDOW_END` | api          | yes                 |                              | ISO 8601 with offset, from GetEvent                            |
+| `ID_TOKEN_VERIFIER`                      | api          | no                  | `cognito`                    | `cognito` or `oidc` (SP2)                                      |
+| `ID_TOKEN_ISSUER`                        | api          | yes                 |                              | exact `iss` (SP2)                                              |
+| `ID_TOKEN_CLIENT_ID`                     | api          | no                  | `7vmom55m1qstvq8i71ph127bfq` | expected `aud`                                                 |
+| `ID_TOKEN_JWKS_URI`                      | api          | in `oidc` mode      |                              | `jwks_uri` from discovery (SP2)                                |
+| `APNS_ENABLED`                           | api          | no                  | `true`                       | SP3 fallback switch                                            |
+| `APNS_HOST`                              | api          | no                  | `api.push.apple.com`         | APNs production host                                           |
+| `APNS_PUSH_TYPE`                         | api          | no                  | unset                        | `alert` or `background`, sent only when set (SP3)              |
+| `APNS_TIMEOUT_MS`, `APNS_BUDGET_MS`      | api          | no                  | `2000`, `4000`               | per push and per request                                       |
+| `GOOGLE_WALLET_ENABLED`                  | api          | no                  | `true`                       | cut-list item 10 switch (SP4)                                  |
+| `GOOGLE_WALLET_CLASS_SUFFIX`             | api          | when Google enabled |                              | class id suffix created by `scripts/google-wallet-class.mjs`   |
+| `HANDOFF_CALENDAR_ENABLED`               | api          | no                  | `true`                       | cut-list item 5 switch                                         |
+| `SECRETS_CACHE_TTL_SECONDS`              | api, passkit | no                  | `300`                        | secret cache period                                            |
+| `SERVICE_VERSION`                        | api          | yes                 |                              | returned by getHealth                                          |
 
 ### Permissions each Lambda needs (for S6)
 
-- api: `dynamodb:GetItem`, `PutItem`, `UpdateItem`, `DeleteItem`, `Query` on the table and both GSIs; `secretsmanager:GetSecretValue` on the three secrets; outbound HTTPS to the JWKS host, `api.push.apple.com`, `walletobjects.googleapis.com` and `oauth2.googleapis.com` (no VPC).
-- passkit: `dynamodb:GetItem`, `PutItem`, `DeleteItem`, `Query` on the table; `secretsmanager:GetSecretValue` on `app` and `apple-pass` only.
+- api: `dynamodb:GetItem`, `PutItem`, `UpdateItem`, `DeleteItem`, `Query` on the table and both GSIs; `secretsmanager:GetSecretValue` on the four secrets (app, origin-verify, apple-pass, google-wallet); outbound HTTPS to the JWKS host, `api.push.apple.com`, `walletobjects.googleapis.com` and `oauth2.googleapis.com` (no VPC).
+- passkit: `dynamodb:GetItem`, `PutItem`, `DeleteItem`, `Query` on the table; `secretsmanager:GetSecretValue` on `app`, `origin-verify` and `apple-pass` only.
 
 ## Correctness Properties
 
@@ -1221,3 +1223,5 @@ Each entry names the task that introduced it. Where this section and the text ab
 - Task 2: `json()` accepts 200, 201 and 202; the hardening headers (review M4) are added by the pipeline through `withHardening`, not by each builder, and not for getHealth.
 - Task 9: `RateLimiter` methods take an optional `scope` (per-pass update counters), `consume` and `record` cover the review counters `forgetMe`, `updates`, `passUpdate`, and `consumeHandoffRead` caps hand-off reads at 30 for the life of the hand-off (review H2, H3, M4).
 - Task 10: `parseRegistrationBody` and `parseLogBody` take the event (they read the body themselves). Every registerDevice body failure is the 401 (the contract lists no 400 for it), and an unreadable logMessages body counts zero and answers 200 (the contract lists only 200), so neither can produce a status the contract omits. A title with leading or trailing spaces is valid text (spaces are in the allowlist) and is stored untrimmed.
+- S6 alignment (integrator): origin-verify is its own secret. `ORIGIN_VERIFY_SECRET_ID` names `compass/<env>/origin-verify` (JSON key `originVerify`, optional `originVerifyPrevious` during rotation); `APP_SECRET_ID` names `compass/<env>/app` (`pepper`, `pepperId`). Both Lambdas read both, and each secret is cached with its own single-flight reader. The Origin_Guard reads the origin secret, the verifier and hashing read the app secret. This replaces the app-secret `originVerify` and `originVerifyPrevious` of the review amendments.
+- Task 12: Apple's live Wallet pages are rendered by script and could not be fetched, so the image sizes (icon 29 by 29 points, logo up to 160 by 50 points, at 1x, 2x and 3x) come from the published Apple guidance and passkit-generator's own documentation, and are to be checked by the owner on a device in SP3. Artwork scripts run through `scripts/run.mjs` (an esbuild bundle-and-run wrapper) because the sources use `.js` import specifiers that Node's type stripping cannot resolve; `scripts/tsconfig.json` covers the TypeScript launchers. STARTS and ENDS show the weekday and time (`formatEventDayTime`), boarding closes shows the time only, and the back says 'All times are Pacific Time.' (generic zone name). An unencrypted signer key (empty passphrase) is supported by sending no passphrase to passkit-generator, which refuses an empty one. passkit-generator accepts a past `expirationDate` for a voided pass, so no workaround was needed. Signing failures are `DependencyError('signing')` with no cause, because passkit-generator's validation error object holds the certificate and key text and it also prints it to the console.
