@@ -26,6 +26,7 @@ export type CompassErrorCode =
   | 'SpecWriteRefused'
   | 'MaxPerDayRange'
   | 'LayoverInvalid'
+  | 'LimitInvalid'
   | 'NoPassesIssued'
   | 'Network'
   | 'UnsafePath'

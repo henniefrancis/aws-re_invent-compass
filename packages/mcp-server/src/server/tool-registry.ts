@@ -4,6 +4,10 @@
 
 import type { McpToolName } from '@compass/contracts';
 import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
+import { findSessions } from '../tools/find-sessions.js';
+import { refreshCatalog } from '../tools/refresh-catalog.js';
+import { signIn } from '../tools/sign-in.js';
+import { signOut } from '../tools/sign-out.js';
 import { DESCRIPTIONS, TITLES } from './descriptions.js';
 import type { ToolClass, ToolOutcome, ToolSpec } from './types.js';
 
@@ -32,10 +36,10 @@ function spec<K extends McpToolName>(
 
 /** Every tool, keyed by name. Handlers are replaced by the real ones in later tasks. */
 export const TOOL_SPECS: { [K in McpToolName]: ToolSpec<K> } = {
-  sign_in: spec('sign_in', 'localAction', false, notBuilt),
-  sign_out: spec('sign_out', 'localAction', false, notBuilt),
-  refresh_catalog: spec('refresh_catalog', 'read', false, notBuilt),
-  find_sessions: spec('find_sessions', 'read', false, notBuilt),
+  sign_in: spec('sign_in', 'localAction', false, signIn),
+  sign_out: spec('sign_out', 'localAction', false, signOut),
+  refresh_catalog: spec('refresh_catalog', 'read', false, refreshCatalog),
+  find_sessions: spec('find_sessions', 'read', false, findSessions),
   scan_repo: spec('scan_repo', 'read', false, notBuilt),
   plan_week: spec('plan_week', 'localAction', false, notBuilt),
   check_itinerary: spec('check_itinerary', 'read', false, notBuilt),

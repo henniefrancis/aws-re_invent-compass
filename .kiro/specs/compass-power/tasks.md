@@ -239,14 +239,14 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 12.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 13. Build the session and catalog tools
-  - [ ] 13.1 Implement sign_in, sign_out, refresh_catalog and find_sessions
+- [x] 13. Build the session and catalog tools
+  - [x] 13.1 Implement sign_in, sign_out, refresh_catalog and find_sessions
     - One file each in `src/tools/`: `sign-in.ts` (memory-only notice), `sign-out.ts` (sign-out URL in text), `refresh-catalog.ts` (count and time), `find-sessions.ts` (local filter, limit default 20 and maximum 50, `totalMatched` before the limit, Labelled_Data_Block text); the not-signed-in error from the fixed table; simulated runtime signed in at once
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 10.1, 10.2_
-  - [ ] 13.2 Write unit tests for the session and catalog tools
+  - [x] 13.2 Write unit tests for the session and catalog tools
     - Each tool against fakes, including not signed in, missing catalog and limit clamping
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6_
-  - [ ] 13.3 Commit
+  - [x] 13.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 14. Build scan_repo, plan_week and check_itinerary
