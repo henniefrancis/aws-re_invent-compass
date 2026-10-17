@@ -27,8 +27,8 @@ run "sampling_off_with_kill_switch_disabled" {
   command = plan
 
   assert {
-    condition     = length(aws_wafv2_web_acl.this.rule) == 7
-    error_message = "The web ACL must contain seven rules (the five defined rules, the PassKit rate rule and the API body size rule)."
+    condition     = length(aws_wafv2_web_acl.this.rule) == 8
+    error_message = "The web ACL must contain eight rules (the five defined rules, the PassKit rate rule, the API body size rule and the site rate rule)."
   }
 
   assert {

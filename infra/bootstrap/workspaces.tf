@@ -38,6 +38,10 @@ resource "tfe_workspace_settings" "env" {
 
   workspace_id   = tfe_workspace.env[each.key].id
   execution_mode = "remote"
+
+  # No other workspace may read this one state, so the output of one environment
+  # is never exposed to another.
+  global_remote_state = false
 }
 
 # Dynamic provider credentials: the plan and apply roles are assumed through OIDC.

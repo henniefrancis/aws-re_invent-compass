@@ -447,6 +447,50 @@ resource "aws_wafv2_web_acl" "this" {
     }
   }
 
+  # Eighth rule: a high per-IP ceiling on the site (default behaviour), every
+  # path outside /api/. Blocks count in the BlockedRequests alarm.
+  rule {
+    name     = "site-per-ip-rate-limit"
+    priority = 8
+
+    action {
+      block {}
+    }
+
+    statement {
+      rate_based_statement {
+        limit              = local.site_rate_limit
+        aggregate_key_type = "IP"
+
+        scope_down_statement {
+          not_statement {
+            statement {
+              byte_match_statement {
+                search_string         = "/api/"
+                positional_constraint = "STARTS_WITH"
+
+                field_to_match {
+                  uri_path {}
+                }
+
+                text_transformation {
+                  priority = 0
+                  type     = "NONE"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${local.name_prefix}-site-per-ip-rate-limit"
+      sampled_requests_enabled   = false
+    }
+  }
+
   visibility_config {
     cloudwatch_metrics_enabled = true
     metric_name                = local.name_prefix

@@ -32,7 +32,12 @@ locals {
       cf_function_pattern  = "arn:aws:cloudfront::${local.account_id}:function/compass-${e}-*"
       cf_distribution_arns = "arn:aws:cloudfront::${local.account_id}:distribution/*"
       apigw_restapis       = ["arn:aws:apigateway:${local.region}::/restapis", "arn:aws:apigateway:${local.region}::/restapis/*"]
-      apigw_keys_plans     = ["arn:aws:apigateway:${local.region}::/apikeys", "arn:aws:apigateway:${local.region}::/apikeys/*", "arn:aws:apigateway:${local.region}::/usageplans", "arn:aws:apigateway:${local.region}::/usageplans/*"]
+      apigw_tag_paths = [
+        "arn:aws:apigateway:${local.region}::/tags/arn%3Aaws%3Aapigateway%3A${local.region}%3A%3A%2Frestapis%2F*",
+        "arn:aws:apigateway:${local.region}::/tags/arn%3Aaws%3Aapigateway%3A${local.region}%3A%3A%2Fapikeys%2F*",
+        "arn:aws:apigateway:${local.region}::/tags/arn%3Aaws%3Aapigateway%3A${local.region}%3A%3A%2Fusageplans%2F*",
+      ]
+      apigw_keys_plans = ["arn:aws:apigateway:${local.region}::/apikeys", "arn:aws:apigateway:${local.region}::/apikeys/*", "arn:aws:apigateway:${local.region}::/usageplans", "arn:aws:apigateway:${local.region}::/usageplans/*"]
     }
   }
 
@@ -362,10 +367,29 @@ locals {
         Condition = local.tag_on_manage[e]
       },
       {
-        Sid      = "TagApiGatewayResources"
+        # The tag resource path carries the URL-encoded ARN of the tagged
+        # resource, so the patterns name only REST APIs, API keys and usage plans.
+        # PUT needs the resource to be tagged with this environment already, and
+        # the request may only set this environment, so a role can neither retag
+        # another environment's resource nor point a tag at one.
+        Sid      = "TagManagedApiGatewayResources"
         Effect   = "Allow"
-        Action   = ["apigateway:DELETE", "apigateway:PUT"]
-        Resource = "arn:aws:apigateway:${local.region}::/tags/*"
+        Action   = ["apigateway:PUT"]
+        Resource = local.name_scope[e].apigw_tag_paths
+        Condition = {
+          StringEquals = {
+            "aws:ResourceTag/project"     = local.project_tag
+            "aws:ResourceTag/environment" = e
+            "aws:RequestTag/environment"  = e
+          }
+        }
+      },
+      {
+        Sid       = "UntagManagedApiGatewayResources"
+        Effect    = "Allow"
+        Action    = ["apigateway:DELETE"]
+        Resource  = local.name_scope[e].apigw_tag_paths
+        Condition = local.tag_on_manage[e]
       },
     ]
   }

@@ -129,12 +129,12 @@ run "web_acl_shape" {
   }
 
   assert {
-    condition     = length(aws_wafv2_web_acl.this.rule) == 7
-    error_message = "The web ACL must contain the five defined rules, the PassKit rate rule and the API body size rule."
+    condition     = length(aws_wafv2_web_acl.this.rule) == 8
+    error_message = "The web ACL must contain the five defined rules, the PassKit rate rule, the API body size rule and the site rate rule."
   }
 
   assert {
-    condition     = sort([for r in aws_wafv2_web_acl.this.rule : format("%d-%s", r.priority, r.name)]) == tolist(["1-per-ip-rate-limit", "2-aws-managed-common", "3-aws-managed-known-bad-inputs", "4-aws-managed-ip-reputation", "5-kill-switch", "6-passkit-rate-limit", "7-api-body-size-limit"])
+    condition     = sort([for r in aws_wafv2_web_acl.this.rule : format("%d-%s", r.priority, r.name)]) == tolist(["1-per-ip-rate-limit", "2-aws-managed-common", "3-aws-managed-known-bad-inputs", "4-aws-managed-ip-reputation", "5-kill-switch", "6-passkit-rate-limit", "7-api-body-size-limit", "8-site-per-ip-rate-limit"])
     error_message = "The rules must be in the defined priority order."
   }
 }
@@ -190,6 +190,15 @@ run "waf_and_headers_source_scan" {
   assert {
     condition     = can(regex("(?s)resource[[:space:]]+\"aws_cloudfront_response_headers_policy\"[[:space:]]+\"api\".*?strict_transport_security.*?content_type_options.*?referrer_policy[[:space:]]*=[[:space:]]*\"no-referrer\"", file("${path.module}/main.tf")))
     error_message = "The API headers policy must set HSTS, nosniff and no-referrer."
+  }
+}
+
+run "site_rate_rule_is_high_and_excludes_the_api" {
+  command = plan
+
+  assert {
+    condition     = can(regex("site_rate_limit[[:space:]]*=[[:space:]]*3000", file("${path.module}/locals.tf"))) && can(regex("(?s)name[[:space:]]*=[[:space:]]*\"site-per-ip-rate-limit\".*?not_statement.*?search_string[[:space:]]*=[[:space:]]*\"/api/\"", file("${path.module}/main.tf")))
+    error_message = "The site rule must allow 3000 per window and exclude /api/."
   }
 }
 

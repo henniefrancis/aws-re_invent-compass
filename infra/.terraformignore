@@ -1,10 +1,19 @@
 # Files excluded from the HCP Terraform upload (S6 infra).
 #
-# When this file exists it replaces the Terraform CLI defaults, so the defaults
-# are repeated here. Private values never travel with the upload: real backend
-# and variable files stay on the owner's machine, and workspace variables in HCP
-# carry the values instead.
-
+# UPLOAD ROOT: the dev and prod workspaces set the working directory to
+# envs/<env>. The Terraform CLI is run from infra/envs/<env> and uploads the
+# configuration tree one level up from the working directory, that is the infra/
+# directory, so the modules next to envs/ travel with it. This file therefore sits
+# at infra/, which is the upload root. The same patterns are repeated in
+# infra/envs/dev and infra/envs/prod in case a CLI reads the ignore file at the
+# working directory instead; a static test keeps the three files identical.
+#
+# Patterns follow the Terraform CLI ignore rules, which are anchored at the upload
+# root, so every pattern is written with a **/ twin to match at any depth. When
+# this file exists it replaces the CLI defaults, so the defaults are repeated here.
+# Private values never travel with the upload: real backend and variable files stay
+# on the owner machine, and workspace variables in HCP carry the values instead.
+#
 # infra/build/ (the Lambda zips written by scripts/release.sh) is deliberately
 # NOT listed here: a remote plan and apply read the zips from the uploaded
 # configuration, so they must travel with it. The folder is git-ignored instead.
@@ -15,27 +24,39 @@ cloud.auto.tfbackend
 terraform.tfvars
 **/terraform.tfvars
 *.tfvars.json
+**/*.tfvars.json
 *.auto.tfvars
-*.auto.tfvars.json
 **/*.auto.tfvars
+*.auto.tfvars.json
 **/*.auto.tfvars.json
 
 # Key material and local environment files
 .env
+**/.env
 .env.*
+**/.env.*
 *.pem
+**/*.pem
 *.p12
+**/*.p12
 
 # Local state and plan artefacts
 .terraform/
 **/.terraform/
 *.tfstate
+**/*.tfstate
 *.tfstate.*
+**/*.tfstate.*
 *.tfplan
+**/*.tfplan
 tfplan
+**/tfplan
 crash.log
+**/crash.log
 crash.*.log
+**/crash.*.log
 
 # Version control metadata
 .git/
+**/.git/
 .gitignore

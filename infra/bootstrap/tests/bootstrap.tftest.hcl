@@ -259,6 +259,51 @@ run "no_apply_allow_can_reach_the_hcp_roles" {
   }
 }
 
+# N1: API Gateway tagging is scoped to the tag paths of REST APIs, API keys and
+# usage plans, requires the environment resource tag, and the PUT may only set the
+# role's own environment, so a dev role cannot retag a prod resource.
+run "api_gateway_tagging_is_scoped_to_the_environment" {
+  command = plan
+
+  assert {
+    condition = alltrue(flatten([
+      for k, p in aws_iam_policy.apply : [
+        for s in jsondecode(p.policy).Statement :
+        s.Effect != "Allow" || !anytrue([for r in try(tolist(s.Resource), [s.Resource]) : endswith(r, "::/tags/*")])
+      ]
+    ]))
+    error_message = "No Allow may cover the whole /tags/* path."
+  }
+
+  assert {
+    condition = alltrue([
+      for e in ["dev", "prod"] : anytrue([
+        for s in jsondecode(aws_iam_policy.apply["${e}-edge"].policy).Statement :
+        s.Effect == "Allow" && s.Sid == "TagManagedApiGatewayResources" &&
+        contains(try(tolist(s.Action), [s.Action]), "apigateway:PUT") &&
+        s.Condition.StringEquals["aws:ResourceTag/environment"] == e &&
+        s.Condition.StringEquals["aws:RequestTag/environment"] == e &&
+        s.Condition.StringEquals["aws:ResourceTag/project"] == "reinvent-compass" &&
+        length(s.Resource) == 3 &&
+        alltrue([for r in s.Resource : strcontains(r, "/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2F")])
+      ])
+    ])
+    error_message = "Tagging must name the encoded tag ARN paths and require the environment on the resource and on the request."
+  }
+
+  assert {
+    condition = alltrue([
+      for e in ["dev", "prod"] : anytrue([
+        for s in jsondecode(aws_iam_policy.apply["${e}-edge"].policy).Statement :
+        s.Effect == "Allow" && s.Sid == "UntagManagedApiGatewayResources" &&
+        contains(try(tolist(s.Action), [s.Action]), "apigateway:DELETE") &&
+        s.Condition.StringEquals["aws:ResourceTag/environment"] == e
+      ])
+    ])
+    error_message = "Untagging must require the environment resource tag."
+  }
+}
+
 run "lambda_boundaries_are_per_environment" {
   command = plan
 
@@ -305,8 +350,8 @@ run "account_api_gateway_role_and_workspaces" {
   }
 
   assert {
-    condition     = alltrue([for s in values(tfe_workspace_settings.env) : s.execution_mode == "remote"])
-    error_message = "The environment workspaces run remotely."
+    condition     = alltrue([for s in values(tfe_workspace_settings.env) : s.execution_mode == "remote" && s.global_remote_state == false])
+    error_message = "The environment workspaces run remotely and share no state."
   }
 
   assert {
