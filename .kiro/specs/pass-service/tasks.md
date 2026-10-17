@@ -215,24 +215,24 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 12.7 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 13. Implement the APNs client
-  - [ ] 13.1 Implement the APNs client and connector
+- [x] 13. Implement the APNs client
+  - [x] 13.1 Implement the APNs client and connector
     - Create `src/apns/http2-connector.ts` (`http2.connect` with the PEM certificate, key and passphrase, optional `ca` for tests only) and `src/apns/apns-client.ts` (`createApnsClient`: one session per call, concurrent streams, `POST /3/device/<pushToken>`, `apns-topic` equal to the Pass Type ID, `apns-push-type` only when configured, body `{}`, per-push timeout and total budget, 410 or 400 `BadDeviceToken` as invalid, any other outcome as failed, no retry, `skipped` when disabled)
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7_
 
-  - [ ] 13.2 Create the loopback HTTP/2 test server
+  - [x] 13.2 Create the loopback HTTP/2 test server
     - Create `test/helpers/apns-stand-in.ts`: an `http2.createSecureServer` on 127.0.0.1 using the throwaway PKI, which records requests and answers each push with a scripted status, reason and delay
     - _Requirements: 25.8_
 
-  - [ ] 13.3 Write property test for APNs requests and replies
+  - [x] 13.3 Write property test for APNs requests and replies
     - **Property 19: APNs requests and replies are handled exactly**
     - **Validates: Requirements 13.1, 13.2, 13.3, 13.4**
 
-  - [ ] 13.4 Write property test for the push budget
+  - [x] 13.4 Write property test for the push budget
     - **Property 20: Pushes stay inside the time budget**
     - **Validates: Requirements 13.5, 13.6**
 
-  - [ ] 13.5 Commit
+  - [x] 13.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 14. Implement the Google Wallet client
