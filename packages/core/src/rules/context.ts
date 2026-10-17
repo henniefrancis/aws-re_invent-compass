@@ -10,7 +10,7 @@
 // @compass/contracts and are only imported here, never redefined.
 import { z } from 'zod';
 import type { Venue } from '@compass/contracts';
-import { VenueSchema } from '@compass/contracts';
+import { VenueDataSchema } from './venue-data.js';
 
 /** The daily window in which the attendee should have some free minutes to eat. */
 export interface MealWindow {
@@ -40,10 +40,13 @@ export interface WalkingEdge {
   source: SourceNote;
 }
 
-/** A venue plus the source note for its coordinates (when it has coordinates). */
+/** A venue plus the source notes for its coordinates and for its name. */
 export interface VenueEntry {
   venue: Venue;
+  /** Required when the venue has coordinates. */
   coordinatesSource?: SourceNote;
+  /** Where the venue name was found, for example an official AWS re:Invent page. */
+  nameSource?: SourceNote;
 }
 
 /** The wrapper object held by data/venues.json. */
@@ -90,35 +93,11 @@ const MealWindowSchema = z.object({
   requiredFreeMinutes: z.number().min(0),
 });
 
-const SourceNoteShapeSchema = z.object({
-  kind: z.enum(['official', 'estimate']),
-  url: z.string().optional(),
-  basis: z.string().optional(),
-});
-
-/**
- * Structural shape of the venue data wrapper. The strict schema with every venue data
- * rule lives in venue-data.ts (VenueDataSchema); this shape is only the structure.
- */
-export const VenueDataShapeSchema = z.object({
-  venues: z.array(
-    z.object({ venue: VenueSchema, coordinatesSource: SourceNoteShapeSchema.optional() }),
-  ),
-  walkingTimes: z.array(
-    z.object({
-      from: z.string(),
-      to: z.string(),
-      minutes: z.number(),
-      source: SourceNoteShapeSchema,
-    }),
-  ),
-});
-
 /** Zod schema for a complete Context. now is required; eventTimezone is optional. */
 export const ContextSchema: z.ZodType<Context> = z.object({
   now: z.string(),
   eventTimezone: z.string().optional(),
-  venueData: VenueDataShapeSchema,
+  venueData: VenueDataSchema,
   mealWindow: MealWindowSchema,
   maxStretchMinutes: z.number().min(0),
   overloadThreshold: z.number(),

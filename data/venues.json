@@ -1,0 +1,330 @@
+{
+  "venues": [
+    {
+      "venue": {
+        "name": "Caesars Forum"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/"
+      }
+    },
+    {
+      "venue": {
+        "name": "Caesars Palace"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/"
+      }
+    },
+    {
+      "venue": {
+        "name": "Encore"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/"
+      }
+    },
+    {
+      "venue": {
+        "name": "MGM Grand"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/"
+      }
+    },
+    {
+      "venue": {
+        "name": "The Venetian"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/"
+      }
+    },
+    {
+      "venue": {
+        "name": "Wynn"
+      },
+      "nameSource": {
+        "kind": "official",
+        "url": "https://aws.amazon.com/events/reinvent/faqs/"
+      }
+    }
+  ],
+  "walkingTimes": [
+    {
+      "from": "Caesars Forum",
+      "to": "Caesars Palace",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Caesars Forum",
+      "to": "Encore",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Caesars Forum",
+      "to": "MGM Grand",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Caesars Forum",
+      "to": "The Venetian",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Caesars Forum",
+      "to": "Wynn",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Caesars Palace",
+      "to": "Caesars Forum",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Caesars Palace",
+      "to": "Encore",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Caesars Palace",
+      "to": "MGM Grand",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Caesars Palace",
+      "to": "The Venetian",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Caesars Palace",
+      "to": "Wynn",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Encore",
+      "to": "Caesars Forum",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Encore",
+      "to": "Caesars Palace",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Encore",
+      "to": "MGM Grand",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Encore",
+      "to": "The Venetian",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Encore",
+      "to": "Wynn",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "MGM Grand",
+      "to": "Caesars Forum",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "MGM Grand",
+      "to": "Caesars Palace",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "MGM Grand",
+      "to": "Encore",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "MGM Grand",
+      "to": "The Venetian",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "MGM Grand",
+      "to": "Wynn",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "The Venetian",
+      "to": "Caesars Forum",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "The Venetian",
+      "to": "Caesars Palace",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "The Venetian",
+      "to": "Encore",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "The Venetian",
+      "to": "MGM Grand",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "The Venetian",
+      "to": "Wynn",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Wynn",
+      "to": "Caesars Forum",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Wynn",
+      "to": "Caesars Palace",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Wynn",
+      "to": "Encore",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Wynn",
+      "to": "MGM Grand",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    },
+    {
+      "from": "Wynn",
+      "to": "The Venetian",
+      "minutes": 30,
+      "source": {
+        "kind": "estimate",
+        "basis": "No official walking time between two venues is published. This is 30 minutes, the low end of the official guidance to allow 30 to 45 minutes when walking between or within venues (https://aws.amazon.com/resources/analyst-summit/). It is a planning estimate and may include waiting time. Replace it with a measured value when one is available."
+      }
+    }
+  ]
+}

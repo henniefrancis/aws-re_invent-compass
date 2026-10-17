@@ -60,23 +60,23 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 3.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 4. Implement venue data loading, validation, and matrix lookup
-  - [ ] 4.1 Create the owned `data/venues.json` wrapper file
+- [x] 4. Implement venue data loading, validation, and matrix lookup
+  - [x] 4.1 Create the owned `data/venues.json` wrapper file
     - A wrapper object (not a bare `Venue` array) with `venues` and `walkingTimes`, covering only main re:Invent 2026 venues named on official AWS pages
     - Each venue carries a non-empty name and optional in-range coordinates; the matrix covers every ordered pair of distinct named venues with whole minutes 0 to 240; every value carries a source note defaulting to estimate, with official requiring a URL on `reinvent.awsevents.com` or `aws.amazon.com`
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
-  - [ ] 4.2 Implement `venue-data.ts` with `VenueDataSchema` and matrix lookup
+  - [x] 4.2 Implement `venue-data.ts` with `VenueDataSchema` and matrix lookup
     - `VenueDataSchema` reuses `VenueSchema` from `@compass/contracts` for each venue entry and rejects an invalid entry with a message naming which entry failed and why
     - Provide an in-memory ordered-pair walking-time lookup that returns a not-found signal when a venue is absent from the list or the pair has no matrix value (for the connection layer to treat as unknown)
     - Match venue names after trimming and lowercasing, by exact name only, with no fuzzy matching
     - _Requirements: 9.6, 9.7, 9.8, 9.9_
-  - [ ] 4.3 Write venue-data validation smoke test
+  - [x] 4.3 Write venue-data validation smoke test
     - Parse `data/venues.json` with `VenueDataSchema`; assert wrapper shape, non-empty names, in-range coordinates, whole-minute matrix values 0 to 240, and a valid source note on every value
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6_
-  - [ ] 4.4 Write property test for invalid venue entry rejection
+  - [x] 4.4 Write property test for invalid venue entry rejection
     - **Property 15: Invalid venue entries are rejected with a naming reason**
     - **Validates: Requirements 9.7**
-  - [ ] 4.5 Run the rules tests, confirm they pass, then commit
+  - [x] 4.5 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 5. Implement commitment resolution
