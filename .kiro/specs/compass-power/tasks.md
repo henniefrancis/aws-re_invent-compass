@@ -378,26 +378,26 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 21.7 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 22. Build the hook runner
-  - [ ] 22.1 Implement hook input, tool names and the exit policy
+- [x] 22. Build the hook runner
+  - [x] 22.1 Implement hook input, tool names and the exit policy
     - `src/hooks/read-stdin.ts` (1 MiB, 5 seconds), `hook-input.ts` (`HookInputSchema`, zod, unknown fields stripped), `tool-names.ts` (`identifyTool` for `mcp_<server>_<tool>` and bare names), `exit-policy.ts` (the only map from decision kind to exit code 0 or 2)
     - _Requirements: 18.4, 18.5, 19.6, 24.2_
-  - [ ] 22.2 Write property test for tool names
+  - [x] 22.2 Write property test for tool names
     - **Property 38: Hook tool names resolve whatever the server prefix**
     - **Validates: Requirements 19.6**
-  - [ ] 22.3 Implement the pre-write guardrail and the post-write sync hooks
+  - [x] 22.3 Implement the pre-write guardrail and the post-write sync hooks
     - `src/hooks/pre-write-guardrail.ts` per the design decision table (snapshot and catalog through ports, same `RulesPort.checkReservation` path, catalog titles in warnings, stale after 15 minutes, no write and no network) and `src/hooks/post-write-sync.ts` (reminder for schedule writes only)
     - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 19.7_
-  - [ ] 22.4 Write property test for the decision table
+  - [x] 22.4 Write property test for the decision table
     - **Property 39: The hook decision table is exact**
     - **Validates: Requirements 18.5, 19.1, 19.2, 19.3, 19.4**
-  - [ ] 22.5 Write property test for fail-open input handling
+  - [x] 22.5 Write property test for fail-open input handling
     - **Property 40: The hook fails open on any input**
     - **Validates: Requirements 18.4, 18.5, 19.3**
-  - [ ] 22.6 Write property test for the sync reminder
+  - [x] 22.6 Write property test for the sync reminder
     - **Property 41: The sync reminder follows schedule writes only**
     - **Validates: Requirements 19.5**
-  - [ ] 22.7 Commit
+  - [x] 22.7 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 23. Build the CLI and the demo
