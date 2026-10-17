@@ -372,13 +372,13 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 16.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 17. Implement the required security test
-  - [ ] 17.1 Write the required no-secret security test
+- [x] 17. Implement the required security test
+  - [x] 17.1 Write the required no-secret security test
     - **Property 7: No secret ever appears in logs or errors** (full named required run)
     - Exercise sign-in, token refresh and at least one failing Events API operation with token, refresh token, ID token, email and `Authorization` needles, asserting none appear in captured logs or in any returned or thrown error message or field
     - _Requirements: 20.1, 20.2, 20.3_
 
-  - [ ] 17.2 Commit
+  - [x] 17.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 18. Implement the owner-gated live smoke tests
