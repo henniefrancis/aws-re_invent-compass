@@ -390,7 +390,7 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 18.2 Commit
     - After `npm test` (with the live tests skipped), `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 19. Final checkpoint - Ensure all tests pass and coverage is complete
+- [x] 19. Final checkpoint - Ensure all tests pass and coverage is complete
   - Ensure all tests pass with 100% lines, branches, functions and statements for S1-owned code and zero named exclusions, lint, format and typecheck clean, ask the user if questions arise.
   - _Requirements: 21.1_
 
