@@ -21,6 +21,7 @@ import {
   VENUES_LOCATION,
 } from '../runtime/resources.js';
 import type { ExecFileLike } from '../runtime/browser-opener.js';
+import type { StdinLimits } from '../hooks/read-stdin.js';
 import { runCli } from './run-cli.js';
 import { startStdioServer } from './stdio.js';
 
@@ -42,6 +43,10 @@ export interface Host {
   /** The URL of a module inside the package; the package root and its resources are found from it. */
   moduleUrl?: string;
   tempRoot?: string;
+  /** Ends the process (default `process.exit`). Only a hook uses it. */
+  exit?: (code: number) => void;
+  /** Shortens the hook's stdin limits in tests. */
+  hookLimits?: StdinLimits;
 }
 
 /** The real process launcher, used only to open the sign-in page. */
@@ -69,6 +74,15 @@ export async function readVersion(packageRoot: URL): Promise<string> {
   }
 }
 
+/** Resolves once everything written so far has been handed to the stream's destination. */
+function flush(stream: Writable): Promise<void> {
+  return new Promise((resolve) => {
+    stream.write('', () => {
+      resolve();
+    });
+  });
+}
+
 /** Runs the command line with the real machine behind it and returns the exit code. */
 export async function main(io: MainIo, host: Host = {}): Promise<number> {
   const root = await findPackageRoot(host.moduleUrl ?? import.meta.url, exists);
@@ -88,7 +102,7 @@ export async function main(io: MainIo, host: Host = {}): Promise<number> {
       ...(fixtures === undefined ? {} : { fixturesRoot: fileURLToPath(fixtures) }),
     };
   };
-  return runCli(
+  const code = await runCli(
     { argv: io.argv, env: io.env, stdin: io.stdin, stdout: io.stdout, stderr: io.stderr },
     {
       version,
@@ -99,6 +113,15 @@ export async function main(io: MainIo, host: Host = {}): Promise<number> {
         prepareWorkspace(repoPath, host.tempRoot === undefined ? {} : { tempRoot: host.tempRoot }),
       defaultRepoPath: async () =>
         fileURLToPath(await findResource(root, SAMPLE_REPO_LOCATION, exists)),
+      ...(host.hookLimits === undefined ? {} : { hookLimits: host.hookLimits }),
     },
   );
+  if (io.argv[0] === 'hook') {
+    // A hook ends the process itself: stdin may still be open (a client that never closes it), and
+    // an open stdin would keep the process alive past the hook's time limit (QA M6).
+    io.stdin.destroy();
+    await Promise.all([flush(io.stdout), flush(io.stderr)]);
+    (host.exit ?? process.exit)(code);
+  }
+  return code;
 }

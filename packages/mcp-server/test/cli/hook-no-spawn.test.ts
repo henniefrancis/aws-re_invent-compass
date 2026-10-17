@@ -46,7 +46,7 @@ describe('hook commands never start a process', () => {
           stdout: new PassThrough(),
           stderr: new PassThrough(),
         },
-        { homeDir: join(temp, 'home'), platform: 'linux', cwd: temp },
+        { homeDir: join(temp, 'home'), platform: 'linux', cwd: temp, exit: () => undefined },
       );
       expect(code).toBe(expected);
     }

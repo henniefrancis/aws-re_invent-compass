@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -141,4 +141,30 @@ describe('the packed package (QA H2, security M1)', () => {
       await rm(home, { recursive: true, force: true });
     }
   }, 180_000);
+
+  test('a hook exits within six seconds with its code even when stdin stays open (QA M6)', async () => {
+    const started = performance.now();
+    const result = await new Promise<{ code: number | null; elapsed: number }>(
+      (resolve, reject) => {
+        const child = spawn(
+          process.execPath,
+          [join(built.extracted, 'dist', 'bin.js'), 'hook', 'post-write-sync'],
+          {
+            stdio: ['pipe', 'pipe', 'pipe'],
+          },
+        );
+        const timer = setTimeout(() => {
+          child.kill();
+          reject(new Error('the hook did not exit'));
+        }, 20_000);
+        child.on('exit', (code) => {
+          clearTimeout(timer);
+          resolve({ code, elapsed: performance.now() - started });
+        });
+        // stdin is left open on purpose: nothing is written and it is never ended.
+      },
+    );
+    expect(result.code).toBe(0);
+    expect(result.elapsed).toBeLessThan(6000);
+  }, 30_000);
 });

@@ -16,6 +16,7 @@ import type { Workspace } from '../demo/workspace-copy.js';
 import { COULD_NOT_CHECK_NOTE } from '../hooks/pre-write-guardrail.js';
 import type { HookDeps } from '../hooks/pre-write-guardrail.js';
 import { isHookName, runHook } from '../hooks/run-hook.js';
+import type { StdinLimits } from '../hooks/read-stdin.js';
 import { CompassError } from '../ports/errors.js';
 import type { Runtime } from '../ports/runtime.js';
 import { messageFor } from '../server/error-messages.js';
@@ -48,6 +49,8 @@ export interface CliDeps {
   prepareWorkspace(repoPath: string): Promise<Workspace>;
   /** The sample repo that ships with the package. */
   defaultRepoPath(): Promise<string>;
+  /** The hook's stdin limits (default 1 MiB and 5 seconds); tests shorten them. */
+  hookLimits?: StdinLimits;
 }
 
 /** The usage text. */
@@ -78,7 +81,7 @@ async function runHookCommand(name: string, io: CliIo, deps: CliDeps): Promise<n
   }
   let decision;
   try {
-    decision = await runHook(name, io.stdin, await deps.createHookDeps(io.env));
+    decision = await runHook(name, io.stdin, await deps.createHookDeps(io.env), deps.hookLimits);
   } catch {
     decision =
       name === 'pre-write-guardrail'

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PassThrough } from 'node:stream';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { defaultExecFile, main, readVersion } from '../../src/cli/main.js';
 import type { Host, MainIo } from '../../src/cli/main.js';
 import { startStdioServer } from '../../src/cli/stdio.js';
@@ -85,8 +85,10 @@ describe('main', () => {
       {},
       JSON.stringify({ tool_name: 'reserve_with_guardrails' }),
     );
-    expect(await main(t, {})).toBe(0);
+    const exits: number[] = [];
+    expect(await main(t, { exit: (code) => exits.push(code) })).toBe(0);
     expect(t.out.join('')).toContain('sync_passes');
+    expect(exits).toEqual([0]);
   });
 
   test('the demo runs end to end with the real simulated stack, on a copy of the bundled sample repo', async () => {
@@ -231,5 +233,53 @@ describe('main with a package that has no worker and no fixtures folder', () => 
     const t = io(['demo']);
     expect(await main(t, { ...host(), moduleUrl })).toBe(0);
     expect(t.out.join('')).toContain('The demo finished.');
+  });
+});
+
+describe('a hook ends the process even when stdin stays open (QA M6)', () => {
+  test('after the stdin time limit it destroys stdin, flushes and exits with the hook code', async () => {
+    const t = io(['hook', 'post-write-sync']);
+    const open = new PassThrough();
+    const served = { ...t, stdin: open };
+    const exits: number[] = [];
+    const started = performance.now();
+    const code = await main(served, {
+      ...host(),
+      exit: (c) => exits.push(c),
+      hookLimits: { maxBytes: 1000, timeoutMs: 60 },
+    });
+    expect(code).toBe(0);
+    expect(exits).toEqual([0]);
+    expect(open.destroyed).toBe(true);
+    expect(performance.now() - started).toBeLessThan(3000);
+  });
+
+  test('a blocking hook exits 2 through the same path', async () => {
+    const t = io(
+      ['hook', 'pre-write-guardrail'],
+      {},
+      JSON.stringify({ tool_name: 'mcp_awsevents_ReserveSessions' }),
+    );
+    const exits: number[] = [];
+    expect(await main(t, { ...host(), exit: (c) => exits.push(c) })).toBe(2);
+    expect(exits).toEqual([2]);
+  });
+
+  test('other commands never call exit', async () => {
+    const t = io(['--version']);
+    const exits: number[] = [];
+    await main(t, { ...host(), exit: (c) => exits.push(c) });
+    expect(exits).toEqual([]);
+  });
+
+  test('without an exit seam it calls process.exit', async () => {
+    const spy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+    try {
+      const t = io(['hook', 'post-write-sync'], {}, '{}');
+      await main(t, host());
+      expect(spy).toHaveBeenCalledWith(0);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
