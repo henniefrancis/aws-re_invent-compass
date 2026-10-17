@@ -93,16 +93,16 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Compass_Client and contract-typed response schemas" -m "Typed client validates every response with zod, attaches the Bearer ID token, retries 429 once on Retry-After and treats 404 on write as already gone."`
 
-- [ ] 4. Implement Pass_Store
+- [x] 4. Implement Pass_Store
   - Implement `PassStore` (`read`, `write`, `deleteRecord`) over the injected `AppDataResolver` and `FileSystem`.
   - Resolve the App_Data_Folder per OS: `%APPDATA%` on Windows, `~/Library/Application Support` on macOS, `$XDG_DATA_HOME` with the `/reinvent-compass` suffix on Linux.
   - Store per issued pass only the serial number, session code, fields hash and platforms; never the ID token or attendee email.
   - Always pass mode 0600 to the filesystem seam on write; read an absent record as an empty record `{ passes: [] }`.
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
-  - [ ] 4.1 Write example tests for per-OS resolution, write path and mode, round trip and absent read
+  - [x] 4.1 Write example tests for per-OS resolution, write path and mode, round trip and absent read
     - Per-OS App_Data_Folder resolution across platform and environment combinations including the Linux suffix (3.2); record written inside the resolved folder with mode 0600 passed to the seam (3.1, 3.4, former Property 13); write then read yields an equal record with no ID token or email in the serialised text (3.3, 3.6, former Property 14); absent read returns an empty record (3.5).
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
-  - [ ] 4.2 Run this task's tests, then commit locally
+  - [x] 4.2 Run this task's tests, then commit locally
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Pass_Store with per-OS app-data resolution" -m "Reads and writes the issued-pass record with mode 0600, excludes token and email, and returns an empty record when absent."`
 

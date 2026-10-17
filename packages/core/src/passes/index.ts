@@ -71,3 +71,18 @@ export type {
   CreateHandoffResponse,
   ForgetMeResponse,
 } from './compass-api-schemas.js';
+
+// Pass_Store and the per-OS app-data folder.
+export {
+  createAppDataResolver,
+  createNodeAppDataResolver,
+  joinInFolder,
+  APP_FOLDER_NAME,
+  RECORD_FILE_NAME,
+  OUTPUT_FOLDER_NAME,
+  CALENDAR_FILE_NAME,
+  ITINERARY_FILE_NAME,
+} from './app-data.js';
+export type { AppDataEnvironment } from './app-data.js';
+export { createPassStore, RECORD_FILE_MODE } from './pass-store.js';
+export type { PassStore, PassStoreDeps } from './pass-store.js';
