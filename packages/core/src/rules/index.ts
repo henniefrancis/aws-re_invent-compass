@@ -16,7 +16,8 @@ export { computeBoarding, boardingFor } from './boarding.js';
 export { classifyConnection } from './connections.js';
 export { findClashes } from './clashes.js';
 export { checkLayovers } from './layovers.js';
-export { isOverloaded } from './energy.js';
+export { isOverloaded, scoreEnergy } from './energy.js';
+export { connectionsForDay, energyForDay } from './day-view.js';
 export { findRebookingOptions } from './rebooking.js';
 export { planSafeSwap } from './safe-swap.js';
 
@@ -39,8 +40,9 @@ export type { ResolvedCommitment, ScheduleInput, SessionsLookup } from './resolv
 export type { BoardingInput, BoardingResult } from './boarding.js';
 export type { ConnectionClass, ConnectionResult } from './connections.js';
 export type { ClashPair, ClashReport } from './clashes.js';
+export type { DayConnection, DayConnections, DayEnergy, DaySkipped } from './day-view.js';
 export type { DayLayover, LayoverReport, SuggestedBlock } from './layovers.js';
-export type { OverloadResult } from './energy.js';
+export type { EnergyResult, OverloadResult } from './energy.js';
 export type { RebookOption, RebookResult } from './rebooking.js';
 export type { SwapPlan, SwapStep } from './safe-swap.js';
 export type { VenueDataValidation } from './venue-data.js';

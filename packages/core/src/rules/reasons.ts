@@ -181,6 +181,10 @@ export function layoverTimeMissing(ref: string, what: 'start' | 'end'): string {
   return `${missingTime(ref, what)} It is left out of the break checks.`;
 }
 
+export function dayViewTimeMissing(ref: string): string {
+  return `${missingTime(ref, 'start')} It is left out of the day view.`;
+}
+
 export function suggestMealBlock(): string {
   return 'Take a meal break in this gap.';
 }

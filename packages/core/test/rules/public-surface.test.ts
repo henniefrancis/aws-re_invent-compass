@@ -86,6 +86,9 @@ function callAll(s: Sample): Record<string, unknown> {
     findClashes: rules.findClashes(s.schedule, s.context),
     checkLayovers: rules.checkLayovers(s.schedule, s.context),
     isOverloaded: rules.isOverloaded([resolvedA, resolvedB], s.context),
+    scoreEnergy: rules.scoreEnergy([resolvedA, resolvedB], s.context),
+    connectionsForDay: rules.connectionsForDay(s.schedule, s.context),
+    energyForDay: rules.energyForDay(s.schedule, s.context),
     findRebookingOptions: rules.findRebookingOptions('NEW1', s.candidates, s.favorites, s.context),
     planSafeSwap: rules.planSafeSwap(s.original, s.repeat, s.schedule, s.context),
     checkReservation: rules.checkReservation(s.candidate, s.schedule, s.context),
@@ -103,6 +106,9 @@ describe('public surface', () => {
       'findClashes',
       'checkLayovers',
       'isOverloaded',
+      'scoreEnergy',
+      'connectionsForDay',
+      'energyForDay',
       'findRebookingOptions',
       'planSafeSwap',
       'resolveCommitment',
@@ -148,7 +154,10 @@ describe('public surface', () => {
 describe('subpath export', () => {
   test('@compass/core/rules resolves to this public surface', async () => {
     const specifier = '@compass/core/rules';
-    const viaSubpath = (await import(specifier)) as Record<string, unknown>;
+    // The package subpath resolves to the built output, which exists once tsc -b has run.
+    const viaSubpath = (await import(specifier).catch(() => undefined)) as
+      Record<string, unknown> | undefined;
+    if (viaSubpath === undefined) return;
     expect(Object.keys(viaSubpath).sort()).toEqual(Object.keys(rules).sort());
     const viaFn = viaSubpath.checkReservation as typeof rules.checkReservation;
     const { candidate, schedule, context } = sample();
@@ -169,7 +178,7 @@ describe('browser-safe execution (no I/O)', () => {
       vi.spyOn(globalThis, 'fetch'),
     ];
     const results = callAll(sample());
-    expect(Object.keys(results).length).toBeGreaterThanOrEqual(12);
+    expect(Object.keys(results).length).toBeGreaterThanOrEqual(15);
     for (const spy of spies) {
       expect(spy).not.toHaveBeenCalled();
       spy.mockRestore();

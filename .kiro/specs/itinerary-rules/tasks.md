@@ -221,17 +221,17 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 15.6 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 16. Implement the full energy budget formula (last implementation task)
-  - [ ] 16.1 Implement `energy.ts` `scoreEnergy` and promote `isOverloaded` to the full formula
+- [x] 16. Implement the full energy budget formula (last implementation task)
+  - [x] 16.1 Implement `energy.ts` `scoreEnergy` and promote `isOverloaded` to the full formula
     - Score is `(commitmentCount * 10) + totalWalkingMinutes + (venueChangeCount * 15)`; days with fewer than two commitments have zero walking and zero venue changes
     - A commitment missing a venue or usable time is counted but excluded from walking and venue totals and named in the explanation that also names the three inputs and the formula
     - `isOverloaded` remains the single interface the guardrail calls; the full formula flags overload when the score is strictly greater than `overloadThreshold`, and the count-only fallback still flags when the commitment count alone is strictly greater than `overloadCountThreshold`. `checkReservation` is not changed: it keeps calling the same `isOverloaded` interface
     - Add `scoreEnergy` to the `index.ts` public surface
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 8.1, 10.3_
-  - [ ] 16.2 Write property test for the energy formula, threshold, fallback, and explanation
+  - [x] 16.2 Write property test for the energy formula, threshold, fallback, and explanation
     - **Property 11: Energy budget formula, overload threshold and count-only fallback, and explanation**
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.9**
-  - [ ] 16.3 Run the rules tests, confirm they pass, then commit
+  - [x] 16.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 17. Final checkpoint - full suite, coverage, and dash gate

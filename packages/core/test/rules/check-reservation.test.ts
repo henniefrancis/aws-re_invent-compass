@@ -148,17 +148,21 @@ describe('warn rules', () => {
   });
 
   test('raising the day over the overload line warns and names the overload', () => {
-    const context = testContext({ overloadCountThreshold: 2 });
+    const context = testContext({ overloadThreshold: 40 });
     const others = [slot('OLD1', clock(8), clock(8, 30)), slot('OLD2', clock(9, 30), clock(10))];
     const verdict = check(slot('NEW1', clock(16), clock(17)), others, context);
     expect(verdict).toEqual({
       decision: 'warn',
-      reasons: ['This makes 2026-12-01 too busy. 3 commitments is more than the limit of 2.'],
+      reasons: [
+        'This makes 2026-12-01 too busy. Energy score is 50: 3 commitments times 10, 20 walking minutes, 0 venue changes times 15. ' +
+          'Formula: commitments times 10 plus walking minutes plus venue changes times 15. ' +
+          'That is above the limit of 40, so the day is overloaded.',
+      ],
     });
   });
 
   test('no warning when the day was already overloaded', () => {
-    const context = testContext({ overloadCountThreshold: 1 });
+    const context = testContext({ overloadThreshold: 20 });
     const others = [slot('OLD1', clock(8), clock(8, 30)), slot('OLD2', clock(9, 30), clock(10))];
     expect(check(slot('NEW1', clock(16), clock(17)), others, context).decision).toBe('allow');
   });
@@ -246,7 +250,7 @@ describe('all-day candidate', () => {
 
 describe('severity precedence', () => {
   test('block wins over warn and missing data, and every applied rule has one reason', () => {
-    const context = testContext({ overloadCountThreshold: 3 });
+    const context = testContext({ overloadThreshold: 70 });
     const clashing = slot('OLD1', clock(10, 30), clock(11, 30));
     const tightNeighbour = slot('OLD2', clock(11, 33), clock(12, 33), { venue: 'Beta Tower' });
     const noEnd = slot('OLD3', clock(18), clock(19), { endsAt: undefined });

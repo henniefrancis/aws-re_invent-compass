@@ -89,6 +89,7 @@ const builders: Array<[string, fc.Arbitrary<string>]> = [
     'layoverTimeMissing',
     fc.tuple(freeText, edge).map(([r, e]) => reasons.layoverTimeMissing(r, e)),
   ],
+  ['dayViewTimeMissing', freeText.map((r) => reasons.dayViewTimeMissing(r))],
   ['suggestMealBlock', fc.constant(reasons.suggestMealBlock())],
   ['suggestRestBlock', placement.map((p) => reasons.suggestRestBlock(p))],
   ['noPlacement', kind.map((k) => reasons.noPlacement(k))],
