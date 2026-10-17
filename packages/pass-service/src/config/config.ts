@@ -57,6 +57,8 @@ export type PasskitConfig = Pick<
 export interface ParseOptions {
   /** Only the owner-run local harness sets this (Apple allows HTTP while testing). */
   allowHttpBaseUrl?: boolean;
+  /** Only the owner-run local harness and the loopback tests set this (review N10). */
+  allowAnyApnsHost?: boolean;
 }
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -120,6 +122,8 @@ export class ConfigError extends Error {
 
 const NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}$/;
 const HOST_PATTERN = /^[A-Za-z0-9]([A-Za-z0-9.-]{0,251}[A-Za-z0-9])?$/;
+/** APNs production and sandbox. Pass pushes work only in production, but the sandbox exists. */
+export const APNS_HOSTS: readonly string[] = ['api.push.apple.com', 'api.sandbox.push.apple.com'];
 const PATH_PATTERN = /^(?:\/[A-Za-z0-9._~-]+)+$/;
 const ZONE_PATTERN = /^[A-Za-z][A-Za-z0-9_+-]*(?:\/[A-Za-z0-9_+-]+)*$/;
 const ISO_OFFSET_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
@@ -281,10 +285,10 @@ function idToken(env: Env): IdTokenConfig {
   return { mode: 'oidc', issuer, clientId, jwksUri };
 }
 
-function apns(env: Env): ApiConfig['apns'] {
+function apns(env: Env, allowAnyHost: boolean): ApiConfig['apns'] {
   const enabled = boolean(env, 'APNS_ENABLED', true);
   const host = raw(env, 'APNS_HOST') ?? DEFAULT_APNS_HOST;
-  if (!HOST_PATTERN.test(host)) {
+  if (!(allowAnyHost ? HOST_PATTERN.test(host) : APNS_HOSTS.includes(host))) {
     throw new ConfigError('APNS_HOST');
   }
   const pushType = raw(env, 'APNS_PUSH_TYPE');
@@ -319,7 +323,7 @@ export function parseApiConfig(env: Env, opts: ParseOptions = {}): ApiConfig {
   const zone = timezone(env);
   const window = eventWindow(env, zone);
   const token = idToken(env);
-  const push = apns(env);
+  const push = apns(env, opts.allowAnyApnsHost === true);
   const handoffCalendarEnabled = boolean(env, 'HANDOFF_CALENDAR_ENABLED', true);
   const secretsCacheSeconds = integer(env, 'SECRETS_CACHE_TTL_SECONDS', 300, 1, 3600);
   const serviceVersion = matching(env, 'SERVICE_VERSION', VERSION_PATTERN);

@@ -81,9 +81,11 @@ export function createTokenVerifier(cfg: IdTokenConfig, deps: TokenVerifierDeps)
         throw unauthorized();
       }
       const claims = await current()(token);
-      const oidcOk =
-        cfg.mode === 'cognito' || (claims.token_use === 'id' && typeof claims.aud === 'string');
-      if (!oidcOk || typeof claims.sub !== 'string' || claims.sub === '') {
+      // aud must be a string in both modes; token_use is checked here in oidc mode (cognito mode
+      // checks it in the library).
+      const claimsOk =
+        typeof claims.aud === 'string' && (cfg.mode === 'cognito' || claims.token_use === 'id');
+      if (!claimsOk || typeof claims.sub !== 'string' || claims.sub === '') {
         throw unauthorized();
       }
       return claims.sub;

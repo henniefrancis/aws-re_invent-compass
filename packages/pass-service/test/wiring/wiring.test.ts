@@ -1,11 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
 import { ConfigError } from '../../src/config/config.js';
 import { DependencyError } from '../../src/http/problem.js';
-import {
-  newJwksCache,
-  productionApiDeps,
-  productionPasskitDeps,
-} from '../../src/wiring/production-deps.js';
+import { newJwksCache, productionApiDeps } from '../../src/wiring/api-deps.js';
+import { productionPasskitDeps } from '../../src/wiring/passkit-deps.js';
 import { BASE_ENV } from '../helpers/api-fixture.js';
 
 describe('Feature: pass-service, production wiring', () => {

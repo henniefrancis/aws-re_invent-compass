@@ -164,7 +164,7 @@ function send(response: ServerResponse, result: ProxyResult): void {
 
 export async function startLocalHarness(options: HarnessOptions): Promise<HarnessHandle> {
   const log = options.log ?? ((line: string) => process.stdout.write(`${line}\n`));
-  const config = parseApiConfig(options.env, { allowHttpBaseUrl: true });
+  const config = parseApiConfig(options.env, { allowHttpBaseUrl: true, allowAnyApnsHost: true });
   const passkitConfig = parsePasskitConfig(options.env, { allowHttpBaseUrl: true });
   const table = createMemoryTable();
   const source = fileSecretSource(options.secrets, [

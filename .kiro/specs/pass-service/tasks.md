@@ -436,7 +436,7 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 
 - [x] 23. Wire production dependencies, the Lambda entries and the local harness
   - [x] 23.1 Implement the production wiring
-    - Create `src/wiring/production-deps.ts` with `productionApiDeps` and `productionPasskitDeps`: parse configuration, build the DynamoDB document client, Secrets Manager client, JWKS cache and verifier, HTTP/2 connector, Google token source and `fetch`-based client at module scope so they are reused across invocations; the passkit wiring never builds Google pieces
+    - Create `src/wiring/api-deps.ts` and `src/wiring/passkit-deps.ts` (shared pieces in `src/wiring/common.ts`) with `productionApiDeps` and `productionPasskitDeps`: parse configuration, build the DynamoDB document client, Secrets Manager client, JWKS cache and verifier, HTTP/2 connector, Google token source and `fetch`-based client at module scope so they are reused across invocations; the passkit wiring never builds Google pieces
     - _Requirements: 4.6, 21.1, 21.2, 21.6, 24.1_
 
   - [x] 23.2 Create the Lambda entry adapters

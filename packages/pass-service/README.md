@@ -56,7 +56,7 @@ names the variable (never its value). Checks run in the order of this table.
 | `ID_TOKEN_CLIENT_ID`                     | api          | no                  | `7vmom55m1qstvq8i71ph127bfq` | expected `aud`                                                                                              |
 | `ID_TOKEN_JWKS_URI`                      | api          | in `oidc` mode      |                              | `https`, and its host must equal the issuer host                                                            |
 | `APNS_ENABLED`                           | api          | no                  | `true`                       | SP3 fallback switch                                                                                         |
-| `APNS_HOST`                              | api          | no                  | `api.push.apple.com`         | APNs production host                                                                                        |
+| `APNS_HOST`                              | api          | no                  | `api.push.apple.com`         | `api.push.apple.com` or `api.sandbox.push.apple.com` only (any other value fails closed)                    |
 | `APNS_PUSH_TYPE`                         | api          | no                  | unset                        | `alert` or `background`, sent only when set (SP3)                                                           |
 | `APNS_TIMEOUT_MS`, `APNS_BUDGET_MS`      | api          | no                  | `2000`, `4000`               | per push and per request                                                                                    |
 | `HANDOFF_CALENDAR_ENABLED`               | api          | no                  | `true`                       | cut-list item 5 switch                                                                                      |
@@ -142,6 +142,9 @@ and 80 active passes per attendee.
 CloudWatch embedded metric format, namespace `Compass`, the single dimension `Function` (`api` or
 `passkit`), plus `Latency`. Counts only: `ApnsFailure`, `ApnsInvalidToken`, `ApnsSkipped`,
 `GoogleWalletFailure`, `GoogleSaveJwtOversize`, `PasskitLogMessages`. Alarm on `ApnsFailure`.
+`GoogleWalletFailure` counts every failed Google call: an insert that failed or missed its budget, a
+failed content patch on update, a failed `INACTIVE` patch on void and on forget_me, and a hand-off view
+that had to leave out its Google link.
 
 Logs hold one JSON line per request: `requestId`, `route` (method plus template, or `UNMATCHED`),
 `status`, `latencyMs`, `outcome`, `Function`, `Latency`, the metric counts and `_aws`. Never a path

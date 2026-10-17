@@ -36,6 +36,9 @@ export interface ApnsDeps {
 
 type Result = 'delivered' | 'invalid' | 'failed';
 
+/** The most reply text that is read from one push (review N10). */
+export const MAX_REPLY_CHARS = 4096;
+
 function classify(status: number | undefined, body: string): Result {
   if (status === 200) {
     return 'delivered';
@@ -85,6 +88,12 @@ function pushOne(
       });
       stream.setEncoding('utf8');
       stream.on('data', (chunk: string) => {
+        if (body.length + chunk.length > MAX_REPLY_CHARS) {
+          // An APNs reply is a few dozen bytes; anything larger is not one.
+          stream.close();
+          finish('failed');
+          return;
+        }
         body += chunk;
       });
       stream.on('end', () => finish(classify(status, body)));

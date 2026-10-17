@@ -125,17 +125,23 @@ export function createHandoffService(deps: HandoffDeps): HandoffService {
       const withObject = active.filter((rec) => rec.googleState === 'active');
       let google: HandoffView['google'] = null;
       if (handoff.include.google && config.google.enabled && withObject.length > 0) {
-        const secret = await deps.secrets.google();
-        const classId = `${secret.issuerId}.${config.google.classSuffix}`;
-        const link = await deps.google.saveUrl(
-          withObject.map((rec) => ({
-            id: googleObjectId(secret.issuerId, rec.serialNumber),
-            classId,
-          })),
-          Math.floor(op.now / 1000),
-        );
-        op.metrics.add('GoogleSaveJwtOversize', link.oversize ? 1 : 0);
-        google = { saveUrl: link.url };
+        // The view is still useful without the Google link: any failure here is counted and the
+        // link is left out (review N4).
+        try {
+          const secret = await deps.secrets.google();
+          const classId = `${secret.issuerId}.${config.google.classSuffix}`;
+          const link = await deps.google.saveUrl(
+            withObject.map((rec) => ({
+              id: googleObjectId(secret.issuerId, rec.serialNumber),
+              classId,
+            })),
+            Math.floor(op.now / 1000),
+          );
+          op.metrics.add('GoogleSaveJwtOversize', link.oversize ? 1 : 0);
+          google = { saveUrl: link.url };
+        } catch {
+          op.metrics.add('GoogleWalletFailure', 1);
+        }
       }
       return {
         expiresAt: new Date(handoff.expiresAtMs).toISOString(),
