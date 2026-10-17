@@ -24,8 +24,10 @@
 #     that name wrapped in a dollar-brace marker on the uri line only. Those two
 #     are the only template placeholders in the file.
 #   - Auth is verified inside the Lambdas, so there is NO
-#     x-amazon-apigateway-authorizer anywhere. The securitySchemes below are
-#     documentation only, for human readers of the contract.
+#     x-amazon-apigateway-authorizer anywhere. The bearerIdToken and applePass
+#     securitySchemes below are documentation only, for human readers of the
+#     contract. The api_key scheme is the exception: API Gateway enforces it
+#     on every method (apiKeyRequired), with the key injected by CloudFront.
 #   - Request validation is enabled through x-amazon-apigateway-request-validators
 #     and each operation sets x-amazon-apigateway-request-validator.
 #   - Binary responses (.pkpass, .pkpasses, .ics) are declared in
@@ -53,6 +55,8 @@ info:
 
 # Binary media types so API Gateway returns the Apple pass bundles and the
 # calendar file as binary rather than attempting UTF-8 handling.
+# API Gateway requires the x-api-key header on every method (see api_key below).
+x-amazon-apigateway-api-key-source: HEADER
 x-amazon-apigateway-binary-media-types:
   - application/vnd.apple.pkpass
   - application/vnd.apple.pkpasses
@@ -84,6 +88,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Health'
+      security:
+        - api_key: []
       x-amazon-apigateway-integration:
         type: aws_proxy
         httpMethod: POST
@@ -99,6 +105,7 @@ paths:
         a Builder ID ID token, verified inside the Lambda.
       security:
         - bearerIdToken: []
+          api_key: []
       x-amazon-apigateway-request-validator: all
       requestBody:
         required: true
@@ -136,6 +143,7 @@ paths:
         ID token and an owner match, verified inside the Lambda.
       security:
         - bearerIdToken: []
+          api_key: []
       x-amazon-apigateway-request-validator: params-only
       responses:
         '200':
@@ -166,6 +174,7 @@ paths:
         object. Requires a Builder ID ID token and an owner match.
       security:
         - bearerIdToken: []
+          api_key: []
       x-amazon-apigateway-request-validator: all
       requestBody:
         required: true
@@ -204,6 +213,7 @@ paths:
         owner match.
       security:
         - bearerIdToken: []
+          api_key: []
       x-amazon-apigateway-request-validator: params-only
       responses:
         '200':
@@ -231,6 +241,7 @@ paths:
         Requires a Builder ID ID token.
       security:
         - bearerIdToken: []
+          api_key: []
       x-amazon-apigateway-request-validator: all
       requestBody:
         required: true
@@ -276,6 +287,8 @@ paths:
                 $ref: '#/components/schemas/HandoffView'
         '404':
           $ref: '#/components/responses/ProblemNotFound'
+      security:
+        - api_key: []
       x-amazon-apigateway-integration:
         type: aws_proxy
         httpMethod: POST
@@ -303,6 +316,8 @@ paths:
                 format: binary
         '404':
           $ref: '#/components/responses/ProblemNotFound'
+      security:
+        - api_key: []
       x-amazon-apigateway-integration:
         type: aws_proxy
         httpMethod: POST
@@ -329,6 +344,8 @@ paths:
                 format: binary
         '404':
           $ref: '#/components/responses/ProblemNotFound'
+      security:
+        - api_key: []
       x-amazon-apigateway-integration:
         type: aws_proxy
         httpMethod: POST
@@ -344,6 +361,7 @@ paths:
         a Builder ID ID token.
       security:
         - bearerIdToken: []
+          api_key: []
       x-amazon-apigateway-request-validator: params-only
       responses:
         '202':
@@ -377,6 +395,7 @@ paths:
         registered, 401 when the token does not match.
       security:
         - applePass: []
+          api_key: []
       x-amazon-apigateway-request-validator: all
       requestBody:
         required: true
@@ -404,6 +423,7 @@ paths:
         the ApplePass token.
       security:
         - applePass: []
+          api_key: []
       x-amazon-apigateway-request-validator: params-only
       responses:
         '200':
@@ -444,6 +464,8 @@ paths:
                 $ref: '#/components/schemas/SerialNumbers'
         '204':
           description: Nothing changed since passesUpdatedSince.
+      security:
+        - api_key: []
       x-amazon-apigateway-integration:
         type: aws_proxy
         httpMethod: POST
@@ -463,6 +485,7 @@ paths:
         pass, 304 when not modified, 401 when the token does not match.
       security:
         - applePass: []
+          api_key: []
       parameters:
         - name: If-Modified-Since
           in: header
@@ -506,6 +529,8 @@ paths:
       responses:
         '200':
           description: The log messages were received.
+      security:
+        - api_key: []
       x-amazon-apigateway-integration:
         type: aws_proxy
         httpMethod: POST
@@ -517,6 +542,15 @@ components:
   # reader can see which credential each route expects, but no API Gateway
   # authorizer is attached: every route is authorised inside its Lambda.
   securitySchemes:
+    api_key:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: >-
+        The API Gateway API key, enforced by API Gateway on every method.
+        CloudFront adds it as a custom origin header, so a direct call to the
+        execute-api endpoint is rejected before any Lambda runs. Viewers never
+        send or see it. This is the one scheme API Gateway itself enforces.
     bearerIdToken:
       type: http
       scheme: bearer
