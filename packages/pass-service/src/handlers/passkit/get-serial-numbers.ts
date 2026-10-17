@@ -1,6 +1,9 @@
 // GET .../devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}
 // No credential: Apple sends none here, and the device library identifier acts as the
-// shared secret. 200 with the passes updated since the tag, or 204.
+// shared secret. 200 with the passes updated at or after the tag, or 204. The tag is the
+// millisecond update tag of the newest pass listed; the comparison is at or after, so a change
+// made in the same millisecond as the previous list is never lost (the pass at the tag itself
+// is listed again, and its fetch answers 304 through If-Modified-Since).
 import type { PasskitDeps } from '../../app/deps.js';
 import type { PassRecord } from '../../data/records.js';
 import { empty, json } from '../../http/responses.js';
@@ -32,7 +35,7 @@ export const getSerialNumbers: Handler<PasskitDeps> = async (req, deps) => {
     registrations.map((registration) => deps.passes.get(registration.serialNumber, req.now)),
   );
   const changed = found.filter(
-    (rec): rec is PassRecord => rec !== undefined && rec.lastUpdatedMs > since,
+    (rec): rec is PassRecord => rec !== undefined && rec.updateTagMs >= since,
   );
   if (changed.length === 0) {
     return empty(204);
@@ -41,7 +44,7 @@ export const getSerialNumbers: Handler<PasskitDeps> = async (req, deps) => {
     200,
     SerialNumbersSchema.parse({
       serialNumbers: changed.map((rec) => rec.serialNumber),
-      lastUpdated: String(Math.max(...changed.map((rec) => rec.lastUpdatedMs))),
+      lastUpdated: String(Math.max(...changed.map((rec) => rec.updateTagMs))),
     }),
   );
 };

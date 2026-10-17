@@ -123,10 +123,13 @@ describe('Feature: pass-service, PassKit statuses', () => {
     const all = await list(fixture, 'device-1');
     expect(all.result.statusCode).toBe(200);
     const rec = await fixture.deps.passes.get(serial, fixture.clock.now());
-    expect(all.json).toEqual({ serialNumbers: [serial], lastUpdated: String(rec?.lastUpdatedMs) });
-    expect((await list(fixture, 'device-1', String(rec?.lastUpdatedMs))).result.statusCode).toBe(
-      204,
-    );
+    expect(all.json).toEqual({ serialNumbers: [serial], lastUpdated: String(rec?.updateTagMs) });
+    // The pass at the tag itself is listed again (its fetch answers 304); one millisecond later
+    // nothing has changed.
+    expect((await list(fixture, 'device-1', String(rec?.updateTagMs))).result.statusCode).toBe(200);
+    expect(
+      (await list(fixture, 'device-1', String((rec?.updateTagMs ?? 0) + 1))).result.statusCode,
+    ).toBe(204);
     expect((await fixture.callPasskit({ method: 'GET', resource: LIST })).result.statusCode).toBe(
       204,
     );
@@ -386,6 +389,7 @@ describe('Feature: pass-service, PassKit properties', () => {
           await fixture.deps.passes.create(
             makePassRecord(SUB, serial, {
               lastUpdatedMs: last,
+              updateTagMs: last,
               status: spec.voided ? 'voided' : 'active',
               expiresAtMs: spec.expired ? now - 1 : now + 3_600_000,
             }),
@@ -412,7 +416,7 @@ describe('Feature: pass-service, PassKit properties', () => {
             !spec.otherType &&
             !spec.expiredRegistration &&
             !spec.expired &&
-            last > sinceMs
+            last >= sinceMs
           ) {
             expected.push({ serial, last });
           }
@@ -497,5 +501,61 @@ describe('Feature: pass-service, PassKit missing path values', () => {
       });
       expect(reply.result.statusCode).toBe(401);
     }
+  });
+});
+
+describe('Feature: pass-service, update then list race', () => {
+  async function twoRegistered() {
+    const fixture = createApiFixture();
+    const serials: string[] = [];
+    for (const code of ['AAA101', 'BBB202']) {
+      const serial = await fixture.issue(SUB, samplePassFields({ sessionCode: code }));
+      const token = await fixture.authToken(serial);
+      await reg(fixture, { serial, token });
+      serials.push(serial);
+    }
+    return { fixture, serials };
+  }
+
+  const change = (fixture: ApiFixture, serial: string, code: string, room: string) =>
+    fixture.call({
+      method: 'PUT',
+      resource: '/api/v1/passes/{serialNumber}',
+      path: { serialNumber: serial },
+      token: SUB,
+      body: samplePassFields({ sessionCode: code, room }),
+    });
+
+  test('a second pass changed in the same second as the previous list is still listed', async () => {
+    const { fixture, serials } = await twoRegistered();
+    fixture.clock.advance(5000);
+    await change(fixture, serials[0] as string, 'AAA101', 'Room 1');
+    const first = await list(fixture, 'device-1', '0');
+    const tag = (first.json as { lastUpdated: string }).lastUpdated;
+    await change(fixture, serials[1] as string, 'BBB202', 'Room 2');
+    const second = await list(fixture, 'device-1', tag);
+    expect(second.result.statusCode).toBe(200);
+    expect((second.json as { serialNumbers: string[] }).serialNumbers).toContain(serials[1]);
+  });
+
+  test('changes a millisecond apart inside one second are told apart by the tag', async () => {
+    const { fixture, serials } = await twoRegistered();
+    fixture.clock.advance(5000);
+    await change(fixture, serials[0] as string, 'AAA101', 'Room 1');
+    const tag = (await list(fixture, 'device-1', '0')).json as { lastUpdated: string };
+    fixture.clock.advance(1);
+    await change(fixture, serials[1] as string, 'BBB202', 'Room 2');
+    const second = await list(fixture, 'device-1', String(Number(tag.lastUpdated) + 1));
+    expect((second.json as { serialNumbers: string[] }).serialNumbers).toEqual([serials[1]]);
+  });
+
+  test('Last-Modified keeps second precision', async () => {
+    const { fixture, serials } = await twoRegistered();
+    fixture.clock.advance(5432);
+    await change(fixture, serials[0] as string, 'AAA101', 'Room 1');
+    const token = await fixture.authToken(serials[0] as string);
+    const reply = await latest(fixture, serials[0] as string, token);
+    const modified = reply.result.headers['last-modified'] ?? '';
+    expect(Date.parse(modified) % 1000).toBe(0);
   });
 });

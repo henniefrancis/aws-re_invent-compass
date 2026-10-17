@@ -12,7 +12,7 @@ import type { ApiDeps } from '../app/deps.js';
 import type { ApiConfig } from '../config/config.js';
 import type { VerifiedCaller } from '../auth/token-verifier.js';
 import { EXPIRY_GRACE_MS, ttlOf } from '../data/keys.js';
-import { nextLastUpdated } from '../data/last-updated.js';
+import { nextLastUpdated, nextUpdateTag } from '../data/last-updated.js';
 import { ACTIVE_PASS_LIMIT } from '../data/rate-limiter.js';
 import type { DeviceRegistration, PassRecord } from '../data/records.js';
 import { buildGenericObject, googleObjectId, type GenericObject } from '../google/google-object.js';
@@ -284,6 +284,7 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
             status: 'active',
             version: 1,
             lastUpdatedMs: Math.floor(op.now / 1000) * 1000,
+            updateTagMs: op.now,
             googleState: 'none',
             createdAtMs: op.now,
             expiresAtMs,
@@ -343,6 +344,7 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
           fields,
           version: current.version + 1,
           lastUpdatedMs: nextLastUpdated(current.lastUpdatedMs, op.now),
+          updateTagMs: nextUpdateTag(current.updateTagMs, op.now),
           expiresAtMs,
           ttl: ttlOf(expiresAtMs),
         };
@@ -384,6 +386,7 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
               voidedAt: new Date(op.now).toISOString(),
               version: current.version + 1,
               lastUpdatedMs: nextLastUpdated(current.lastUpdatedMs, op.now),
+              updateTagMs: nextUpdateTag(current.updateTagMs, op.now),
             },
       );
       if (saved === undefined) {

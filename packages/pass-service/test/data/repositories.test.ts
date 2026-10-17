@@ -29,6 +29,7 @@ function passRecord(overrides: Partial<PassRecord> = {}): PassRecord {
     status: 'active',
     version: 1,
     lastUpdatedMs: NOW,
+    updateTagMs: NOW,
     googleState: 'none',
     createdAtMs: NOW,
     expiresAtMs,
@@ -118,6 +119,7 @@ describe('Feature: pass-service, pass repository', () => {
       status: 'voided',
       voidedAt: '2026-12-02T12:00:00.000Z',
       lastUpdatedMs: NOW + 1000,
+      updateTagMs: NOW + 1234,
       googleState: 'pending_inactive',
       fields: samplePassFields({ room: 'Room 202' }),
     });

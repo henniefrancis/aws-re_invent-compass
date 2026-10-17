@@ -26,6 +26,7 @@ export function makePassRecord(
     status: 'active',
     version: 1,
     lastUpdatedMs: 0,
+    updateTagMs: 0,
     googleState: 'none',
     createdAtMs: 0,
     expiresAtMs,

@@ -65,6 +65,7 @@ export function createPassRepository(table: TableClient): PassRepository {
         status: rec.status,
         version: rec.version,
         lastUpdatedMs: rec.lastUpdatedMs,
+        updateTagMs: rec.updateTagMs,
         expiresAtMs: rec.expiresAtMs,
         ttl: ttlOf(rec.expiresAtMs),
         googleState: rec.googleState,

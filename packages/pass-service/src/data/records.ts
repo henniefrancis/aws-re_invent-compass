@@ -16,7 +16,8 @@ export interface PassRecord {
   tokenSalt: string; // random per pass, base64url
   status: 'active' | 'voided';
   version: number; // starts at 1
-  lastUpdatedMs: number; // whole seconds, strictly increasing
+  lastUpdatedMs: number; // whole seconds, strictly increasing: Last-Modified and If-Modified-Since
+  updateTagMs: number; // milliseconds, strictly increasing per pass: the passesUpdatedSince tag
   voidedAt?: string; // ISO 8601
   googleState: GoogleState;
   createdAtMs: number;

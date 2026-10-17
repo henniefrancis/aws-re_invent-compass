@@ -60,6 +60,7 @@ function record(sub: string, serial: string, overrides: Partial<PassRecord> = {}
     status: 'active',
     version: 1,
     lastUpdatedMs: 0,
+    updateTagMs: 0,
     googleState: 'none',
     createdAtMs: 0,
     expiresAtMs,
