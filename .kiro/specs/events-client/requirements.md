@@ -266,7 +266,8 @@ Scope boundary: this stream does not build the guardrails engine (S2 rules), the
 1. WHEN the Events_Client needs the Event_Window, THE Events_Client SHALL obtain the event start, event end and event timezone by reading them from the responses of ListEvents and GetEvent.
 2. THE Events_Client SHALL NOT use hard-coded event dates or a hard-coded timezone.
 3. IF the event start, event end or event timezone is absent from the ListEvents and GetEvent responses, THEN THE Events_Client SHALL return an error indicating that the Event_Window could not be determined and SHALL NOT substitute a default value.
-4. IF the event timezone read from the API is not a valid IANA timezone identifier, THEN THE Events_Client SHALL return an error indicating that the Event_Window could not be determined and SHALL NOT substitute a default value.
+4. IF the event timezone read from the API is not a strictly valid IANA timezone identifier (exactly as the runtime lists it, or UTC, or a properly cased alias of a listed zone; a different letter case of a valid zone is not accepted), OR the event start or end is not an ISO 8601 date-time with an offset (or Z), OR the start is not before the end, THEN THE Events_Client SHALL return an error indicating that the Event_Window could not be determined and SHALL NOT substitute a default value.
+5. WHEN GetEvent lacks a usable event start, end or timezone, THE Events_Client SHALL take that value from the ListEvents entry with the same event id before treating it as absent.
 
 ### Requirement 18: Simulated mode
 

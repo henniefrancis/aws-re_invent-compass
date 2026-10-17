@@ -1,12 +1,14 @@
-// Event window and timezone from the API (events-client, S1, task 13.17).
+// Event window and timezone from the API (events-client, S1, task 13.17, tightened by
+// QA M7 and M8).
 //
 // The event start, end and timezone are read from the ListEvents and GetEvent
-// responses; they are never hard-coded and never defaulted (Requirement 17). If any
-// of the three is absent, or the timezone is not a valid IANA identifier, or a date
-// is not a parseable date, EventWindowError is thrown and no value is substituted.
-//
-// GetEvent is the primary source. The timezone may also come from the ListEvents
-// entry with the same eventId when the GetEvent body omits it.
+// responses; they are never hard-coded and never defaulted (Requirement 17). Each of
+// the three is taken from GetEvent when it is usable there, and otherwise from the
+// ListEvents entry with the same eventId. A date is usable only if it is an ISO 8601
+// date-time with an offset or Z (the format the Events API documents), and a timezone
+// only if it is a strictly valid IANA identifier in its exact case. If any of the
+// three is missing or unusable, or the start is not before the end, EventWindowError
+// is thrown and no value is substituted.
 
 import { EventWindowError } from '../api/errors.js';
 import { isValidTimeZone } from './session-time.js';
@@ -21,6 +23,27 @@ export interface EventWindow {
 }
 
 const NOT_DETERMINED = 'The event window could not be determined from the Events API';
+const ISO_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
+
+function validDate(value: string | undefined): value is string {
+  return value !== undefined && ISO_DATE_TIME.test(value) && !Number.isNaN(Date.parse(value));
+}
+
+function validZone(value: string | undefined): value is string {
+  return value !== undefined && isValidTimeZone(value);
+}
+
+/** The first usable value: GetEvent's, else the ListEvents entry's. */
+function firstValid(
+  primary: string | undefined,
+  fallback: string | undefined,
+  usable: (value: string | undefined) => value is string,
+): string | undefined {
+  if (usable(primary)) {
+    return primary;
+  }
+  return usable(fallback) ? fallback : undefined;
+}
 
 /** Resolve the event window, or throw EventWindowError. Never returns a default. */
 export function resolveEventWindow(
@@ -29,18 +52,14 @@ export function resolveEventWindow(
 ): EventWindow {
   const { event } = getEvent;
   const listed = listEvents.items.find((item) => item.eventId === event.eventId);
-  const timezone = event.timezone ?? listed?.timezone;
-  const { startDate: start, endDate: end } = event;
-
-  const present = (value: string | undefined): value is string =>
-    value !== undefined && value.length > 0;
+  const start = firstValid(event.startDate, listed?.startDate, validDate);
+  const end = firstValid(event.endDate, listed?.endDate, validDate);
+  const timezone = firstValid(event.timezone, listed?.timezone, validZone);
   if (
-    !present(start) ||
-    !present(end) ||
-    !present(timezone) ||
-    Number.isNaN(Date.parse(start)) ||
-    Number.isNaN(Date.parse(end)) ||
-    !isValidTimeZone(timezone)
+    start === undefined ||
+    end === undefined ||
+    timezone === undefined ||
+    Date.parse(start) >= Date.parse(end)
   ) {
     throw new EventWindowError('GetEvent', NOT_DETERMINED);
   }

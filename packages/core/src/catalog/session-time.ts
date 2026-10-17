@@ -28,6 +28,26 @@ const MS_PER_MINUTE = 60_000;
 
 const formatterCache = new Map<string, Intl.DateTimeFormat | null>();
 
+/** The IANA identifiers the runtime reports, in their canonical case. */
+const SUPPORTED_ZONES: ReadonlySet<string> = new Set(Intl.supportedValuesOf('timeZone'));
+/** The shape of a properly cased Area/Location alias such as Asia/Kolkata. */
+const ALIAS_PATTERN = /^[A-Z][a-z]+(\/[A-Z][A-Za-z0-9_+-]*)+$/;
+
+/**
+ * Strict IANA check (QA M8). Intl accepts any letter case, so it is not enough: the
+ * identifier must be exactly as the runtime lists it, or UTC, or exactly the name the
+ * runtime resolves it to, or a properly cased alias of a listed zone (such as Asia/Kolkata, which the runtime resolves to its
+ * canonical name). A different casing of the same zone is refused.
+ */
+function isStrictZone(zone: string, resolved: string): boolean {
+  if (SUPPORTED_ZONES.has(zone) || zone === 'UTC' || resolved === zone) {
+    return true;
+  }
+  if (resolved.toLowerCase() === zone.toLowerCase()) {
+    return false;
+  }
+  return ALIAS_PATTERN.test(zone);
+}
 /** A formatter for the zone, or null when the zone is not a valid IANA identifier. */
 function formatterFor(zone: string): Intl.DateTimeFormat | null {
   const cached = formatterCache.get(zone);
@@ -36,7 +56,7 @@ function formatterFor(zone: string): Intl.DateTimeFormat | null {
   }
   let formatter: Intl.DateTimeFormat | null;
   try {
-    formatter = new Intl.DateTimeFormat('en-US', {
+    const candidate = new Intl.DateTimeFormat('en-US', {
       timeZone: zone,
       hourCycle: 'h23',
       year: 'numeric',
@@ -46,6 +66,7 @@ function formatterFor(zone: string): Intl.DateTimeFormat | null {
       minute: '2-digit',
       second: '2-digit',
     });
+    formatter = isStrictZone(zone, candidate.resolvedOptions().timeZone) ? candidate : null;
   } catch {
     formatter = null;
   }

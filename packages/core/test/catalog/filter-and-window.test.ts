@@ -155,50 +155,110 @@ describe('Feature: events-client, Property 35: Event window comes from the API o
   // Validates: Requirements 17.1, 17.2, 17.3, 17.4
   const maybe = (arb: fc.Arbitrary<string>): fc.Arbitrary<string | undefined> =>
     fc.option(arb, { nil: undefined });
+  const GOOD_ZONES = ['America/Los_Angeles', 'Europe/Paris', 'Asia/Kolkata', 'UTC'];
   const zoneArb = fc.constantFrom(
-    'America/Los_Angeles',
-    'Europe/Paris',
+    ...GOOD_ZONES,
     'Not/AZone',
     'PST8NOPE',
     '',
+    'america/los_angeles',
+    'AMERICA/LOS_ANGELES',
+    'Europe/PARIS',
   );
-  const dateArb = fc.constantFrom('2026-11-30T00:00:00-08:00', '2026-12-04', 'garbage', '');
+  const dateArb = fc.constantFrom(
+    '2026-11-30T00:00:00-08:00',
+    '2026-12-04T23:59:59-08:00',
+    '2026-12-04T23:59:59Z',
+    '2026-12-04',
+    '2026-12-04 10:00:00',
+    'garbage',
+    '',
+  );
+  const isoOk = (d: string | undefined): d is string =>
+    d !== undefined &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})$/.test(d) &&
+    !Number.isNaN(Date.parse(d));
+  const first = (
+    a: string | undefined,
+    b: string | undefined,
+    ok: (v: string | undefined) => boolean,
+  ) => (ok(a) ? a : ok(b) ? b : undefined);
 
-  test('for any responses the window is returned only when start, end and a valid zone are present', () => {
+  test('for any responses the window is returned only when start, end and a strict IANA zone are usable', () => {
     fc.assert(
       fc.property(
         dateArb,
         dateArb,
+        dateArb,
+        dateArb,
         maybe(zoneArb),
         maybe(zoneArb),
-        (start, end, ownZone, listedZone) => {
+        (start, end, listedStart, listedEnd, ownZone, listedZone) => {
           const got: Event = { ...event, startDate: start, endDate: end, timezone: ownZone };
-          const listed: Event = { ...event, timezone: listedZone };
-          const zone = ownZone ?? listedZone;
-          const valid = (d: string): boolean => d.length > 0 && !Number.isNaN(Date.parse(d));
-          const zoneOk =
-            zone !== undefined && ['America/Los_Angeles', 'Europe/Paris'].includes(zone);
+          const listed: Event = {
+            ...event,
+            startDate: listedStart,
+            endDate: listedEnd,
+            timezone: listedZone,
+          };
+          const goodZone = (z: string | undefined): boolean =>
+            z !== undefined && GOOD_ZONES.includes(z);
+          const s = first(start, listedStart, isoOk);
+          const e = first(end, listedEnd, isoOk);
+          const z = first(ownZone, listedZone, goodZone);
           const run = (): unknown => resolveEventWindow({ items: [listed] }, { event: got });
-          if (valid(start) && valid(end) && zoneOk) {
-            expect(run()).toEqual({ start, end, timezone: zone });
+          if (
+            s !== undefined &&
+            e !== undefined &&
+            z !== undefined &&
+            Date.parse(s) < Date.parse(e)
+          ) {
+            expect(run()).toEqual({ start: s, end: e, timezone: z });
           } else {
             expect(run).toThrow(EventWindowError);
           }
         },
       ),
-      { numRuns: 100 },
+      { numRuns: 200 },
     );
   });
 
-  test('the timezone may come from the matching ListEvents entry, but never from another event', () => {
-    const noZone: Event = { ...event, timezone: undefined };
-    expect(resolveEventWindow({ items: [event] }, { event: noZone }).timezone).toBe(
-      'America/Los_Angeles',
-    );
+  test('start, end and timezone each fall back to the matching ListEvents entry, never to another event', () => {
+    const bare: Event = { ...event, startDate: '', endDate: 'bad', timezone: undefined };
+    expect(resolveEventWindow({ items: [event] }, { event: bare })).toEqual({
+      start: event.startDate,
+      end: event.endDate,
+      timezone: 'America/Los_Angeles',
+    });
     expect(() =>
-      resolveEventWindow({ items: [{ ...event, eventId: 'other' }] }, { event: noZone }),
+      resolveEventWindow({ items: [{ ...event, eventId: 'other' }] }, { event: bare }),
     ).toThrow(EventWindowError);
-    expect(() => resolveEventWindow({ items: [] }, { event: noZone })).toThrow(EventWindowError);
+    expect(() => resolveEventWindow({ items: [] }, { event: bare })).toThrow(EventWindowError);
+  });
+
+  test('the start must be before the end', () => {
+    for (const [startDate, endDate] of [
+      ['2026-12-04T00:00:00-08:00', '2026-11-30T00:00:00-08:00'],
+      ['2026-12-04T00:00:00-08:00', '2026-12-04T00:00:00-08:00'],
+      ['2026-12-04T08:00:00Z', '2026-12-04T00:00:00-08:00'],
+    ] as const) {
+      expect(() =>
+        resolveEventWindow({ items: [] }, { event: { ...event, startDate, endDate } }),
+      ).toThrow(EventWindowError);
+    }
+  });
+
+  test('a zone in the wrong case is refused even though Intl would accept it', () => {
+    for (const timezone of ['america/los_angeles', 'AMERICA/LOS_ANGELES', 'Europe/PARIS', 'utc']) {
+      expect(() => resolveEventWindow({ items: [] }, { event: { ...event, timezone } })).toThrow(
+        EventWindowError,
+      );
+    }
+    for (const timezone of ['America/Los_Angeles', 'Asia/Kolkata', 'UTC', 'Etc/GMT+8']) {
+      expect(resolveEventWindow({ items: [] }, { event: { ...event, timezone } }).timezone).toBe(
+        timezone,
+      );
+    }
   });
 
   test('the error carries no substituted value', () => {
