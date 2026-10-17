@@ -188,7 +188,7 @@ Note: The safe-swap function takes a confirmation schedule as an input parameter
 2. THE venues list SHALL contain only the main re:Invent 2026 venues that are named on official AWS re:Invent pages, and each venue entry SHALL carry a non-empty name, with optional coordinates given as a latitude from -90 to 90 and a longitude from -180 to 180.
 3. THE Venue_Data SHALL include a Walking_Time_Matrix that gives, for each ordered pair of distinct named venues, a walking time in whole minutes from 0 to 240.
 4. THE Venue_Data SHALL carry a source note on every walking time value and on every coordinate value, and each source note SHALL be either "official" with a URL to the official AWS re:Invent page the value came from, or "estimate".
-5. IF a walking time value or a coordinate value has no official AWS re:Invent source, THEN THE Venue_Data SHALL mark that value as "estimate" in its source note.
+5. IF a walking time value or a coordinate value has no official AWS re:Invent source, THEN THE Venue_Data SHALL mark that value as "estimate" in its source note, and an estimate for a walk between two venues SHALL state its basis (the distance, the formula and the 30 minute floor) and SHALL be at least 30 minutes.
 6. THE Venue_Data wrapper schema SHALL reuse the VenueSchema from @compass/contracts for each venue entry, and a test SHALL validate the whole Venue_Data file against that wrapper schema.
 7. IF any venue entry fails VenueSchema validation, THEN THE Rules_Engine SHALL reject the Venue_Data and SHALL state which entry failed and why.
 8. IF a venue referenced by the Walking_Time_Matrix is absent from the venues list, THEN THE Rules_Engine SHALL treat any Connection using that venue as "unknown" and SHALL state the reason.

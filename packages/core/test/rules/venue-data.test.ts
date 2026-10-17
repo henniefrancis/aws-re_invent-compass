@@ -80,6 +80,62 @@ describe('data/venues.json', () => {
     }
   });
 
+  test('has the researched per-pair estimates, each with a 30 minute floor, both ways', () => {
+    const data = VenueDataSchema.parse(raw);
+    // The researched minutes for each unordered pair, after the 30 minute floor.
+    const expected: Array<[string, string, number]> = [
+      ['Caesars Forum', 'Caesars Palace', 40],
+      ['Caesars Forum', 'Encore', 45],
+      ['Caesars Forum', 'MGM Grand', 55],
+      ['Caesars Forum', 'The Venetian', 30],
+      ['Caesars Forum', 'Wynn', 45],
+      ['Caesars Palace', 'Encore', 55],
+      ['Caesars Palace', 'MGM Grand', 60],
+      ['Caesars Palace', 'The Venetian', 55],
+      ['Caesars Palace', 'Wynn', 55],
+      ['Encore', 'MGM Grand', 75],
+      ['Encore', 'The Venetian', 45],
+      ['Encore', 'Wynn', 30],
+      ['MGM Grand', 'The Venetian', 60],
+      ['MGM Grand', 'Wynn', 75],
+      ['The Venetian', 'Wynn', 40],
+    ];
+    const minutesOf = (from: string, to: string): number | undefined =>
+      data.walkingTimes.find((edge) => edge.from === from && edge.to === to)?.minutes;
+    for (const [a, b, minutes] of expected) {
+      expect(minutesOf(a, b), `${a} to ${b}`).toBe(minutes);
+      expect(minutesOf(b, a), `${b} to ${a}`).toBe(minutes);
+    }
+    // Encore and Wynn were 25 before the floor.
+    expect(minutesOf('Encore', 'Wynn')).toBe(30);
+    expect(data.walkingTimes.every((edge) => edge.minutes >= 30)).toBe(true);
+  });
+
+  test('every estimate states its basis: the OSRM distance, the formula, the floor and the sources', () => {
+    const data = VenueDataSchema.parse(raw);
+    for (const edge of data.walkingTimes) {
+      expect(edge.source.kind).toBe('estimate');
+      const basis = edge.source.kind === 'estimate' ? (edge.source.basis ?? '') : '';
+      expect(basis, `${edge.from} to ${edge.to}`).toContain(
+        'https://routing.openstreetmap.de/routed-foot/',
+      );
+      expect(basis).toMatch(/OSRM foot distance between .+ is \d+ m/);
+      expect(basis).toContain('Formula: minutes = round up to 5');
+      expect(basis).toContain('66.7 metres per minute');
+      expect(basis).toContain('30 minute floor');
+      expect(basis).toContain('https://aws.amazon.com/resources/analyst-summit');
+      expect(basis).not.toContain(String.fromCharCode(0x2013));
+      expect(basis).not.toContain(String.fromCharCode(0x2014));
+    }
+    const routes = data.walkingTimes.filter(
+      (edge) =>
+        edge.source.kind === 'estimate' && edge.source.basis?.includes('AWS source for the routes'),
+    );
+    // Only the pairs AWS names as direct routes cite that page again: Forum and Venetian,
+    // Encore and Venetian, Encore and Wynn, Venetian and Wynn, in both directions.
+    expect(routes).toHaveLength(8);
+  });
+
   test('keeps coordinates in range and sourced, and marks unsourced values as estimates', () => {
     const data = VenueDataSchema.parse(raw);
     for (const entry of data.venues) {
