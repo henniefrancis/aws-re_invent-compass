@@ -434,24 +434,24 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 22.8 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 23. Wire production dependencies, the Lambda entries and the local harness
-  - [ ] 23.1 Implement the production wiring
+- [x] 23. Wire production dependencies, the Lambda entries and the local harness
+  - [x] 23.1 Implement the production wiring
     - Create `src/wiring/production-deps.ts` with `productionApiDeps` and `productionPasskitDeps`: parse configuration, build the DynamoDB document client, Secrets Manager client, JWKS cache and verifier, HTTP/2 connector, Google token source and `fetch`-based client at module scope so they are reused across invocations; the passkit wiring never builds Google pieces
     - _Requirements: 4.6, 21.1, 21.2, 21.6, 24.1_
 
-  - [ ] 23.2 Create the Lambda entry adapters
+  - [x] 23.2 Create the Lambda entry adapters
     - Create `src/lambda-entry/api.ts` and `src/lambda-entry/passkit.ts`, each a one-line `export const handler = createXApp(productionXDeps(process.env))` (the named coverage exclusion)
     - _Requirements: 1.2_
 
-  - [ ] 23.3 Implement the owner-run local harness
+  - [x] 23.3 Implement the owner-run local harness
     - Create `src/harness/local-server.ts` (`startLocalHarness`: `node:http` server, request to `ProxyEvent` conversion matched against the 15 contract templates, the in-memory table from task 8.2, a file-based `SecretSource` reading the PEM and Google key files from paths in harness variables, a fixed origin value injected, `allowHttpBaseUrl`, a small page to issue, update, void, hand off and repeat-insert passes for made-up sessions) and `scripts/local-harness.ts` (thin launcher); it prints only "listening" and Request_Logger lines, never file contents, tokens or identifiers
     - _Requirements: 24.7_
 
-  - [ ] 23.4 Write tests for the wiring and the harness
+  - [x] 23.4 Write tests for the wiring and the harness
     - Wiring builds both dependency sets from a valid environment without network calls and fails closed on an invalid one; the harness serves a full issue, register, latest-pass and void round trip over loopback with throwaway files in a temporary folder outside the repository, and its output contains no needle
     - _Requirements: 24.1, 24.7, 25.8_
 
-  - [ ] 23.5 Commit
+  - [x] 23.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 24. Build the deterministic Lambda bundles
