@@ -79,16 +79,16 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 4.5 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 5. Implement commitment resolution
-  - [ ] 5.1 Implement `resolve.ts` for venue, time, and reservability resolution
+- [x] 5. Implement commitment resolution
+  - [x] 5.1 Implement `resolve.ts` for venue, time, and reservability resolution
     - Turn one `Commitment` plus the `Sessions_Lookup` into a `ResolvedCommitment` with `ref`, optional `venue`, `startsAt`, `endsAt`, `isAllDay`, optional `isReservable`, and a `missing` list
     - `Venue_Resolution` order: `NormalisedSession.venue`, then `Commitment.venue` for a reservedSession, then `Commitment.location` for a personalTime
     - A time is usable only when present, not named in `missingFields`, and matching ISO 8601 with `Z` or `+/-HH:MM`; a `sessionId` absent from the lookup yields unknown venue, times, and reservability; reservability is missing when `isReservable` is in `missingFields` or the session is absent
     - _Requirements: 1.5, 2.5, 3.7, 5.7, 11.5_
-  - [ ] 5.2 Write property test for missing-field resolution yielding unknown with no default
+  - [x] 5.2 Write property test for missing-field resolution yielding unknown with no default
     - **Property 3: Missing required field yields unknown with a reason and no value**
     - **Validates: Requirements 1.5, 1.6, 2.5, 3.7, 11.5**
-  - [ ] 5.3 Run the rules tests, confirm they pass, then commit
+  - [x] 5.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 6. Checkpoint - internal foundation
