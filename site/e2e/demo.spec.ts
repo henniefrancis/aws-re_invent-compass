@@ -10,7 +10,7 @@ async function loadSample(page: Page): Promise<void> {
   await page.goto('/demo');
   await expect(page.getByText(/These sessions are made up/)).toBeVisible();
   await page.getByRole('button', { name: 'Start with a sample week' }).click();
-  await expect(status(page)).toContainText('Sample week loaded: 4 sessions. Try adding ARC228');
+  await expect(status(page)).toContainText('Sample week loaded: 2 sessions. Try adding ARC228');
 }
 
 test.describe('the demo', () => {
@@ -56,9 +56,7 @@ test.describe('the demo', () => {
     await expect(page.locator('section[aria-labelledby="day-2026-12-04"]')).toContainText(
       'BWP213-R',
     );
-    await expect(page.locator('section[aria-labelledby="day-2026-12-01"]')).not.toContainText(
-      'BWP213',
-    );
+    await expect(page.locator('section[aria-labelledby="day-2026-12-01"]')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Add ARC228' }).first().click();
     await expect(status(page)).toContainText('ARC228');
@@ -68,13 +66,13 @@ test.describe('the demo', () => {
     page,
   }) => {
     await loadSample(page);
-    await page.getByRole('button', { name: /Show sample pass for AIM321/ }).click();
-    const pass = page.getByRole('img', { name: /Boarding pass for AIM321/ });
+    await page.getByRole('button', { name: /Show sample pass for BWP213/ }).click();
+    const pass = page.getByRole('img', { name: /Boarding pass for BWP213/ });
     await expect(pass).toBeVisible();
     const name = (await pass.getAttribute('aria-label')) ?? '';
     for (const part of [
       'Gate: MGM Grand',
-      'Seat released at 11:20 AM',
+      'Seat released at 12:50 PM',
       'Sample pass. Made-up session.',
       'Unofficial. Your badge is your ticket.',
     ]) {
@@ -97,7 +95,7 @@ test.describe('the demo', () => {
     const path = await download.path();
     const text = readFileSync(path, 'utf8');
     const events = new ICAL.Component(ICAL.parse(text) as unknown[]).getAllSubcomponents('vevent');
-    expect(events).toHaveLength(4);
+    expect(events).toHaveLength(2);
     expect(text).toContain('PRODID:-//re:Invent Compass//Showcase demo//EN');
     expect(text).toContain('.invalid');
   });
@@ -137,16 +135,17 @@ test.describe('the demo', () => {
     await expect(page.getByRole('heading', { name: 'Your week' })).toBeFocused();
   });
 
-  test('repeated items have different accessible names', async ({ page }) => {
+  test('every item in the week has its own accessible name', async ({ page }) => {
     await loadSample(page);
-    for (let i = 0; i < 2; i += 1) {
-      const buttons = page.getByRole('button', { name: /^Add this layover/ });
-      await buttons.first().click();
-      await expect(page.getByRole('heading', { name: 'Your week' })).toBeFocused();
-    }
+    await addButton(page, 'ARC228').click();
+    await page.getByRole('button', { name: 'Start the safe swap' }).click();
+    await page.getByRole('button', { name: 'Reserve the repeat' }).click();
+    await page.getByRole('button', { name: 'Confirm the schedule' }).click();
+    await page.getByRole('button', { name: 'Cancel the original' }).click();
+    await page.getByRole('button', { name: 'Add ARC228' }).first().click();
     const names = await page.getByRole('button', { name: /^Remove / }).allTextContents();
+    expect(names.length).toBe(3);
     expect(new Set(names).size).toBe(names.length);
-    expect(names.filter((n) => n.includes('Layover at')).length).toBeGreaterThanOrEqual(1);
   });
 
   test('Start over empties the week', async ({ page }) => {

@@ -49,3 +49,18 @@ export function run(
 export function heldIds(state: DemoState): string[] {
   return state.commitments.flatMap((c) => (c.kind === 'reservedSession' ? [c.sessionId] : []));
 }
+
+/**
+ * A busy test week of four sessions (two of them back to back at one venue), held through the
+ * test double engine. The shipped Starter_Week is clean, so tests that need impossible
+ * connections or a missing meal layover use this week instead.
+ */
+export const RICH_WEEK: readonly string[] = ['syn-003', 'syn-024', 'syn-002', 'syn-028'];
+
+export function richWeek(): DemoState {
+  const open = makeDeps({ checkReservation: () => ({ decision: 'allow', reasons: [] }) });
+  return run(
+    RICH_WEEK.map((sessionId): DemoAction => ({ type: 'add', sessionId })),
+    open,
+  );
+}

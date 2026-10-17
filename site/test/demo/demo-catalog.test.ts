@@ -165,10 +165,10 @@ describe('demo catalog scenarios (Requirement 7.3)', () => {
     expect(DEMO_SESSIONS.some((s) => !s.isReservable)).toBe(true);
   });
 
-  test('the Starter_Week fills one meal window so a missing meal layover is reachable', () => {
+  test('adding syn-003 to the Starter_Week fills one meal window, so a missing meal layover is reachable', () => {
     const mealStart = 11 * 60 + 30;
     const mealEnd = 14 * 60;
-    const starter = STARTER_WEEK.map(get);
+    const starter = [...STARTER_WEEK, 'syn-003'].map(get);
     const freeOn = (d: string): number => {
       let free = 0;
       for (let minute = mealStart; minute < mealEnd; minute += 1) {

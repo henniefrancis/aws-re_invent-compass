@@ -24,7 +24,7 @@ import {
 } from '../../src/lib/demo/sample-pass';
 import { formatInZone } from '../../src/lib/time/time-format';
 import { createFakeEngine } from '../doubles/rules-double';
-import { VENUE_DATA, heldIds, makeDeps, run, runStates } from '../support/demo-harness';
+import { VENUE_DATA, heldIds, makeDeps, run, runStates, richWeek } from '../support/demo-harness';
 
 const schema = createPassFieldsSchema({
   start: DEMO_EVENT.windowStart,
@@ -32,7 +32,7 @@ const schema = createPassFieldsSchema({
   timezone: DEMO_EVENT.timezone,
 });
 const deps = makeDeps();
-const starter = run([{ type: 'loadStarter' }], deps);
+const starter = richWeek();
 
 describe('fitTitle and clampWalk', () => {
   test('a title of 80 characters or fewer is only normalised', () => {

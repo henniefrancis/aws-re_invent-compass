@@ -19,10 +19,10 @@ import {
   toScheduleInput,
 } from '../../src/lib/demo/schedule';
 import { createFakeEngine } from '../doubles/rules-double';
-import { VENUE_DATA, makeDeps, run } from '../support/demo-harness';
+import { VENUE_DATA, makeDeps, richWeek } from '../support/demo-harness';
 
 const deps = makeDeps();
-const starter = run([{ type: 'loadStarter' }], deps);
+const starter = richWeek();
 const byId = (id: string): NormalisedSession =>
   DEMO_SESSIONS.find((s) => s.sessionId === id) as NormalisedSession;
 

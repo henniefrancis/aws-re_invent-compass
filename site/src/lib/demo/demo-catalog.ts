@@ -16,7 +16,8 @@
 //   - the guided clash: syn-076 (ARC228) overlaps syn-024 on Tuesday;
 //   - consecutive sessions at different venues: syn-047 (Encore) then syn-026 (MGM Grand);
 //   - sessions that cannot be reserved: syn-120 (keynote) and syn-087 (breakout);
-//   - a missing meal layover: syn-003 then syn-024 fill the meal window on 2026-12-01;
+//   - a missing meal layover is reachable by adding syn-003 (11:30 to 13:00, MGM Grand) next to
+//     syn-024 on 2026-12-01; the Starter_Week itself is clean, with no impossible connection;
 //   - a session with no venue, shown as "Venue not published": syn-008.
 
 import type { NormalisedSession } from '@compass/contracts';
@@ -287,7 +288,7 @@ export const DEMO_SESSIONS: readonly NormalisedSession[] = [
 ];
 
 /** The sessions "Start with a sample week" holds, by sessionId. */
-export const STARTER_WEEK: readonly string[] = ['syn-003', 'syn-024', 'syn-002', 'syn-028'];
+export const STARTER_WEEK: readonly string[] = ['syn-024', 'syn-028'];
 
 /** The guided path: load the sample week, then try to add the session named here. */
 export const GUIDED_CLASH = {

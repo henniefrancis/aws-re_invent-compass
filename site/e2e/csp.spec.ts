@@ -28,8 +28,8 @@ async function demoFlow(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Confirm the schedule' }).click();
   await page.getByRole('button', { name: 'Cancel the original' }).click();
   await expect(page.getByText('The swap is done.')).toBeVisible();
-  await page.getByRole('button', { name: /Show sample pass for AIM321/ }).click();
-  await expect(page.getByRole('img', { name: /Boarding pass for AIM321/ })).toBeVisible();
+  await page.getByRole('button', { name: /Show sample pass for BWP213/ }).click();
+  await expect(page.getByRole('img', { name: /Boarding pass for BWP213/ })).toBeVisible();
 }
 
 test.describe('under the Required_CSP', () => {

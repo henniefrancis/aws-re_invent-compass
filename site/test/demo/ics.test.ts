@@ -15,10 +15,10 @@ import {
 import { neighboursOf } from '../../src/lib/demo/neighbours';
 import { commitmentRef } from '../../src/lib/demo/schedule';
 import { toUtcStamp } from '../../src/lib/time/iso';
-import { makeDeps, run, runStates } from '../support/demo-harness';
+import { makeDeps, run, runStates, richWeek } from '../support/demo-harness';
 
 const deps = makeDeps();
-const starter = run([{ type: 'loadStarter' }], deps);
+const starter = richWeek();
 const octets = (text: string): number => new TextEncoder().encode(text).length;
 const BACKSLASH = String.fromCharCode(92);
 

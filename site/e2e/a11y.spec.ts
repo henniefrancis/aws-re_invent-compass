@@ -72,8 +72,8 @@ test.describe('axe on the demo states', () => {
     await expect(page.getByText('The swap is done.')).toBeVisible();
     await expectNoAxeViolations(page);
 
-    await page.getByRole('button', { name: /Show sample pass for AIM321/ }).click();
-    await expect(page.getByRole('img', { name: /Boarding pass for AIM321/ })).toBeVisible();
+    await page.getByRole('button', { name: /Show sample pass for BWP213/ }).click();
+    await expect(page.getByRole('img', { name: /Boarding pass for BWP213/ })).toBeVisible();
     await expectNoAxeViolations(page);
   });
 

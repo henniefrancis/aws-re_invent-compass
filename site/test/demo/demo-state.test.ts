@@ -20,7 +20,7 @@ const starter = run([{ type: 'loadStarter' }], deps);
 
 describe('loading and the guided clash', () => {
   test('the sample week holds the starter sessions in start order and names the session to try', () => {
-    expect(heldIds(starter)).toEqual(['syn-003', 'syn-024', 'syn-002', 'syn-028']);
+    expect(heldIds(starter)).toEqual(['syn-024', 'syn-028']);
     expect(STARTER_WEEK.every((id) => heldIds(starter).includes(id))).toBe(true);
     expect(starter.announcement).toContain('ARC228');
     expect(starter.pending).toBeNull();
@@ -49,15 +49,15 @@ describe('loading and the guided clash', () => {
   test('sessions missing from the catalog are skipped and the hint names the id', () => {
     const smaller = {
       ...deps,
-      catalog: new Map([...deps.catalog].filter(([id]) => id !== 'syn-076' && id !== 'syn-002')),
+      catalog: new Map([...deps.catalog].filter(([id]) => id !== 'syn-076' && id !== 'syn-028')),
     };
     const state = reduceDemo(EMPTY_DEMO, { type: 'loadStarter' }, smaller);
-    expect(heldIds(state)).toEqual(['syn-003', 'syn-024', 'syn-028']);
-    expect(state.announcement).toContain('Sample week loaded: 3 sessions. Try adding syn-076');
+    expect(heldIds(state)).toEqual(['syn-024']);
+    expect(state.announcement).toContain('Sample week loaded: 1 sessions. Try adding syn-076');
   });
 
   test('the sample week is not asked to pass the guardrail', () => {
-    expect(starter.commitments).toHaveLength(4);
+    expect(starter.commitments).toHaveLength(2);
   });
 });
 
@@ -200,9 +200,9 @@ describe('safe swap', () => {
     expect(cancelled.commitments).toEqual(starter.commitments);
     expect(reduceDemo(offered, { type: 'dismiss' }, deps).commitments).toEqual(starter.commitments);
     expect(
-      reduceDemo(reserved, { type: 'selectPass', sessionId: 'syn-003' }, deps)
+      reduceDemo(reserved, { type: 'selectPass', sessionId: 'syn-028' }, deps)
         .selectedPassSessionId,
-    ).toBe('syn-003');
+    ).toBe('syn-028');
     expect(reduceDemo(reserved, { type: 'reset' }, deps)).toEqual(EMPTY_DEMO);
   });
 
@@ -416,14 +416,14 @@ describe('the week', () => {
   });
 
   test('remove takes out a session by its key and clears its selected pass', () => {
-    const selected = reduceDemo(starter, { type: 'selectPass', sessionId: 'syn-003' }, deps);
-    expect(selected.selectedPassSessionId).toBe('syn-003');
-    const removed = reduceDemo(selected, { type: 'remove', ref: 'syn-003' }, deps);
-    expect(heldIds(removed)).not.toContain('syn-003');
+    const selected = reduceDemo(starter, { type: 'selectPass', sessionId: 'syn-024' }, deps);
+    expect(selected.selectedPassSessionId).toBe('syn-024');
+    const removed = reduceDemo(selected, { type: 'remove', ref: 'syn-024' }, deps);
+    expect(heldIds(removed)).not.toContain('syn-024');
     expect(removed.selectedPassSessionId).toBeNull();
-    expect(removed.announcement).toContain('Identity and access');
-    const other = reduceDemo(selected, { type: 'remove', ref: 'syn-002' }, deps);
-    expect(other.selectedPassSessionId).toBe('syn-003');
+    expect(removed.announcement).toContain('Data lakes');
+    const other = reduceDemo(selected, { type: 'remove', ref: 'syn-028' }, deps);
+    expect(other.selectedPassSessionId).toBe('syn-024');
     expect(reduceDemo(starter, { type: 'remove', ref: 'nope' }, deps)).toBe(starter);
   });
 
@@ -443,8 +443,8 @@ describe('the week', () => {
   test('selectPass only selects a reserved session in the week', () => {
     expect(reduceDemo(starter, { type: 'selectPass', sessionId: 'syn-076' }, deps)).toBe(starter);
     expect(
-      reduceDemo(starter, { type: 'selectPass', sessionId: 'syn-002' }, deps).selectedPassSessionId,
-    ).toBe('syn-002');
+      reduceDemo(starter, { type: 'selectPass', sessionId: 'syn-028' }, deps).selectedPassSessionId,
+    ).toBe('syn-028');
   });
 
   test('reset returns the empty state and confirmWarn without a warning does nothing', () => {

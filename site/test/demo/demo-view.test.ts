@@ -10,10 +10,10 @@ import {
 } from '../../src/lib/demo/demo-view';
 import { PASS_WIDTH, layoutPass, wrapText } from '../../src/lib/demo/pass-layout';
 import { buildSamplePass } from '../../src/lib/demo/sample-pass';
-import { makeDeps, run } from '../support/demo-harness';
+import { makeDeps, run, richWeek } from '../support/demo-harness';
 
 const deps = makeDeps();
-const starter = run([{ type: 'loadStarter' }], deps);
+const starter = richWeek();
 const blocked = run(
   [{ type: 'loadStarter' }, { type: 'add', sessionId: GUIDED_CLASH.tryAdd }],
   deps,

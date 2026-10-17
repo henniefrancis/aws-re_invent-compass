@@ -22,7 +22,7 @@ import { buildSamplePass } from '../../src/lib/demo/sample-pass';
 import { commitmentRef, sortCommitments, toScheduleInput } from '../../src/lib/demo/schedule';
 import { DEMO_VENUE_DATA } from '../../src/lib/demo/venue-data';
 import { buildCatalogView, buildWeekView } from '../../src/lib/demo/week-view';
-import { heldIds, run, runStates } from '../support/demo-harness';
+import { heldIds, makeDeps, run, runStates } from '../support/demo-harness';
 
 const deps = createDemoRuntime(REAL_ENGINE, DEMO_VENUE_DATA) as DemoDeps;
 const schema = createPassFieldsSchema({
@@ -101,6 +101,25 @@ describe('the guided path on the real engine', () => {
     expect(heldIds(final)).toContain(GUIDED_CLASH.heldRepeat);
     expect(heldIds(final)).not.toContain(GUIDED_CLASH.clashesWith);
     expect(final.announcement).toContain('You can now add');
+  });
+
+  test('the Starter_Week is clean: no impossible connection, at most one tight, no layover problem', () => {
+    const classes = buildWeekView(starter, deps).flatMap((day) => [
+      ...day.connections.map((c) => c.classification),
+    ]);
+    expect(classes).not.toContain('impossible');
+    expect(classes.filter((c) => c === 'tight').length).toBeLessThanOrEqual(1);
+    for (const day of buildWeekView(starter, deps)) {
+      expect(day.layovers).toEqual({ lines: [], suggestions: [] });
+    }
+  });
+
+  test('a missing meal layover shows the engine suggestion when AIM321 is held next to BWP213', () => {
+    const open = makeDeps({ checkReservation: () => ({ decision: 'allow', reasons: [] }) });
+    const crowded = run([{ type: 'add', sessionId: 'syn-003' }], open, starter);
+    const tuesday = buildWeekView(crowded, deps).find((day) => day.date === '2026-12-01');
+    expect(tuesday?.layovers.lines.join(' ')).toContain('meal');
+    expect(tuesday?.layovers.suggestions.length).toBeGreaterThan(0);
   });
 
   test('every connection view repeats the engine walk, and the layover lines are the engine reasons', () => {
