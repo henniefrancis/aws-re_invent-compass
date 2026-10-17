@@ -64,12 +64,12 @@ describe('the sample calendar of the starter week', () => {
     expect(text.replace(/\r\n/g, '')).not.toMatch(/[\r\n]/);
     expect(text).toContain('VERSION:2.0\r\n');
     expect(text).toContain(`PRODID:${PRODID}\r\n`);
-    expect(parse(text).getAllSubcomponents('vevent')).toHaveLength(5);
+    expect(parse(text).getAllSubcomponents('vevent')).toHaveLength(4);
   });
 
   test('uses the fixed demo instant and .invalid UIDs', () => {
     expect(text.match(/DTSTAMP:(\S+)/g)).toEqual(
-      Array.from({ length: 5 }, () => 'DTSTAMP:20261201T020000Z'),
+      Array.from({ length: 4 }, () => 'DTSTAMP:20261201T020000Z'),
     );
     for (const event of demoCalendarEvents(starter, deps)) {
       expect(event.uid.endsWith(`@${UID_DOMAIN}`)).toBe(true);
@@ -87,14 +87,34 @@ describe('the sample calendar of the starter week', () => {
     expect(byUid['syn-003']?.alarms).toEqual([
       { minutesBeforeStart: 10, description: 'Boarding closes' },
     ]);
-    expect(byUid['syn-002']?.alarms).toEqual([
+    const comfortable = makeDeps({
+      connectionsForDay: () => ({
+        status: 'ok',
+        connections: [
+          {
+            from: 'AIM321',
+            to: 'BWP213',
+            result: { classification: 'comfortable', walkingMinutes: 10, reason: 'x' },
+          },
+          {
+            from: 'BWP213',
+            to: 'DAT204',
+            result: { classification: 'comfortable', walkingMinutes: 40, reason: 'y' },
+          },
+        ],
+        skipped: [],
+      }),
+    });
+    const walked = demoCalendarEvents(starter, comfortable);
+    const leaving = walked.find((e) => e.uid.startsWith('syn-002@'));
+    expect(leaving?.alarms).toEqual([
       { minutesBeforeStart: 10, description: 'Boarding closes' },
       { minutesBeforeStart: 50, description: 'Leave now' },
     ]);
+    expect(leaving?.description).toContain('walk plus buffer: 40 minutes');
     expect(byUid['syn-003']?.description).toContain(
       'The walk from the previous session is unknown',
     );
-    expect(byUid['syn-002']?.description).toContain('walk plus buffer: 40 minutes');
     expect(byUid['syn-003']?.description).toContain('Made-up session');
     expect(byUid['syn-003']?.description).toContain('Unofficial. Your badge is your ticket.');
   });
@@ -105,12 +125,12 @@ describe('the sample calendar of the starter week', () => {
         status: 'ok',
         connections: [
           {
-            from: 'NET381',
-            to: 'CMP327',
+            from: 'AIM321',
+            to: 'BWP213',
             result: { classification: 'impossible', walkingMinutes: 75, reason: 'x' },
           },
           {
-            from: 'AIM321',
+            from: 'BWP213',
             to: 'DAT204',
             result: { classification: 'tight', walkingMinutes: 75, reason: 'y' },
           },
@@ -120,10 +140,10 @@ describe('the sample calendar of the starter week', () => {
     });
     const events = demoCalendarEvents(starter, impossible);
     const byCode = (code: string) => events.find((e) => e.summary.startsWith(code));
-    expect(byCode('CMP327')?.alarms).toEqual([
+    expect(byCode('BWP213')?.alarms).toEqual([
       { minutesBeforeStart: 10, description: 'Boarding closes' },
     ]);
-    expect(byCode('CMP327')?.description).toContain(
+    expect(byCode('BWP213')?.description).toContain(
       'does not fit in the time available, so there is no Leave now alarm',
     );
     expect(byCode('DAT204')?.alarms.map((a) => a.description)).toEqual([
@@ -153,7 +173,7 @@ describe('the sample calendar of the starter week', () => {
     expect(layover?.description).toContain('Made-up layover');
     const lone = demoCalendarEvents(run([{ type: 'add', sessionId: 'syn-008' }], deps), deps);
     expect(lone[0]?.location).toBe('Venue not published');
-    expect(events.find((e) => e.summary.startsWith('CMP327'))?.location).toContain('MGM Grand');
+    expect(events.find((e) => e.summary.startsWith('BWP213'))?.location).toContain('MGM Grand');
   });
 
   test('sessions missing from the catalog still make an event named by title or key', () => {

@@ -85,7 +85,7 @@ describe('pass text normalisation', () => {
 
 describe('buildSamplePass examples', () => {
   test('is null for a session that is not in the week or not in the catalog', () => {
-    expect(buildSamplePass('syn-118', starter, deps)).toBeNull();
+    expect(buildSamplePass('syn-076', starter, deps)).toBeNull();
     expect(buildSamplePass('nope', starter, deps)).toBeNull();
     expect(buildSamplePass('syn-003', EMPTY_DEMO, deps)).toBeNull();
   });
@@ -98,28 +98,28 @@ describe('buildSamplePass examples', () => {
       gate: 'MGM Grand, Room 118',
       seatReleased: 'Seat released at 11:20 AM',
       walkFromPrevious: null,
-      nextConnection: 'DAT204 at 2:30 PM, 40 min walk',
+      nextConnection: 'BWP213 at 1:00 PM, 10 min walk',
       label: SAMPLE_LABEL,
       disclaimer: PASS_DISCLAIMER,
     });
     expect(pass?.accessibleName).toContain('Walk from the previous session: not known.');
-    expect(pass?.accessibleName).toContain('Next connection: DAT204 at 2:30 PM, 40 min walk.');
+    expect(pass?.accessibleName).toContain('Next connection: BWP213 at 1:00 PM, 10 min walk.');
     expect(pass?.accessibleName).toContain(
       'Sample pass. Made-up session. Unofficial. Your badge is your ticket.',
     );
   });
 
   test('shows the walk from the previous session and no next connection for the last one', () => {
-    const pass = buildSamplePass('syn-026', starter, deps);
-    expect(pass?.walkFromPrevious).toBe('40 min walk from Encore, Room 139');
+    const pass = buildSamplePass('syn-002', starter, deps);
+    expect(pass?.walkFromPrevious).toBe('40 min walk from MGM Grand, Room 114');
     expect(pass?.nextConnection).toBeNull();
-    expect(pass?.passFields.walkFromPrevious).toEqual({ minutes: 40, fromVenue: 'Encore' });
+    expect(pass?.passFields.walkFromPrevious).toEqual({ minutes: 40, fromVenue: 'MGM Grand' });
     expect(pass?.passFields.nextConnection).toBeUndefined();
-    const first = buildSamplePass('syn-047', starter, deps);
+    const first = buildSamplePass('syn-024', starter, deps);
     expect(first?.passFields.nextConnection).toMatchObject({
-      sessionCode: 'CMP327',
+      sessionCode: 'DAT204',
       walkMinutes: 40,
-      venue: 'MGM Grand',
+      venue: 'Wynn',
     });
   });
 
@@ -155,7 +155,7 @@ describe('buildSamplePass examples', () => {
     const unknown = makeDeps({
       connectionsForDay: () => ({ status: 'unknown', reason: 'No timezone.' }),
     });
-    const noWalk = buildSamplePass('syn-026', starter, unknown);
+    const noWalk = buildSamplePass('syn-002', starter, unknown);
     expect(noWalk?.walkFromPrevious).toBeNull();
     expect(noWalk?.passFields.walkFromPrevious).toBeUndefined();
     const long = makeDeps({
@@ -163,15 +163,15 @@ describe('buildSamplePass examples', () => {
         status: 'ok',
         connections: [
           {
-            from: 'NET381',
-            to: 'CMP327',
+            from: 'BWP213',
+            to: 'DAT204',
             result: { classification: 'impossible', walkingMinutes: 140, reason: 'x' },
           },
         ],
         skipped: [],
       }),
     });
-    expect(buildSamplePass('syn-026', starter, long)?.passFields.walkFromPrevious?.minutes).toBe(
+    expect(buildSamplePass('syn-002', starter, long)?.passFields.walkFromPrevious?.minutes).toBe(
       90,
     );
   });

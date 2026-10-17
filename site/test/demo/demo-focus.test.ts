@@ -84,7 +84,7 @@ describe('where focus goes when the focused control is removed (QA M1)', () => {
     expect(target(starter, { type: 'confirmWarn' })).toBeNull();
     const book = { type: 'bookRepeat', sessionId: 'syn-002' } as const;
     expect(focusTargetAfter(book, asked, reduceDemo(asked, book, warn))).toBe('verdict-title');
-    const repeat = { type: 'bookRepeat', sessionId: 'syn-009' } as const;
+    const repeat = { type: 'bookRepeat', sessionId: 'syn-025' } as const;
     expect(focusTargetAfter(repeat, blocked, apply(blocked, repeat))).toBe('demo-week');
     expect(target(starter, repeat)).toBeNull();
   });
@@ -92,7 +92,7 @@ describe('where focus goes when the focused control is removed (QA M1)', () => {
   test('the Add button of a finished swap focuses the verdict or the week; an Add in the list moves nothing', () => {
     const add = { type: 'add', sessionId: GUIDED_CLASH.tryAdd } as const;
     expect(['verdict-title', 'demo-week']).toContain(focusTargetAfter(add, done, apply(done, add)));
-    expect(target(starter, { type: 'add', sessionId: 'syn-088' })).toBeNull();
+    expect(target(starter, { type: 'add', sessionId: 'syn-008' })).toBeNull();
   });
 
   test('Add this layover focuses the week heading, and a layover that changes nothing moves nothing', () => {

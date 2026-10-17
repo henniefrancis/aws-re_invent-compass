@@ -130,7 +130,7 @@ describe('catalog view', () => {
         .filter((s) => s.inWeek)
         .map((s) => s.sessionId)
         .sort(),
-    ).toEqual(['syn-002', 'syn-003', 'syn-026', 'syn-047', 'syn-096']);
+    ).toEqual(['syn-002', 'syn-003', 'syn-024', 'syn-028']);
   });
 
   test('shows nothing for a type or level that is not published', () => {
@@ -171,26 +171,26 @@ describe('week view', () => {
     const view = buildWeekView(starter, deps);
     expect(view[0]?.connections).toEqual([
       {
-        classification: 'comfortable',
-        text: 'Comfortable: AIM321 to DAT204. Walk from MGM Grand to Wynn is about 40 minutes (estimate), with 40 spare.',
+        classification: 'impossible',
+        text: 'Impossible: AIM321 to BWP213. Walk from MGM Grand to MGM Grand is about 10 minutes (estimate), with -20 spare.',
+        walk: 'Walk plus buffer: 10 minutes.',
+      },
+      {
+        classification: 'impossible',
+        text: 'Impossible: BWP213 to DAT204. Walk from MGM Grand to Wynn is about 40 minutes (estimate), with -20 spare.',
         walk: 'Walk plus buffer: 40 minutes.',
       },
     ]);
-    expect(view[1]?.connections[1]).toMatchObject({
-      classification: 'impossible',
-    });
-    expect(view[1]?.connections[1]?.text).toContain(
-      'Impossible: NET381 to CMP327. Walk from Encore to MGM Grand',
-    );
+    expect(view[1]?.connections).toEqual([]);
   });
 
   test('shows the layover report with its suggested blocks', () => {
-    const day = buildWeekView(starter, deps)[1];
-    expect(day?.layovers.lines).toEqual(['Only 0 free minutes in the meal window on 2026-12-04.']);
+    const day = buildWeekView(starter, deps)[0];
+    expect(day?.layovers.lines).toEqual(['Only 0 free minutes in the meal window on 2026-12-01.']);
     expect(day?.layovers.suggestions).toEqual([
       {
-        start: '2026-12-04T14:00:00-08:00',
-        end: '2026-12-04T14:30:00-08:00',
+        start: '2026-12-01T14:00:00-08:00',
+        end: '2026-12-01T14:30:00-08:00',
         label: '2:00 PM to 2:30 PM: A free gap just after the meal window.',
       },
     ]);
@@ -210,7 +210,7 @@ describe('week view', () => {
       },
     ]);
     expect(day?.layovers).toEqual({ lines: ['The meal window is unknown.'], suggestions: [] });
-    expect(day?.items).toHaveLength(2);
+    expect(day?.items).toHaveLength(3);
   });
 
   test('an unknown connection class keeps the engine reason and says the walk is unknown', () => {

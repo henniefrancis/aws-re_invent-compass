@@ -5,6 +5,7 @@ import {
   SessionWireSchema,
   type NormalisedSession,
 } from '@compass/contracts';
+import { normaliseSession } from '@compass/core/catalog';
 import { describe, expect, test } from 'vitest';
 import {
   DEMO_EVENT,
@@ -14,7 +15,6 @@ import {
   STARTER_WEEK,
 } from '../../src/lib/demo/demo-catalog';
 import { DEMO_VENUE_DATA } from '../../src/lib/demo/venue-data';
-import { normaliseWire } from '../support/normalise-wire';
 import { SITE_ROOT } from '../support/source-files';
 
 const REPO_ROOT = join(SITE_ROOT, '..');
@@ -61,7 +61,9 @@ describe('demo catalog provenance (Requirement 7.1)', () => {
     for (const id of DEMO_SOURCE_IDS) {
       const wire = catalog.find((record) => record.sessionId === id);
       expect(wire, id).toBeDefined();
-      expect(get(id), id).toEqual(normaliseWire(wire as NonNullable<typeof wire>));
+      expect(get(id), id).toEqual(
+        normaliseSession(wire as NonNullable<typeof wire>, undefined, DEMO_EVENT.timezone),
+      );
     }
   });
 
@@ -192,6 +194,11 @@ describe('demo catalog scenarios (Requirement 7.3)', () => {
     expect(STARTER_WEEK).not.toContain(repeat.sessionId);
     expect(tryAdd.isReservable).toBe(true);
     expect(overlap(tryAdd, held)).toBe(true);
+    // QA M6: the held session and its repeat both have seats, so the safe swap is believable.
+    expect(['available', 'limited', 'veryLimited']).toContain(held.seatAvailability);
+    expect(['available', 'limited', 'veryLimited']).toContain(repeat.seatAvailability);
+    expect(repeat.isReservable).toBe(true);
+    expect(repeat.title).toBe(held.title);
     expect(repeat.repeatOf).toBe(held.code);
     for (const other of STARTER_WEEK.map(get)) {
       if (other !== held) {

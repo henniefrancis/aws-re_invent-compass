@@ -20,9 +20,9 @@ const starter = run([{ type: 'loadStarter' }], deps);
 
 describe('loading and the guided clash', () => {
   test('the sample week holds the starter sessions in start order and names the session to try', () => {
-    expect(heldIds(starter)).toEqual(['syn-003', 'syn-002', 'syn-096', 'syn-047', 'syn-026']);
+    expect(heldIds(starter)).toEqual(['syn-003', 'syn-024', 'syn-002', 'syn-028']);
     expect(STARTER_WEEK.every((id) => heldIds(starter).includes(id))).toBe(true);
-    expect(starter.announcement).toContain('STG487');
+    expect(starter.announcement).toContain('ARC228');
     expect(starter.pending).toBeNull();
   });
 
@@ -35,29 +35,29 @@ describe('loading and the guided clash', () => {
     expect(blocked.pending?.kind).toBe('block');
     expect(blocked.commitments).toEqual(starter.commitments);
     if (blocked.pending?.kind === 'block') {
-      expect(blocked.pending.reasons).toEqual(['STG487 overlaps ANT163.']);
-      expect(blocked.pending.rebook.message).toBe('No alternative found for STG487.');
+      expect(blocked.pending.reasons).toEqual(['ARC228 overlaps BWP213.']);
+      expect(blocked.pending.rebook.message).toBe('No alternative found for ARC228.');
       expect(blocked.pending.swapOffer).toEqual({
         originalSessionId: GUIDED_CLASH.clashesWith,
         repeatSessionId: GUIDED_CLASH.heldRepeat,
       });
     }
-    expect(blocked.announcement).toContain('Blocked: STG487 was not added.');
-    expect(blocked.announcement).toContain('STG487 overlaps ANT163.');
+    expect(blocked.announcement).toContain('Blocked: ARC228 was not added.');
+    expect(blocked.announcement).toContain('ARC228 overlaps BWP213.');
   });
 
   test('sessions missing from the catalog are skipped and the hint names the id', () => {
     const smaller = {
       ...deps,
-      catalog: new Map([...deps.catalog].filter(([id]) => id !== 'syn-118' && id !== 'syn-002')),
+      catalog: new Map([...deps.catalog].filter(([id]) => id !== 'syn-076' && id !== 'syn-002')),
     };
     const state = reduceDemo(EMPTY_DEMO, { type: 'loadStarter' }, smaller);
-    expect(heldIds(state)).toEqual(['syn-003', 'syn-096', 'syn-047', 'syn-026']);
-    expect(state.announcement).toContain('Sample week loaded: 4 sessions. Try adding syn-118');
+    expect(heldIds(state)).toEqual(['syn-003', 'syn-024', 'syn-028']);
+    expect(state.announcement).toContain('Sample week loaded: 3 sessions. Try adding syn-076');
   });
 
   test('the sample week is not asked to pass the guardrail', () => {
-    expect(starter.commitments).toHaveLength(5);
+    expect(starter.commitments).toHaveLength(4);
   });
 });
 
@@ -85,13 +85,13 @@ describe('safe swap', () => {
       offered,
     );
     expect(states.map((s) => s.swap?.step)).toEqual(['repeatReserved', 'confirmed', 'done']);
-    expect(heldIds(states[0] as DemoState)).toContain('syn-009');
-    expect(heldIds(states[0] as DemoState)).toContain('syn-096');
+    expect(heldIds(states[0] as DemoState)).toContain('syn-025');
+    expect(heldIds(states[0] as DemoState)).toContain('syn-024');
     expect(states[1]?.swap?.plan?.outcome).toBe('safe');
-    expect(heldIds(states[1] as DemoState)).toContain('syn-096');
-    expect(heldIds(states[2] as DemoState)).not.toContain('syn-096');
-    expect(heldIds(states[2] as DemoState)).toContain('syn-009');
-    expect(states[2]?.announcement).toContain('You can now add STG487.');
+    expect(heldIds(states[1] as DemoState)).toContain('syn-024');
+    expect(heldIds(states[2] as DemoState)).not.toContain('syn-024');
+    expect(heldIds(states[2] as DemoState)).toContain('syn-025');
+    expect(states[2]?.announcement).toContain('You can now add ARC228.');
   });
 
   test('after the swap the blocked session goes through the guardrail again', () => {
@@ -103,7 +103,7 @@ describe('safe swap', () => {
     const next = reduceDemo(done, { type: 'add', sessionId: GUIDED_CLASH.tryAdd }, deps);
     expect(next.swap).toBeNull();
     expect(['allow', 'warn', 'block'].length).toBe(3);
-    expect(next.pending?.kind === 'warn' || heldIds(next).includes('syn-118')).toBe(true);
+    expect(next.pending?.kind === 'warn' || heldIds(next).includes('syn-076')).toBe(true);
   });
 
   test('a swap whose repeat is blocked is not started and leaves the week unchanged', () => {
@@ -172,8 +172,8 @@ describe('safe swap', () => {
       const last = states[4] as DemoState;
       expect(last.swap?.step).toBe('stopped');
       expect(last.swap?.reasons).toEqual([`The plan is ${outcome}.`]);
-      expect(heldIds(last)).toContain('syn-096');
-      expect(heldIds(last)).not.toContain('syn-009');
+      expect(heldIds(last)).toContain('syn-024');
+      expect(heldIds(last)).not.toContain('syn-025');
       expect(last.commitments).toEqual(starter.commitments);
       expect(last.announcement).toContain(`The plan is ${outcome}.`);
     }
@@ -187,7 +187,7 @@ describe('safe swap', () => {
       { type: 'remove', ref: 'syn-003' },
       { type: 'confirmWarn' },
       { type: 'startSwap' },
-      { type: 'bookRepeat', sessionId: 'syn-009' },
+      { type: 'bookRepeat', sessionId: 'syn-025' },
       { type: 'addLayover', start: '2026-12-04T14:00:00-08:00', end: '2026-12-04T14:30:00-08:00' },
     ] as const) {
       const held = reduceDemo(reserved, action, deps);
@@ -209,8 +209,8 @@ describe('safe swap', () => {
   test('odd states are left alone', () => {
     const swap = (step: SwapProgress['step']): SwapProgress => ({
       originalSessionId: 'syn-026',
-      repeatSessionId: 'syn-009',
-      blockedSessionId: 'syn-118',
+      repeatSessionId: 'syn-025',
+      blockedSessionId: 'syn-076',
       step,
       plan: null,
       reasons: [],
@@ -225,7 +225,7 @@ describe('safe swap', () => {
       ...starter,
       pending: {
         kind: 'block' as const,
-        sessionId: 'syn-118',
+        sessionId: 'syn-076',
         reasons: ['x'],
         rebook: { status: 'ok' as const, options: [], message: 'm' },
         swapOffer: { originalSessionId: 'syn-026', repeatSessionId: 'nope' },
@@ -292,12 +292,12 @@ describe('verdicts', () => {
     });
     run(
       [
-        { type: 'add', sessionId: 'syn-009' },
-        { type: 'add', sessionId: 'syn-118' },
+        { type: 'add', sessionId: 'syn-025' },
+        { type: 'add', sessionId: 'syn-076' },
       ],
       d,
     );
-    expect(calls).toEqual(['ANT163', 'STG487']);
+    expect(calls).toEqual(['BWP213', 'ARC228']);
   });
 
   test('a clash report that is unknown gives no swap offer', () => {
@@ -315,7 +315,7 @@ describe('verdicts', () => {
     const noRepeat = run(
       [
         { type: 'add', sessionId: 'syn-047' },
-        { type: 'add', sessionId: 'syn-088' },
+        { type: 'add', sessionId: 'syn-008' },
       ],
       makeDeps(),
     );
@@ -327,7 +327,7 @@ describe('verdicts', () => {
           start: '2026-12-04T11:30:00-08:00',
           end: '2026-12-04T12:30:00-08:00',
         },
-        { type: 'add', sessionId: 'syn-088' },
+        { type: 'add', sessionId: 'syn-008' },
       ],
       only('block', ['No.']),
     );
@@ -337,10 +337,10 @@ describe('verdicts', () => {
   test('a repeat that is already held is not offered again', () => {
     const state = run(
       [
-        { type: 'add', sessionId: 'syn-096' },
-        { type: 'add', sessionId: 'syn-009' },
+        { type: 'add', sessionId: 'syn-024' },
+        { type: 'add', sessionId: 'syn-025' },
         { type: 'confirmWarn' },
-        { type: 'add', sessionId: 'syn-118' },
+        { type: 'add', sessionId: 'syn-076' },
       ],
       makeDeps(),
     );
@@ -353,13 +353,13 @@ describe('verdicts', () => {
         status: 'ok',
         clashes: [
           {
-            a: 'STG487',
-            b: 'ANT163',
+            a: 'ARC228',
+            b: 'BWP213',
             overlap: 'same time',
             reason: 'overlap',
             aIndex: schedule.commitments.length - 1,
             bIndex: schedule.commitments.findIndex(
-              (c) => c.kind === 'reservedSession' && c.sessionId === 'syn-096',
+              (c) => c.kind === 'reservedSession' && c.sessionId === 'syn-024',
             ),
           },
         ],
@@ -371,13 +371,13 @@ describe('verdicts', () => {
       flipped,
     );
     expect(state.pending?.kind === 'block' && state.pending.swapOffer?.originalSessionId).toBe(
-      'syn-096',
+      'syn-024',
     );
   });
 
   test('bookRepeat goes through the same guardrail as add', () => {
-    const viaAdd = run([{ type: 'add', sessionId: 'syn-009' }], deps);
-    const viaBook = run([{ type: 'bookRepeat', sessionId: 'syn-009' }], deps);
+    const viaAdd = run([{ type: 'add', sessionId: 'syn-025' }], deps);
+    const viaBook = run([{ type: 'bookRepeat', sessionId: 'syn-025' }], deps);
     expect(viaBook).toEqual(viaAdd);
   });
 
@@ -441,10 +441,10 @@ describe('the week', () => {
   });
 
   test('selectPass only selects a reserved session in the week', () => {
-    expect(reduceDemo(starter, { type: 'selectPass', sessionId: 'syn-118' }, deps)).toBe(starter);
+    expect(reduceDemo(starter, { type: 'selectPass', sessionId: 'syn-076' }, deps)).toBe(starter);
     expect(
-      reduceDemo(starter, { type: 'selectPass', sessionId: 'syn-026' }, deps).selectedPassSessionId,
-    ).toBe('syn-026');
+      reduceDemo(starter, { type: 'selectPass', sessionId: 'syn-002' }, deps).selectedPassSessionId,
+    ).toBe('syn-002');
   });
 
   test('reset returns the empty state and confirmWarn without a warning does nothing', () => {

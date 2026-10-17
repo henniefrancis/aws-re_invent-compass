@@ -58,8 +58,8 @@ test.describe('axe on the demo states', () => {
     await expect(page.getByRole('status')).toContainText('Sample week loaded');
     await expectNoAxeViolations(page);
 
-    await addButton(page, 'STG487').click();
-    await expect(page.getByRole('heading', { name: 'STG487 was blocked' })).toBeVisible();
+    await addButton(page, 'ARC228').click();
+    await expect(page.getByRole('heading', { name: 'ARC228 was blocked' })).toBeVisible();
     await expectNoAxeViolations(page);
 
     await page.getByRole('button', { name: 'Start the safe swap' }).click();

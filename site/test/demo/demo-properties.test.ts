@@ -19,10 +19,10 @@ const POPULAR = [
   'syn-002',
   'syn-047',
   'syn-026',
-  'syn-118',
-  'syn-009',
-  'syn-009',
-  'syn-088',
+  'syn-076',
+  'syn-024',
+  'syn-025',
+  'syn-008',
 ];
 const sessionIdArb = fc.oneof(
   { weight: 3, arbitrary: fc.constantFrom(...POPULAR) },

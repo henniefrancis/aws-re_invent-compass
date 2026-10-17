@@ -21,8 +21,8 @@ async function demoFlow(page: Page): Promise<void> {
   await page.goto('/demo');
   await page.getByRole('button', { name: 'Start with a sample week' }).click();
   await expect(page.getByRole('status')).toContainText('Sample week loaded');
-  await page.getByRole('button', { name: /^Add STG487, / }).click();
-  await expect(page.getByRole('heading', { name: 'STG487 was blocked' })).toBeVisible();
+  await page.getByRole('button', { name: /^Add ARC228, / }).click();
+  await expect(page.getByRole('heading', { name: 'ARC228 was blocked' })).toBeVisible();
   await page.getByRole('button', { name: 'Start the safe swap' }).click();
   await page.getByRole('button', { name: 'Reserve the repeat' }).click();
   await page.getByRole('button', { name: 'Confirm the schedule' }).click();

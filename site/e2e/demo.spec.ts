@@ -10,7 +10,7 @@ async function loadSample(page: Page): Promise<void> {
   await page.goto('/demo');
   await expect(page.getByText(/These sessions are made up/)).toBeVisible();
   await page.getByRole('button', { name: 'Start with a sample week' }).click();
-  await expect(status(page)).toContainText('Sample week loaded: 5 sessions. Try adding STG487');
+  await expect(status(page)).toContainText('Sample week loaded: 4 sessions. Try adding ARC228');
 }
 
 test.describe('the demo', () => {
@@ -35,33 +35,33 @@ test.describe('the demo', () => {
     page,
   }) => {
     await loadSample(page);
-    await addButton(page, 'STG487').click();
-    await expect(status(page)).toContainText('Blocked: STG487 was not added.');
+    await addButton(page, 'ARC228').click();
+    await expect(status(page)).toContainText('Blocked: ARC228 was not added.');
     const panel = page.locator('.verdict').first();
-    await expect(panel.getByRole('heading', { name: 'STG487 was blocked' })).toBeVisible();
+    await expect(panel.getByRole('heading', { name: 'ARC228 was blocked' })).toBeVisible();
     await expect(panel.locator('li').first()).toContainText('overlap');
-    await expect(panel.getByText('Safe swap: move ANT163 to its repeat ANT163-R.')).toBeVisible();
-    await expect(page.locator('section[aria-labelledby="day-2026-12-04"]')).not.toContainText(
-      'STG487',
+    await expect(panel.getByText('Safe swap: move BWP213 to its repeat BWP213-R.')).toBeVisible();
+    await expect(page.locator('section[aria-labelledby="day-2026-12-01"]')).not.toContainText(
+      'ARC228',
     );
 
     await panel.getByRole('button', { name: 'Start the safe swap' }).click();
     await expect(status(page)).toContainText('Step 1 of 3');
     await page.getByRole('button', { name: 'Reserve the repeat' }).click();
-    await expect(status(page)).toContainText('Step 1 of 3 done: ANT163-R is reserved (simulated).');
+    await expect(status(page)).toContainText('Step 1 of 3 done: BWP213-R is reserved (simulated).');
     await page.getByRole('button', { name: 'Confirm the schedule' }).click();
     await expect(status(page)).toContainText('Step 2 of 3 done');
     await page.getByRole('button', { name: 'Cancel the original' }).click();
-    await expect(status(page)).toContainText('Step 3 of 3 done: ANT163 is cancelled (simulated).');
-    await expect(page.locator('section[aria-labelledby="day-2026-12-01"]')).toContainText(
-      'ANT163-R',
+    await expect(status(page)).toContainText('Step 3 of 3 done: BWP213 is cancelled (simulated).');
+    await expect(page.locator('section[aria-labelledby="day-2026-12-04"]')).toContainText(
+      'BWP213-R',
     );
-    await expect(page.locator('section[aria-labelledby="day-2026-12-04"]')).not.toContainText(
-      'ANT163',
+    await expect(page.locator('section[aria-labelledby="day-2026-12-01"]')).not.toContainText(
+      'BWP213',
     );
 
-    await page.getByRole('button', { name: 'Add STG487' }).first().click();
-    await expect(status(page)).toContainText('STG487');
+    await page.getByRole('button', { name: 'Add ARC228' }).first().click();
+    await expect(status(page)).toContainText('ARC228');
   });
 
   test('shows the sample pass as an image with every field in its name, and no barcode', async ({
@@ -97,15 +97,15 @@ test.describe('the demo', () => {
     const path = await download.path();
     const text = readFileSync(path, 'utf8');
     const events = new ICAL.Component(ICAL.parse(text) as unknown[]).getAllSubcomponents('vevent');
-    expect(events).toHaveLength(5);
+    expect(events).toHaveLength(4);
     expect(text).toContain('PRODID:-//re:Invent Compass//Showcase demo//EN');
     expect(text).toContain('.invalid');
   });
 
   test('focus follows the action when the focused control is removed (QA M1)', async ({ page }) => {
     await loadSample(page);
-    await addButton(page, 'STG487').click();
-    await expect(page.getByRole('heading', { name: 'STG487 was blocked' })).toBeVisible();
+    await addButton(page, 'ARC228').click();
+    await expect(page.getByRole('heading', { name: 'ARC228 was blocked' })).toBeVisible();
 
     // Start the safe swap: the verdict panel is replaced by the swap panel.
     await page.getByRole('button', { name: 'Start the safe swap' }).click();
@@ -116,7 +116,7 @@ test.describe('the demo', () => {
     await page.getByRole('button', { name: 'Confirm the schedule' }).click();
     await expect(page.getByRole('button', { name: 'Cancel the original' })).toBeFocused();
     await page.getByRole('button', { name: 'Cancel the original' }).click();
-    await expect(page.getByRole('button', { name: 'Add STG487' }).first()).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Add ARC228' }).first()).toBeFocused();
 
     // Close the finished swap panel: focus goes to "Your week".
     await page.getByRole('button', { name: 'Close' }).click();
@@ -132,7 +132,7 @@ test.describe('the demo', () => {
 
   test('Keep my week closes the verdict and focuses the week heading', async ({ page }) => {
     await loadSample(page);
-    await addButton(page, 'STG487').click();
+    await addButton(page, 'ARC228').click();
     await page.getByRole('button', { name: 'Keep my week' }).click();
     await expect(page.getByRole('heading', { name: 'Your week' })).toBeFocused();
   });
