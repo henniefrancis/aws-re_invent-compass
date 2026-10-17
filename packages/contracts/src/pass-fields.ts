@@ -43,11 +43,21 @@ import { z } from 'zod';
 const SESSION_CODE_PATTERN = /^[A-Z0-9]{2,12}(-R[0-9]?)?$/;
 
 /**
- * ISO 8601 date-time that requires an explicit timezone offset (Z or +/-HH:MM).
+ * ISO 8601 date-time that requires an explicit timezone offset (Z or +/-HH:MM),
+ * with an optional fraction of one to nine digits.
  * A matching string is additionally parsed with Date.parse to confirm it is a
  * real instant (NaN is rejected). No coercion is performed.
  */
-const ISO_OFFSET_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+const ISO_OFFSET_PATTERN =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
+
+/**
+ * The longest accepted ISO 8601 string: 19 characters of date and time, up to 10
+ * for a fraction of at most nine digits, and up to 6 for the offset. The bound keeps
+ * attacker-sized strings away from downstream date parsers (joi isoDate inside
+ * passkit-generator backtracks quadratically on long fractions; ADR-026).
+ */
+const ISO_OFFSET_MAX_LENGTH = 35;
 
 /**
  * The character ALLOWLIST for free text. A value passes only when every
@@ -495,6 +505,9 @@ function safeText(maxLen: number, opts: { minLen: number; fieldName: string }): 
 function isoWithOffset(fieldName: string): z.ZodString {
   return z
     .string()
+    .max(ISO_OFFSET_MAX_LENGTH, {
+      message: `${fieldName} must be ISO 8601 with a timezone offset`,
+    })
     .regex(ISO_OFFSET_PATTERN, {
       message: `${fieldName} must be ISO 8601 with a timezone offset`,
     })
