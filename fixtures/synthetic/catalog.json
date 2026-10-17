@@ -1021,7 +1021,7 @@
     "venue": "Wynn"
   },
   {
-    "abbreviation": "BWP161",
+    "abbreviation": "BWP162",
     "abstract": "A made-up abstract for Observability: Patterns and practice. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
@@ -2209,7 +2209,7 @@
     "venue": "Mandalay Bay"
   },
   {
-    "abbreviation": "AIM482",
+    "abbreviation": "AIM483",
     "abstract": "A made-up abstract for Container platforms: Patterns and practice. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,

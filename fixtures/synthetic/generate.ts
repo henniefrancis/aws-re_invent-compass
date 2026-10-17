@@ -34,6 +34,10 @@
 // the last day to the first). The PRNG call sequence is unchanged, so session ids
 // and every non-repeat session are byte-identical to the previous generator.
 //
+// Code uniqueness: every non-repeat session code is unique. A drawn code that
+// collides with an earlier non-repeat code is bumped by one (wrapping inside 100 to
+// 499) until it is free, with no extra PRNG draw; repeats follow their base's code.
+//
 // This file contains no em dash or en dash.
 
 // ----------------------------------------------------------------------------
@@ -271,6 +275,8 @@ export function generateCatalog({
   const sessions: GeneratedSession[] = [];
   // The nearest earlier non-repeat session, the base of the next repeat.
   let base: GeneratedSession | undefined;
+  // The codes already taken by non-repeat sessions, so every one is unique.
+  const usedCodes = new Set<string>();
 
   // Reserve the last two ids for the keynotes so the total stays at count.
   const KEYNOTE_COUNT = 2;
@@ -282,11 +288,20 @@ export function generateCatalog({
     const sessionId = `syn-${seq}`;
 
     const prefix = pick(rng, CODE_PREFIXES);
-    const codeNumber = 100 + Math.floor(rng() * 400);
+    let codeNumber = 100 + Math.floor(rng() * 400);
+    // A repeat takes its base's code, so only non-repeats need a unique code. On a
+    // collision the number is bumped by one (wrapping inside 100 to 499), with no
+    // extra PRNG draw, until the code is free.
 
     // Every fourth session is a repeat, carrying the -R suffix (sometimes -R<digit>).
     const isRepeat = i % 4 === 0 && i > 0;
     const repeatSuffix = isRepeat ? (i % 8 === 0 ? '-R' : '-R2') : '';
+    if (!isRepeat) {
+      while (usedCodes.has(`${prefix}${codeNumber}`)) {
+        codeNumber = 100 + ((codeNumber - 100 + 1) % 400);
+      }
+      usedCodes.add(`${prefix}${codeNumber}`);
+    }
     const abbreviation = `${prefix}${codeNumber}${repeatSuffix}`;
 
     const title = `${pick(rng, TITLE_TOPICS)}: ${pick(rng, TITLE_SHAPES)}`;

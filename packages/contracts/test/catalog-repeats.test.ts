@@ -48,6 +48,18 @@ describe('Feature: foundation-contracts, synthetic catalog repeats', () => {
     expect(repeats.length).toBeGreaterThanOrEqual(1);
   });
 
+  test('non-repeat codes are unique', () => {
+    const codes = catalog.filter((s) => !REPEAT.test(s.abbreviation)).map((s) => s.abbreviation);
+    expect(new Set(codes).size).toBe(codes.length);
+  });
+
+  test('each repeat stripped code maps to exactly one base', () => {
+    for (const repeat of repeats) {
+      const code = repeat.abbreviation.replace(REPEAT, '');
+      expect(catalog.filter((s) => s.abbreviation === code)).toHaveLength(1);
+    }
+  });
+
   test.each(repeats.map((r) => [r.abbreviation, r] as const))(
     '%s has a base with an equal title, type and level',
     (_code, repeat) => {
