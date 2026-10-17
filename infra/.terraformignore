@@ -5,9 +5,9 @@
 # and variable files stay on the owner's machine, and workspace variables in HCP
 # carry the values instead.
 
-# Generated build output (Lambda zips written by scripts/release.sh)
-build/
-**/build/
+# infra/build/ (the Lambda zips written by scripts/release.sh) is deliberately
+# NOT listed here: a remote plan and apply read the zips from the uploaded
+# configuration, so they must travel with it. The folder is git-ignored instead.
 
 # Real private configuration (only the .example files are committed)
 cloud.auto.tfbackend

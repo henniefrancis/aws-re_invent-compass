@@ -22,7 +22,7 @@ The build order lays the shared foundation first (version pins, provider, tags, 
 
 - [x] 1. Lay the Terraform foundation (version pins, provider, tags, ignore files)
   - [x] 1.1 Create the repo-level ignore and example-file scaffolding under `infra/`
-    - Create `infra/.terraformignore` excluding `build/`, the real `cloud.auto.tfbackend` and `terraform.tfvars` files, and local state and plan artefacts from HCP uploads
+    - Create `infra/.terraformignore` excluding the real `cloud.auto.tfbackend` and `terraform.tfvars` files and local state and plan artefacts from HCP uploads (`build/` is not excluded: the remote run needs the Lambda zips, see design.md Implementation deviations)
     - Add `infra/build/` and the real `cloud.auto.tfbackend` and `terraform.tfvars` paths to `.gitignore` (keep `.example` counterparts committed)
     - _Requirements: 1.7, 10.3, 17.5_
 
@@ -112,37 +112,37 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit the module and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 4.10, 4.11, 4.12, 9.1_
 
-- [ ] 6. Checkpoint - foundation, data, secrets, site, and edge modules
+- [x] 6. Checkpoint - foundation, data, secrets, site, and edge modules
   - Ensure all offline checks pass for the modules built so far. Ask the user if questions arise.
 
-- [ ] 7. Implement the Api_Module (`infra/modules/api`)
-  - [ ] 7.1 Implement the REST API, deployment, and Lambda functions with dedicated roles
+- [x] 7. Implement the Api_Module (`infra/modules/api`)
+  - [x] 7.1 Implement the REST API, deployment, and Lambda functions with dedicated roles
     - Write `versions.tf`, `variables.tf` (`env`, `api_lambda_zip`, `passkit_lambda_zip`, `table_name`, `secret_arns`, `throttle_rate`, `throttle_burst`, optional `route_throttles` map), `locals.tf`, `main.tf`, `outputs.tf` (`rest_api_id`, `stage_invoke_host`, `api_lambda_role_arn`, `passkit_lambda_role_arn`)
     - Create `aws_api_gateway_rest_api` with `body = templatefile("${path.module}/openapi.yaml", { api_lambda_invoke_arn = ..., passkit_lambda_invoke_arn = ... })` passing exactly those two variables and no others, reading the S0 file without writing it; set `endpoint_configuration { types = ["REGIONAL"] }`; do not set `binary_media_types`
     - Create one `aws_api_gateway_deployment` with `triggers = { redeployment = sha1(aws_api_gateway_rest_api.this.body) }` and `lifecycle { create_before_destroy = true }`
     - Create two `aws_lambda_function` (`api`, `passkit`), each `architectures = ["arm64"]`, `runtime = "nodejs24.x"`, `memory_size = 512`, timeouts 10 s (`api`) and 5 s (`passkit`); create one dedicated `aws_iam_role` per Lambda; create two `aws_lambda_permission` with principal `apigateway.amazonaws.com` and `source_arn = "${execution_arn}/*/*"`
     - _Requirements: 5.1, 5.2, 5.3, 5.6, 5.9, 5.10, 5.11_
 
-  - [ ] 7.2 Implement the `live` stage, throttling, method settings, and log groups
+  - [x] 7.2 Implement the `live` stage, throttling, method settings, and log groups
     - Create one `aws_api_gateway_stage` named `live` referencing the deployment
     - Add default `aws_api_gateway_method_settings` on `*/*` with `logging_level = "OFF"`, `data_trace_enabled = false`, `metrics_enabled = true`; apply stage-level throttling (rate and burst) and per-route method-level throttle overrides from `route_throttles`
     - Set `access_log_settings` with a format that records the path only as `$context.resourcePath` and contains no `$context.path`, `$context.identity.sourceIp`, or other source-IP or full-path field
     - Create one CloudWatch log group per Lambda and one for the stage access logs, all `retention_in_days = 14`; do not create an `aws_api_gateway_account` CloudWatch role here (it comes from the bootstrap)
     - _Requirements: 5.4, 5.5, 5.7, 5.8, 5.12, 5.13, 5.14_
 
-  - [ ] 7.3 Write property test for log retention
+  - [x] 7.3 Write property test for log retention
     - **Property 3: Every log group retains logs for 14 days**
     - **Validates: Requirements 5.12, 5.13, 16.3**
 
-  - [ ] 7.4 Write property test for identifier-free access log format
+  - [x] 7.4 Write property test for identifier-free access log format
     - **Property 4: The access log format captures no IP or full path**
     - **Validates: Requirements 5.7, 5.8, 16.6, 17.3**
 
-  - [ ] 7.5 Write plan assertions for the Api_Module resources
+  - [x] 7.5 Write plan assertions for the Api_Module resources
     - Native test asserting the REST API `body` built from exactly the two template variables with no `binary_media_types` and `endpoint_configuration` `["REGIONAL"]`, the deployment `sha1` trigger with `create_before_destroy`, two Lambdas arm64 `nodejs24.x` 512 MB with 10 s and 5 s timeouts and dedicated roles, two `aws_lambda_permission` with `source_arn` `.../*/*`, the single `live` stage, default `method_settings` values plus stage throttling, and no per-environment `aws_api_gateway_account`
     - _Requirements: 5.1, 5.3, 5.4, 5.5, 5.6, 5.9, 5.10, 5.11, 5.14_
 
-  - [ ] 7.6 Run the offline checks and commit the Api_Module
+  - [x] 7.6 Run the offline checks and commit the Api_Module
     - Run `terraform fmt`, `terraform validate` (`init -backend=false`), `tflint`, `terraform test` (mock providers), and a Trivy config scan; fix any finding. Do not edit `infra/modules/api/openapi.yaml` (S0-owned)
     - Commit the module and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10, 5.11, 5.12, 5.13, 5.14_

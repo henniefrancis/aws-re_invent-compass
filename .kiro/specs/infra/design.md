@@ -32,7 +32,7 @@ One personal HCP Terraform organisation, project `reinvent-compass`, three works
 
 The dev and prod workspaces authenticate with `TFC_AWS_PROVIDER_AUTH=true`, `TFC_AWS_PLAN_ROLE_ARN` and `TFC_AWS_APPLY_ROLE_ARN`. The plan phase assumes the read-only Plan_Role; the apply phase assumes the tag-scoped Apply_Role.
 
-Each workspace sets its working directory so the whole `infra/` tree (modules included) is uploaded to HCP Terraform on each run: `reinvent-compass-dev` uses working directory `envs/dev` and `reinvent-compass-prod` uses working directory `envs/prod`. Because HCP uploads the configuration directory and its parents' module references, the environment roots reach the sibling `modules/` tree through relative `../../modules/...` source paths. To keep the upload lean and free of private or generated material, an `infra/.terraformignore` file at the repo's `infra/` root excludes the git-ignored `build/` directory, the `.example` counterparts' real files (`cloud.auto.tfbackend`, `terraform.tfvars`), and local state and plan artefacts, so they are never sent to HCP.
+Each workspace sets its working directory so the whole `infra/` tree (modules included) is uploaded to HCP Terraform on each run: `reinvent-compass-dev` uses working directory `envs/dev` and `reinvent-compass-prod` uses working directory `envs/prod`. Because HCP uploads the configuration directory and its parents' module references, the environment roots reach the sibling `modules/` tree through relative `../../modules/...` source paths. To keep the upload lean and free of private or generated material, an `infra/.terraformignore` file at the repo's `infra/` root excludes the real `cloud.auto.tfbackend` and `terraform.tfvars` files and local state and plan artefacts, so they are never sent to HCP. It does **not** exclude `build/`: the remote plan and apply read the two Lambda zips from the uploaded configuration, so the git-ignored `infra/build/` folder must travel with the upload (see Implementation deviations).
 
 ```mermaid
 flowchart TD
@@ -66,7 +66,7 @@ flowchart LR
 
 ```
 infra/
-  .terraformignore                # excludes build/, real tfbackend/tfvars, local state and plan files from HCP uploads
+  .terraformignore                # excludes real tfbackend/tfvars, local state and plan files from HCP uploads (build/ is uploaded)
   build/                          # git-ignored: Lambda zips produced by release.sh (never committed)
   bootstrap/                      # OIDC provider, 4 roles, apigw account role (local exec in HCP)
     versions.tf provider.tf variables.tf locals.tf oidc.tf roles-plan.tf
@@ -260,7 +260,7 @@ GSI1 and GSI2 project the attributes needed to answer their queries without read
 | `infra/envs/<env>/terraform.tfvars` | `terraform.tfvars.example` | env name, alarm email, throttling, table name |
 | `infra/bootstrap/terraform.tfvars` | `bootstrap/terraform.tfvars.example` | organisation name, project |
 
-In addition to the files above, the git-ignore list (`.gitignore`) includes `infra/build/`, the directory into which `release.sh` builds the Lambda zips. It holds generated build artefacts only, has no `.example` counterpart (nothing to document), and is also excluded from HCP uploads by `infra/.terraformignore`.
+In addition to the files above, the git-ignore list (`.gitignore`) includes `infra/build/`, the directory into which `release.sh` builds the Lambda zips. It holds generated build artefacts only and has no `.example` counterpart (nothing to document). It is git-ignored but is deliberately uploaded to HCP, because the remote plan and apply need the Lambda zips.
 
 ### Retained resources (Requirement 9, ADR-015)
 
@@ -392,3 +392,16 @@ One Trivy finding is suppressed deliberately with an inline `trivy:ignore` comme
 - End-to-end health: `release.sh dev` completes with an HTTP 200 from `GET /api/v1/health` (Requirement 12.10).
 
 These require real AWS credentials and a deploy, so they live in the runbooks and are performed by the Owner, consistent with the owner-only-deploy constraint.
+
+## Implementation deviations
+
+These changes were made while implementing the spec. Each is a deliberate departure from the text above, recorded here so the design stays the record.
+
+1. **`build/` is uploaded to HCP.** The design said `.terraformignore` excludes `infra/build/`. The Lambda zips are read by `filename` and `source_code_hash` during the remote plan and apply, so excluding them would make every remote run fail. `.terraformignore` therefore leaves `build/` out of its list; the folder stays git-ignored.
+2. **Provider lock files are git-ignored.** `.terraform.lock.hcl` is generated per platform and a lock with local-platform hashes only would fail on the HCP runners, so `.gitignore` lists it. The owner can create one with `terraform providers lock`.
+3. **Extra module inputs and outputs.** Edge takes an `env` input (the WAF, function, headers policy and OAC names are account-wide, so dev and prod need distinct names) and outputs `distribution_id` (for the cache invalidation). Site outputs `bucket_name` (for the site sync). Api takes `table_arn` and `permissions_boundary_arn` as inputs (role policies; the Apply_Role requires the permissions boundary on every created role) and outputs `rest_api_name`, `api_lambda_name` and `passkit_lambda_name`.
+4. **WAF common rule set.** `SizeRestrictions_BODY` in `AWSManagedRulesCommonRuleSet` is set to count: its 8 KB body limit would block valid pass requests of up to 25 passes. The API Gateway request validator and the Lambda schema checks bound the body. The rule count stays five.
+5. **Site bucket policy.** Beside the CloudFront allow statement there is an explicit deny of `s3:GetObject` for any request whose `AWS:SourceArn` is not the distribution, and a deny of plain HTTP. This implements "denying all other principals" explicitly. The site sync lists and writes objects and never reads them, so it is unaffected.
+6. **Lambda environment variable names.** `COMPASS_ENV`, `TABLE_NAME`, `APP_SECRET_ARN`, `APPLE_SECRET_ARN` (both), `GOOGLE_SECRET_ARN` (api only). S5 must read these names or the integrator must align them.
+7. **Static scans in the native tests.** Under a mock provider the DynamoDB `global_secondary_index` set and the CloudFront `origin` set are unknown (or sensitive) at plan time, and a mocked data source has no `id`. Those facts are asserted by regular-expression scans of the module source with `file()` inside the `.tftest.hcl` files, which are listed in each test's header.
+8. **DynamoDB table encryption.** `server_side_encryption` is declared explicitly (AWS owned key). Trivy reports the LOW customer-managed-key finding only; no HIGH or CRITICAL.
