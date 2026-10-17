@@ -39,19 +39,21 @@ locals {
     }
   EOT
 
-  # Strict policy for a static, prerendered site that calls only its own origin.
-  # Inline styles are allowed because the Angular build inlines critical CSS.
+  # The Required_CSP from the site (site/scripts/required-csp.mjs is the single source; a
+  # static test keeps the two identical). The build inlines nothing (inlineCritical is off), so
+  # styles need no unsafe-inline. base-uri is self because the pages carry <base href="/">.
   content_security_policy = join("; ", [
-    "default-src 'self'",
+    "default-src 'none'",
     "script-src 'self'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
+    "style-src 'self'",
+    "img-src 'self'",
     "font-src 'self'",
     "connect-src 'self'",
-    "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    "form-action 'none'",
     "frame-ancestors 'none'",
+    "object-src 'none'",
+    "upgrade-insecure-requests",
   ])
 
   permissions_policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()"

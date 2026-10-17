@@ -1,0 +1,1254 @@
+{
+  "status": 200,
+  "body": {
+    "items": [
+      {
+        "abbreviation": "CMP436",
+        "abstract": "A made-up abstract for Cost optimisation: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "100",
+        "room": "Room 115",
+        "seatAvailability": "unavailable",
+        "services": ["networking"],
+        "sessionId": "syn-001",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "120",
+          "time": "14:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Alex Gupta"
+          }
+        ],
+        "title": "Cost optimisation: Hands on workshop",
+        "type": "Chalk talk",
+        "venue": "Encore"
+      },
+      {
+        "abbreviation": "DAT204",
+        "abstract": "A made-up abstract for Event-driven systems: Lessons from the field. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "400",
+        "room": "Room 114",
+        "seatAvailability": "veryLimited",
+        "services": ["compute"],
+        "sessionId": "syn-002",
+        "sessionTime": {
+          "date": "2026-12-01",
+          "length": "90",
+          "time": "14:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Emery Haddad"
+          }
+        ],
+        "title": "Event-driven systems: Lessons from the field",
+        "type": "Code talk",
+        "venue": "Wynn"
+      },
+      {
+        "abbreviation": "AIM321",
+        "abstract": "A made-up abstract for Identity and access: Deep dive. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "400",
+        "room": "Room 118",
+        "seatAvailability": "veryLimited",
+        "services": ["containers"],
+        "sessionId": "syn-003",
+        "sessionTime": {
+          "date": "2026-12-01",
+          "length": "90",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Alex Farrell"
+          }
+        ],
+        "title": "Identity and access: Deep dive",
+        "type": "Workshop",
+        "venue": "MGM Grand"
+      },
+      {
+        "abbreviation": "ARC121",
+        "abstract": "A made-up abstract for Edge delivery: From zero to production. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "room": "Room 134",
+        "seatAvailability": "available",
+        "services": ["containers"],
+        "sessionId": "syn-004",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "90",
+          "time": "10:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Emery Diaz"
+          }
+        ],
+        "title": "Edge delivery: From zero to production",
+        "type": "Code talk",
+        "venue": "MGM Grand"
+      },
+      {
+        "abbreviation": "ARC121-R2",
+        "abstract": "A made-up abstract for Edge delivery: From zero to production. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "room": "Room 132",
+        "seatAvailability": "available",
+        "services": ["containers"],
+        "sessionId": "syn-005",
+        "sessionTime": {
+          "date": "2026-12-01",
+          "length": "60",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Emery Diaz"
+          }
+        ],
+        "title": "Edge delivery: From zero to production",
+        "type": "Code talk",
+        "venue": "Encore"
+      },
+      {
+        "abbreviation": "DAT159",
+        "abstract": "A made-up abstract for Identity and access: Lessons from the field. Synthetic data for testing only.",
+        "isAllDaySession": true,
+        "isReservable": false,
+        "level": "200",
+        "room": "Room 116",
+        "seatAvailability": "walkUp",
+        "services": ["networking"],
+        "sessionId": "syn-006",
+        "sessionTime": {
+          "date": "2026-12-01",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Alex Adams"
+          }
+        ],
+        "title": "Identity and access: Lessons from the field",
+        "type": "Breakout session",
+        "venue": "MGM Grand"
+      },
+      {
+        "abbreviation": "NET110",
+        "abstract": "A made-up abstract for Edge delivery: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "200",
+        "room": "Room 132",
+        "seatAvailability": "available",
+        "services": ["machine-learning"],
+        "sessionId": "syn-007",
+        "sessionTime": {
+          "date": "2026-12-03",
+          "length": "60",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Harper Chen"
+          }
+        ],
+        "title": "Edge delivery: Hands on workshop",
+        "type": "Code talk",
+        "venue": "Caesars Forum"
+      },
+      {
+        "abbreviation": "AIM482",
+        "abstract": "A made-up abstract for Observability: From zero to production. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "seatAvailability": "unavailable",
+        "services": ["storage"],
+        "sessionId": "syn-008",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "90",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Emery Farrell"
+          }
+        ],
+        "title": "Observability: From zero to production",
+        "type": "Builders session"
+      },
+      {
+        "abbreviation": "AIM482-R",
+        "abstract": "A made-up abstract for Observability: From zero to production. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "room": "Room 102",
+        "seatAvailability": "available",
+        "services": ["storage"],
+        "sessionId": "syn-009",
+        "sessionTime": {
+          "date": "2026-12-01",
+          "length": "60",
+          "time": "10:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Emery Farrell"
+          }
+        ],
+        "title": "Observability: From zero to production",
+        "type": "Builders session",
+        "venue": "MGM Grand"
+      },
+      {
+        "abbreviation": "ARC206",
+        "abstract": "A made-up abstract for Zero-downtime deploys: Lessons from the field. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "400",
+        "room": "Room 108",
+        "seatAvailability": "veryLimited",
+        "services": ["networking"],
+        "sessionId": "syn-010",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "time": "10:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Emery Chen"
+          }
+        ],
+        "title": "Zero-downtime deploys: Lessons from the field",
+        "type": "Workshop",
+        "venue": "Mandalay Bay"
+      },
+      {
+        "abbreviation": "ARC108",
+        "abstract": "A made-up abstract for Serverless APIs: Deep dive. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "room": "Room 111",
+        "seatAvailability": "unavailable",
+        "services": ["machine-learning"],
+        "sessionId": "syn-011",
+        "sessionTime": {
+          "date": "2026-12-02",
+          "length": "90",
+          "time": "08:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Finley Farrell"
+          }
+        ],
+        "title": "Serverless APIs: Deep dive",
+        "type": "Chalk talk",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "CMP136",
+        "abstract": "A made-up abstract for Event-driven systems: Lessons from the field. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "100",
+        "room": "Room 105",
+        "seatAvailability": "walkUp",
+        "services": ["database"],
+        "sessionId": "syn-012",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "90",
+          "time": "14:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Blair Eriksson"
+          }
+        ],
+        "title": "Event-driven systems: Lessons from the field",
+        "type": "Breakout session",
+        "venue": "MGM Grand"
+      },
+      {
+        "abbreviation": "CMP136-R2",
+        "abstract": "A made-up abstract for Event-driven systems: Lessons from the field. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "100",
+        "room": "Room 114",
+        "seatAvailability": "walkUp",
+        "services": ["database"],
+        "sessionId": "syn-013",
+        "sessionTime": {
+          "date": "2026-12-02",
+          "length": "90",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Blair Eriksson"
+          }
+        ],
+        "title": "Event-driven systems: Lessons from the field",
+        "type": "Breakout session",
+        "venue": "Caesars Forum"
+      },
+      {
+        "abbreviation": "BWP315",
+        "abstract": "A made-up abstract for Data lakes: A builder guide. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "100",
+        "room": "Room 133",
+        "seatAvailability": "veryLimited",
+        "services": ["storage"],
+        "sessionId": "syn-014",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "90",
+          "time": "13:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Devon Eriksson"
+          }
+        ],
+        "title": "Data lakes: A builder guide",
+        "type": "Chalk talk",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "BWP161",
+        "abstract": "A made-up abstract for Event-driven systems: From zero to production. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "100",
+        "room": "Room 102",
+        "seatAvailability": "unavailable",
+        "services": ["security"],
+        "sessionId": "syn-015",
+        "sessionTime": {
+          "date": "2026-12-03",
+          "length": "90",
+          "time": "14:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Finley Diaz"
+          }
+        ],
+        "title": "Event-driven systems: From zero to production",
+        "type": "Workshop",
+        "venue": "Mandalay Bay"
+      },
+      {
+        "abbreviation": "ANT398",
+        "abstract": "A made-up abstract for Serverless APIs: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "400",
+        "room": "Room 115",
+        "seatAvailability": "unavailable",
+        "services": ["containers"],
+        "sessionId": "syn-016",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "90",
+          "time": "08:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Gray Gupta"
+          }
+        ],
+        "title": "Serverless APIs: Hands on workshop",
+        "type": "Workshop",
+        "venue": "Mandalay Bay"
+      },
+      {
+        "abbreviation": "ANT398-R",
+        "abstract": "A made-up abstract for Serverless APIs: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "400",
+        "room": "Room 104",
+        "seatAvailability": "available",
+        "services": ["containers"],
+        "sessionId": "syn-017",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "90",
+          "time": "10:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Gray Gupta"
+          }
+        ],
+        "title": "Serverless APIs: Hands on workshop",
+        "type": "Workshop",
+        "venue": "Mandalay Bay"
+      },
+      {
+        "abbreviation": "CMP429",
+        "abstract": "A made-up abstract for Zero-downtime deploys: Patterns and practice. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "400",
+        "room": "Room 135",
+        "seatAvailability": "limited",
+        "services": ["networking"],
+        "sessionId": "syn-018",
+        "sessionTime": {
+          "date": "2026-12-01",
+          "length": "60",
+          "time": "10:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Gray Eriksson"
+          }
+        ],
+        "title": "Zero-downtime deploys: Patterns and practice",
+        "type": "Code talk",
+        "venue": "Mandalay Bay"
+      },
+      {
+        "abbreviation": "BWP477",
+        "abstract": "A made-up abstract for Zero-downtime deploys: Patterns and practice. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "300",
+        "room": "Room 135",
+        "seatAvailability": "walkUp",
+        "services": ["storage"],
+        "sessionId": "syn-019",
+        "sessionTime": {
+          "date": "2026-12-01",
+          "length": "120",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Emery Chen"
+          }
+        ],
+        "title": "Zero-downtime deploys: Patterns and practice",
+        "type": "Breakout session",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "NET392",
+        "abstract": "A made-up abstract for Zero-downtime deploys: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "200",
+        "room": "Room 137",
+        "seatAvailability": "veryLimited",
+        "services": ["security"],
+        "sessionId": "syn-020",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "60",
+          "time": "08:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Emery Bello"
+          }
+        ],
+        "title": "Zero-downtime deploys: Hands on workshop",
+        "type": "Code talk",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "NET392-R2",
+        "abstract": "A made-up abstract for Zero-downtime deploys: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "200",
+        "room": "Room 119",
+        "seatAvailability": "limited",
+        "services": ["security"],
+        "sessionId": "syn-021",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "120",
+          "time": "13:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Emery Bello"
+          }
+        ],
+        "title": "Zero-downtime deploys: Hands on workshop",
+        "type": "Code talk",
+        "venue": "MGM Grand"
+      },
+      {
+        "abbreviation": "ARC335",
+        "abstract": "A made-up abstract for Cost optimisation: Patterns and practice. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "room": "Room 127",
+        "seatAvailability": "veryLimited",
+        "services": ["security"],
+        "sessionId": "syn-022",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "120",
+          "time": "13:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Devon Bello"
+          }
+        ],
+        "title": "Cost optimisation: Patterns and practice",
+        "type": "Workshop",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "AIM452",
+        "abstract": "A made-up abstract for Data lakes: A builder guide. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "300",
+        "room": "Room 101",
+        "seatAvailability": "walkUp",
+        "services": ["analytics"],
+        "sessionId": "syn-023",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "90",
+          "time": "16:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Devon Adams"
+          }
+        ],
+        "title": "Data lakes: A builder guide",
+        "type": "Breakout session",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "BWP213",
+        "abstract": "A made-up abstract for Data lakes: A builder guide. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "400",
+        "room": "Room 114",
+        "seatAvailability": "available",
+        "services": ["machine-learning"],
+        "sessionId": "syn-024",
+        "sessionTime": {
+          "date": "2026-12-01",
+          "length": "60",
+          "time": "13:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Harper Gupta"
+          }
+        ],
+        "title": "Data lakes: A builder guide",
+        "type": "Workshop",
+        "venue": "MGM Grand"
+      },
+      {
+        "abbreviation": "BWP213-R",
+        "abstract": "A made-up abstract for Data lakes: A builder guide. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "400",
+        "room": "Room 135",
+        "seatAvailability": "available",
+        "services": ["machine-learning"],
+        "sessionId": "syn-025",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "90",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Harper Gupta"
+          }
+        ],
+        "title": "Data lakes: A builder guide",
+        "type": "Workshop",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "CMP327",
+        "abstract": "A made-up abstract for Event-driven systems: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "200",
+        "room": "Room 101",
+        "seatAvailability": "available",
+        "services": ["networking"],
+        "sessionId": "syn-026",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "60",
+          "time": "13:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Emery Farrell"
+          }
+        ],
+        "title": "Event-driven systems: Hands on workshop",
+        "type": "Code talk",
+        "venue": "MGM Grand"
+      },
+      {
+        "abbreviation": "ARC391",
+        "abstract": "A made-up abstract for Data lakes: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "200",
+        "room": "Room 107",
+        "seatAvailability": "walkUp",
+        "services": ["storage"],
+        "sessionId": "syn-027",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "120",
+          "time": "08:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Devon Diaz"
+          }
+        ],
+        "title": "Data lakes: Hands on workshop",
+        "type": "Breakout session",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "NET217",
+        "abstract": "A made-up abstract for Event-driven systems: Patterns and practice. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "200",
+        "room": "Room 132",
+        "seatAvailability": "available",
+        "services": ["storage"],
+        "sessionId": "syn-028",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "60",
+          "time": "14:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Harper Adams"
+          }
+        ],
+        "title": "Event-driven systems: Patterns and practice",
+        "type": "Chalk talk",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "NET217-R2",
+        "abstract": "A made-up abstract for Event-driven systems: Patterns and practice. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "200",
+        "room": "Room 118",
+        "seatAvailability": "unavailable",
+        "services": ["storage"],
+        "sessionId": "syn-029",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "60",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Harper Adams"
+          }
+        ],
+        "title": "Event-driven systems: Patterns and practice",
+        "type": "Chalk talk",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "BWP355",
+        "abstract": "A made-up abstract for Identity and access: Patterns and practice. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "100",
+        "room": "Room 113",
+        "seatAvailability": "available",
+        "services": ["analytics"],
+        "sessionId": "syn-030",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "90",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Finley Chen"
+          }
+        ],
+        "title": "Identity and access: Patterns and practice",
+        "type": "Builders session",
+        "venue": "Caesars Forum"
+      },
+      {
+        "abbreviation": "BWP244",
+        "abstract": "A made-up abstract for Observability: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "200",
+        "room": "Room 111",
+        "seatAvailability": "veryLimited",
+        "services": ["storage"],
+        "sessionId": "syn-031",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "60",
+          "time": "14:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Finley Bello"
+          }
+        ],
+        "title": "Observability: Hands on workshop",
+        "type": "Builders session",
+        "venue": "Encore"
+      },
+      {
+        "abbreviation": "BWP291",
+        "abstract": "A made-up abstract for Observability: Deep dive. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "room": "Room 133",
+        "seatAvailability": "veryLimited",
+        "services": ["networking"],
+        "sessionId": "syn-032",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "120",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Gray Adams"
+          }
+        ],
+        "title": "Observability: Deep dive",
+        "type": "Builders session",
+        "venue": "Caesars Forum"
+      },
+      {
+        "abbreviation": "BWP291-R",
+        "abstract": "A made-up abstract for Observability: Deep dive. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "room": "Room 113",
+        "seatAvailability": "available",
+        "services": ["networking"],
+        "sessionId": "syn-033",
+        "sessionTime": {
+          "date": "2026-12-01",
+          "length": "120",
+          "time": "13:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Gray Adams"
+          }
+        ],
+        "title": "Observability: Deep dive",
+        "type": "Builders session",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "NET466",
+        "abstract": "A made-up abstract for Serverless APIs: From zero to production. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "100",
+        "room": "Room 108",
+        "seatAvailability": "walkUp",
+        "services": ["compute"],
+        "sessionId": "syn-034",
+        "sessionTime": {
+          "date": "2026-12-02",
+          "length": "90",
+          "time": "13:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Casey Gupta"
+          }
+        ],
+        "title": "Serverless APIs: From zero to production",
+        "type": "Breakout session",
+        "venue": "Encore"
+      },
+      {
+        "abbreviation": "SEC162",
+        "abstract": "A made-up abstract for Observability: Deep dive. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "room": "Room 133",
+        "seatAvailability": "limited",
+        "services": ["compute"],
+        "sessionId": "syn-035",
+        "sessionTime": {
+          "date": "2026-12-02",
+          "length": "90",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Finley Gupta"
+          }
+        ],
+        "title": "Observability: Deep dive",
+        "type": "Workshop",
+        "venue": "Wynn"
+      },
+      {
+        "abbreviation": "ANT493",
+        "abstract": "A made-up abstract for Zero-downtime deploys: Deep dive. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "100",
+        "room": "Room 136",
+        "seatAvailability": "walkUp",
+        "services": ["security"],
+        "sessionId": "syn-036",
+        "sessionTime": {
+          "date": "2026-12-02",
+          "length": "90",
+          "time": "10:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Casey Adams"
+          }
+        ],
+        "title": "Zero-downtime deploys: Deep dive",
+        "type": "Breakout session",
+        "venue": "Encore"
+      },
+      {
+        "abbreviation": "ANT493-R2",
+        "abstract": "A made-up abstract for Zero-downtime deploys: Deep dive. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "100",
+        "room": "Room 116",
+        "seatAvailability": "walkUp",
+        "services": ["security"],
+        "sessionId": "syn-037",
+        "sessionTime": {
+          "date": "2026-12-03",
+          "length": "60",
+          "time": "10:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Casey Adams"
+          }
+        ],
+        "title": "Zero-downtime deploys: Deep dive",
+        "type": "Breakout session",
+        "venue": "Caesars Forum"
+      },
+      {
+        "abbreviation": "ARC114",
+        "abstract": "A made-up abstract for Cost optimisation: A builder guide. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "200",
+        "room": "Room 119",
+        "seatAvailability": "walkUp",
+        "services": ["security"],
+        "sessionId": "syn-038",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "120",
+          "time": "16:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Emery Bello"
+          }
+        ],
+        "title": "Cost optimisation: A builder guide",
+        "type": "Breakout session",
+        "venue": "Wynn"
+      },
+      {
+        "abbreviation": "BWP162",
+        "abstract": "A made-up abstract for Observability: Patterns and practice. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "room": "Room 114",
+        "seatAvailability": "veryLimited",
+        "services": ["networking"],
+        "sessionId": "syn-039",
+        "sessionTime": {
+          "date": "2026-12-03",
+          "length": "120",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Casey Gupta"
+          }
+        ],
+        "title": "Observability: Patterns and practice",
+        "type": "Builders session",
+        "venue": "Encore"
+      },
+      {
+        "abbreviation": "BWP344",
+        "abstract": "A made-up abstract for Event-driven systems: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "200",
+        "room": "Room 114",
+        "seatAvailability": "walkUp",
+        "services": ["compute"],
+        "sessionId": "syn-040",
+        "sessionTime": {
+          "date": "2026-12-02",
+          "length": "60",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Gray Farrell"
+          }
+        ],
+        "title": "Event-driven systems: Hands on workshop",
+        "type": "Breakout session",
+        "venue": "Encore"
+      },
+      {
+        "abbreviation": "BWP344-R",
+        "abstract": "A made-up abstract for Event-driven systems: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "200",
+        "room": "Room 124",
+        "seatAvailability": "walkUp",
+        "services": ["compute"],
+        "sessionId": "syn-041",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "120",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Gray Farrell"
+          }
+        ],
+        "title": "Event-driven systems: Hands on workshop",
+        "type": "Breakout session",
+        "venue": "Wynn"
+      },
+      {
+        "abbreviation": "CMP163",
+        "abstract": "A made-up abstract for Observability: Hands on workshop. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "room": "Room 129",
+        "seatAvailability": "veryLimited",
+        "services": ["storage"],
+        "sessionId": "syn-042",
+        "sessionTime": {
+          "date": "2026-12-02",
+          "length": "90",
+          "time": "10:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Harper Eriksson"
+          }
+        ],
+        "title": "Observability: Hands on workshop",
+        "type": "Workshop",
+        "venue": "MGM Grand"
+      },
+      {
+        "abbreviation": "DEV421",
+        "abstract": "A made-up abstract for Zero-downtime deploys: Patterns and practice. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "400",
+        "room": "Room 106",
+        "seatAvailability": "walkUp",
+        "services": ["compute"],
+        "sessionId": "syn-043",
+        "sessionTime": {
+          "date": "2026-12-02",
+          "length": "120",
+          "time": "10:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Devon Chen"
+          }
+        ],
+        "title": "Zero-downtime deploys: Patterns and practice",
+        "type": "Breakout session",
+        "venue": "MGM Grand"
+      },
+      {
+        "abbreviation": "CMP353",
+        "abstract": "A made-up abstract for Identity and access: Deep dive. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "400",
+        "room": "Room 136",
+        "seatAvailability": "walkUp",
+        "services": ["containers"],
+        "sessionId": "syn-044",
+        "sessionTime": {
+          "date": "2026-12-03",
+          "length": "60",
+          "time": "10:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Finley Gupta"
+          }
+        ],
+        "title": "Identity and access: Deep dive",
+        "type": "Breakout session",
+        "venue": "MGM Grand"
+      },
+      {
+        "abbreviation": "CMP353-R2",
+        "abstract": "A made-up abstract for Identity and access: Deep dive. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": false,
+        "level": "400",
+        "room": "Room 117",
+        "seatAvailability": "walkUp",
+        "services": ["containers"],
+        "sessionId": "syn-045",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "120",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Finley Gupta"
+          }
+        ],
+        "title": "Identity and access: Deep dive",
+        "type": "Breakout session",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "ANT148",
+        "abstract": "A made-up abstract for Cost optimisation: A builder guide. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "300",
+        "room": "Room 102",
+        "seatAvailability": "veryLimited",
+        "services": ["machine-learning"],
+        "sessionId": "syn-046",
+        "sessionTime": {
+          "date": "2026-12-01",
+          "length": "120",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Finley Farrell"
+          }
+        ],
+        "title": "Cost optimisation: A builder guide",
+        "type": "Builders session",
+        "venue": "Caesars Forum"
+      },
+      {
+        "abbreviation": "NET381",
+        "abstract": "A made-up abstract for Cost optimisation: From zero to production. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "200",
+        "room": "Room 139",
+        "seatAvailability": "available",
+        "services": ["networking"],
+        "sessionId": "syn-047",
+        "sessionTime": {
+          "date": "2026-12-04",
+          "length": "90",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Alex Diaz"
+          }
+        ],
+        "title": "Cost optimisation: From zero to production",
+        "type": "Chalk talk",
+        "venue": "Encore"
+      },
+      {
+        "abbreviation": "ANT435",
+        "abstract": "A made-up abstract for Container platforms: Deep dive. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "100",
+        "room": "Room 139",
+        "seatAvailability": "limited",
+        "services": ["database"],
+        "sessionId": "syn-048",
+        "sessionTime": {
+          "date": "2026-12-02",
+          "length": "120",
+          "time": "13:00",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Casey Eriksson"
+          }
+        ],
+        "title": "Container platforms: Deep dive",
+        "type": "Chalk talk",
+        "venue": "The Venetian"
+      },
+      {
+        "abbreviation": "ANT435-R",
+        "abstract": "A made-up abstract for Container platforms: Deep dive. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "100",
+        "room": "Room 139",
+        "seatAvailability": "veryLimited",
+        "services": ["database"],
+        "sessionId": "syn-049",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "60",
+          "time": "11:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Casey Eriksson"
+          }
+        ],
+        "title": "Container platforms: Deep dive",
+        "type": "Chalk talk",
+        "venue": "Caesars Forum"
+      },
+      {
+        "abbreviation": "SEC209",
+        "abstract": "A made-up abstract for Zero-downtime deploys: Lessons from the field. Synthetic data for testing only.",
+        "isAllDaySession": false,
+        "isReservable": true,
+        "level": "400",
+        "room": "Room 134",
+        "seatAvailability": "unavailable",
+        "services": ["containers"],
+        "sessionId": "syn-050",
+        "sessionTime": {
+          "date": "2026-11-30",
+          "length": "120",
+          "time": "14:30",
+          "timezone": "America/Los_Angeles"
+        },
+        "speakers": [
+          {
+            "name": "Harper Farrell"
+          }
+        ],
+        "title": "Zero-downtime deploys: Lessons from the field",
+        "type": "Workshop",
+        "venue": "MGM Grand"
+      }
+    ],
+    "totalCount": 120,
+    "nextToken": "50"
+  }
+}
