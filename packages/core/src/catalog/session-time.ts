@@ -32,24 +32,21 @@ export const MAX_CACHED_ZONES = 64;
 
 /** The IANA identifiers the runtime reports, in their canonical case. */
 const SUPPORTED_ZONES: ReadonlySet<string> = new Set(Intl.supportedValuesOf('timeZone'));
-/** The shape of a properly cased Area/Location alias such as Asia/Kolkata. */
-const ALIAS_PATTERN = /^[A-Z][a-z]+(\/[A-Z][A-Za-z0-9_+-]*)+$/;
-
 /**
- * Strict IANA check (QA M8). Intl accepts any letter case, so it is not enough: the
- * identifier must be exactly as the runtime lists it, or UTC, or exactly the name the
- * runtime resolves it to, or a properly cased alias of a listed zone (such as Asia/Kolkata, which the runtime resolves to its
- * canonical name). A different casing of the same zone is refused.
+ * Strict IANA check (QA M8, L2). Intl accepts any letter case and, in current runtimes,
+ * even a bare offset such as +08:00, so it is not enough. The identifier must be exactly
+ * one the runtime lists (Intl.supportedValuesOf), or UTC, or exactly the canonical name
+ * the runtime resolves it to. An offset string and a different letter case of a valid
+ * zone are refused. (A valid alias the runtime resolves to another name, such as
+ * Asia/Kolkata, which this runtime lists as Asia/Calcutta, is therefore refused too.)
  */
 function isStrictZone(zone: string, resolved: string): boolean {
-  if (SUPPORTED_ZONES.has(zone) || zone === 'UTC' || resolved === zone) {
-    return true;
-  }
-  if (resolved.toLowerCase() === zone.toLowerCase()) {
+  if (zone.startsWith('+') || zone.startsWith('-')) {
     return false;
   }
-  return ALIAS_PATTERN.test(zone);
+  return SUPPORTED_ZONES.has(zone) || zone === 'UTC' || resolved === zone;
 }
+
 /** A formatter for the zone, or null when the zone is not a valid IANA identifier. */
 function formatterFor(zone: string): Intl.DateTimeFormat | null {
   const cached = formatterCache.get(zone);

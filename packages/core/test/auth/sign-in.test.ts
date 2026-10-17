@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import fc from 'fast-check';
 import {
+  KEYCHAIN_FAILED_NOTICE,
   MEMORY_ONLY_NOTICE,
   buildAuthorizeUrl,
   redirectUriFor,
@@ -383,5 +384,28 @@ describe('events-client, L5: only bearer token responses are accepted', () => {
       await expect(signIn(r.deps)).rejects.toBeInstanceOf(SignInFailedError);
       expect(r.store.saves).toHaveLength(0);
     }
+  });
+});
+
+describe('events-client, L7: the memory-only notice matches why tokens are in memory', () => {
+  test('no keychain from the start gets the no-keychain notice', async () => {
+    const r = rig({ kind: 'memory' });
+    const result = await signIn(r.deps);
+    expect(result.memoryOnlyNotice).toBe(MEMORY_ONLY_NOTICE);
+    expect(MEMORY_ONLY_NOTICE).toContain('No OS keychain is available');
+  });
+
+  test('a keychain that fails while saving gets the keychain-failed notice', async () => {
+    const r = rig({});
+    const save = r.store.save.bind(r.store);
+    r.store.save = (tokens) => {
+      r.store.setKind('memory');
+      return save(tokens);
+    };
+    const result = await signIn(r.deps);
+    expect(result.memoryOnlyNotice).toBe(KEYCHAIN_FAILED_NOTICE);
+    expect(KEYCHAIN_FAILED_NOTICE).toContain('could not be written');
+    expect(KEYCHAIN_FAILED_NOTICE).not.toContain('No OS keychain is available');
+    expect(KEYCHAIN_FAILED_NOTICE).not.toContain('each session');
   });
 });

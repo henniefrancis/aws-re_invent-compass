@@ -79,6 +79,7 @@ export {
   buildAuthorizeUrl,
   redirectUriFor,
   MEMORY_ONLY_NOTICE,
+  KEYCHAIN_FAILED_NOTICE,
   DEFAULT_SIGN_IN_TIMEOUT_MS,
   type SignInDeps,
   type SignInResult,

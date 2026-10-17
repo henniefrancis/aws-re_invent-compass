@@ -54,12 +54,8 @@ describe('events-client, N4: input is cut to 8 KB before matching', () => {
     const line = lines[0] ?? '';
     expect(line.startsWith('[REDACTED] ')).toBe(true);
     expect(line.endsWith('[TRUNCATED]')).toBe(true);
-    expect(line.length).toBe(
-      MAX_REDACT_INPUT_LENGTH +
-        '[TRUNCATED]'.length -
-        'needle-in-the-head'.length +
-        '[REDACTED]'.length,
-    );
+    // The secret is removed from the full input first, then the line is cut to the limit.
+    expect(line.length).toBe(MAX_REDACT_INPUT_LENGTH + '[TRUNCATED]'.length);
     expect(line).not.toContain('past-the-cut');
   });
 
