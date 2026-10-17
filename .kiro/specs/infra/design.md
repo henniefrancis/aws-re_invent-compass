@@ -24,11 +24,11 @@ Three constraints shape every decision below:
 
 One personal HCP Terraform organisation, project `reinvent-compass`, three workspaces:
 
-| Workspace | Execution | Who runs it | Purpose |
-|---|---|---|---|
-| `reinvent-compass-bootstrap` | local (in HCP) | Owner, once, in CloudShell | OIDC provider, four roles, account-level API Gateway CloudWatch role |
-| `reinvent-compass-dev` | remote, CLI-driven | Owner via `release.sh dev` | Dev environment, all six modules |
-| `reinvent-compass-prod` | remote, CLI-driven | Owner via `release.sh prod` | Prod environment, all six modules |
+| Workspace                    | Execution          | Who runs it                 | Purpose                                                              |
+| ---------------------------- | ------------------ | --------------------------- | -------------------------------------------------------------------- |
+| `reinvent-compass-bootstrap` | local (in HCP)     | Owner, once, in CloudShell  | OIDC provider, four roles, account-level API Gateway CloudWatch role |
+| `reinvent-compass-dev`       | remote, CLI-driven | Owner via `release.sh dev`  | Dev environment, all six modules                                     |
+| `reinvent-compass-prod`      | remote, CLI-driven | Owner via `release.sh prod` | Prod environment, all six modules                                    |
 
 The dev and prod workspaces authenticate with `TFC_AWS_PROVIDER_AUTH=true`, `TFC_AWS_PLAN_ROLE_ARN` and `TFC_AWS_APPLY_ROLE_ARN`. The plan phase assumes the read-only Plan_Role; the apply phase assumes the tag-scoped Apply_Role.
 
@@ -100,7 +100,7 @@ Each environment root and the bootstrap config split concerns into separate file
 
 The Owner applies it once in CloudShell with their own credentials. State is stored in HCP Terraform through a `cloud` block pointing at the `reinvent-compass-bootstrap` workspace, which is set to **Local execution mode** in HCP (per build plan 7.1 and ADR-001). Local execution means Terraform runs on the Owner's machine using the Owner's own credentials, while HCP only holds the state file: the bootstrap run therefore does not assume and does not depend on the project Plan_Role or Apply_Role (those roles do not exist yet when the bootstrap first runs).
 
-> **Design decision reconciling Requirement 2.1.** Requirement 2.1 says the Bootstrap_Config uses "no `cloud` block and no remote backend requiring the project roles". The design keeps state in HCP via a `cloud` block (ADR-001, build plan 7.1) but runs in Local execution mode with the Owner's credentials, so it satisfies the *intent* of 2.1: the bootstrap needs no project plan or apply role, no remote backend assuming those roles, and no dependency on anything the bootstrap itself creates. The literal "no `cloud` block" wording is in tension with ADR-001's "state in HCP for every workspace, including bootstrap". This design follows ADR-001 (the plan and ADRs win over the requirement wording per the steering rule) and records the tension here. **Integrator note:** if the requirement wording must be honoured literally (a purely local backend for bootstrap), raise it as an S6 change request before the owner runs the bootstrap; otherwise Requirement 2.1 should be reworded to "a configuration suited to local execution (local execution mode, owner credentials, no dependency on the project plan or apply roles), with state in HCP per ADR-001".
+> **Design decision reconciling Requirement 2.1.** Requirement 2.1 says the Bootstrap_Config uses "no `cloud` block and no remote backend requiring the project roles". The design keeps state in HCP via a `cloud` block (ADR-001, build plan 7.1) but runs in Local execution mode with the Owner's credentials, so it satisfies the _intent_ of 2.1: the bootstrap needs no project plan or apply role, no remote backend assuming those roles, and no dependency on anything the bootstrap itself creates. The literal "no `cloud` block" wording is in tension with ADR-001's "state in HCP for every workspace, including bootstrap". This design follows ADR-001 (the plan and ADRs win over the requirement wording per the steering rule) and records the tension here. **Integrator note:** if the requirement wording must be honoured literally (a purely local backend for bootstrap), raise it as an S6 change request before the owner runs the bootstrap; otherwise Requirement 2.1 should be reworded to "a configuration suited to local execution (local execution mode, owner credentials, no dependency on the project plan or apply roles), with state in HCP per ADR-001".
 
 It creates:
 
@@ -234,31 +234,31 @@ All shell scripts are `shellcheck` clean, never echo secrets, and are run only b
 
 A single-table design (ADR-012, plan section 4.2). The base table and two GSIs support the pass and device access patterns. Identifiers are opaque: UUID v4 serials, and `subHash`/`deviceHash` are HMAC-SHA256 with the pepper from Secrets Manager. TTL is for clean-up only; code checks `expiresAt` on every read.
 
-| Attribute | Role |
-|---|---|
-| `PK`, `SK` | Base table partition and sort keys (opaque composite keys) |
-| `GSI1PK` (pass), `GSI1SK` (device) | GSI1: all devices for a pass |
-| `GSI2PK` (`subHash`), `GSI2SK` (pass) | GSI2: all passes for a `subHash` |
-| `ttl` | Numeric epoch-seconds TTL attribute for automatic clean-up |
-| `expiresAt` | Logical expiry checked in code on every read |
+| Attribute                             | Role                                                       |
+| ------------------------------------- | ---------------------------------------------------------- |
+| `PK`, `SK`                            | Base table partition and sort keys (opaque composite keys) |
+| `GSI1PK` (pass), `GSI1SK` (device)    | GSI1: all devices for a pass                               |
+| `GSI2PK` (`subHash`), `GSI2SK` (pass) | GSI2: all passes for a `subHash`                           |
+| `ttl`                                 | Numeric epoch-seconds TTL attribute for automatic clean-up |
+| `expiresAt`                           | Logical expiry checked in code on every read               |
 
 GSI1 and GSI2 project the attributes needed to answer their queries without reading the base table (Requirement 6.8). Each index states its `projection_type` explicitly: GSI1 uses `INCLUDE` with the device fields the "all devices for a pass" query needs, and GSI2 uses `INCLUDE` with the pass fields the "all passes for a subHash" query needs (serial, session reference and `expiresAt`). The indexes are declared with the stable `hash_key`/`range_key` arguments rather than the provider 6.x `key_schema` block, because `key_schema` currently forces GSI replacement on a Retained_Resource (see the Data_Module section and provider issues #46335 and #46601).
 
 ### Secrets Manager layout
 
-| Secret | Loaded by | Content |
-|---|---|---|
-| `compass/<env>/apple-pass` | Owner, out of band (`load-secrets.sh`) | Apple Pass Type ID certificate and key |
-| `compass/<env>/google-wallet` | Owner, out of band (`load-secrets.sh`) | Google Wallet service account key (ADR-019) |
-| `compass/<env>/app` | Terraform (`random_password`) | pepper and origin-verify value, each >= 32 chars |
+| Secret                        | Loaded by                              | Content                                          |
+| ----------------------------- | -------------------------------------- | ------------------------------------------------ |
+| `compass/<env>/apple-pass`    | Owner, out of band (`load-secrets.sh`) | Apple Pass Type ID certificate and key           |
+| `compass/<env>/google-wallet` | Owner, out of band (`load-secrets.sh`) | Google Wallet service account key (ADR-019)      |
+| `compass/<env>/app`           | Terraform (`random_password`)          | pepper and origin-verify value, each >= 32 chars |
 
 ### Backend and tfvars configuration (git-ignored, with committed examples)
 
-| Real file (git-ignored) | Committed example | Keys |
-|---|---|---|
-| `infra/envs/<env>/cloud.auto.tfbackend` | `cloud.auto.tfbackend.example` | `TF_CLOUD_ORGANIZATION`, `TF_CLOUD_PROJECT`, `TF_WORKSPACE` style KEY=VALUE lines |
-| `infra/envs/<env>/terraform.tfvars` | `terraform.tfvars.example` | env name, alarm email, throttling, table name |
-| `infra/bootstrap/terraform.tfvars` | `bootstrap/terraform.tfvars.example` | organisation name, project |
+| Real file (git-ignored)                 | Committed example                    | Keys                                                                              |
+| --------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------- |
+| `infra/envs/<env>/cloud.auto.tfbackend` | `cloud.auto.tfbackend.example`       | `TF_CLOUD_ORGANIZATION`, `TF_CLOUD_PROJECT`, `TF_WORKSPACE` style KEY=VALUE lines |
+| `infra/envs/<env>/terraform.tfvars`     | `terraform.tfvars.example`           | env name, alarm email, throttling, table name                                     |
+| `infra/bootstrap/terraform.tfvars`      | `bootstrap/terraform.tfvars.example` | organisation name, project                                                        |
 
 In addition to the files above, the git-ignore list (`.gitignore`) includes `infra/build/`, the directory into which `release.sh` builds the Lambda zips. It holds generated build artefacts only and has no `.example` counterpart (nothing to document). It is git-ignored but is deliberately uploaded to HCP, because the remote plan and apply need the Lambda zips.
 
@@ -268,7 +268,7 @@ Six resources carry `prevent_destroy = true`: the CloudFront Distribution, the D
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system, essentially a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system, essentially a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 This feature is Infrastructure as Code (Terraform), so randomized property-based testing does not apply: there is no pure function with a large input space to generate against. Following the project's prescribed approach (ADR-014, Requirement 16), correctness is verified by Terraform native tests (`tests/*.tftest.hcl`) using `mock_provider` blocks with `command = plan` only, plus static scans. The properties below are therefore universally-quantified **plan invariants**: each is a "for all" statement about the planned configuration that a single plan-only assertion (or a repo scan) verifies. The owner-run deploy path (zero-diff apply, idempotence of bootstrap) is validated by the Owner, never by the Agent.
 
@@ -276,55 +276,55 @@ Properties were selected from the acceptance criteria that express cross-cutting
 
 ### Property 1: Every managed resource carries the required tags
 
-*For all* taggable resources in a planned environment root, the plan SHALL show both a `project` tag and an `environment` tag (supplied by provider `default_tags`).
+_For all_ taggable resources in a planned environment root, the plan SHALL show both a `project` tag and an `environment` tag (supplied by provider `default_tags`).
 
 **Validates: Requirements 1.9, 16.4**
 
 ### Property 2: Sampling is disabled on every WAF rule
 
-*For all* five rules in the Web_ACL, `visibility_config.sampled_requests_enabled` SHALL be `false`.
+_For all_ five rules in the Web_ACL, `visibility_config.sampled_requests_enabled` SHALL be `false`.
 
 **Validates: Requirements 4.11, 16.5, 17.4**
 
 ### Property 3: Every log group retains logs for 14 days
 
-*For all* CloudWatch log groups created by the Api_Module (the two Lambda log groups and the stage access-log group), `retention_in_days` SHALL equal 14.
+_For all_ CloudWatch log groups created by the Api_Module (the two Lambda log groups and the stage access-log group), `retention_in_days` SHALL equal 14.
 
 **Validates: Requirements 5.12, 5.13, 16.3**
 
 ### Property 4: The access log format captures no IP or full path
 
-*For all* planned configurations of the `live` stage access log format, the format string SHALL contain `$context.resourcePath` and SHALL NOT contain `$context.path`, `$context.identity.sourceIp`, or any other source-IP or full-path field.
+_For all_ planned configurations of the `live` stage access log format, the format string SHALL contain `$context.resourcePath` and SHALL NOT contain `$context.path`, `$context.identity.sourceIp`, or any other source-IP or full-path field.
 
 **Validates: Requirements 5.7, 5.8, 16.6, 17.3**
 
 ### Property 5: Every retained resource is protected against destruction
 
-*For all* six Retained_Resources (the CloudFront Distribution, the DynamoDB table, the three secrets, and the site bucket), the resource SHALL have `prevent_destroy = true` in its lifecycle block.
+_For all_ six Retained_Resources (the CloudFront Distribution, the DynamoDB table, the three secrets, and the site bucket), the resource SHALL have `prevent_destroy = true` in its lifecycle block.
 
 **Validates: Requirements 9.1, 9.2, 9.3, 9.4, 16.2**
 
 ### Property 6: No Terraform output exposes a secret or identifier
 
-*For all* outputs declared by the environment roots and modules, no output value SHALL be a secret, token, email address, account identifier, or other identifier, and any unavoidable sensitive value SHALL be marked `sensitive`.
+_For all_ outputs declared by the environment roots and modules, no output value SHALL be a secret, token, email address, account identifier, or other identifier, and any unavoidable sensitive value SHALL be marked `sensitive`.
 
 **Validates: Requirements 7.4, 17.1**
 
 ### Property 7: No committed owned file embeds an account id, account-bearing ARN, or email
 
-*For all* committed files under `infra/**`, `scripts/**`, and `docs/runbooks/**`, the file SHALL NOT contain a 12-digit AWS account identifier, an `arn:aws` string that embeds an account identifier, or an email address.
+_For all_ committed files under `infra/**`, `scripts/**`, and `docs/runbooks/**`, the file SHALL NOT contain a 12-digit AWS account identifier, an `arn:aws` string that embeds an account identifier, or an email address.
 
 **Validates: Requirements 17.6**
 
 ### Property 8: No script echoes a secret on any exit path
 
-*For all* execution paths of every script (success, validation failure, and write or apply failure), the script SHALL NOT echo, print, or log any secret, token, email address, account identifier, or other identifier value, referring to secrets only by name or path.
+_For all_ execution paths of every script (success, validation failure, and write or apply failure), the script SHALL NOT echo, print, or log any secret, token, email address, account identifier, or other identifier value, referring to secrets only by name or path.
 
 **Validates: Requirements 13.5, 17.2**
 
 ### Property 9: The two environments compose the same modules
 
-*For all* six modules (Site, Edge, Api, Data, Secrets, Observability), each module SHALL be present in both the `dev` and the `prod` environment root, with no module present in one and absent from the other.
+_For all_ six modules (Site, Edge, Api, Data, Secrets, Observability), each module SHALL be present in both the `dev` and the `prod` environment root, with no module present in one and absent from the other.
 
 **Validates: Requirements 10.1**
 
@@ -419,7 +419,8 @@ These changes were made while implementing the spec. Each is a deliberate depart
 20. **API key at the edge.** The api module creates an API key (value from the sensitive variable `api_key_value`), a usage plan on stage `live` and the plan key, and sets `api_key_source = HEADER`. The edge sends the same value as the custom origin header `x-api-key` beside `x-origin-verify`. CloudFront overwrites a viewer-supplied header of the same name with a custom origin header, so a client cannot choose either value. **Unresolved:** API Gateway enforces a key only on methods marked `apiKeyRequired`, which is a `security` entry with an `apiKey` scheme named `x-api-key` in the OpenAPI contract. S0 owns the contract and this stream may not edit it, so until S0 adds that marking to every operation the key is created and sent but not enforced. Change request for S0: add an `api_key` security scheme (type apiKey, name `x-api-key`, in header) and `security: [{api_key: []}]` on every operation.
 21. **WAF PassKit rate rule.** A sixth rule, `passkit-rate-limit` at priority 6 (per-IP rate, scope-down to URI paths starting `/api/passkit/`, 300 requests per window), is added after the kill switch so priorities 1 to 5 do not move. Requirement 4.9's "exactly five rules" becomes five defined rules plus this one. Sampling is off on it.
 22. **Least-privilege DynamoDB writes.** The passkit role may `PutItem` and `DeleteItem` only with `dynamodb:LeadingKeys` matching `DEV#*`, and has no `UpdateItem`. The api role may `PutItem`, `UpdateItem` and `DeleteItem` only with leading keys `PASS#*`, `DEV#*`, `HANDOFF#*` and `RATE#*` (the item kinds of the S5 data model). `GetItem` and `Query` on the table and both GSIs are unconditional.
-23. **Point-in-time recovery is off (owner decision, final).** `point_in_time_recovery` is disabled on the table, so `forget_me` is a real erasure and the data lives only until session end plus 24 hours. Requirement 6.4 and the build plan's PITR line are replaced by this. Deletion protection and `prevent_destroy` stay on. Consequence for the rollback runbook: there is no restore-from-backup path for the table; a lost table is rebuilt empty and attendees reissue passes.
+23. **Point-in-time recovery is off (owner decision, final).** `point_in_time_recovery` is disabled on the table, so `forget_me` is a real erasure and the data lives only until session end plus 24 hours. Requirement 6.4 and the build plan's PITR line are replaced by this. Deletion protection and `prevent_destroy` stay on. Consequence for the rollback runbook: there is no restore-from-backup path for the table; a lost table is rebuilt empty and attendees reissue passes.
+
 24. **No request detail anywhere.** The stage sets `xray_tracing_enabled = false` and both Lambdas set tracing to `PassThrough` explicitly; method settings keep execution logging OFF and data trace off. The access log format scan (never `$context.path`, never a source IP) runs in the api module native tests and again over every Terraform file in the repo-wide static tests under `infra/tests`.
 25. **Final Trivy result.** No HIGH or CRITICAL finding in any module, the bootstrap or either root; the only suppression is the documented AVD-AWS-0132 on the site bucket. The scan reports MEDIUM findings for CloudFront access logging off (Requirement 4.7 requires it) and for DynamoDB point-in-time recovery off (owner decision), and LOW findings for customer managed keys, X-Ray and API caching, none of which are in scope.
 26. **Security review fixes, IAM (H1, H2, M3, M4, M5, L4, L6).**
