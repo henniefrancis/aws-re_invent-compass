@@ -39,7 +39,7 @@ export async function suggestForBlock(
   favorites: readonly string[],
 ): Promise<Suggestions> {
   const rebooking: RebookOption[] = [];
-  for (const option of await rules.rebooking(blocked.code, lookup, favorites)) {
+  for (const option of await rules.rebooking(blocked.code, lookup, favorites, blocked.sessionId)) {
     if (
       option.kind === 'similar' ||
       (await rules.checkReservation(option.session, confirmed, lookup)).decision !== 'block'
@@ -57,9 +57,9 @@ export async function suggestForBlock(
       const repeats =
         originalSession === undefined
           ? []
-          : (await rules.rebooking(originalSession.code, lookup, favorites)).filter(
-              (option) => option.kind === 'repeat',
-            );
+          : (
+              await rules.rebooking(originalSession.code, lookup, favorites, original.sessionId)
+            ).filter((option) => option.kind === 'repeat');
       const without = [...confirmed.filter((c) => c !== original), commitmentFor(blocked)];
       for (const { session: repeat } of repeats) {
         if (

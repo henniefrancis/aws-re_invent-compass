@@ -52,7 +52,7 @@ function bindRules(
       rules.checkReservation(candidate, commitments, catalog),
     suggestLayovers: async (day) => (await rules.suggestLayovers(day, catalog)).suggestions,
     repeatsOf: async (session) =>
-      (await rules.rebooking(session.code, catalog, favorites))
+      (await rules.rebooking(session.code, catalog, favorites, session.sessionId))
         .filter((option) => option.kind === 'repeat')
         .map((option) => option.session),
   };

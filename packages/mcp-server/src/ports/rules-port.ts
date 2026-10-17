@@ -36,7 +36,8 @@ export interface RebookOption {
 
 /** The outcome of S2 planSafeSwap for hold-the-repeat-then-cancel-the-original. */
 export interface SwapPlan {
-  outcome: 'safe' | 'unsafe' | 'failed';
+  /** Only `safe` allows the cancel. `unknown` means S2 cannot judge it (treated as not safe). */
+  outcome: 'safe' | 'unsafe' | 'failed' | 'unknown';
   explanation: string;
 }
 
@@ -61,6 +62,7 @@ export interface RulesPort {
     baseCode: string,
     lookup: CatalogView,
     favorites: readonly string[],
+    originalSessionId?: string,
   ): Promise<RebookOption[]>;
   planSafeSwap(
     original: Commitment,

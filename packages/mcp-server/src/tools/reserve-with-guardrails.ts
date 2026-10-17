@@ -138,7 +138,12 @@ export async function reserveWithGuardrails(
   const rebooking: { forCode: string; code: string; title: string; reason: string }[] = [];
   for (const session of sessions) {
     if (fullIds.has(session.sessionId)) {
-      for (const option of await rules.rebooking(session.code, catalog, schedule.favorites)) {
+      for (const option of await rules.rebooking(
+        session.code,
+        catalog,
+        schedule.favorites,
+        session.sessionId,
+      )) {
         rebooking.push({
           forCode: session.code,
           code: option.session.code,
