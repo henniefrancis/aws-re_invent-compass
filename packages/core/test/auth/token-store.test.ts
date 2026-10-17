@@ -279,3 +279,40 @@ describe('Feature: events-client, Property 6: Keychain absence or failure falls 
     );
   });
 });
+
+describe('events-client, M2: the store generation', () => {
+  test('sign-in saves, clears and invalidate each start a new generation', () => {
+    const store = createTokenStore(fakeKeyring());
+    const g0 = store.generation;
+    store.save(sample);
+    expect(store.generation).toBe(g0 + 1);
+    store.invalidate();
+    expect(store.generation).toBe(g0 + 2);
+    store.clear();
+    expect(store.generation).toBe(g0 + 3);
+  });
+
+  test('replaceIfCurrent writes only for the current generation and keeps it', () => {
+    const store = createTokenStore(fakeKeyring());
+    store.save(sample);
+    const g = store.generation;
+    const refreshed = { ...sample, accessToken: 'refreshed-access' };
+    expect(store.replaceIfCurrent(g, refreshed)).toBe('keychain');
+    expect(store.generation).toBe(g);
+    expect(store.load()?.accessToken).toBe('refreshed-access');
+    store.invalidate();
+    expect(store.replaceIfCurrent(g, { ...sample, accessToken: 'late' })).toBeUndefined();
+    expect(store.load()?.accessToken).toBe('refreshed-access');
+  });
+
+  test('clearIfCurrent clears only for the current generation', () => {
+    const store = createTokenStore(fakeKeyring());
+    store.save(sample);
+    const stale = store.generation;
+    store.save({ ...sample, accessToken: 'newer' });
+    expect(store.clearIfCurrent(stale)).toBe(false);
+    expect(store.load()?.accessToken).toBe('newer');
+    expect(store.clearIfCurrent(store.generation)).toBe(true);
+    expect(store.load()).toBeUndefined();
+  });
+});

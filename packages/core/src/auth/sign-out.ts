@@ -72,6 +72,9 @@ async function revoke(refreshToken: string, deps: SignOutDeps): Promise<void> {
 
 /** Sign out: revoke, then clear, then return the Builder ID sign-out URL. */
 export async function signOut(store: TokenStore, deps: SignOutDeps): Promise<SignOutResult> {
+  // Invalidate first: a refresh already running can then no longer write tokens that
+  // sign-out would not revoke or clear (finding M2).
+  store.invalidate();
   const held = store.load();
   if (held !== undefined) {
     await revoke(held.refreshToken, deps);

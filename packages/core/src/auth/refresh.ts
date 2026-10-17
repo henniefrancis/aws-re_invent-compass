@@ -43,7 +43,12 @@ export interface RefreshDeps {
 const inFlight = new Map<string, Promise<void>>();
 
 /** Run one refresh exchange for the held tokens and store the result. */
-async function exchange(store: TokenStore, held: TokenSet, deps: RefreshDeps): Promise<void> {
+async function exchange(
+  store: TokenStore,
+  held: TokenSet,
+  generation: number,
+  deps: RefreshDeps,
+): Promise<void> {
   assertAudience('refresh-token', hostOf(TOKEN_ENDPOINT));
   let result;
   try {
@@ -59,7 +64,12 @@ async function exchange(store: TokenStore, held: TokenSet, deps: RefreshDeps): P
 
   if (!isOk(result.status)) {
     if (oauthErrorCode(result.json) === 'invalid_grant') {
-      store.clear();
+      // A rejection of an old refresh token must not wipe tokens from a newer
+      // sign-in, nor repeat a clear that sign-out already did (finding M2).
+      if (!store.clearIfCurrent(generation)) {
+        deps.logger.warn('Token refresh result discarded: the session changed meanwhile');
+        return;
+      }
       deps.logger.warn('Token refresh rejected: sign-in is required');
       throw new SignInRequiredError();
     }
@@ -75,17 +85,23 @@ async function exchange(store: TokenStore, held: TokenSet, deps: RefreshDeps): P
   deps.logger.addSecret(parsed.accessToken);
   deps.logger.addSecret(parsed.idToken);
   deps.logger.addSecret(parsed.refreshToken);
-  store.save({
+  // Write only if no sign-in, sign-out or clear happened since this refresh started,
+  // so a late refresh can never bring back tokens after sign-out (finding M2).
+  const stored = store.replaceIfCurrent(generation, {
     accessToken: parsed.accessToken,
     idToken: parsed.idToken,
     refreshToken: parsed.refreshToken ?? held.refreshToken,
     accessTokenExpiresAt: deps.now() + parsed.expiresInSeconds * 1000,
   });
+  if (stored === undefined) {
+    deps.logger.warn('Token refresh result discarded: the session changed meanwhile');
+  }
 }
 
 /** Refresh now, sharing any refresh already running for the same refresh token. */
 export function refreshNow(store: TokenStore, deps: RefreshDeps): Promise<void> {
   const held = store.load();
+  const generation = store.generation;
   if (held === undefined) {
     return Promise.reject(new NotSignedInError());
   }
@@ -93,7 +109,7 @@ export function refreshNow(store: TokenStore, deps: RefreshDeps): Promise<void> 
   if (running !== undefined) {
     return running;
   }
-  const started = exchange(store, held, deps).finally(() => {
+  const started = exchange(store, held, generation, deps).finally(() => {
     inFlight.delete(held.refreshToken);
   });
   inFlight.set(held.refreshToken, started);

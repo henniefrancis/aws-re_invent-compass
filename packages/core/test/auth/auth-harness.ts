@@ -18,24 +18,50 @@ export interface FakeStore extends TokenStore {
 export function fakeStore(initial?: TokenSet, kind: StorageKind = 'keychain'): FakeStore {
   let held = initial;
   let currentKind = kind;
+  let generation = 0;
   const store: FakeStore = {
     saves: [],
     clears: 0,
     get kind() {
       return currentKind;
     },
+    get generation() {
+      return generation;
+    },
     setKind(next) {
       currentKind = next;
     },
     load: () => (held === undefined ? undefined : { ...held }),
     save(tokens) {
+      generation += 1;
       store.saves.push(tokens);
       held = { ...tokens };
       return currentKind;
     },
     clear() {
+      generation += 1;
       store.clears += 1;
       held = undefined;
+    },
+    invalidate() {
+      generation += 1;
+    },
+    replaceIfCurrent(expected, tokens) {
+      if (expected !== generation) {
+        return undefined;
+      }
+      store.saves.push(tokens);
+      held = { ...tokens };
+      return currentKind;
+    },
+    clearIfCurrent(expected) {
+      if (expected !== generation) {
+        return false;
+      }
+      generation += 1;
+      store.clears += 1;
+      held = undefined;
+      return true;
     },
   };
   return store;

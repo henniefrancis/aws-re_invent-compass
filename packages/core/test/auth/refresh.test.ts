@@ -11,6 +11,7 @@ import {
   createIdTokenProvider,
 } from '../../src/auth/credential-provider.js';
 import { CLIENT_ID, TOKEN_ENDPOINT } from '../../src/auth/oauth.js';
+import { signOut } from '../../src/auth/sign-out.js';
 import {
   NotSignedInError,
   RefreshFailedError,
@@ -277,5 +278,92 @@ describe('events-client, task 11.5: credential sources over the store', () => {
       createEventsApiCredential(sources).getAccessTokenForEventsApi(),
     ).rejects.toBeInstanceOf(NotSignedInError);
     await expect(sources.refreshNow()).rejects.toBeInstanceOf(NotSignedInError);
+  });
+});
+
+describe('events-client, M2: a refresh cannot outlive the session it started in', () => {
+  /** A refresh whose token endpoint answer is held back until released. */
+  function heldRefresh(
+    status = 200,
+    body: unknown = tokenBody(),
+  ): {
+    oauth: ReturnType<typeof fakeOAuth>;
+    release: () => void;
+  } {
+    let release: () => void = () => undefined;
+    const deferred = new Promise<{ status: number; body: unknown }>((resolve) => {
+      release = () => {
+        resolve({ status, body });
+      };
+    });
+    return { oauth: fakeOAuth([{ deferred }]), release };
+  }
+
+  test('a refresh finishing after sign-out or clear does not bring the tokens back', async () => {
+    const { oauth, release } = heldRefresh();
+    const store = fakeStore(heldTokens());
+    const pending = refreshNow(store, deps(oauth).deps);
+    store.clear();
+    release();
+    await pending;
+    expect(store.load()).toBeUndefined();
+    expect(store.saves).toHaveLength(0);
+  });
+
+  test('a refresh finishing after a newer sign-in does not overwrite the new tokens', async () => {
+    const { oauth, release } = heldRefresh();
+    const store = fakeStore(heldTokens());
+    const pending = refreshNow(store, deps(oauth).deps);
+    const fresh = heldTokens({
+      accessToken: 'newer-sign-in-access',
+      refreshToken: 'newer-sign-in-refresh',
+    });
+    store.save(fresh);
+    release();
+    await pending;
+    expect(store.load()).toEqual(fresh);
+    expect(store.saves).toEqual([fresh]);
+  });
+
+  test('a stale invalid_grant does not wipe a newer sign-in or repeat a clear', async () => {
+    const { oauth, release } = heldRefresh(400, { error: 'invalid_grant' });
+    const store = fakeStore(heldTokens());
+    const pending = refreshNow(store, deps(oauth).deps);
+    const fresh = heldTokens({ refreshToken: 'newer-sign-in-refresh' });
+    store.save(fresh);
+    release();
+    await expect(pending).resolves.toBeUndefined();
+    expect(store.load()).toEqual(fresh);
+    expect(store.clears).toBe(0);
+
+    const second = heldRefresh(400, { error: 'invalid_grant' });
+    const other = fakeStore(heldTokens({ refreshToken: 'other-refresh-token-value' }));
+    const pending2 = refreshNow(other, deps(second.oauth).deps);
+    other.clear();
+    second.release();
+    await expect(pending2).resolves.toBeUndefined();
+    expect(other.clears).toBe(1);
+  });
+
+  test('a current invalid_grant still clears and asks for sign-in', async () => {
+    const { oauth, release } = heldRefresh(400, { error: 'invalid_grant' });
+    const store = fakeStore(heldTokens());
+    const pending = refreshNow(store, deps(oauth).deps);
+    release();
+    await expect(pending).rejects.toBeInstanceOf(SignInRequiredError);
+    expect(store.load()).toBeUndefined();
+  });
+
+  test('sign-out invalidates a refresh already in flight, so nothing unrevoked is stored', async () => {
+    const { oauth: tokenOauth, release } = heldRefresh();
+    const store = fakeStore(heldTokens());
+    const { logger } = capturingLogger();
+    const refreshing = refreshNow(store, deps(tokenOauth).deps);
+    const revokeOauth = fakeOAuth([{ status: 200 }]);
+    const signingOut = signOut(store, { fetch: revokeOauth.fetch, logger });
+    release();
+    await Promise.all([refreshing, signingOut]);
+    expect(store.load()).toBeUndefined();
+    expect(store.saves).toHaveLength(0);
   });
 });

@@ -39,10 +39,28 @@ export interface TokenStore {
   readonly kind: StorageKind;
   /** The held tokens, or undefined when not signed in. */
   load(): TokenSet | undefined;
-  /** Store the tokens. Returns 'memory' if the keychain failed and memory is used. */
+  /**
+   * Store the tokens of a new sign-in. Returns 'memory' if the keychain failed and
+   * memory is used. A sign-in save starts a new generation, so any refresh that began
+   * earlier can no longer write.
+   */
   save(tokens: TokenSet): StorageKind;
-  /** Remove every token. Empties memory even if a keychain delete throws. */
+  /** Remove every token and start a new generation. Empties memory even if a delete throws. */
   clear(): void;
+  /**
+   * The current generation. It changes on every sign-in save, clear and invalidate. A
+   * refresh records it when it starts and may only write or clear if it is unchanged.
+   */
+  readonly generation: number;
+  /** Start a new generation without touching the tokens (used when sign-out begins). */
+  invalidate(): void;
+  /**
+   * Store refreshed tokens only if the generation is still `generation`. Returns the
+   * storage kind, or undefined (and writes nothing) when the generation has moved on.
+   */
+  replaceIfCurrent(generation: number, tokens: TokenSet): StorageKind | undefined;
+  /** Clear the tokens only if the generation is still `generation`; true if cleared. */
+  clearIfCurrent(generation: number): boolean;
 }
 
 /** The part of a keyring Entry this store uses. */
@@ -121,11 +139,40 @@ export function createTokenStore(keyring: KeyringLike = realKeyring): TokenStore
   let kind: StorageKind = entries === undefined ? 'memory' : 'keychain';
   let memory: TokenSet | undefined;
   let expiresAt = 0;
+  let generation = 0;
 
   /** Switch to memory only after a keychain failure, removing any leftovers. */
   function fallBack(held: Entries): void {
     kind = 'memory';
     deleteAll(held);
+  }
+
+  /** Write the tokens to the keychain, or to memory after a keychain failure. */
+  function write(tokens: TokenSet): StorageKind {
+    expiresAt = tokens.accessTokenExpiresAt;
+    if (kind === 'keychain' && entries !== undefined) {
+      try {
+        setSecret(entries.access, tokens.accessToken);
+        setSecret(entries.refresh, tokens.refreshToken);
+        setSecret(entries.id, tokens.idToken);
+        memory = undefined;
+        return 'keychain';
+      } catch {
+        fallBack(entries);
+      }
+    }
+    memory = { ...tokens };
+    return 'memory';
+  }
+
+  /** Remove every token and start a new generation. */
+  function wipe(): void {
+    generation += 1;
+    memory = undefined;
+    expiresAt = 0;
+    if (entries !== undefined) {
+      deleteAll(entries);
+    }
   }
 
   return {
@@ -152,28 +199,32 @@ export function createTokenStore(keyring: KeyringLike = realKeyring): TokenStore
     },
 
     save(tokens) {
-      expiresAt = tokens.accessTokenExpiresAt;
-      if (kind === 'keychain' && entries !== undefined) {
-        try {
-          setSecret(entries.access, tokens.accessToken);
-          setSecret(entries.refresh, tokens.refreshToken);
-          setSecret(entries.id, tokens.idToken);
-          memory = undefined;
-          return 'keychain';
-        } catch {
-          fallBack(entries);
-        }
-      }
-      memory = { ...tokens };
-      return 'memory';
+      generation += 1;
+      return write(tokens);
     },
 
     clear() {
-      memory = undefined;
-      expiresAt = 0;
-      if (entries !== undefined) {
-        deleteAll(entries);
+      wipe();
+    },
+
+    get generation() {
+      return generation;
+    },
+
+    invalidate() {
+      generation += 1;
+    },
+
+    replaceIfCurrent(expected, tokens) {
+      return expected === generation ? write(tokens) : undefined;
+    },
+
+    clearIfCurrent(expected) {
+      if (expected !== generation) {
+        return false;
       }
+      wipe();
+      return true;
     },
   };
 }
