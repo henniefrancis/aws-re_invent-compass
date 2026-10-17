@@ -6,6 +6,7 @@ import {
   HEADERS_TIMEOUT_MS,
   LOOPBACK_PORTS,
   MAX_HEADER_SIZE_BYTES,
+  MAX_WRONG_STATE_CALLBACKS,
   REQUEST_TIMEOUT_MS,
   bindLoopback,
   defaultLoopbackDeps,
@@ -16,7 +17,12 @@ import {
   type ResponseLike,
   type ServerLike,
 } from '../../src/auth/loopback-server.js';
-import { CallbackError, NoLoopbackPortError, SignInTimeoutError } from '../../src/auth/errors.js';
+import {
+  CallbackError,
+  NoLoopbackPortError,
+  SignInTimeoutError,
+  StateMismatchError,
+} from '../../src/auth/errors.js';
 
 // Tests for the loopback server (events-client, S1, tasks 9.3 to 9.5, plus the M1 and
 // L2 hardening). Port selection (Property 2) runs against fake server factories keyed
@@ -255,8 +261,7 @@ describe('events-client, M1: only a matching state consumes the single callback 
     }
   });
 
-  test('a wrong, missing or oversized state is answered 400 and does not use up the slot', async () => {
-    const { world, handler, server } = await bound();
+  test('one or two wrong, missing or oversized state values are answered 400 and do not use up the slot', async () => {
     const badUrls = [
       `${CALLBACK_PATH}?code=abc&state=wrong`,
       `${CALLBACK_PATH}?code=abc`,
@@ -267,14 +272,44 @@ describe('events-client, M1: only a matching state consumes the single callback 
       `${CALLBACK_PATH}?error=access_denied`,
       `${CALLBACK_PATH}?error=access_denied&state=nope`,
     ];
-    for (const url of badUrls) {
-      const res = fakeRes();
-      handler(req(url, HOST), res);
-      expect(res.status).toBe(400);
-      expect(res.body).not.toContain('abc');
+    for (let i = 0; i + 1 < badUrls.length; i += 2) {
+      const { world, handler, server } = await bound();
+      for (const url of [badUrls[i], badUrls[i + 1]]) {
+        const res = fakeRes();
+        handler(req(url ?? '', HOST), res);
+        expect(res.status).toBe(400);
+        expect(res.body).not.toContain('abc');
+      }
+      expect(world.servers.every((s) => s.closeCount === 0)).toBe(true);
+      // The real redirect still completes afterwards, within the same timeout.
+      handler(req(goodUrl(), HOST), fakeRes());
+      await expect(server.awaitCallback()).resolves.toMatchObject({ code: 'abc' });
     }
-    expect(world.servers.every((s) => s.closeCount === 0)).toBe(true);
-    // The real redirect still completes afterwards, within the same timeout.
+  });
+
+  test('the third wrong-state callback rejects with StateMismatchError and shuts everything down', async () => {
+    expect(MAX_WRONG_STATE_CALLBACKS).toBe(3);
+    const { world, handler, server } = await bound();
+    for (const url of [`${CALLBACK_PATH}?code=abc&state=one`, `${CALLBACK_PATH}?code=abc`]) {
+      handler(req(url, HOST), fakeRes());
+    }
+    const res = fakeRes();
+    handler(req(`${CALLBACK_PATH}?code=abc&state=three`, HOST), res);
+    expect(res.status).toBe(400);
+    await expect(server.awaitCallback()).rejects.toBeInstanceOf(StateMismatchError);
+    expect(world.servers.every((s) => s.closeCount === 1 && s.closeAllCount === 1)).toBe(true);
+    // Even the right state is refused once the attempt has ended.
+    const late = fakeRes();
+    handler(req(goodUrl(), HOST), late);
+    expect(late.status).toBe(404);
+  });
+
+  test('wrong-state callbacks on other hosts or paths are not counted', async () => {
+    const { handler, server } = await bound();
+    for (let i = 0; i < 6; i += 1) {
+      handler(req(`${CALLBACK_PATH}?state=bad`, 'evil.example:8484'), fakeRes());
+      handler(req('/other?state=bad', HOST), fakeRes());
+    }
     handler(req(goodUrl(), HOST), fakeRes());
     await expect(server.awaitCallback()).resolves.toMatchObject({ code: 'abc' });
   });
@@ -436,6 +471,23 @@ describe('events-client, task 9.5: loopback request handling (real socket on 127
       port: server.port,
     });
     await expect(httpRequest(server.port, '/callback?code=a&state=b')).rejects.toBeDefined();
+  });
+
+  test('through a real socket three wrong-state callbacks reject, and the right one before that still works', async () => {
+    const dead = await bindLoopback([0], realV4Deps(), OPTIONS);
+    for (const state of ['x1', 'x2']) {
+      expect((await httpRequest(dead.port, `/callback?code=abc&state=${state}`)).status).toBe(400);
+    }
+    const failing = dead.awaitCallback().catch((e: unknown) => e);
+    expect((await httpRequest(dead.port, '/callback?code=abc&state=x3')).status).toBe(400);
+    expect(await failing).toBeInstanceOf(StateMismatchError);
+    await expect(httpRequest(dead.port, `/callback?code=abc&state=${STATE}`)).rejects.toBeDefined();
+
+    const live = await bindLoopback([0], realV4Deps(), OPTIONS);
+    await httpRequest(live.port, '/callback?code=abc&state=x1');
+    await httpRequest(live.port, '/callback?code=abc&state=x2');
+    expect((await httpRequest(live.port, `/callback?code=abc&state=${STATE}`)).status).toBe(200);
+    await expect(live.awaitCallback()).resolves.toMatchObject({ code: 'abc' });
   });
 
   test('a real POST to /callback is refused with 404', async () => {

@@ -10,6 +10,7 @@ const EXPECTED = [
   'AuthError',
   'BUILDER_ID_SIGN_OUT_URL',
   'CALLBACK_PATH',
+  'MAX_WRONG_STATE_CALLBACKS',
   'CLIENT_ID',
   'CallbackError',
   'DEFAULT_SIGN_IN_TIMEOUT_MS',

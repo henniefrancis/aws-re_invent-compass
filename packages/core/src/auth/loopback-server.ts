@@ -19,7 +19,8 @@
 //   - the state parameter equals the expected state, compared in constant time over
 //     equal-length buffers.
 // A request with a missing or wrong state gets a 400 page and the server keeps
-// listening. Only a matching state consumes the slot; then exactly one request is
+// listening, until the third such request, which rejects the attempt with
+// StateMismatchError. Only a matching state consumes the slot; then exactly one request is
 // handled, answered with a completion page, and the server shuts down. A matching
 // state with an error parameter rejects at once. The sign-in timeout starts when the
 // port is bound, so a started sign-in that is never completed cannot hold the port
@@ -32,7 +33,12 @@
 
 import { timingSafeEqual } from 'node:crypto';
 import { createServer as createHttpServer } from 'node:http';
-import { CallbackError, NoLoopbackPortError, SignInTimeoutError } from './errors.js';
+import {
+  CallbackError,
+  NoLoopbackPortError,
+  SignInTimeoutError,
+  StateMismatchError,
+} from './errors.js';
 
 /** The ports tried, in order, for the loopback redirect (Requirement 1.2). */
 export const LOOPBACK_PORTS: readonly number[] = [8484, 8485, 8486, 8487, 8488, 8489];
@@ -46,6 +52,9 @@ const LOOPBACK_V6 = '::1';
 const UNSUPPORTED_CODES: ReadonlySet<string> = new Set(['EADDRNOTAVAIL', 'EAFNOSUPPORT']);
 /** The longest code or state value accepted from the redirect. */
 const MAX_PARAM_LENGTH = 2048;
+
+/** After this many wrong-state callbacks the sign-in is rejected (Requirement 1.13). */
+export const MAX_WRONG_STATE_CALLBACKS = 3;
 
 /** HTTP server limits for the callback listener. */
 export const MAX_HEADER_SIZE_BYTES = 8192;
@@ -214,6 +223,7 @@ export async function bindLoopback(
     const servers: ServerLike[] = [];
     let closed = false;
     let handled = false;
+    let wrongState = 0;
     let boundPort = candidate;
     const timers: { handle?: ReturnType<typeof setTimeout> } = {};
     let settle: { resolve: (r: LoopbackResult) => void; reject: (e: Error) => void };
@@ -249,8 +259,16 @@ export async function bindLoopback(
       }
       const state = readParam(url.searchParams, 'state');
       if (state === undefined || !stateMatches(options.expectedState, state)) {
-        // Not our redirect: answer it, but keep the slot and keep listening.
-        respond(res, 400, FAILED_PAGE, 'text/html');
+        // Not our redirect: answer it, keep the slot and keep listening. Only after
+        // MAX_WRONG_STATE_CALLBACKS of them is the attempt rejected as a state mismatch.
+        wrongState += 1;
+        if (wrongState >= MAX_WRONG_STATE_CALLBACKS) {
+          handled = true;
+          respond(res, 400, FAILED_PAGE, 'text/html', shutdown);
+          settle.reject(new StateMismatchError());
+        } else {
+          respond(res, 400, FAILED_PAGE, 'text/html');
+        }
         return;
       }
       handled = true;
