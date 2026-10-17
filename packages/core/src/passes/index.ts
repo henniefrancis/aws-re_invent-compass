@@ -41,3 +41,7 @@ export { redact, passError, PassError } from './redaction.js';
 
 // Field hash used by the sync diff.
 export { fieldsHash } from './field-hash.js';
+
+// Pass_Builder: builds validated PassFields from a confirmed session.
+export { buildPass } from './pass-builder.js';
+export type { BuildPassInput, BuildPassResult, BuildPassDeps } from './pass-builder.js';

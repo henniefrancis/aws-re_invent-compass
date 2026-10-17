@@ -30,7 +30,7 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags. Stage the task 1 code and tests under `packages/core/**/passes/**` together with the spec folder `.kiro/specs/boarding-passes/` (`requirements.md`, `design.md`, `tasks.md`, `.config.kiro`). Never push, never open a PR, never tag.
     - Example: `git commit -m "chore(boarding-passes): scaffold passes package, injected seams and shared helpers" -m "Add injected interface contracts, owned data models, redact helper, PassError and fieldsHash. Commit the boarding-passes spec folder alongside the initial code."`
 
-- [ ] 2. Implement Pass_Builder
+- [x] 2. Implement Pass_Builder
   - Implement `buildPass(input, deps)` as a pure function (no clock), taking only the `ConnectionProvider` as an injected dependency.
   - Run `normalisePassText` from `@compass/contracts` on title, venue, room and the from-venue value before validation.
   - Apply the title rule: after normalisation, truncate a title longer than eighty characters to seventy-seven characters followed by the three ASCII full stops `...`, never using the single Unicode ellipsis and never splitting a surrogate pair.
@@ -39,28 +39,28 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
   - Include the attendee name field (one to forty characters) only when a local opt-in is recorded, and omit it otherwise.
   - Set no server-owned field (`boardingClosesAt`, `disclaimer`, `expirationDate`, `relevantDates`, `transitType`, `sharingProhibited`) and send no barcode field; validate the result against `createPassFieldsSchema(eventWindow)` before return.
   - _Requirements: 1.1, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 1.10_
-  - [ ] 2.1 Write property test: built fields always validate for the current window
+  - [x] 2.1 Write property test: built fields always validate for the current window
     - **Property 1: Built fields always validate for the current window**
     - **Validates: Requirements 1.1, 1.8**
-  - [ ] 2.2 Write property test: adjacency fields present exactly when the adjacent commitment exists
+  - [x] 2.2 Write property test: adjacency fields present exactly when the adjacent commitment exists
     - **Property 3: Adjacency fields present exactly when the adjacent commitment exists**
     - **Validates: Requirements 1.3, 1.4**
-  - [ ] 2.3 Write property test: title length and ASCII ellipsis truncation
+  - [x] 2.3 Write property test: title length and ASCII ellipsis truncation
     - **Property 4: Title length and ASCII ellipsis truncation**
     - **Validates: Requirements 1.5**
-  - [ ] 2.4 Write property test: attendee name present exactly when opt-in is recorded
+  - [x] 2.4 Write property test: attendee name present exactly when opt-in is recorded
     - **Property 5: Attendee name present exactly when opt-in is recorded**
     - **Validates: Requirements 1.6, 1.7**
-  - [ ] 2.5 Write property test: empty venue and room are sent as empty strings
+  - [x] 2.5 Write property test: empty venue and room are sent as empty strings
     - **Property 6: Empty venue and room are sent as empty strings**
     - **Validates: Requirements 1.9**
-  - [ ] 2.6 Write property test: no server-derived or barcode fields in builder output
+  - [x] 2.6 Write property test: no server-derived or barcode fields in builder output
     - **Property 7: No server-derived or barcode fields in builder output**
     - **Validates: Requirements 1.10**
-  - [ ] 2.7 Write example and snapshot tests for the builder
+  - [x] 2.7 Write example and snapshot tests for the builder
     - Snapshot the builder output over representative sessions (Requirement 9.1); add example tests for the `Title not shown` fallback (rejected text never echoed) and the empty venue and room cases.
     - _Requirements: 1.8, 1.9_
-  - [ ] 2.8 Run this task's tests, then commit locally
+  - [x] 2.8 Run this task's tests, then commit locally
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Pass_Builder with text normalisation and adjacency" -m "Pure buildPass derives walk fields, truncates titles with ASCII ellipsis, applies safe fallbacks and validates against the window schema."`
 
