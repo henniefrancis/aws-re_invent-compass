@@ -1,0 +1,10 @@
+{
+  "status": 500,
+  "contentType": "application/problem+json",
+  "body": {
+    "type": "about:blank",
+    "title": "Server error",
+    "status": 500,
+    "code": "internal_error"
+  }
+}

@@ -151,3 +151,34 @@
   border-radius: var(--radius);
   background: var(--color-surface);
 }
+
+.board-panel {
+  max-inline-size: var(--measure);
+}
+
+.board-note {
+  color: var(--color-ink-muted);
+}
+
+.board-actions,
+.board-sessions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.board-actions li + li,
+.board-sessions li + li {
+  margin-block-start: var(--space-3);
+}
+
+.board-actions .button {
+  inline-size: 100%;
+}
+
+.board-sessions li {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}

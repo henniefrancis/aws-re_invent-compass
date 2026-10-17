@@ -204,27 +204,27 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 7.13 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 8. Board page component and hand-off fixtures
-  - [ ] 8.1 Implement the Board_Page
+- [x] 8. Board page component and hand-off fixtures
+  - [x] 8.1 Implement the Board_Page
     - Prerender the Reading state with a `<noscript>` message and `<meta name="robots" content="noindex">` for this route only
     - In `afterNextRender`: build the Board_Controller with the browser globals only (`location.hash`, `Location.replaceState`, global `fetch`, `setTimeout`, `clearTimeout`, `Date.now`) and call `start()`; "Try again" calls `retry()`; `ngOnDestroy` calls `dispose()`. The component holds no flow logic
     - Focus the state heading and update the polite live region after each state change; `aria-busy` while loading
     - Action links as plain anchors: Apple bundle paths with `type="application/vnd.apple.pkpasses"`, the Google save URL, the calendar path with `download`; first action visible in the first viewport on iPhone portrait
     - _Requirements: 1.7, 16.1, 16.4, 16.5, 16.7, 18.1, 18.2, 18.3, 18.8, 18.9, 18.10, 20.4_
 
-  - [ ] 8.2 Create the hand-off fixtures and their test
+  - [x] 8.2 Create the hand-off fixtures and their test
     - Create `site/e2e/fixtures/handoff/` with the fixtures listed in design Component 20, all built for one fixed test id and shaped by the contract
     - Write `site/test/board/fixtures.test.ts`: every ready fixture is accepted by `validateHandoffView` and every negative fixture is rejected
     - _Requirements: 17.3, 17.4, 17.5, 22.5_
 
-  - [ ] 8.3 Verify the build and both checks
+  - [x] 8.3 Verify the build and both checks
     - Build and run both checks; confirm `board/index.html` carries `noindex`, the `<noscript>` text and no inline script
     - _Requirements: 3.8, 16.7, 21.4_
 
-  - [ ] 8.4 Commit
+  - [x] 8.4 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 9. Checkpoint - Ensure all tests pass
+- [x] 9. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, coverage of Site_Logic is 100%, and both build checks pass; ask the user if questions arise.
 
 - [ ] 10. Rules port, demo catalog and demo context

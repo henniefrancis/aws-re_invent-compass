@@ -1,1 +1,55 @@
-<h1 tabindex="-1">Board</h1>
+<section class="board-panel stack" [attr.aria-busy]="vm().busy">
+  <h1 #stateHeading tabindex="-1">{{ vm().heading }}</h1>
+  <p>{{ vm().message }}</p>
+  @if (!scriptRuns()) {
+    <p class="board-note">This page needs JavaScript to open your hand-off link.</p>
+  }
+
+  @if (vm().actions.length > 0) {
+    <ul class="board-actions">
+      @for (action of vm().actions; track action.href) {
+        <li>
+          @if (action.kind === 'apple') {
+            <a class="button" [href]="action.href" type="application/vnd.apple.pkpasses">{{
+              action.label
+            }}</a>
+          } @else if (action.kind === 'google') {
+            <a class="button" [href]="action.href" rel="noopener noreferrer">{{ action.label }}</a>
+          } @else {
+            <a class="button button--secondary" [href]="action.href" download>{{ action.label }}</a>
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  @if (vm().canRetry) {
+    <p>
+      <button type="button" (click)="retry()">{{ retryLabel }}</button>
+    </p>
+  }
+
+  @if (vm().deviceHint !== null) {
+    <p>{{ vm().deviceHint }}</p>
+  }
+
+  @if (vm().sessions.length > 0) {
+    <h2>Your sessions</h2>
+    @if (vm().timezoneNote !== null) {
+      <p>{{ vm().timezoneNote }}</p>
+    }
+    <ul class="board-sessions">
+      @for (row of vm().sessions; track $index) {
+        <li>
+          <strong>{{ row.code }}</strong
+          >: {{ row.title }}<br />{{ row.time }}
+        </li>
+      }
+    </ul>
+  }
+
+  @if (vm().expiresText !== null) {
+    <p class="source-note">{{ vm().expiresText }}</p>
+  }
+</section>
+<p class="live-region" role="status" aria-live="polite">{{ announcement() }}</p>
