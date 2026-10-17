@@ -401,37 +401,37 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 21.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 22. Write the security and lifecycle suite
-  - [ ] 22.1 Write property test for no echo
+- [x] 22. Write the security and lifecycle suite
+  - [x] 22.1 Write property test for no echo
     - **Property 1: Problem responses never echo input**
     - **Validates: Requirements 2.5, 2.6**
 
-  - [ ] 22.2 Write property test for keyed identity
+  - [x] 22.2 Write property test for keyed identity
     - **Property 6: Identity reduces to a keyed hash**
     - **Validates: Requirements 4.7, 4.8, 17.7, 19.4**
 
-  - [ ] 22.3 Write property test for expiry on every read
+  - [x] 22.3 Write property test for expiry on every read
     - **Property 32: Expiry is enforced on every read**
     - **Validates: Requirements 19.1, 19.2, 19.3**
 
-  - [ ] 22.4 Write property test for the log allowlist (the log-redaction test)
+  - [x] 22.4 Write property test for the log allowlist (the log-redaction test)
     - **Property 35: Log lines hold only allowlisted fields**
     - Drive all 15 operations with known token, `sub`, email, serial, hand-off id, device identifier, push token, session code, title and body needles, including throwing handlers and console noise from stubbed third-party calls
     - **Validates: Requirements 22.1, 22.2, 22.3, 22.4, 22.5, 25.6**
 
-  - [ ] 22.5 Write the named security and lifecycle tests
+  - [x] 22.5 Write the named security and lifecycle tests
     - PassKit 200, 201, 204, 304 and 401, one test each; hand-off read at 14 minutes 59 seconds succeeds and at exactly 15 minutes returns the unknown-id 404; 429 on issuePasses after 60 units and on createHandoff after 10, each with `Retry-After`, and the 81st active pass refused; PassFields rejection of a URL, a bare domain, U+202E, a control character, an out-of-window date and an 81-character title; void leads to an APNs push and a Google `INACTIVE` patch; TTL and expiry enforced on each item kind
     - _Requirements: 6.2, 6.3, 6.4, 7.2, 12.2, 16.7, 17.2, 18.2, 18.5, 19.2, 25.4, 25.5_
 
-  - [ ] 22.6 Write the structural guard tests
+  - [x] 22.6 Write the structural guard tests
     - No test file imports `@aws-sdk/client-secrets-manager` except the secret-source adapter test (which mocks `send`); no file under `packages/pass-service` contains a PEM block, a private key header or a `.p12` reference to a real file; the Passkit_Lambda wiring never requests the google-wallet secret
     - _Requirements: 21.4, 21.5, 21.6, 25.8_
 
-  - [ ] 22.7 Re-check ADR-026
+  - [x] 22.7 Re-check ADR-026
     - Confirm by reading the `passkit-generator` 3.7.0 source in `node_modules` that the code paths S5 uses do not call `node-forge` signature verification, and that every value reaching `joi` has already passed `createPassFieldsSchema` or comes from S5's fixed template; record the result in the README (any change to ADR-026 itself is a request for the integrator)
     - _Requirements: 26.1_
 
-  - [ ] 22.8 Commit
+  - [x] 22.8 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 23. Wire production dependencies, the Lambda entries and the local harness

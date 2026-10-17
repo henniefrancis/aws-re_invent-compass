@@ -3,6 +3,7 @@
 // a fake signer. Used by the handler, lifecycle, hand-off and contract tests.
 import type { PassFields } from '@compass/contracts';
 import type { ApnsClient, PushOutcome, PushTarget } from '../../src/apns/apns-client.js';
+import type { TokenVerifier } from '../../src/auth/token-verifier.js';
 import type { PassSigner } from '../../src/apple/pass-signer.js';
 import { createApiApp } from '../../src/app/api-app.js';
 import { createPasskitApp } from '../../src/app/passkit-app.js';
@@ -97,6 +98,14 @@ export interface Reply {
 }
 
 export interface FixtureOptions {
+  /** Replaces the stub verifier (the bearer is the SubHash) with a real one. */
+  verifier?: (parts: {
+    config: ApiConfig;
+    secrets: FakeSecrets;
+    clock: FakeClock;
+  }) => TokenVerifier;
+  /** Adjusts the dependencies before the apps are built (to inject failures). */
+  tweak?: (deps: ApiDeps) => void;
   env?: Record<string, string | undefined>;
   secrets?: FakeSecretsInit;
   /** Runs before every table operation (to count or to interleave). */
@@ -162,7 +171,7 @@ export function createApiFixture(options: FixtureOptions = {}): ApiFixture {
     logSink: capture.sink,
     console: capture.console,
     config,
-    verifier: {
+    verifier: options.verifier?.({ config, secrets, clock }) ?? {
       verify: (header) => {
         if (header === undefined || !header.startsWith('Bearer ')) {
           return Promise.reject(new ProblemError(401, 'unauthorized'));
@@ -179,6 +188,7 @@ export function createApiFixture(options: FixtureOptions = {}): ApiFixture {
     apns,
     google,
   };
+  options.tweak?.(deps);
   const app = createApiApp(deps);
   const passkitApp = createPasskitApp({
     clock,
