@@ -28,6 +28,7 @@ const WALLET_API = 'https://walletobjects.googleapis.com/walletobjects/v1';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const WALLET_SCOPE = 'https://www.googleapis.com/auth/wallet_object.issuer';
 const DEFAULT_ISSUER_NAME = 'Compass';
+const REQUEST_TIMEOUT_MS = 30_000;
 
 // Fields the class must carry besides its id. Kept minimal on purpose: the pass
 // content lives in the objects the api Lambda creates, not in the class.
@@ -94,6 +95,7 @@ async function getAccessToken(account) {
     account.private_key,
   );
   const response = await fetch(TOKEN_URL, {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -110,6 +112,7 @@ async function getAccessToken(account) {
 
 async function call(token, method, path, body) {
   const response = await fetch(`${WALLET_API}/${path}`, {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     method,
     headers: {
       authorization: `Bearer ${token}`,
@@ -137,7 +140,7 @@ async function ensureIssuer(token, issuerId, issuerName) {
   if (found.status !== 404)
     throw new ApiError(`reading the issuer failed with HTTP ${found.status}`);
   const created = await call(token, 'POST', 'issuer', {
-    issuerId: Number(issuerId),
+    issuerId,
     name: issuerName,
   });
   if (!created.ok) throw new ApiError(`creating the issuer failed with HTTP ${created.status}`);

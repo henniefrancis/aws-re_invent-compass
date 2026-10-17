@@ -5,7 +5,8 @@
 #   scripts/load-secrets.sh <dev|prod> apple --p12 FILE --wwdr FILE --pass-type-id ID --team-id ID
 #   scripts/load-secrets.sh <dev|prod> google --service-account FILE --issuer-id ID
 #   scripts/load-secrets.sh <dev|prod> edge-values --origin-verify-out FILE --api-key-out FILE
-#   scripts/load-secrets.sh <dev|prod> app --origin-verify-file FILE [--rotate]
+#   scripts/load-secrets.sh <dev|prod> origin-verify --origin-verify-file FILE [--rotate]
+#   scripts/load-secrets.sh <dev|prod> app [--rotate-pepper]
 #
 # OWNER-RUN ONLY, on your own machine, under your own AWS SSO session.
 #
@@ -16,18 +17,25 @@
 #         environment variable or, when that is unset, from a silent prompt.
 # google  writes compass/<env>/google-wallet with the keys issuerId and
 #         serviceAccount (the downloaded service account key).
-# edge-values  (no AWS call, run it BEFORE the first apply) generates the origin-verify
-#         value and the API key locally with openssl rand and writes each to a new
-#         file you name (mode 600). Set the sensitive HCP variables
-#         origin_verify_value and api_key_value from those files. Terraform
-#         generates neither value.
-# app     (run it AFTER the first apply has created the empty secret containers)
-#         generates the pepper locally and writes pepper and originVerify into
-#         compass/<env>/app, taking originVerify from the file edge-values wrote.
-#         It refuses to replace a secret that already holds a value unless you
-#         pass --rotate, because rotating the origin-verify value breaks the edge
-#         until the HCP variable and the secret agree again. Shred the files when
-#         the HCP variables are set and the app secret is written.
+# edge-values  (no AWS call, run it BEFORE the first apply) generates the
+#         origin-verify value and the API key locally with openssl rand and writes
+#         each to a new file you name (mode 600), outside the repository. Set the
+#         sensitive HCP variables origin_verify_value and api_key_value from those
+#         files with scripts/set-workspace-secrets.sh. Terraform generates neither.
+# origin-verify  (run it AFTER the first apply has created the empty containers)
+#         writes compass/<env>/origin-verify with the key originVerify, taken from
+#         the file edge-values wrote. The pepper lives in its own secret, so
+#         rotating this value never touches or reads the pepper. A secret that
+#         already holds a value is replaced only with --rotate, and rotating breaks
+#         the edge until the HCP variable and the secret agree again.
+# app     generates the pepper locally and writes compass/<env>/app with the key
+#         pepper. The pepper is the root of every subHash: replacing it changes all
+#         of them, so a secret that already holds a value is refused unless you
+#         pass --rotate-pepper, which also asks you to type the environment name.
+#
+# Every aws call pins --region us-east-1. An existing value is detected with
+# list-secret-version-ids (the AWSCURRENT stage) and any AWS error stops the
+# script: it fails closed.
 #
 # Secret handling: no secret value is ever printed or passed on a command line.
 # Values travel only through files in a private temporary directory (mode 700)
@@ -39,11 +47,14 @@
 set -euo pipefail
 umask 077
 
+AWS_REGION="us-east-1"
+
 usage() {
   echo "usage: scripts/load-secrets.sh <dev|prod> apple --p12 FILE --wwdr FILE --pass-type-id ID --team-id ID" >&2
   echo "       scripts/load-secrets.sh <dev|prod> google --service-account FILE --issuer-id ID" >&2
   echo "       scripts/load-secrets.sh <dev|prod> edge-values --origin-verify-out FILE --api-key-out FILE" >&2
-  echo "       scripts/load-secrets.sh <dev|prod> app --origin-verify-file FILE [--rotate]" >&2
+  echo "       scripts/load-secrets.sh <dev|prod> origin-verify --origin-verify-file FILE [--rotate]" >&2
+  echo "       scripts/load-secrets.sh <dev|prod> app [--rotate-pepper]" >&2
 }
 
 fail() {
@@ -98,10 +109,30 @@ work_dir="$(mktemp -d)"
 chmod 700 "${work_dir}"
 trap 'wipe_dir "${work_dir}"' EXIT
 
+# Succeeds (prints nothing) when the secret holds a current value, and fails
+# closed on any AWS error: an unexpected answer is never treated as "empty".
+secret_has_value() {
+  local secret_name="$1"
+  local count
+  if ! count="$(aws secretsmanager list-secret-version-ids \
+    --region "${AWS_REGION}" \
+    --secret-id "${secret_name}" \
+    --query "length(Versions[?contains(VersionStages, 'AWSCURRENT')])" \
+    --output text 2>/dev/null)"; then
+    fail "could not check ${secret_name}; nothing was written"
+  fi
+  case "${count}" in
+    0) return 1 ;;
+    [1-9] | [1-9][0-9]*) return 0 ;;
+    *) fail "unexpected answer while checking ${secret_name}; nothing was written" ;;
+  esac
+}
+
 write_secret() {
   local secret_name="$1"
   local json_file="$2"
   if ! aws secretsmanager put-secret-value \
+    --region "${AWS_REGION}" \
     --secret-id "${secret_name}" \
     --secret-string "file://${json_file}" >/dev/null 2>&1; then
     echo "error: could not write the secret ${secret_name}" >&2
@@ -212,6 +243,20 @@ load_google() {
   write_secret "compass/${env_name}/google-wallet" "${json_file}"
 }
 
+# A generated secret file must never sit inside the repository, where a stray
+# commit could publish it.
+refuse_path_inside_repo() {
+  local path="$1"
+  local dir repo_root script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+  repo_root="$(cd "${script_dir}/.." && pwd -P)"
+  dir="$(cd "$(dirname "${path}")" 2>/dev/null && pwd -P)" || fail "the folder of ${path} does not exist"
+  case "${dir}/" in
+    "${repo_root}"/*) fail "${path} is inside the repository; choose a path outside it" ;;
+    *) ;;
+  esac
+}
+
 load_edge_values() {
   local origin_out="" api_key_out=""
   while [ "$#" -gt 0 ]; do
@@ -229,13 +274,15 @@ load_edge_values() {
     echo "error: an output file already exists; name new files: ${origin_out} ${api_key_out}" >&2
     exit 1
   fi
+  refuse_path_inside_repo "${origin_out}"
+  refuse_path_inside_repo "${api_key_out}"
   openssl rand -hex 32 >"${origin_out}" || fail "could not write ${origin_out}"
   openssl rand -hex 32 >"${api_key_out}" || fail "could not write ${api_key_out}"
   chmod 600 "${origin_out}" "${api_key_out}"
   echo "wrote ${origin_out} and ${api_key_out}: set the HCP variables origin_verify_value and api_key_value from them"
 }
 
-load_app() {
+load_origin_verify() {
   local origin_file="" rotate="no"
   while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -250,17 +297,51 @@ load_app() {
   fi
   require_readable_file "${origin_file}"
 
+  # Carriage returns and newlines are stripped so the stored value matches the
+  # HCP variable byte for byte on any platform.
+  local clean_file="${work_dir}/origin-verify"
+  tr -d '\r\n' <"${origin_file}" >"${clean_file}"
   local length
-  length="$(tr -d '\r\n' <"${origin_file}" | wc -c)"
+  length="$(wc -c <"${clean_file}")"
   if [ "${length}" -lt 32 ]; then
     fail "the origin-verify value in ${origin_file} is shorter than 32 characters"
   fi
 
-  if [ "${rotate}" != "yes" ]; then
-    # A secret that already has a value has a last-changed date.
-    if aws secretsmanager describe-secret --secret-id "compass/${env_name}/app" \
-      --query 'LastChangedDate' --output text 2>/dev/null | grep -qv '^None$'; then
-      fail "compass/${env_name}/app already holds a value; pass --rotate to replace it"
+  local secret_name="compass/${env_name}/origin-verify"
+  if secret_has_value "${secret_name}" && [ "${rotate}" != "yes" ]; then
+    fail "${secret_name} already holds a value; pass --rotate to replace it"
+  fi
+
+  local json_file="${work_dir}/origin-verify.json"
+  jq -n --rawfile originVerify "${clean_file}" '{originVerify: $originVerify}' >"${json_file}" ||
+    fail "could not assemble the origin-verify secret"
+
+  write_secret "${secret_name}" "${json_file}"
+}
+
+load_app() {
+  local rotate_pepper="no"
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --rotate-pepper) rotate_pepper="yes"; shift ;;
+      *) usage; exit 2 ;;
+    esac
+  done
+
+  local secret_name="compass/${env_name}/app"
+  if secret_has_value "${secret_name}"; then
+    if [ "${rotate_pepper}" != "yes" ]; then
+      fail "${secret_name} already holds a pepper; pass --rotate-pepper to replace it"
+    fi
+    echo "WARNING: replacing the pepper changes EVERY subHash. All issued passes lose their owner match and every attendee must reissue." >&2
+    if [ ! -t 0 ]; then
+      fail "type the environment name to confirm: run this from a terminal"
+    fi
+    printf 'Type the environment name (%s) to replace the pepper: ' "${env_name}" >&2
+    local answer=""
+    read -r answer || true
+    if [ "${answer}" != "${env_name}" ]; then
+      fail "aborted: the pepper was not replaced"
     fi
   fi
 
@@ -268,18 +349,16 @@ load_app() {
   openssl rand -hex 32 >"${pepper_file}" || fail "could not generate the pepper"
 
   local json_file="${work_dir}/app.json"
-  jq -n \
-    --rawfile pepper "${pepper_file}" \
-    --rawfile originVerify "${origin_file}" \
-    '{pepper: ($pepper | rtrimstr("\n")), originVerify: ($originVerify | rtrimstr("\n"))}' >"${json_file}" ||
+  jq -n --rawfile pepper "${pepper_file}" '{pepper: ($pepper | rtrimstr("\n"))}' >"${json_file}" ||
     fail "could not assemble the app secret"
 
-  write_secret "compass/${env_name}/app" "${json_file}"
+  write_secret "${secret_name}" "${json_file}"
 }
 
 case "${kind}" in
   apple) load_apple "$@" ;;
   app) load_app "$@" ;;
+  origin-verify) load_origin_verify "$@" ;;
   edge-values) load_edge_values "$@" ;;
   google) load_google "$@" ;;
   *)

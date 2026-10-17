@@ -11,6 +11,12 @@
 # and the cache invalidation run on your machine under your own AWS SSO session
 # (run aws sso login first).
 #
+# The plan JSON is held in memory and piped through jq. It is never written to
+# disk, because it can contain values that are sensitive in the plan.
+#
+# Confirmation: dev asks for the word yes; prod asks you to type prod, so a typed
+# yes that was meant for dev cannot apply production.
+#
 # This script never prints a secret, a token, an email address, an account id or
 # a resource identifier. It prints resource addresses and types from the plan
 # (names such as module.data.aws_dynamodb_table.this), never values.
@@ -26,10 +32,13 @@ set -euo pipefail
 
 # Resource types the plan may touch. Anything else is refused.
 ALLOWED_TYPES=(
+  aws_api_gateway_api_key
   aws_api_gateway_deployment
   aws_api_gateway_method_settings
   aws_api_gateway_rest_api
   aws_api_gateway_stage
+  aws_api_gateway_usage_plan
+  aws_api_gateway_usage_plan_key
   aws_budgets_budget
   aws_cloudfront_distribution
   aws_cloudfront_function
@@ -50,11 +59,9 @@ ALLOWED_TYPES=(
   aws_s3_bucket_server_side_encryption_configuration
   aws_s3_bucket_versioning
   aws_secretsmanager_secret
-  aws_secretsmanager_secret_version
   aws_sns_topic
   aws_sns_topic_subscription
   aws_wafv2_web_acl
-  random_password
 )
 
 # Retained resources (ADR-015): a plan may never destroy or replace these types.
@@ -65,6 +72,7 @@ RETAINED_TYPES=(
   aws_s3_bucket
 )
 
+AWS_REGION="us-east-1"
 HEALTH_ATTEMPTS=6
 HEALTH_WAIT_SECONDS=10
 
@@ -107,6 +115,9 @@ TF_CLOUD_ORGANIZATION=""
 TF_CLOUD_PROJECT=""
 TF_WORKSPACE=""
 while IFS='=' read -r key value || [ -n "${key}" ]; do
+  # A file edited on Windows carries carriage returns; drop them.
+  key="${key%$'\r'}"
+  value="${value%$'\r'}"
   case "${key}" in
     TF_CLOUD_ORGANIZATION) TF_CLOUD_ORGANIZATION="${value}" ;;
     TF_CLOUD_PROJECT) TF_CLOUD_PROJECT="${value}" ;;
@@ -125,10 +136,6 @@ export TF_CLOUD_ORGANIZATION TF_CLOUD_PROJECT TF_WORKSPACE
 for tool in terraform jq npm aws curl; do
   command -v "${tool}" >/dev/null 2>&1 || fail "${tool} is not installed"
 done
-
-work_dir="$(mktemp -d)"
-chmod 700 "${work_dir}"
-trap 'rm -rf "${work_dir}"' EXIT
 
 # ---- build: Lambda zips and the site -------------------------------------
 
@@ -161,20 +168,25 @@ terraform init -input=false || fail "terraform init failed"
 echo "planning ${env_name}"
 terraform plan -input=false -out=tfplan -var "service_version=${service_version}" || fail "terraform plan failed"
 
-plan_json="${work_dir}/plan.json"
-(umask 077 && terraform show -json tfplan >"${plan_json}") || fail "could not read the saved plan"
+plan_json="$(terraform show -json tfplan)" || fail "could not read the saved plan"
+
+# jq reads the plan through a pipe from the shell, never from a file on disk.
+plan_jq() {
+  printf '%s' "${plan_json}" | jq "$@"
+}
 
 # ---- refusal checks (print addresses and types only) -----------------------
 
 retained_json="$(jq -n '$ARGS.positional' --args "${RETAINED_TYPES[@]}")"
 allowed_json="$(jq -n '$ARGS.positional' --args "${ALLOWED_TYPES[@]}")"
 
-retained_hits="$(jq -r --argjson retained "${retained_json}" '
+# shellcheck disable=SC2016 # the single quotes hold a jq program, not shell
+retained_hits="$(plan_jq -r --argjson retained "${retained_json}" '
   .resource_changes[]?
   | select(.mode == "managed")
   | select(.change.actions | index("delete") != null)
   | select(.type as $t | ($retained | index($t)) != null)
-  | .address' "${plan_json}")"
+  | .address')"
 
 if [ -n "${retained_hits}" ]; then
   echo "refused: the plan would destroy or replace a retained resource:" >&2
@@ -183,12 +195,13 @@ if [ -n "${retained_hits}" ]; then
   exit 1
 fi
 
-unexpected_types="$(jq -r --argjson allowed "${allowed_json}" '
+# shellcheck disable=SC2016 # the single quotes hold a jq program, not shell
+unexpected_types="$(plan_jq -r --argjson allowed "${allowed_json}" '
   .resource_changes[]?
   | select(.mode == "managed")
   | select((.change.actions == ["no-op"]) | not)
   | select(.type as $t | ($allowed | index($t)) == null)
-  | .type' "${plan_json}" | sort -u)"
+  | .type' | sort -u)"
 
 if [ -n "${unexpected_types}" ]; then
   echo "refused: the plan touches resource types outside the allow list:" >&2
@@ -197,17 +210,21 @@ if [ -n "${unexpected_types}" ]; then
   exit 1
 fi
 
-to_add="$(jq '[.resource_changes[]? | select(.change.actions | index("create"))] | length' "${plan_json}")"
-to_change="$(jq '[.resource_changes[]? | select(.change.actions == ["update"])] | length' "${plan_json}")"
-to_destroy="$(jq '[.resource_changes[]? | select(.change.actions | index("delete"))] | length' "${plan_json}")"
+to_add="$(plan_jq '[.resource_changes[]? | select(.change.actions | index("create"))] | length')"
+to_change="$(plan_jq '[.resource_changes[]? | select(.change.actions == ["update"])] | length')"
+to_destroy="$(plan_jq '[.resource_changes[]? | select(.change.actions | index("delete"))] | length')"
 echo "plan for ${env_name}: ${to_add} to add or replace, ${to_change} to change, ${to_destroy} to destroy"
 
 # ---- typed confirmation -----------------------------------------------------
 
-printf 'Type yes to apply this plan to %s: ' "${env_name}"
+expected_answer="yes"
+if [ "${env_name}" = "prod" ]; then
+  expected_answer="prod"
+fi
+printf 'Type %s to apply this plan to %s: ' "${expected_answer}" "${env_name}"
 answer=""
 read -r answer || true
-if [ "${answer}" != "yes" ]; then
+if [ "${answer}" != "${expected_answer}" ]; then
   echo "aborted: nothing was applied" >&2
   exit 1
 fi
@@ -221,11 +238,11 @@ distribution_id="$(terraform output -raw distribution_id)" || fail "could not re
 site_bucket="$(terraform output -raw site_bucket_name)" || fail "could not read the site bucket output"
 
 echo "syncing the site (uses your own AWS SSO session)"
-aws sts get-caller-identity >/dev/null 2>&1 || fail "no AWS session; run aws sso login first"
-aws s3 sync "${site_dir}" "s3://${site_bucket}" --delete --only-show-errors || fail "the site sync failed"
+aws sts get-caller-identity --region "${AWS_REGION}" >/dev/null 2>&1 || fail "no AWS session; run aws sso login first"
+aws s3 sync --region "${AWS_REGION}" "${site_dir}" "s3://${site_bucket}" --delete --only-show-errors || fail "the site sync failed"
 
 echo "invalidating the CloudFront cache"
-aws cloudfront create-invalidation --distribution-id "${distribution_id}" --paths "/*" >/dev/null || fail "the cache invalidation failed"
+aws cloudfront create-invalidation --region "${AWS_REGION}" --distribution-id "${distribution_id}" --paths "/*" >/dev/null || fail "the cache invalidation failed"
 
 # ---- health check: only HTTP 200 is success --------------------------------
 

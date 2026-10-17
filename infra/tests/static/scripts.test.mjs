@@ -12,7 +12,13 @@ import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
 import { readOwned, repoRoot } from './lib.mjs';
 
-const SHELL_SCRIPTS = ['scripts/bootstrap.sh', 'scripts/release.sh', 'scripts/load-secrets.sh'];
+const SHELL_SCRIPTS = [
+  'scripts/bootstrap.sh',
+  'scripts/release.sh',
+  'scripts/load-secrets.sh',
+  'scripts/set-workspace-secrets.sh',
+  'scripts/check-secrets.sh',
+];
 const ALL_SCRIPTS = [...SHELL_SCRIPTS, 'scripts/google-wallet-class.mjs'];
 
 // Names of variables that hold secret material or a value derived from it.
@@ -37,6 +43,10 @@ const SECRET_VARIABLES = [
   'access_token',
   'privateKeyPem',
   'privateKey',
+  'TFE_TOKEN',
+  'clean',
+  'clean_file',
+  'body',
 ];
 
 const OUTPUT_STATEMENT =
@@ -53,6 +63,8 @@ export function secretEchoes(source) {
   source.split('\n').forEach((line, index) => {
     if (line.trimStart().startsWith('#') || line.trimStart().startsWith('//')) return;
     if (!OUTPUT_STATEMENT.test(line)) return;
+    // A printf piped into curl hands the token to curl on stdin; it prints nothing.
+    if (/\|\s*curl/.test(line) || /\|\s*$/.test(line)) return;
     for (const name of SECRET_VARIABLES) {
       const shell = new RegExp(`\\$\\{?${name}\\}?(?![A-Za-z0-9_])`);
       const js = new RegExp(`\\$\\{\\s*[A-Za-z_.]*\\b${name}\\b`);
@@ -62,7 +74,7 @@ export function secretEchoes(source) {
   return problems;
 }
 
-test('shellcheck is clean on the three shell scripts', () => {
+test('shellcheck is clean on every shell script', () => {
   const result = spawnSync('shellcheck', SHELL_SCRIPTS, { cwd: repoRoot, encoding: 'utf8' });
   assert.equal(result.error, undefined, 'shellcheck must be installed');
   assert.equal(result.status, 0, result.stdout);
@@ -150,22 +162,40 @@ test('release.sh refuses a retained resource and an unexpected type without appl
   assert.match(source, /refused: the plan touches resource types outside the allow list/);
   const retainedRefusal = source.indexOf('refused: the plan would destroy');
   const typeRefusal = source.indexOf('refused: the plan touches');
-  const confirm = source.indexOf('Type yes to apply');
+  const confirm = source.indexOf("printf 'Type %s to apply");
   const apply = source.indexOf('terraform apply -input=false tfplan');
   assert.ok(retainedRefusal > 0 && typeRefusal > retainedRefusal);
   assert.ok(confirm > typeRefusal && apply > confirm);
   assert.match(source, /nothing was applied/);
 });
 
-test('release.sh aborts on anything but yes and treats only HTTP 200 as healthy', () => {
+test('release.sh aborts on anything but the typed word and treats only HTTP 200 as healthy', () => {
   const source = readOwned('scripts/release.sh');
   assert.match(
     source,
-    /if \[ "\$\{answer\}" != "yes" \]; then\s+echo "aborted: nothing was applied" >&2\s+exit 1/,
+    /if \[ "\$\{answer\}" != "\$\{expected_answer\}" \]; then\s+echo "aborted: nothing was applied" >&2\s+exit 1/,
+  );
+  // dev asks for yes, prod asks for the environment name.
+  assert.match(
+    source,
+    /expected_answer="yes"\s+if \[ "\$\{env_name\}" = "prod" \]; then\s+expected_answer="prod"/,
   );
   assert.match(source, /if \[ "\$\{status\}" = "200" \]; then/);
   assert.match(source, /fail "the health check never returned HTTP 200"/);
   assert.match(source, /\/api\/v1\/health/);
+});
+
+test('release.sh allows the API key types and no longer allows secret versions or random passwords', () => {
+  const source = readOwned('scripts/release.sh');
+  for (const type of [
+    'aws_api_gateway_api_key',
+    'aws_api_gateway_usage_plan',
+    'aws_api_gateway_usage_plan_key',
+  ]) {
+    assert.match(source, new RegExp(`^  ${type}$`, 'm'));
+  }
+  assert.doesNotMatch(source, /^ {2}aws_secretsmanager_secret_version$/m);
+  assert.doesNotMatch(source, /^ {2}random_password$/m);
 });
 
 test('release.sh exits non-zero when the apply, the sync or the invalidation fails', () => {
@@ -175,11 +205,26 @@ test('release.sh exits non-zero when the apply, the sync or the invalidation fai
   assert.match(source, /aws cloudfront create-invalidation .* \|\| fail/);
 });
 
-test('release.sh keeps the plan JSON in a private temporary directory that is removed', () => {
+test('release.sh never writes the plan JSON to disk and pipes it to jq', () => {
   const source = readOwned('scripts/release.sh');
-  assert.match(source, /work_dir="\$\(mktemp -d\)"/);
-  assert.match(source, /chmod 700 "\$\{work_dir\}"/);
-  assert.match(source, /trap 'rm -rf "\$\{work_dir\}"' EXIT/);
+  assert.doesNotMatch(source, /mktemp/);
+  assert.doesNotMatch(source, /show -json tfplan\s*>/);
+  assert.doesNotMatch(source, /<<</);
+  assert.match(source, /plan_json="\$\(terraform show -json tfplan\)"/);
+  assert.match(source, /printf '%s' "\$\{plan_json\}" \| jq/);
+});
+
+test('release.sh strips carriage returns from the backend file and pins the region', () => {
+  const source = readOwned('scripts/release.sh');
+  assert.match(source, /key="\$\{key%\$'\\r'\}"/);
+  assert.match(source, /value="\$\{value%\$'\\r'\}"/);
+  for (const command of [
+    'aws sts get-caller-identity',
+    'aws s3 sync',
+    'aws cloudfront create-invalidation',
+  ]) {
+    assert.match(source, new RegExp(`${command} --region "\\$\\{AWS_REGION\\}"`));
+  }
 });
 
 test('bootstrap.sh exits 0 only after a clean apply and non-zero otherwise', () => {
@@ -232,10 +277,62 @@ test('load-secrets.sh generates edge values locally and the pepper locally', () 
   assert.match(source, /an output file already exists/);
 });
 
-test('load-secrets.sh refuses to replace the app secret without --rotate and needs no AWS for edge values', () => {
+test('load-secrets.sh detects an existing value with list-secret-version-ids and fails closed', () => {
   const source = readOwned('scripts/load-secrets.sh');
+  assert.match(source, /aws secretsmanager list-secret-version-ids/);
+  assert.match(source, /Versions\[\?contains\(VersionStages, 'AWSCURRENT'\)\]/);
+  assert.match(source, /could not check \$\{secret_name\}; nothing was written/);
+  assert.match(source, /unexpected answer while checking/);
   assert.match(source, /already holds a value; pass --rotate to replace it/);
   assert.match(source, /if \[ "\$\{kind\}" != "edge-values" \]; then\s+required_tools\+=\(aws\)/);
+});
+
+test('load-secrets.sh needs a separate flag, a warning and a typed name to replace the pepper', () => {
+  const source = readOwned('scripts/load-secrets.sh');
+  assert.match(source, /--rotate-pepper\) rotate_pepper="yes"/);
+  assert.match(source, /WARNING: replacing the pepper changes EVERY subHash/);
+  assert.match(source, /Type the environment name \(%s\) to replace the pepper/);
+  assert.match(source, /already holds a pepper; pass --rotate-pepper to replace it/);
+  // A plain origin-verify rotation writes its own secret and never touches the pepper.
+  assert.match(source, /secret_name="compass\/\$\{env_name\}\/origin-verify"/);
+  assert.match(source, /secret_name="compass\/\$\{env_name\}\/app"/);
+});
+
+test('load-secrets.sh pins the region on every aws call and strips carriage returns', () => {
+  const source = readOwned('scripts/load-secrets.sh');
+  const calls =
+    source.match(/aws secretsmanager [a-z-]+ \\\n\s+--region "\$\{AWS_REGION\}"/g) ?? [];
+  assert.equal(calls.length, 2);
+  assert.match(source, /AWS_REGION="us-east-1"/);
+  assert.match(source, /tr -d '\\r\\n' <"\$\{origin_file\}"/);
+});
+
+test('load-secrets.sh refuses to write an edge value inside the repository', () => {
+  const source = readOwned('scripts/load-secrets.sh');
+  assert.match(source, /refuse_path_inside_repo "\$\{origin_out\}"/);
+  assert.match(source, /refuse_path_inside_repo "\$\{api_key_out\}"/);
+  assert.match(source, /is inside the repository; choose a path outside it/);
+});
+
+test('the HCP scripts pass the token on stdin, never on a command line, and check presence only', () => {
+  for (const script of ['scripts/set-workspace-secrets.sh', 'scripts/check-secrets.sh']) {
+    const source = readOwned(script);
+    assert.match(
+      source,
+      /printf 'header = "Authorization: Bearer %s"\\n' "\$\{TFE_TOKEN\}" \|/,
+      script,
+    );
+    assert.match(source, /-K -/, script);
+    assert.doesNotMatch(source, /-H "Authorization/, script);
+    assert.match(source, /\[ -n "\$\{TFE_TOKEN:-\}" \] \|\| fail "TFE_TOKEN is not set"/, script);
+  }
+  const setter = readOwned('scripts/set-workspace-secrets.sh');
+  assert.match(setter, /sensitive: true/);
+  assert.match(setter, /--rawfile value/);
+  assert.doesNotMatch(setter, /--arg value/);
+  const checker = readOwned('scripts/check-secrets.sh');
+  assert.match(checker, /alarm_email origin_verify_value api_key_value/);
+  assert.match(checker, /for name in app origin-verify apple-pass google-wallet/);
 });
 
 test('google-wallet-class.mjs exits 0 on success, 1 on an API failure and 2 on bad usage', () => {
@@ -244,6 +341,8 @@ test('google-wallet-class.mjs exits 0 on success, 1 on an API failure and 2 on b
   assert.match(source, /error instanceof UsageError[\s\S]*process\.exitCode = 2/);
   assert.match(source, /error instanceof ApiError[\s\S]*process\.exitCode = 1/);
   assert.match(source, /unexpected failure[\s\S]*process\.exitCode = 1/);
+  assert.doesNotMatch(source, /Number\(/);
+  assert.equal((source.match(/AbortSignal\.timeout\(REQUEST_TIMEOUT_MS\)/g) ?? []).length, 2);
   assert.doesNotMatch(source, /console\./);
 });
 

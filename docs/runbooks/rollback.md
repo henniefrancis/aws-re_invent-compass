@@ -13,9 +13,9 @@ Owner-run. Rollback in this project is always a roll forward: the previous commi
 
 Order for a bad release across the product: backend first, then the site, then npm. The npm client points only at prod and the API is additive, so a backend-new, client-old window is compatible.
 
-## Roll-forward notes for the six retained resources
+## Roll-forward notes for the seven retained resources
 
-Each carries `prevent_destroy` in Terraform, and `scripts/release.sh` refuses any plan that destroys or replaces it.
+Each of the seven carries `prevent_destroy` in Terraform, and `scripts/release.sh` refuses any plan that destroys or replaces it.
 
 ### CloudFront distribution
 
@@ -35,7 +35,11 @@ Same as the Apple secret: restore inside the recovery window with `restore-secre
 
 ### Secret `compass/<env>/app`
 
-Same restore path. If the values are lost, run `scripts/load-secrets.sh <env> edge-values` and `scripts/load-secrets.sh <env> app --rotate`, set the HCP variables `origin_verify_value` and `api_key_value` from the new files, and release again. Existing passes are unaffected, but `subHash` values derived from the old pepper no longer match, so attendees reissue passes.
+Holds the pepper. Same restore path. If the value is lost, run `scripts/load-secrets.sh <env> app --rotate-pepper` and release again. Replacing the pepper changes every `subHash`, so existing passes lose their owner match and attendees reissue them. Prefer the restore path.
+
+### Secret `compass/<env>/origin-verify`
+
+Same restore path. If the value is lost, run `scripts/load-secrets.sh <env> edge-values` and `scripts/load-secrets.sh <env> origin-verify --rotate` with the new file, set the HCP variable `origin_verify_value` from the same file with `scripts/set-workspace-secrets.sh`, and release again. The pepper is untouched, so passes are unaffected; the API refuses traffic until the edge and the secret agree again.
 
 ### Site bucket
 
