@@ -164,18 +164,18 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 10.6 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 11. Checkpoint - core fact rules
+- [x] 11. Checkpoint - core fact rules
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Implement rebooking options
-  - [ ] 12.1 Implement `rebooking.ts` `findRebookingOptions`
+- [x] 12. Implement rebooking options
+  - [x] 12.1 Implement `rebooking.ts` `findRebookingOptions`
     - Find repeats by the `-R` base-code suffix and by `repeatOf`, list standby favorites sharing the base code, and list walk-up options whose `isReservable` is false or that are full, including only sessions starting strictly after `Context.now` in the event timezone
     - Attach a 1 to 200 character reason to each option; return zero options with a plain-English no-alternative message when none match; a missing timezone returns zero options with a timezone message and leaves the input unchanged
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
-  - [ ] 12.2 Write property test for rebooking options
+  - [x] 12.2 Write property test for rebooking options
     - **Property 12: Every rebooking option matches the base code and starts after now**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
-  - [ ] 12.3 Run the rules tests, confirm they pass, then commit
+  - [x] 12.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 13. Implement safe swap
