@@ -18,8 +18,8 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 - **CLI**: The `reinvent-compass` command in the same package: no arguments starts the Compass_Server; `demo` runs the simulated flow; `hook <name>` is what Kiro hooks call.
 - **Tool**: One of the seventeen MCP tools defined in `mcpTools` in `packages/contracts/src/mcp-tools.ts`.
 - **Read_Tool**: `refresh_catalog`, `find_sessions`, `scan_repo`, `check_itinerary`. These may be auto-approved by the attendee.
-- **Local_Action_Tool**: `sign_in`, `sign_out`, `plan_week`, `sync_passes`, `export_calendar`. These change only local state or passes that follow an approved write, and are not auto-approved by Compass.
-- **Write_Tool**: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`, `issue_boarding_passes`, `send_to_phone`, `forget_me`. Never auto-approved; guardrailed inside the Compass_Server.
+- **Local_Action_Tool**: `sign_in`, `sign_out`, `plan_week`, `export_calendar`. These change only local state and are not auto-approved by Compass.
+- **Write_Tool**: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`, `issue_boarding_passes`, `send_to_phone`, `sync_passes`, `forget_me`. Never auto-approved; guardrailed inside the Compass_Server. `sync_passes` is a Write_Tool because it can void passes (CTO review H1).
 - **Schedule_Write_Tool**: The Write_Tools that change the attendee's real re:Invent schedule: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`.
 - **Awsevents_Write_Tool**: The write tools of the official remote server, as listed in the AWS Events API MCP documentation: `ReserveSessions`, `CancelReservation`, `AssociateFavorites`, `DisassociateFavorite`, `CreatePersonalTime`, `UpdatePersonalTime`, `DeletePersonalTime`.
 - **Guardrail**: The S2 function `checkReservation(candidate, schedule, context)` returning a `Verdict` of allow, warn or block.
@@ -225,7 +225,7 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 1. WHEN the Compass_Server suggests a safe swap, THE Compass_Server SHALL record a Pending_Swap naming the original session and the repeat, chosen from S2 rebooking options so that the repeat passes the Guardrail against the schedule without the original and with the blocked session.
 2. WHEN `cancel_reservation` is called for a session in a Pending_Swap, THE Compass_Server SHALL read a fresh schedule and run S2 `planSafeSwap`, and SHALL cancel only when the outcome is safe.
 3. IF the Pending_Swap outcome is failed or unsafe on the first cancel call for that session, THEN THE Compass_Server SHALL NOT send CancelReservation, SHALL return `cancelled: false`, and SHALL explain that cancelling now could leave the attendee with neither seat.
-4. WHEN `cancel_reservation` is called again for the same session after such a refusal, THE Compass_Server SHALL drop the Pending_Swap and cancel through the Confirmed_Write.
+4. WHEN `cancel_reservation` is called again for the same session after such a refusal, THE Compass_Server SHALL, WHERE the client declares Elicitation, ask an explicit "cancel anyway" question and cancel only on accept, and OTHERWISE SHALL honour the second call only within 5 minutes of the refusal; in both cases it SHALL drop the Pending_Swap and cancel through the Confirmed_Write, and the refusal text SHALL state the rule (CTO review M1).
 5. WHEN `cancel_reservation` is called for a session that is not in the confirmed schedule's reserved list, THE Compass_Server SHALL return `cancelled: false` with a reason and SHALL NOT send CancelReservation.
 6. WHEN a cancellation is sent, THE Compass_Server SHALL send CancelReservation exactly once through the Confirmed_Write and SHALL return `cancelled: true` only when the confirmed schedule no longer lists the session.
 7. THE Compass_Server SHALL keep Pending_Swaps in memory only and SHALL clear one when its swap completes, when it is dropped, or when the server exits.
@@ -318,7 +318,7 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 #### Acceptance Criteria
 
 1. THE Power `plugin.json` SHALL contain the Agent Plugins `$schema`, the name `reinvent-compass`, a version equal to the `reinvent-compass` package version, a description, an author name, the license `Apache-2.0`, and exactly the keywords `reinvent`, `re:Invent`, `conference`, `sessions`, `schedule`, `boarding pass`, `first-timer`.
-2. THE Power `mcp.json` SHALL define `compass` as a stdio server started with `npx --yes reinvent-compass@<version>` using only the Agent Plugins stdio keys, and SHALL define `awsevents` with the URL and OAuth values from tech.md and `disabledTools` listing exactly the seven Awsevents_Write_Tools.
+2. THE Power `mcp.json` SHALL define `compass` as a stdio server started with `npx --yes reinvent-compass@<version>` using only the Agent Plugins stdio keys, and SHALL NOT define `awsevents` until ADR-024 confirms that `disabledTools` is honoured in a Power; once confirmed it SHALL define `awsevents` with the URL and OAuth values from tech.md and `disabledTools` listing exactly the seven Awsevents_Write_Tools (CTO review H2).
 3. THE Power SHALL provide the skills `plan-my-week`, `first-timer-guide` and `install-hooks`, each a `SKILL.md` with `name` and `description` front matter.
 4. THE `first-timer-guide` skill SHALL cite only official AWS pages, each with its URL, on the hosts `reinvent.awsevents.com`, `aws.amazon.com` or `docs.aws.amazon.com`.
 5. THE `plan-my-week` skill SHALL tell the agent to run `check_itinerary` and show the human the session codes and catalog titles before asking for approval of any Write_Tool call.
@@ -388,3 +388,24 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 7. THE compass-power test suite SHALL NOT call the live Events API or the live Compass API.
 8. THE compass-power stream SHALL save two or three simulated-mode screenshots or terminal captures to `docs/article/screenshots/compass-power/`.
 9. THE compass-power owned files SHALL contain no em dash or en dash.
+
+## CTO review amendments
+
+These amendments came from the CTO review and take precedence over the criteria above where they differ.
+
+1. **H1.** `sync_passes` is a Write_Tool (`destructiveHint`, never auto-approved, listed as such in the README and the `plan-my-week` skill). The passes adapter never calls S4 `syncPasses` with partial input: it wraps the pass store in a narrowing view (`read` returns only the narrowed entries, `write` merges untouched entries back), and issue is the Compass client `issuePasses` plus S4 `fieldsHash` plus `store.write`.
+2. **H2.** `power/mcp.json` has no `awsevents` entry until ADR-024 confirms `disabledTools` in a Power. A structural test fails if `awsevents` is present while ADR-024 is missing or negative.
+3. **H3.** The end-to-end and demo triple is A = `syn-096` (ANT163), A-R = `syn-009` (ANT163-R) and B = `syn-082` (BWP304, 4 December 10:00, reservable), pinned by id and asserted to exist in `fixtures/synthetic/catalog.json`.
+4. **M1.** Criterion 13.4 above is replaced by the elicited "cancel anyway" or five-minute rule.
+5. **M2.** "Exactly once" means: no application-level resend, and at most one transport retry only after a rejected, unprocessed request (S1 401 and 429, S4 429). The task 26 adapter tests pin the real counts.
+6. **M3.** `plan_week` states the absolute target folder in its text and, where the client declares Elicitation, asks the human to confirm it. The writer uses `lstat` on every path component under the root and refuses symlinks, creates files with the `wx` flag, and never appends to a symlinked `.gitignore`.
+7. **M4.** WHERE the client declares Elicitation, every Schedule_Write_Tool elicits a confirmation before the write, listing the ids, codes and titles from the catalog plus every warning. Decline or cancel means no write.
+8. **M5.** The SP1 probe tool is `ProbeWrite` on server `sp1-probe`, and the exact `tool_name` is recorded. `identifyTool` is case-insensitive and the hook matcher is `.*(...)$`.
+9. **M6.** The `find_sessions` service filter is applied by the adapter over the cached wire `services` (any match, case-insensitive), because S1 `filterCatalog` takes one service over `NormalisedSession`, which has no `services` field.
+10. **M7.** The Simulated_Runtime clock is pinned at `2026-11-29T18:00:00-08:00`.
+11. **M8.** The rules adapter codes against S2 `connectionsForDay(schedule, context)`, `energyForDay(schedule, context)` and `withContextDefaults` (S2 `context.ts`).
+12. **M11.** The SP1 checklist adds "Import power from GitHub" with the repository URL and with the `power/` subfolder URL; the README install section follows the result and documents both until then.
+13. **L1.** The registry catches every handler throw and returns a fixed message, tested through the in-memory client.
+14. **L2.** `find_sessions.limit` and `plan_week.maxPerDay` refuse negative and non-integer values.
+15. **L3.** The npx local-copy risk is recorded in the threat model (README), and SP1 records the stdio server's working directory.
+16. **L5.** The platform is injected; `process.platform` branches stay out of `src`.

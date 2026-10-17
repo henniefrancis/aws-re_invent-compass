@@ -19,7 +19,7 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 5. **Other streams are mocked until merged.** Write against the port interfaces in the design with fakes in `packages/mcp-server/test/support/`. Never import unmerged S1, S2 or S4 code. Task 26 runs only after S1, S2 and S4 are merged into `develop` and this branch is rebased; if any is not merged when you reach it, stop and ask the owner.
 6. **Never call the live Events API or the live Compass API.** Tests run with `COMPASS_MODE=simulated` (set by the root vitest config) and a network guard. Live checks run only with `COMPASS_LIVE_TESTS=1`, set by the owner, and you never run them.
 7. **Never write tracked fixtures from a test.** Copy `fixtures/sample-repo` to an `fs.mkdtemp` folder before adding decoys or writing spec output.
-8. `fast-check` 4.10.2, `vitest` 4.1.12 and `@modelcontextprotocol/sdk` 1.32.1 are already pinned; `zod` 4.6.7 is pinned in `packages/core` and must be declared in `packages/mcp-server` by the integrator before task 22 (see Notes).
+8. `fast-check` 4.10.2, `vitest` 4.1.12, `@modelcontextprotocol/sdk` 1.32.1 and `zod` 4.6.7 are already pinned and declared.
 9. **Task 29 runs only after the owner records SP1 in `docs/decisions/ADR-024`.** If it is not there when you reach task 29, stop and ask the owner.
 
 ## Tasks
@@ -67,39 +67,39 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 2.8 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 3. Build the service table and the Terraform, CDK, SDK and manifest detectors
-  - [ ] 3.1 Implement the service table
+- [x] 3. Build the service table and the Terraform, CDK, SDK and manifest detectors
+  - [x] 3.1 Implement the service table
     - Create `src/scanner/service-table.ts` with `SERVICE_TABLE` (about 25 services as listed in design Component 1) and `resolveService(kind, identifier)` with longest-prefix matching for Terraform types
     - Check every Terraform prefix, CDK module name, SDK package name and boto3 service name against its official source (Terraform AWS provider docs on the Terraform Registry, AWS CDK API reference, AWS SDK for JavaScript v3 API reference, boto3 docs) and use official AWS display names; taxonomy candidates are the display name plus the synthetic category tokens from `fixtures/synthetic/generate.ts`
     - _Requirements: 4.1, 4.3, 4.4_
-  - [ ] 3.2 Write structural tests for the service table
+  - [x] 3.2 Write structural tests for the service table
     - Keys unique; every entry has a display name, at least one identifier and at least one taxonomy candidate; every identifier resolves to exactly one key
     - _Requirements: 4.1, 4.3, 4.4_
-  - [ ] 3.3 Implement the Terraform detector
+  - [x] 3.3 Implement the Terraform detector
     - Create `src/scanner/detectors/terraform.ts`: whole-line `#` and `//` comments removed, `resource` and `data` blocks with `aws_` types counted, unmapped types counted as unmapped; hits carry no location
     - _Requirements: 2.1, 2.6_
-  - [ ] 3.4 Write property test for the Terraform detector
+  - [x] 3.4 Write property test for the Terraform detector
     - **Property 5: The Terraform detector counts exactly the declared AWS blocks**
     - **Validates: Requirements 2.1, 2.6**
-  - [ ] 3.5 Implement the CDK TypeScript detector
+  - [x] 3.5 Implement the CDK TypeScript detector
     - Create `src/scanner/detectors/cdk-typescript.ts`: imports from `aws-cdk-lib/aws-<module>` and `aws_<module>` namespaces of `aws-cdk-lib`, aliases tracked per file, constructs counted per instantiation from a CDK module
     - _Requirements: 2.2, 2.6_
-  - [ ] 3.6 Write property test for the CDK detector
+  - [x] 3.6 Write property test for the CDK detector
     - **Property 6: The CDK detector counts imports and constructs from CDK modules only**
     - **Validates: Requirements 2.2, 2.6**
-  - [ ] 3.7 Implement the SDK for JavaScript v3 detector
+  - [x] 3.7 Implement the SDK for JavaScript v3 detector
     - Create `src/scanner/detectors/sdk-js-v3.ts`: `@aws-sdk/client-*` imports and requires (plus `lib-dynamodb` and `lib-storage`), `new <Name>Client(` and `new <Name>Command(` counted with the documented attribution rule
     - _Requirements: 2.3, 2.6_
-  - [ ] 3.8 Write property test for the SDK detector
+  - [x] 3.8 Write property test for the SDK detector
     - **Property 7: The SDK for JavaScript v3 detector counts client packages, clients and commands**
     - **Validates: Requirements 2.3, 2.6**
-  - [ ] 3.9 Implement the manifest detector
+  - [x] 3.9 Implement the manifest detector
     - Create `src/scanner/detectors/manifests.ts` for `package.json` dependencies and devDependencies and `requirements.txt` lines; a malformed `package.json` counts nothing and does not throw
     - _Requirements: 2.5_
-  - [ ] 3.10 Write property test for manifests
+  - [x] 3.10 Write property test for manifests
     - **Property 9: Dependency declarations are counted from manifests**
     - **Validates: Requirements 2.5**
-  - [ ] 3.11 Commit
+  - [x] 3.11 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 4. Build evidence, depth, level, reasoning, taxonomy and the scanRepo entry
@@ -378,7 +378,6 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - [ ] 22. Build the hook runner
   - [ ] 22.1 Implement hook input, tool names and the exit policy
     - `src/hooks/read-stdin.ts` (1 MiB, 5 seconds), `hook-input.ts` (`HookInputSchema`, zod, unknown fields stripped), `tool-names.ts` (`identifyTool` for `mcp_<server>_<tool>` and bare names), `exit-policy.ts` (the only map from decision kind to exit code 0 or 2)
-    - This task needs `zod` declared in `packages/mcp-server`; if the integrator has not added it, stop and ask
     - _Requirements: 18.4, 18.5, 19.6, 24.2_
   - [ ] 22.2 Write property test for tool names
     - **Property 38: Hook tool names resolve whatever the server prefix**
@@ -495,11 +494,15 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - Do each task yourself in this chat in numeric order; do not delegate to the spec-task-execution subagent and do not run tasks as parallel waves. Save files after each step.
 - Checkpoints (tasks 6, 10, 20, 30) validate incrementally; the final checkpoint confirms the definition of done.
 - **Integrator requests (S3 cannot make these changes):**
-  1. `packages/mcp-server/package.json`: add `"zod": "4.6.7"` to `dependencies` (already pinned in `packages/core`; the hook input schema needs it, before task 22); add `"bin": { "reinvent-compass": "./dist/bin.js" }`; remove `"private": true` and add `files` and `engines` (`node >= 24`) for publishing; set the release version used by the Power files.
-  2. A build step that copies `data/venues.json` and `fixtures/sample-repo/` into `packages/mcp-server/dist/` so the server and `demo` work from the npm package (Open Question 11).
-  3. Exclude `fixtures/sample-repo/**` from ESLint and `tsc` (its files import packages that are not installed) (Open Question 13).
-  4. Set the live Compass API base URL in `src/config/compass-api.ts` before `1.0.0` (Open Question 10), and supply the public repository URL for `plugin.json` if wanted (Open Question 12).
+  1. `packages/mcp-server/package.json`: `zod` is already declared; add `"bin": { "reinvent-compass": "./dist/bin.js" }`, `files` and `engines` (`node >= 24`); `"private": true` stays until the release gate; set the release version used by the Power files.
+
+2. A build step that copies `data/venues.json` and `fixtures/sample-repo/` into `packages/mcp-server/dist/` so the server and `demo` work from the npm package (Open Question 11).
+3. Exclude `fixtures/sample-repo/**` from ESLint and `tsc` (its files import packages that are not installed) (Open Question 13).
+4. Set the live Compass API base URL in `src/config/compass-api.ts` before `1.0.0` (Open Question 10), and supply the public repository URL for `plugin.json` if wanted (Open Question 12).
+
 - **Change requests to other streams (raised, not blocking):** S0 for `add_layover` update and delete and optional `scan_repo` level and reasoning fields (Open Questions 3 and 4); S2 to export `resolveCommitment` (or a connections helper) and `withContextDefaults` (Open Question 5); S4 to return `boardUrl` and `expiresAt` with the hand-off renders (Open Question 6).
+
+- **CTO review amendments (apply with the affected task):** H1 `sync_passes` is a Write_Tool and the passes adapter uses a narrowing store view (tasks 11.4, 18.2, 24.2, 25.1, 26.1); H2 no `awsevents` in `power/mcp.json` until ADR-024 (tasks 24.1, 24.3, 29.1); H3 the triple A = syn-096, A-R = syn-009, B = syn-082 with an early existence test (tasks 1.3, 27); M1 elicited or five-minute second cancel (16.2, 16.3); M2 exactly-once wording (17.3, 26.2); M3 plan_week target folder, lstat, `wx`, symlink refusal (9.2, 14.3); M4 elicited confirmation for Schedule_Write_Tools (15.3, 16.2, 17.1, 17.2); M5 `ProbeWrite` probe, case-insensitive `identifyTool`, matcher `.*(...)$` (22.1, 24.1, design SP1 checklist); M6 wire-services filter in the adapter (13.1, 26.1); M7 pinned simulated instant (12.3); M8 S2 `connectionsForDay` and `energyForDay` (26.1); M11 GitHub import step (design SP1 checklist, 25.1); L1 handler throw test (11.6); L2 negative and non-integer refusals (13.1, 14.3); L3 npx local-copy risk (25.1); L5 injected platform (all `src`).
 
 ## Task Dependency Graph
 
