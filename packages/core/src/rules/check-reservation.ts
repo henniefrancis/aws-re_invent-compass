@@ -5,9 +5,9 @@
 // rules and never re-implements them, so each concept keeps one definition (Tight in
 // connections.ts, clash in clashes.ts, and so on). It never throws and never reads a clock.
 //
-// Block rules:  the candidate clashes with a commitment, or makes an impossible connection based
-//               on an official walking time. An impossible connection based on an estimated walk
-//               is only a warning ("likely impossible").
+// Block rules:  the candidate clashes with a commitment, or makes a certainly impossible
+//               connection: on an official walking time, or late even at half an estimated walk.
+//               Late at the full estimated walk only is a warning ("likely impossible").
 // Warn rules:   a tight connection, losing the day's only meal break, or pushing the day over
 //               the overload line.
 // Missing data: a rule that cannot be judged is skipped, never blocked on, and the verdict is
@@ -211,8 +211,8 @@ function judgeReservation(
       results.push(classifyConnection(me.resolved, later.resolved, toBoarding, context));
     }
     for (const result of results) {
-      if (result.classification === 'impossible' && result.estimate === true) {
-        // An impossible walk that rests on an estimate is a warning, never a block.
+      if (result.classification === 'impossible' && result.certain !== true) {
+        // Late at the full estimated walk, but not at half of it: a warning, not a block.
         warns.push(reason.connectionAlert('likely', result.reason));
       } else if (result.classification === 'impossible') {
         blocks.push(reason.connectionAlert('impossible', result.reason));

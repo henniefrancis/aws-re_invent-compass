@@ -51,7 +51,7 @@ describe('connection examples', () => {
       spareMinutes: 30,
       estimate: true,
       reason:
-        'The walk from "Alpha Hall" to "Beta Tower" is 10 minutes, an estimate. With a 10 minute buffer, you need 20 minutes. You arrive 30 minutes before it is due.',
+        'The walk from "Alpha Hall" to "Beta Tower" is 20 minutes, an estimate. It includes time to leave and enter buildings. No extra buffer is added, so you need 20 minutes. You arrive 30 minutes before it is due.',
     });
   });
 
@@ -60,7 +60,7 @@ describe('connection examples', () => {
     expect(result.classification).toBe('tight');
     expect(result.spareMinutes).toBe(3);
     expect(result.reason).toBe(
-      'The walk from "Alpha Hall" to "Beta Tower" is 10 minutes, an estimate. With a 10 minute buffer, you need 20 minutes. That leaves only 3 minutes to spare.',
+      'The walk from "Alpha Hall" to "Beta Tower" is 20 minutes, an estimate. It includes time to leave and enter buildings. No extra buffer is added, so you need 20 minutes. That leaves only 3 minutes to spare.',
     );
   });
 
@@ -75,7 +75,7 @@ describe('connection examples', () => {
     expect(result.classification).toBe('impossible');
     expect(result.spareMinutes).toBe(-5);
     expect(result.reason).toBe(
-      'The walk from "Alpha Hall" to "Beta Tower" is 10 minutes, an estimate. With a 10 minute buffer, you need 20 minutes. You would arrive 5 minutes late.',
+      'The walk from "Alpha Hall" to "Beta Tower" is 20 minutes, an estimate. It includes time to leave and enter buildings. No extra buffer is added, so you need 20 minutes. You would arrive 5 minutes late.',
     );
   });
 
@@ -87,11 +87,11 @@ describe('connection examples', () => {
     expect(classify(item(), next(25, { isReservable: false })).classification).toBe('comfortable');
   });
 
-  test('the same venue is a 5 minute estimate plus the buffer, never zero', () => {
+  test('the same venue is a 5 minute room-to-room estimate, never zero', () => {
     const result = classify(item(), next(60, { venue: 'alpha hall' }));
     expect(result).toMatchObject({
       classification: 'comfortable',
-      walkingMinutes: 15,
+      walkingMinutes: 5,
       estimate: true,
     });
     expect(result.reason).toContain('an estimate');
@@ -111,11 +111,11 @@ describe('connection examples', () => {
 
   test('uses the buffer and tight margin from the context', () => {
     const context = testContext({ bufferMinutes: 0, tightMarginMinutes: 0 });
-    // Walk 10, due at gap minus 10: a gap of 20 leaves exactly 0 spare, which is not tight.
-    expect(classify(item(), next(20), context)).toMatchObject({
+    // Walk 20, due at gap minus 10: a gap of 30 leaves exactly 0 spare, which is not tight.
+    expect(classify(item(), next(30), context)).toMatchObject({
       classification: 'comfortable',
       spareMinutes: 0,
-      walkingMinutes: 10,
+      walkingMinutes: 20,
     });
   });
 
@@ -207,10 +207,12 @@ describe('connection wording', () => {
   });
 
   test('the walk and the buffer are stated separately, and the estimate flag is carried', () => {
-    const result = classify(item(), next(60), testContext({ bufferMinutes: 7 }));
+    // An estimate already includes the building allowance, so only the buffer above 15 counts.
+    const result = classify(item(), next(60), testContext({ bufferMinutes: 25 }));
     expect(result.estimate).toBe(true);
+    expect(result.walkingMinutes).toBe(30);
     expect(result.reason).toContain(
-      'is 10 minutes, an estimate. With a 7 minute buffer, you need 17 minutes.',
+      'is 20 minutes, an estimate. It includes time to leave and enter buildings. With a 10 minute buffer, you need 30 minutes.',
     );
     const venueData = testVenueData();
     venueData.walkingTimes = venueData.walkingTimes.map((edge) => ({
@@ -221,9 +223,96 @@ describe('connection wording', () => {
         retrievedOn: '2026-10-17',
       },
     }));
-    const official = classify(item(), next(60), testContext({ venueData }));
+    const official = classify(item(), next(60), testContext({ venueData, bufferMinutes: 7 }));
     expect(official.estimate).toBe(false);
+    expect(official.walkingMinutes).toBe(27);
+    expect(official.reason).toContain(
+      'is 20 minutes. With a 7 minute buffer, you need 27 minutes.',
+    );
     expect(official.reason).not.toContain('estimate');
+  });
+});
+
+describe('certainly impossible connections', () => {
+  const venetianToWynn = testContext({ venueData: testVenueData(40) });
+
+  test('late even at half the estimated walk is certain', () => {
+    // A 2 minute gap: boarding closes 10 minutes before start, and half the walk is 20 minutes.
+    const result = classify(item(), next(2), venetianToWynn);
+    expect(result).toMatchObject({ classification: 'impossible', estimate: true, certain: true });
+  });
+
+  test('late at the full estimated walk but not at half of it is not certain', () => {
+    const result = classify(item(), next(35), venetianToWynn);
+    expect(result).toMatchObject({ classification: 'impossible', estimate: true, certain: false });
+    // The edge: half the walk (20) plus the 10 minute boarding rule is a gap of exactly 30.
+    expect(classify(item(), next(30), venetianToWynn).certain).toBe(false);
+    expect(classify(item(), next(29.9), venetianToWynn).certain).toBe(true);
+  });
+
+  test('an impossible connection on an official walking time is always certain', () => {
+    const venueData = testVenueData(40);
+    venueData.walkingTimes = venueData.walkingTimes.map((edge) => ({
+      ...edge,
+      source: {
+        kind: 'official' as const,
+        url: 'https://aws.amazon.com/events/reinvent/',
+        retrievedOn: '2026-10-17',
+      },
+    }));
+    const context = testContext({ venueData });
+    expect(classify(item(), next(35), context)).toMatchObject({ estimate: false, certain: true });
+  });
+
+  test('tight, comfortable and unknown results carry no certain flag', () => {
+    expect(classify(item(), next(60)).certain).toBeUndefined();
+    expect(classify(item(), next(31)).certain).toBeUndefined();
+    expect(classify(item({ venue: undefined }), next(60)).certain).toBeUndefined();
+  });
+
+  test('a bigger buffer on an estimate only counts above the 15 minute allowance', () => {
+    const base = classify(item(), next(60), testContext({ bufferMinutes: 15 }));
+    const bigger = classify(item(), next(60), testContext({ bufferMinutes: 30 }));
+    expect(base.walkingMinutes).toBe(20);
+    expect(bigger.walkingMinutes).toBe(35);
+    expect(classify(item(), next(60), testContext({ bufferMinutes: 0 })).walkingMinutes).toBe(20);
+  });
+
+  // Feature: itinerary-rules, Property 5: Connection classification follows spare time against the due time, with walking minutes and a naming reason
+  test('Property 5: an impossible connection is certain exactly when late at half the walk too', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: -20, max: 120 }),
+        fc.integer({ min: 1, max: 90 }),
+        fc.boolean(),
+        fc.boolean(),
+        (gap, rawWalk, official, reservable) => {
+          const venueData = testVenueData(rawWalk);
+          if (official) {
+            venueData.walkingTimes = venueData.walkingTimes.map((edge) => ({
+              ...edge,
+              source: {
+                kind: 'official' as const,
+                url: 'https://aws.amazon.com/events/reinvent/',
+                retrievedOn: '2026-10-17',
+              },
+            }));
+          }
+          const context = testContext({ venueData });
+          const result = classify(item(), next(gap, { isReservable: reservable }), context);
+          const total = rawWalk + (official ? 10 : 0);
+          const spare = gap - (reservable ? 10 : 0) - total;
+          if (spare < 0) {
+            const halfSpare = gap - (reservable ? 10 : 0) - total / 2;
+            expect(result.classification).toBe('impossible');
+            expect(result.certain).toBe(official || halfSpare < 0);
+          } else {
+            expect(result.certain).toBeUndefined();
+          }
+        },
+      ),
+      { numRuns: 300 },
+    );
   });
 });
 
@@ -269,7 +358,8 @@ describe('connection properties', () => {
           });
           const result = classify(item(), to, context);
 
-          const walking = (sameVenue ? 5 : rawWalk) + buffer;
+          // An estimate already includes the building allowance, so the buffer adds only above 15.
+          const walking = (sameVenue ? 5 : rawWalk) + Math.max(0, buffer - 15);
           const due = gap - (reservable ? 10 : 0);
           const spare = due - walking;
           const expected = spare < 0 ? 'impossible' : spare < margin ? 'tight' : 'comfortable';

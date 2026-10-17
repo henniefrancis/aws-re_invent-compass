@@ -9,12 +9,16 @@
 //   impossible   the attendee arrives after the due time
 //   unknown      a needed fact is missing, and the reason names it
 // Every reason names both venues and the walking minutes (Req 2.9).
+//
+// An estimated walk already includes time to leave and enter buildings, so the buffer on an
+// estimate is only what is above that allowance. An impossible connection is "certain" when the
+// walk is official or the attendee would be late even at half the estimated walk.
 import type { Context } from './context.js';
 import type { BoardingResult } from './boarding.js';
 import * as reason from './reasons.js';
 import type { ResolvedCommitment } from './resolve.js';
 import { checkZone, minutesBetween, parseInstant } from './time.js';
-import { lookupWalk } from './venue-data.js';
+import { extraBufferMinutes, lookupWalk } from './venue-data.js';
 
 const MS_PER_MINUTE = 60_000;
 
@@ -30,6 +34,11 @@ export interface ConnectionResult {
   spareMinutes?: number;
   /** True when the walking time is an estimate. Absent when the connection is unknown. */
   estimate?: boolean;
+  /**
+   * True when an impossible connection is certain enough to block: the walking time is official,
+   * or the attendee would be late even at half the estimated walk. Absent unless impossible.
+   */
+  certain?: boolean;
   /** Plain English. Names both venues and the walking minutes unless data is missing. */
   reason: string;
 }
@@ -86,12 +95,14 @@ export function classifyConnection(
     return unknown(reason.connectionBoardingMissing(to.ref));
   }
 
-  const walkingMinutes = walk.minutes + context.bufferMinutes;
+  const buffer = extraBufferMinutes(walk.source, context.bufferMinutes);
+  const walkingMinutes = walk.minutes + buffer;
   const estimate = walk.source.kind === 'estimate';
+  const due = parseInstant(dueText) as number;
   const arrival = (parseInstant(from.endsAt) as number) + walkingMinutes * MS_PER_MINUTE;
-  const spareMinutes = minutesBetween(arrival, parseInstant(dueText) as number);
+  const spareMinutes = minutesBetween(arrival, due);
   // A bad tuning value (for example an infinite buffer) must never turn into a verdict.
-  if (!Number.isFinite(spareMinutes)) {
+  if (!Number.isFinite(spareMinutes) || !Number.isFinite(context.bufferMinutes)) {
     return unknown(reason.connectionSpareUnknown());
   }
 
@@ -99,17 +110,20 @@ export function classifyConnection(
     from: from.venue,
     to: to.venue,
     walk: walk.minutes,
-    buffer: context.bufferMinutes,
+    buffer,
     estimate,
   };
   // Spare time is shown rounded down and lateness rounded up, so the words match the class.
   if (spareMinutes < 0) {
     const late = Math.ceil(-spareMinutes);
+    // Late even at half the walk is certain. An official walking time is always taken as certain.
+    const halfSpare = minutesBetween(arrival - (walkingMinutes / 2) * MS_PER_MINUTE, due);
     return {
       classification: 'impossible',
       walkingMinutes,
       spareMinutes,
       estimate,
+      certain: !estimate || halfSpare < 0,
       reason: reason.connectionImpossible(text, late),
     };
   }

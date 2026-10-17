@@ -124,23 +124,26 @@ export function boardingMissingReservability(): string {
 // Connections
 // ---------------------------------------------------------------------------
 
-/** A walk between two venues: the raw walk, the buffer added to it, and whether it is an estimate. */
+/** A walk between two venues: the raw walk, the buffer really added to it, and whether it is an estimate. */
 export interface WalkText {
   from: string;
   to: string;
-  /** The raw walking minutes, before the buffer. */
+  /** The walking minutes from the venue data. */
   walk: number;
-  /** The buffer minutes added to the walk. */
+  /** The buffer minutes really added to the walk (an estimate already has the building allowance). */
   buffer: number;
   estimate: boolean;
 }
 
 function walkSentences(w: WalkText): string {
-  const tail = w.estimate ? ', an estimate' : '';
-  return (
-    `The walk from ${q(w.from)} to ${q(w.to)} is ${mins(w.walk)}${tail}. ` +
-    `With a ${Math.round(w.buffer)} minute buffer, you need ${mins(w.walk + w.buffer)}.`
-  );
+  const first = `The walk from ${q(w.from)} to ${q(w.to)} is ${mins(w.walk)}${w.estimate ? ', an estimate' : ''}.`;
+  const allowance = w.estimate ? ' It includes time to leave and enter buildings.' : '';
+  const total = mins(w.walk + w.buffer);
+  const buffer =
+    w.buffer > 0
+      ? `With a ${Math.round(w.buffer)} minute buffer, you need ${total}.`
+      : `No extra buffer is added, so you need ${total}.`;
+  return `${first}${allowance} ${buffer}`;
 }
 
 export function connectionComfortable(w: WalkText, spare: number): string {

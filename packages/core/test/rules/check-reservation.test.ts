@@ -39,7 +39,8 @@ function check(
   return verdict;
 }
 
-// With the defaults a walk between different venues is 10 minutes plus a 10 minute buffer,
+// With the test venue data a walk between different venues is an estimate of 20 minutes (which
+// already includes the building allowance, so the 10 minute buffer adds nothing),
 // boarding closes 10 minutes before the start, and a connection is tight under 5 spare minutes.
 
 describe('allow', () => {
@@ -100,7 +101,7 @@ describe('block rules', () => {
     const verdict = check(slot('NEW1', clock(10, 25), clock(11, 25)), [earlier], officialContext());
     expect(verdict.decision).toBe('block');
     expect(verdict.reasons).toEqual([
-      'Impossible connection. The walk from "Beta Tower" to "Alpha Hall" is 10 minutes. With a 10 minute buffer, you need 20 minutes. You would arrive 5 minutes late.',
+      'Impossible connection. The walk from "Beta Tower" to "Alpha Hall" is 20 minutes. With a 10 minute buffer, you need 30 minutes. You would arrive 15 minutes late.',
     ]);
   });
 
@@ -117,7 +118,7 @@ describe('block rules', () => {
     expect(verdict).toEqual({
       decision: 'warn',
       reasons: [
-        'Likely impossible connection. The walk from "Beta Tower" to "Alpha Hall" is 10 minutes, an estimate. With a 10 minute buffer, you need 20 minutes. You would arrive 5 minutes late. The walk is an estimate, so check it yourself.',
+        'Likely impossible connection. The walk from "Beta Tower" to "Alpha Hall" is 20 minutes, an estimate. It includes time to leave and enter buildings. No extra buffer is added, so you need 20 minutes. You would arrive 5 minutes late. The walk is an estimate, so check it yourself.',
       ],
     });
     const later = slot('OLD2', clock(11, 25), clock(12, 25), { venue: 'Beta Tower' });
@@ -147,7 +148,7 @@ describe('warn rules', () => {
     expect(verdict).toEqual({
       decision: 'warn',
       reasons: [
-        'Tight connection. The walk from "Beta Tower" to "Alpha Hall" is 10 minutes, an estimate. With a 10 minute buffer, you need 20 minutes. That leaves only 3 minutes to spare.',
+        'Tight connection. The walk from "Beta Tower" to "Alpha Hall" is 20 minutes, an estimate. It includes time to leave and enter buildings. No extra buffer is added, so you need 20 minutes. That leaves only 3 minutes to spare.',
       ],
     });
   });
@@ -186,15 +187,15 @@ describe('warn rules', () => {
   });
 
   test('raising the day over the overload line warns and names the overload', () => {
-    const context = testContext({ overloadThreshold: 40 });
+    const context = testContext({ overloadThreshold: 35 });
     const others = [slot('OLD1', clock(8), clock(8, 30)), slot('OLD2', clock(9, 30), clock(10))];
     const verdict = check(slot('NEW1', clock(16), clock(17)), others, context);
     expect(verdict).toEqual({
       decision: 'warn',
       reasons: [
-        'This makes 2026-12-01 too busy. Energy score is 60: 3 commitments times 10, 30 walking minutes, 0 venue changes times 15. ' +
+        'This makes 2026-12-01 too busy. Energy score is 40: 3 commitments times 10, 10 walking minutes, 0 venue changes times 15. ' +
           'Formula: commitments times 10 plus walking minutes plus venue changes times 15. ' +
-          'That is above the limit of 40, so the day is overloaded. The walking minutes are estimates.',
+          'That is above the limit of 35, so the day is overloaded. The walking minutes are estimates.',
       ],
     });
   });
@@ -684,5 +685,43 @@ describe('personal time with no location means stay put', () => {
       rest('Rest', clock(8), clock(8, 30)),
     ]);
     expect(verdict).toEqual({ decision: 'allow', reasons: [] });
+  });
+});
+
+describe('walk policy: certainly impossible blocks, likely impossible warns', () => {
+  const walk40 = () => testContext({ venueData: testVenueData(40) });
+  const earlier = () => slot('OLD1', clock(9), clock(10), { venue: 'Beta Tower' });
+
+  test('late even at half the estimated walk blocks, with the Impossible connection reason', () => {
+    // A 2 minute gap between two venues 40 minutes apart (Venetian to Wynn, say).
+    const verdict = check(slot('NEW1', clock(10, 2), clock(11)), [earlier()], walk40());
+    expect(verdict.decision).toBe('block');
+    expect(verdict.reasons).toHaveLength(1);
+    expect(verdict.reasons[0]).toMatch(/^Impossible connection\./);
+    expect(verdict.reasons[0]).toContain(
+      'is 40 minutes, an estimate. It includes time to leave and enter buildings.',
+    );
+  });
+
+  test('late at the full walk but not at half of it only warns: likely impossible', () => {
+    const verdict = check(slot('NEW1', clock(10, 35), clock(11)), [earlier()], walk40());
+    expect(verdict.decision).toBe('warn');
+    expect(verdict.reasons[0]).toMatch(/^Likely impossible connection\./);
+  });
+
+  test('the edge: half the walk plus the 10 minute boarding rule is a gap of exactly 30', () => {
+    expect(check(slot('NEW1', clock(10, 30), clock(11)), [earlier()], walk40()).decision).toBe(
+      'warn',
+    );
+    expect(check(slot('NEW1', clock(10, 29), clock(11)), [earlier()], walk40()).decision).toBe(
+      'block',
+    );
+  });
+
+  test('a later commitment is judged the same way', () => {
+    const later = slot('OLD2', clock(11, 2), clock(12), { venue: 'Beta Tower' });
+    expect(check(slot('NEW1', clock(10), clock(11)), [later], walk40()).decision).toBe('block');
+    const farther = slot('OLD2', clock(11, 35), clock(12), { venue: 'Beta Tower' });
+    expect(check(slot('NEW1', clock(10), clock(11)), [farther], walk40()).decision).toBe('warn');
   });
 });

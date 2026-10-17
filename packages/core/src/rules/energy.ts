@@ -21,7 +21,7 @@ import type { Context } from './context.js';
 import * as reason from './reasons.js';
 import type { ResolvedCommitment } from './resolve.js';
 import { parseInstant } from './time.js';
-import { lookupWalk, normaliseName } from './venue-data.js';
+import { extraBufferMinutes, lookupWalk, normaliseName } from './venue-data.js';
 
 const COMMITMENT_WEIGHT = 10;
 const VENUE_CHANGE_WEIGHT = 15;
@@ -83,7 +83,7 @@ export function scoreEnergy(
     }
     const walk = lookupWalk(context.venueData, fromVenue, toVenue);
     if (walk.found) {
-      totalWalkingMinutes += walk.minutes + context.bufferMinutes;
+      totalWalkingMinutes += walk.minutes + extraBufferMinutes(walk.source, context.bufferMinutes);
       usedEstimate = usedEstimate || walk.source.kind === 'estimate';
     } else {
       missingDataNotes.push(reason.energyWalkUnknown(fromVenue, toVenue));

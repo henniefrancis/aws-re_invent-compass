@@ -195,7 +195,12 @@ describe('reason builders', () => {
         3,
       ),
     ).toBe(
-      'The walk from "Venetian" to "Wynn" is 30 minutes, an estimate. With a 10 minute buffer, you need 40 minutes. That leaves only 3 minutes to spare.',
+      'The walk from "Venetian" to "Wynn" is 30 minutes, an estimate. It includes time to leave and enter buildings. With a 10 minute buffer, you need 40 minutes. That leaves only 3 minutes to spare.',
+    );
+    expect(
+      reasons.connectionTight({ from: 'A', to: 'B', walk: 40, buffer: 0, estimate: true }, 3),
+    ).toBe(
+      'The walk from "A" to "B" is 40 minutes, an estimate. It includes time to leave and enter buildings. No extra buffer is added, so you need 40 minutes. That leaves only 3 minutes to spare.',
     );
     expect(reasons.boardingCloses('2026-12-01 10:20')).toBe(
       'Boarding closes at 2026-12-01 10:20. Your seat is released then.',

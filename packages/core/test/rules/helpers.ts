@@ -14,7 +14,7 @@ export const ZONE = 'America/Los_Angeles';
 export const NOW = '2026-12-01T06:00:00-08:00';
 
 /** Three self-made venues with a complete walking-time matrix of the same minutes. */
-export function testVenueData(minutes = 10): VenueData {
+export function testVenueData(minutes = 20): VenueData {
   const names = ['Alpha Hall', 'Beta Tower', 'Gamma Plaza'];
   return {
     venues: names.map((name) => ({ venue: { name } })),

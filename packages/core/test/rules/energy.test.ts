@@ -42,15 +42,15 @@ describe('scoreEnergy examples', () => {
     ];
     const result = scoreEnergy(day, testContext());
     expect(result).toMatchObject({
-      score: 80,
+      score: 70,
       commitmentCount: 3,
-      totalWalkingMinutes: 35,
+      totalWalkingMinutes: 25,
       venueChangeCount: 1,
       overloaded: false,
       missingDataNotes: [],
     });
     expect(result.explanation).toBe(
-      'Energy score is 80: 3 commitments times 10, 35 walking minutes, 1 venue changes times 15. ' +
+      'Energy score is 70: 3 commitments times 10, 25 walking minutes, 1 venue changes times 15. ' +
         'Formula: commitments times 10 plus walking minutes plus venue changes times 15. ' +
         'That is within the limit of 100. The walking minutes are estimates.',
     );
@@ -82,12 +82,12 @@ describe('scoreEnergy examples', () => {
   });
 
   test('strictly greater than the threshold is overloaded, equal is not', () => {
-    // Three commitments in one venue: 30 + 2 * (5 room to room + 10 buffer) = 60.
+    // Three commitments in one venue: 30 + 2 * 5 room to room (the buffer adds nothing) = 40.
     const day = sameVenue(3);
-    expect(scoreEnergy(day, testContext({ overloadThreshold: 60 })).overloaded).toBe(false);
-    const over = scoreEnergy(day, testContext({ overloadThreshold: 59 }));
+    expect(scoreEnergy(day, testContext({ overloadThreshold: 40 })).overloaded).toBe(false);
+    const over = scoreEnergy(day, testContext({ overloadThreshold: 39 }));
     expect(over.overloaded).toBe(true);
-    expect(over.explanation).toContain('That is above the limit of 59, so the day is overloaded.');
+    expect(over.explanation).toContain('That is above the limit of 39, so the day is overloaded.');
   });
 
   test('a commitment with missing data is counted, left out of the totals, and named', () => {
@@ -199,7 +199,7 @@ describe('scoreEnergy examples', () => {
       item('A2', 'Alpha Hall', 11 * 60, 12 * 60),
     ];
     expect(scoreEnergy(same, testContext({ venueData })).explanation).toContain('estimates');
-    expect(scoreEnergy(same, testContext({ venueData })).totalWalkingMinutes).toBe(15);
+    expect(scoreEnergy(same, testContext({ venueData })).totalWalkingMinutes).toBe(5);
   });
 
   test('uses the buffer and threshold from the context', () => {
@@ -209,8 +209,8 @@ describe('scoreEnergy examples', () => {
     ];
     const context = testContext({ venueData: testVenueData(30), bufferMinutes: 5 });
     expect(scoreEnergy(day, context)).toMatchObject({
-      totalWalkingMinutes: 35,
-      score: 20 + 35 + 15,
+      totalWalkingMinutes: 30,
+      score: 20 + 30 + 15,
     });
   });
 
@@ -238,10 +238,10 @@ describe('scoreEnergy examples', () => {
 describe('isOverloaded and the count-only fallback', () => {
   test('isOverloaded follows the full formula and its threshold', () => {
     const day = sameVenue(3);
-    expect(isOverloaded(day, testContext({ overloadThreshold: 60 })).overloaded).toBe(false);
-    const over = isOverloaded(day, testContext({ overloadThreshold: 59 }));
+    expect(isOverloaded(day, testContext({ overloadThreshold: 40 })).overloaded).toBe(false);
+    const over = isOverloaded(day, testContext({ overloadThreshold: 39 }));
     expect(over.overloaded).toBe(true);
-    expect(over.explanation).toContain('Energy score is 60');
+    expect(over.explanation).toContain('Energy score is 40');
   });
 
   test('the default count threshold is 6: seven commitments are overloaded, six are not', () => {
@@ -308,7 +308,8 @@ describe('energy properties', () => {
             const a = sequence[k - 1].r.venue!;
             const b = sequence[k].r.venue!;
             if (a !== b) changes += 1;
-            if (listed.has(a) && listed.has(b)) walking += (a === b ? 5 : 10) + buffer;
+            if (listed.has(a) && listed.has(b))
+              walking += (a === b ? 5 : 20) + Math.max(0, buffer - 15);
           }
           const expected = raw.length * 10 + walking + changes * 15;
           expect(result.commitmentCount).toBe(raw.length);

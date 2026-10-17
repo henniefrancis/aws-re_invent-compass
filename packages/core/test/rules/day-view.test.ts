@@ -189,7 +189,7 @@ describe('energyForDay', () => {
     const result = energyForDay(schedule, testContext());
     expect(result).toMatchObject({
       status: 'ok',
-      energy: { commitmentCount: 3, totalWalkingMinutes: 35, venueChangeCount: 1, score: 80 },
+      energy: { commitmentCount: 3, totalWalkingMinutes: 25, venueChangeCount: 1, score: 70 },
       skipped: [],
     });
   });

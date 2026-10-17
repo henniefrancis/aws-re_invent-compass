@@ -46,6 +46,20 @@ function isOfficialUrl(value: string): boolean {
 export const SAME_VENUE_WALK_MINUTES = 5;
 const SAME_VENUE_BASIS = 'room to room inside one venue, estimate';
 
+/** Minutes of every estimated walk that already cover leaving one building and entering the next. */
+export const BUILDING_ALLOWANCE_MINUTES = 15;
+
+/**
+ * The buffer that is really added to a walk. An estimate already includes the building allowance,
+ * so only the buffer above it counts (the default 10 minute buffer adds nothing). An official
+ * walking time gets the whole buffer.
+ */
+export function extraBufferMinutes(source: SourceNote, bufferMinutes: number): number {
+  return source.kind === 'estimate'
+    ? Math.max(0, bufferMinutes - BUILDING_ALLOWANCE_MINUTES)
+    : bufferMinutes;
+}
+
 /** Match venue names after trimming and lowercasing, by exact name only. */
 export function normaliseName(name: string): string {
   return name.trim().toLowerCase();
