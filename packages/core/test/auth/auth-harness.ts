@@ -81,6 +81,7 @@ export interface OAuthCall {
   headers: Record<string, string>;
   form: Record<string, string>;
   signal: AbortSignal | undefined;
+  redirect: string;
 }
 
 /** A scripted OAuth fetch and the calls it received. */
@@ -110,6 +111,7 @@ export function fakeOAuth(script: Scripted[]): FakeOAuth {
       headers: init.headers,
       form: Object.fromEntries(new URLSearchParams(init.body)),
       signal: init.signal,
+      redirect: init.redirect,
     });
     const step = script[Math.min(index, script.length - 1)];
     index += 1;

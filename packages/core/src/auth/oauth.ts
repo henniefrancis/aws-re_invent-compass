@@ -19,6 +19,8 @@ export const BUILDER_ID_SIGN_OUT_URL = 'https://idp.awsevents.com/oidc/logout';
 export const CLIENT_ID = '7vmom55m1qstvq8i71ph127bfq';
 export const SCOPE = 'openid email events/access';
 export const IDENTITY_PROVIDER = 'AWSBuilderID';
+/** The time limit for a token or refresh call (revoke uses its own 10 second limit). */
+export const OAUTH_REQUEST_TIMEOUT_MS = 30_000;
 /** Refresh when the access token has this many seconds or fewer left. */
 export const REFRESH_WINDOW_SECONDS = 300;
 
@@ -27,7 +29,10 @@ export interface OAuthFetchInit {
   method: 'POST';
   headers: Record<string, string>;
   body: string;
-  signal?: AbortSignal;
+  /** Never follow a redirect: it could carry a refresh token elsewhere. */
+  redirect: 'error';
+  /** Aborts the call: after 30 seconds by default, or the caller's own signal. */
+  signal: AbortSignal;
 }
 
 /** The part of a fetch Response the OAuth calls read. */
@@ -62,10 +67,9 @@ export async function postForm(
       accept: 'application/json',
     },
     body: new URLSearchParams(params).toString(),
+    redirect: 'error',
+    signal: signal ?? AbortSignal.timeout(OAUTH_REQUEST_TIMEOUT_MS),
   };
-  if (signal !== undefined) {
-    init.signal = signal;
-  }
   const response = await doFetch(url, init);
   const text = await response.text();
   let json: unknown;

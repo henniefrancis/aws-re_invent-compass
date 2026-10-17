@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import fc from 'fast-check';
 import {
   createCredentialSources,
@@ -365,5 +365,20 @@ describe('events-client, M2: a refresh cannot outlive the session it started in'
     await Promise.all([refreshing, signingOut]);
     expect(store.load()).toBeUndefined();
     expect(store.saves).toHaveLength(0);
+  });
+});
+
+describe('events-client, M3: token and refresh calls refuse redirects and time out after 30 seconds', () => {
+  test('both the refresh and the sign-in exchange pass redirect error and a 30 second signal', async () => {
+    const spy = vi.spyOn(AbortSignal, 'timeout');
+    try {
+      const oauth = fakeOAuth([{ status: 200, body: tokenBody() }]);
+      await refreshNow(fakeStore(heldTokens()), deps(oauth).deps);
+      expect(oauth.calls[0]?.redirect).toBe('error');
+      expect(oauth.calls[0]?.signal).toBeInstanceOf(AbortSignal);
+      expect(spy).toHaveBeenCalledWith(30_000);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

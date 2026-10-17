@@ -1,21 +1,25 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import {
+  API_REQUEST_TIMEOUT_MS,
+  buildRequestUrl,
   createHttpTransport,
   type FetchInit,
   type FetchResponseLike,
 } from '../../src/api/http-transport.js';
+import { ValidationError } from '../../src/api/errors.js';
+import { AudienceError } from '../../src/auth/errors.js';
 import type { ClientRequest, EventsApiCredential } from '../../src/api/transport.js';
 
 // Unit tests for the live HTTP transport (events-client, S1, task 2.1). They prove
 // the transport attaches the Events API access token as the bearer credential and
 // never attaches an ID token (Requirements 6.2, 4.1, 4.4), builds the absolute URL
-// with query parameters against the injected base, and parses JSON, empty and
+// with query parameters against the fixed live base, and parses JSON, empty and
 // non-JSON bodies without judging success. No live network is used: fetch is
 // injected.
 
 const ACCESS_TOKEN = 'access-token-value-123';
 const ID_TOKEN = 'id-token-value-should-never-be-sent';
-const BASE = 'https://api.example.test/v1';
+const BASE = 'https://api.awsevents.com/v1';
 
 // A credential that hands out only the access token; the ID token is held here only
 // so a test can assert it never appears in a request.
@@ -56,7 +60,6 @@ describe('Feature: events-client, the HTTP transport attaches the access token a
     const transport = createHttpTransport({
       fetch: fetchStub(jsonResponse(200, { ok: true }), captured),
       credential: credential(),
-      baseUrl: BASE,
     });
     const req: ClientRequest = {
       operation: 'GetSchedule',
@@ -80,7 +83,6 @@ describe('Feature: events-client, the HTTP transport attaches the access token a
     const transport = createHttpTransport({
       fetch: fetchStub(jsonResponse(200, { items: [] }), captured),
       credential: credential(),
-      baseUrl: BASE,
     });
     const req: ClientRequest = {
       operation: 'ListSessions',
@@ -101,7 +103,6 @@ describe('Feature: events-client, the HTTP transport attaches the access token a
     const transport = createHttpTransport({
       fetch: fetchStub(jsonResponse(200, { result: { successful: [], failed: [] } }), captured),
       credential: credential(),
-      baseUrl: BASE,
     });
     const req: ClientRequest = {
       operation: 'ReserveSessions',
@@ -127,7 +128,6 @@ describe('Feature: events-client, the HTTP transport attaches the access token a
     const transport = createHttpTransport({
       fetch: fetchStub(emptyResponse, captured),
       credential: credential(),
-      baseUrl: BASE,
     });
     const res = await transport.send({
       operation: 'CancelReservation',
@@ -148,7 +148,6 @@ describe('Feature: events-client, the HTTP transport attaches the access token a
     const transport = createHttpTransport({
       fetch: fetchStub(nonJson, captured),
       credential: credential(),
-      baseUrl: BASE,
     });
     const res = await transport.send({ operation: 'GetEvent', method: 'GET', path: '/events/E1' });
     expect(res.body).toBe('not json at all');
@@ -162,5 +161,81 @@ describe('Feature: events-client, the HTTP transport attaches the access token a
     });
     await transport.send({ operation: 'ListEvents', method: 'GET', path: '/events' });
     expect(captured[0]?.url).toBe('https://api.awsevents.com/v1/events');
+  });
+});
+
+describe('events-client, M3: the bearer token can only go to the Events API', () => {
+  const req: ClientRequest = {
+    operation: 'GetSchedule',
+    method: 'GET',
+    path: '/events/E1/schedule',
+  };
+
+  test('every request refuses redirects and carries a 30 second timeout signal', async () => {
+    const spy = vi.spyOn(AbortSignal, 'timeout');
+    try {
+      const captured: Captured[] = [];
+      const transport = createHttpTransport({
+        fetch: fetchStub(jsonResponse(200, {}), captured),
+        credential: credential(),
+      });
+      await transport.send(req);
+      expect(captured[0]?.init.redirect).toBe('error');
+      expect(captured[0]?.init.signal).toBeInstanceOf(AbortSignal);
+      expect(spy).toHaveBeenCalledWith(30_000);
+      expect(API_REQUEST_TIMEOUT_MS).toBe(30_000);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  test('the base URL cannot be injected: an extra baseUrl is ignored and the live host is used', async () => {
+    const captured: Captured[] = [];
+    const transport = createHttpTransport({
+      fetch: fetchStub(jsonResponse(200, {}), captured),
+      credential: credential(),
+      // @ts-expect-error baseUrl is not an accepted dependency any more
+      baseUrl: 'https://evil.example/v1',
+    });
+    await transport.send(req);
+    expect(captured[0]?.url).toBe('https://api.awsevents.com/v1/events/E1/schedule');
+  });
+
+  test('buildRequestUrl refuses a non-https scheme, credentials, a custom port and any other host', () => {
+    for (const base of [
+      'http://api.awsevents.com/v1',
+      'https://user:pw@api.awsevents.com/v1',
+      'https://api.awsevents.com:8443/v1',
+    ]) {
+      expect(() => buildRequestUrl(base, req)).toThrow(ValidationError);
+    }
+    for (const base of [
+      'https://api.awsevents.com.evil.example/v1',
+      'https://evil.example/v1',
+      'https://oauth.awsevents.com/v1',
+    ]) {
+      expect(() => buildRequestUrl(base, req)).toThrow(AudienceError);
+    }
+    expect(buildRequestUrl('https://API.AWSEVENTS.COM/v1', req)).toBe(
+      'https://api.awsevents.com/v1/events/E1/schedule',
+    );
+  });
+
+  test('the token is not even fetched when the URL is refused', async () => {
+    let asked = false;
+    const transport = createHttpTransport({
+      fetch: fetchStub(jsonResponse(200, {}), []),
+      credential: {
+        getAccessTokenForEventsApi: () => {
+          asked = true;
+          return Promise.resolve(ACCESS_TOKEN);
+        },
+        forceRefresh: () => Promise.resolve(),
+      },
+    });
+    await expect(
+      transport.send({ operation: 'GetSchedule', method: 'GET', path: '/elsewhere' }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    expect(asked).toBe(false);
   });
 });

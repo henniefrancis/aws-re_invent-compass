@@ -98,3 +98,15 @@ describe('Feature: events-client, Property 12: Sign-out always clears tokens and
     expect(lines.join('\n')).not.toContain('held-refresh-token-value');
   });
 });
+
+describe('events-client, M3: OAuth calls refuse redirects and have time limits', () => {
+  test('the revoke call refuses redirects and uses its own 10 second signal', async () => {
+    const oauth = fakeOAuth([{ status: 200 }]);
+    await signOut(fakeStore(heldTokens()), {
+      fetch: oauth.fetch,
+      logger: capturingLogger().logger,
+    });
+    expect(oauth.calls[0]?.redirect).toBe('error');
+    expect(oauth.calls[0]?.signal).toBeInstanceOf(AbortSignal);
+  });
+});

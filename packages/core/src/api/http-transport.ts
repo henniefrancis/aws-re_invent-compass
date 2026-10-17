@@ -9,9 +9,9 @@
 // fetch, URL and Headers are Node 24 runtime globals. To keep the package building
 // under the project's minimal lib set (ES2024, no DOM, no @types/node in the build)
 // and to keep the transport unit-testable without a live network, the fetch
-// function and the base URL are injected through deps. The default factory binds
-// the real global fetch.
+// function is injected through deps; the base URL is fixed (see createHttpTransport).
 
+import { assertAudience } from '../auth/credential-provider.js';
 import { ValidationError } from './errors.js';
 import {
   EVENTS_API_BASE_URL,
@@ -38,6 +38,10 @@ export interface FetchInit {
   method: string;
   headers: Record<string, string>;
   body?: string;
+  /** Never follow a redirect: it could carry the bearer token to another host. */
+  redirect: 'error';
+  /** Aborts the request after the API time limit. */
+  signal: AbortSignal;
 }
 
 /** The injected fetch function shape (a subset of the global fetch). */
@@ -49,8 +53,6 @@ export interface HttpTransportDeps {
   fetch: FetchLike;
   /** The access-token provider; only the Events API access token is attached. */
   credential: EventsApiCredential;
-  /** The base URL. Defaults to the live Events API base. */
-  baseUrl?: string;
 }
 
 /**
@@ -72,35 +74,41 @@ async function parseBody(res: FetchResponseLike): Promise<unknown> {
   }
 }
 
+/** The fixed time limit for one Events API request. */
+export const API_REQUEST_TIMEOUT_MS = 30_000;
+
 /**
- * Build the absolute URL for a request, appending any query parameters. Uses the
- * runtime URL global (present in Node 24) through a narrow cast so the build needs
- * no DOM lib types.
+ * Build the absolute URL for a request, appending any query parameters, and check it
+ * before anything is sent.
+ *
+ * Path (finding H1): the final path must be exactly the base path plus the request
+ * path, inside the /events tree. URL parsing collapses "." and ".." segments and
+ * treats "?" and "#" as delimiters, so any difference means the path was altered or
+ * is unsafe.
+ *
+ * Egress (finding M3): the bearer token may only go to https on the Events API host,
+ * with no credentials in the URL and no custom port. The host is checked on the URL
+ * as finally parsed, through the audience guard, so no base URL or path trick can
+ * send the token anywhere else.
  */
-function buildUrl(baseUrl: string, req: ClientRequest): string {
-  const UrlCtor = (
-    globalThis as unknown as {
-      URL: new (input: string) => {
-        pathname: string;
-        searchParams: { set(k: string, v: string): void };
-        toString(): string;
-      };
-    }
-  ).URL;
-  const url = new UrlCtor(`${baseUrl}${req.path}`);
-  // The final path must be exactly the base path plus the request path, inside the
-  // /events tree. URL parsing collapses "." and ".." segments and treats "?" and "#"
-  // as delimiters, so any difference means the path was altered or is unsafe, and the
-  // request is refused before anything is sent (finding H1).
+export function buildRequestUrl(baseUrl: string, req: ClientRequest): string {
+  const url = new URL(`${baseUrl}${req.path}`);
   const insideEvents =
     (req.path === '/events' || req.path.startsWith('/events/')) &&
     !req.path.slice(1).split('/').includes('');
-  if (!insideEvents || url.pathname !== `${new UrlCtor(baseUrl).pathname}${req.path}`) {
+  if (!insideEvents || url.pathname !== `${new URL(baseUrl).pathname}${req.path}`) {
     throw new ValidationError(
       req.operation,
       `${req.operation} has a request path that is not valid`,
     );
   }
+  if (url.protocol !== 'https:' || url.port !== '' || url.username !== '' || url.password !== '') {
+    throw new ValidationError(
+      req.operation,
+      `${req.operation} must be sent over plain https to the Events API`,
+    );
+  }
+  assertAudience('access-token', url.hostname);
   if (req.query !== undefined) {
     for (const [key, value] of Object.entries(req.query)) {
       url.searchParams.set(key, value);
@@ -110,25 +118,33 @@ function buildUrl(baseUrl: string, req: ClientRequest): string {
 }
 
 /**
- * Create the live HTTP transport. Each send resolves the current access token from
- * the credential provider (which refreshes it if near expiry), attaches it as the
- * bearer credential, issues the request through the injected fetch and returns the
- * raw { status, headers, body }. The ID token is never read or attached here.
+ * Create the live HTTP transport. Each send builds and checks the URL, then resolves
+ * the current access token from the credential provider (which refreshes it if near
+ * expiry), attaches it as the bearer credential, issues the request through the
+ * injected fetch and returns the raw { status, headers, body }. The ID token is never
+ * read or attached here. The base URL is the fixed live one: it cannot be injected,
+ * so a token can only be sent to the Events API. Redirects are an error (a redirect
+ * could carry the token elsewhere) and every request has a 30 second limit.
  */
 export function createHttpTransport(deps: HttpTransportDeps): Transport {
-  const baseUrl = deps.baseUrl ?? EVENTS_API_BASE_URL;
   return {
     async send(req: ClientRequest): Promise<RawResponse> {
+      const target = buildRequestUrl(EVENTS_API_BASE_URL, req);
       const accessToken = await deps.credential.getAccessTokenForEventsApi();
       const headers: Record<string, string> = {
         authorization: `Bearer ${accessToken}`,
       };
-      const init: FetchInit = { method: req.method, headers };
+      const init: FetchInit = {
+        method: req.method,
+        headers,
+        redirect: 'error',
+        signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS),
+      };
       if (req.body !== undefined) {
         headers['content-type'] = 'application/json';
         init.body = JSON.stringify(req.body);
       }
-      const res = await deps.fetch(buildUrl(baseUrl, req), init);
+      const res = await deps.fetch(target, init);
       const body = await parseBody(res);
       return { status: res.status, headers: res.headers, body };
     },

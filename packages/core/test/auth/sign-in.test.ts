@@ -333,3 +333,12 @@ describe('events-client, M1: the loopback is bound with this attempt state', () 
     expect(r.boundStates).toEqual([new URL(r.opened[0] ?? '').searchParams.get('state')]);
   });
 });
+
+describe('events-client, M3: the sign-in exchange refuses redirects and times out after 30 seconds', () => {
+  test('the token exchange passes redirect error and a signal', async () => {
+    const r = rig({});
+    await signIn(r.deps);
+    expect(r.oauth.calls[0]?.redirect).toBe('error');
+    expect(r.oauth.calls[0]?.signal).toBeInstanceOf(AbortSignal);
+  });
+});
