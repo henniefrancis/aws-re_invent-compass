@@ -86,3 +86,7 @@ export {
 export type { AppDataEnvironment } from './app-data.js';
 export { createPassStore, RECORD_FILE_MODE } from './pass-store.js';
 export type { PassStore, PassStoreDeps } from './pass-store.js';
+
+// Pass_Sync: the four-case diff and the sync driver.
+export { diffSchedule, syncPasses, MAX_ISSUE_CHUNK } from './pass-sync.js';
+export type { DiffCase, SyncPlanEntry, SyncResult, SyncDeps } from './pass-sync.js';

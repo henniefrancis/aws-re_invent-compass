@@ -106,21 +106,21 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Pass_Store with per-OS app-data resolution" -m "Reads and writes the issued-pass record with mode 0600, excludes token and email, and returns an empty record when absent."`
 
-- [ ] 5. Implement Pass_Sync
+- [x] 5. Implement Pass_Sync
   - Implement the pure `diffSchedule(input, record, rebuild)` classifying each session code in the union into exactly one of added, changed, cancelled or unchanged, where changed is a differing rebuilt-fields hash and cancelled is in the record but absent from the schedule.
   - Implement `syncPasses(input, deps)`: issue added sessions in chunks of at most twenty-five (matching the issue response back by session code and recording the issued platforms), PUT changed sessions, void cancelled sessions, make no call for unchanged sessions, and write the resulting state to the record after each completed issue, update or void.
   - Handle the client's 404 already-gone signal on update or void by dropping that entry from the record rather than treating it as an error; make zero calls and leave the record unchanged on a fully matching run.
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
-  - [ ] 5.1 Write property test: diff partitions sessions into exactly one case
+  - [x] 5.1 Write property test: diff partitions sessions into exactly one case
     - **Property 15: Diff partitions sessions into exactly one case**
     - **Validates: Requirements 4.1, 4.5**
-  - [ ] 5.2 Write property test: sync drives the correct call per case and persists the post-state
+  - [x] 5.2 Write property test: sync drives the correct call per case and persists the post-state
     - **Property 16: Sync drives the correct call per case and persists the post-state**
     - **Validates: Requirements 4.2, 4.3, 4.4, 4.7**
-  - [ ] 5.3 Write property test: idempotent re-run makes no calls and leaves the record unchanged
+  - [x] 5.3 Write property test: idempotent re-run makes no calls and leaves the record unchanged
     - **Property 17: Idempotent re-run makes no calls and leaves the record unchanged**
     - **Validates: Requirements 4.6**
-  - [ ] 5.4 Run this task's tests, then commit locally
+  - [x] 5.4 Run this task's tests, then commit locally
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Pass_Sync diff and drive issue, update and void" -m "Pure four-case diff keyed on session code drives chunked issue, PUT update and void, self-heals on 404 and is idempotent on a matching run."`
 
