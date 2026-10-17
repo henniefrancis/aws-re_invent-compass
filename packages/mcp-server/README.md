@@ -155,14 +155,14 @@ It forces simulated mode and runs ten steps through the real tools on a copy of 
 
 ## How depth is worked out
 
-The scanner counts evidence per AWS service from Terraform, CDK (TypeScript), AWS SDK for JavaScript v3, and package manifests.
+The scanner counts evidence per AWS service from Terraform, CDK (TypeScript), AWS SDK for JavaScript v3, boto3 (Python) and package manifests.
 
 - `none`: no evidence.
 - `exploring`: only imports, or packages listed as dependencies.
 - `building`: any real resource, construct, client or command.
 - `production`: building, with both infrastructure and code usage, and either a score of 12 or more or a production marker in the repository.
 
-The score is 2 for each resource, construct or client, plus 1 for each command, import or dependency. A depth maps to a suggested session level: exploring is level 100 (200 with more evidence), building is 300 and production is 400. Python files are not analysed yet.
+The score is 2 for each resource, construct or client, plus 1 for each command, import or dependency. A depth maps to a suggested session level: exploring is level 100 (200 with more evidence), building is 300 and production is 400. A boto3 client or resource call counts like an SDK client.
 
 ## Threat model
 

@@ -455,14 +455,14 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 27.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 28. Build the boto3 detector (cut-list item 3, last)
-  - [ ] 28.1 Implement the boto3 detector
+- [x] 28. Build the boto3 detector (cut-list item 3, last)
+  - [x] 28.1 Implement the boto3 detector
     - `src/scanner/detectors/boto3.ts`: `boto3.client` and `boto3.resource` calls and the same on boto3 sessions, single or double quotes, `#` comments removed; register it in `scanRepo` and set `pythonAnalysed: true`; extend the sample repo assertions
     - _Requirements: 2.4, 2.6, 2.7_
-  - [ ] 28.2 Write property test for the boto3 detector
+  - [x] 28.2 Write property test for the boto3 detector
     - **Property 8: The boto3 detector counts client and resource calls**
     - **Validates: Requirements 2.4, 2.6**
-  - [ ] 28.3 Commit
+  - [x] 28.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 29. Adjust the hooks to the SP1 result

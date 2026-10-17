@@ -15,6 +15,7 @@ describe('scanner on fixtures/sample-repo', () => {
       ['dynamodb', 'building', 300],
       ['lambda', 'building', 300],
       ['s3', 'building', 300],
+      ['sns', 'building', 300],
       ['sqs', 'building', 300],
     ]);
     const byKey = Object.fromEntries(result.services.map((s) => [s.key, s.evidence]));
@@ -28,6 +29,8 @@ describe('scanner on fixtures/sample-repo', () => {
     expect(byKey.dynamodb).toMatchObject({ terraformResources: 1, sdkClients: 1, sdkCommands: 1 });
     expect(byKey.lambda).toMatchObject({ terraformResources: 1 });
     expect(byKey.sqs).toMatchObject({ cdkImports: 1, cdkConstructs: 1 });
+    expect(byKey.sns).toMatchObject({ boto3Clients: 1 });
+    expect(result.pythonAnalysed).toBe(true);
     expect(result.truncated).toBe(false);
     expect(result.skipped.gitignored).toBe(0);
     expect(result.skipped.unsupportedType).toBe(1);

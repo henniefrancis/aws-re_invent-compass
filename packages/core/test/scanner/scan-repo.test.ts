@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
-import { scanRepo } from '../../src/scanner/scan-repo.js';
+import { DEFAULT_DETECTORS, scanRepo } from '../../src/scanner/scan-repo.js';
 import type { ScanDeps } from '../../src/scanner/scan-repo.js';
 import { FolderNotFoundError } from '../../src/scanner/walker.js';
 import type { Detector } from '../../src/scanner/detectors/types.js';
@@ -42,7 +42,7 @@ describe('scanRepo', () => {
       dependencyDeclarations: 1,
     });
     expect(result.unmappedCount).toBe(2);
-    expect(result.pythonAnalysed).toBe(false);
+    expect(result.pythonAnalysed).toBe(true);
     expect(result.truncated).toBe(false);
     expect(result.skipped.unsupportedType).toBe(1);
     expect(result.filesRead).toBe(4);
@@ -85,6 +85,19 @@ describe('scanRepo', () => {
     expect(result.truncated).toBe(true);
     expect(result.filesRead).toBe(1);
     expect(result.services[0]).toMatchObject({ key: 's3', depth: 'building' });
+  });
+
+  test('without the boto3 detector Python files are not analysed and python is reported as such', async () => {
+    const result = await scan(
+      { 'a.py': "import boto3\nboto3.client('s3')", 'c.tf': TERRAFORM(1) },
+      { detectors: DEFAULT_DETECTORS.filter((d) => d.id !== 'boto3') },
+    );
+    expect(result.pythonAnalysed).toBe(false);
+    expect(result.services[0]?.evidence.boto3Clients).toBe(0);
+    const analysed = await scan({ 'a.py': "import boto3\nboto3.client('s3')" });
+    expect(analysed.pythonAnalysed).toBe(true);
+    expect(analysed.services[0]).toMatchObject({ key: 's3' });
+    expect(analysed.services[0]?.evidence.boto3Clients).toBe(1);
   });
 });
 

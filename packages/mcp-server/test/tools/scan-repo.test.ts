@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
 import { mcpTools } from '@compass/contracts';
-import { createNodeScanFs, depthToNumber, scanRepo } from '@compass/core/scanner';
+import {
+  createNodeScanFs,
+  DEFAULT_DETECTORS,
+  depthToNumber,
+  scanRepo,
+} from '@compass/core/scanner';
 import { CompassError } from '../../src/ports/errors.js';
 import { scanRepoTool } from '../../src/tools/scan-repo.js';
 import { DATA_PREAMBLE } from '../../src/safety/labelled-data.js';
@@ -35,6 +40,7 @@ describe('scan_repo', () => {
       'src/q.ts': SDK,
       'a.tf': TF('aws_made_up'),
     });
+    fake.runtime.scanDetectors = DEFAULT_DETECTORS.filter((d) => d.id !== 'boto3');
     const ctx = contextFor(fake);
     const outcome = await scanRepoTool({ path: fs.root }, ctx);
     expect(outcome.ok).toBe(true);
@@ -60,6 +66,13 @@ describe('scan_repo', () => {
     });
     expect(ctx.state.workspaceRoot('/cwd')).toBe(fs.root);
     expect(fake.events.writeCalls).toEqual([]);
+  });
+
+  test('python files are analysed by default, and the note appears only when no boto3 detector is registered', async () => {
+    const { fake, fs } = runtimeFor({ 'a.py': "import boto3\nboto3.client('s3')" });
+    const outcome = await scanRepoTool({ path: fs.root }, contextFor(fake));
+    expect(outcome.ok && outcome.text).not.toContain('Python files were not analysed.');
+    expect(outcome.ok && outcome.text).toContain('Amazon S3: building');
   });
 
   test('registering a Python detector removes the Python note', async () => {
@@ -124,6 +137,7 @@ describe('scan_repo', () => {
       'Amazon DynamoDB',
       'AWS Lambda',
       'Amazon S3',
+      'Amazon SNS',
       'Amazon SQS',
     ]);
     await connection.close();

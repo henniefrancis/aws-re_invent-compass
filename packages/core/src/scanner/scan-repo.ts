@@ -4,6 +4,7 @@
 
 import { cdkTypescriptDetector } from './detectors/cdk-typescript.js';
 import { manifestsDetector } from './detectors/manifests.js';
+import { boto3Detector } from './detectors/boto3.js';
 import { sdkJsV3Detector } from './detectors/sdk-js-v3.js';
 import { terraformDetector } from './detectors/terraform.js';
 import type { Detector, DetectorHit } from './detectors/types.js';
@@ -36,7 +37,7 @@ export interface ScanResult {
   filesRead: number;
   skipped: Record<SkipReason, number>;
   truncated: boolean;
-  /** False while the boto3 detector is not registered (cut-list item 3). */
+  /** False only when the boto3 detector is not registered, so Python files were not read for evidence. */
   pythonAnalysed: boolean;
 }
 
@@ -45,6 +46,7 @@ export const DEFAULT_DETECTORS: readonly Detector[] = [
   terraformDetector,
   cdkTypescriptDetector,
   sdkJsV3Detector,
+  boto3Detector,
   manifestsDetector,
 ];
 

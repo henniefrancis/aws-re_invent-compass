@@ -13,6 +13,7 @@ export type { Detector, DetectorHit, EvidenceKind } from './detectors/types.js';
 export { terraformDetector } from './detectors/terraform.js';
 export { cdkTypescriptDetector } from './detectors/cdk-typescript.js';
 export { sdkJsV3Detector } from './detectors/sdk-js-v3.js';
+export { boto3Detector } from './detectors/boto3.js';
 export { manifestsDetector } from './detectors/manifests.js';
 export { EVIDENCE_KINDS, aggregateHits, emptyEvidence } from './evidence.js';
 export type { Aggregate, Evidence } from './evidence.js';
