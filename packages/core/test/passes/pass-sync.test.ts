@@ -124,7 +124,7 @@ function fakeClient(options: FakeClientOptions = {}): { client: CompassClient; c
 
 function storeWith(record?: IssuedPassRecord) {
   const fs = memoryFs();
-  const store = createPassStore({ appData: APP_DATA, fs });
+  const store = createPassStore({ appData: APP_DATA, fs, clock: fakeClock() });
   return { fs, store, seed: () => (record ? store.write(record) : Promise.resolve()) };
 }
 
@@ -133,7 +133,7 @@ function inputFor(codes: string[]) {
 }
 
 function writesIn(ops: string[]): number {
-  return ops.filter((op) => op.startsWith('writeFile ')).length;
+  return ops.filter((op) => op.startsWith('rename ')).length;
 }
 
 /** A scenario: which codes are scheduled, which are recorded, and which recorded ones differ. */

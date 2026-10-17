@@ -1,7 +1,7 @@
 // The per-OS app-data folder for the pass side (boarding-passes, S4, Requirement 3).
 //
 // Personal data stays on the attendee's machine, in a folder named reinvent-compass under
-// the platform's per-user data location: %APPDATA% on Windows, ~/Library/Application
+// the platform's per-user data location: %LOCALAPPDATA% on Windows (then %APPDATA%), ~/Library/Application
 // Support on macOS, and $XDG_DATA_HOME on Linux (falling back to ~/.local/share, the XDG
 // default). resolve is pure given the environment it is handed, so tests pass fixed
 // values instead of reading the real environment.
@@ -11,6 +11,8 @@ import type { AppDataResolver } from './interfaces.js';
 
 /** The folder name appended to the platform data location. */
 export const APP_FOLDER_NAME = 'reinvent-compass';
+/** The app-data folder and its output folder are private to the owner. */
+export const APP_DIR_MODE = 0o700;
 /** The issued-pass record file inside the app-data folder. */
 export const RECORD_FILE_NAME = 'issued-pass-record.json';
 /** The folder for generated artifacts inside the app-data folder. */
@@ -33,8 +35,16 @@ export function createAppDataResolver(environment: AppDataEnvironment): AppDataR
   return {
     resolve(): string {
       if (platform === 'win32') {
-        const appData = env.APPDATA;
-        const base = appData ? appData : win32.join(homeDir, 'AppData', 'Roaming');
+        // Personal data stays on this machine, so prefer LOCALAPPDATA over the roaming
+        // APPDATA. A value that is not an absolute Windows path is ignored.
+        const local = env.LOCALAPPDATA;
+        const roaming = env.APPDATA;
+        const base =
+          local && win32.isAbsolute(local)
+            ? local
+            : roaming && win32.isAbsolute(roaming)
+              ? roaming
+              : win32.join(homeDir, 'AppData', 'Local');
         return win32.join(base, APP_FOLDER_NAME);
       }
       if (platform === 'darwin') {

@@ -4,6 +4,7 @@ import type { IssuedPassRecord } from '../../src/passes/models.js';
 import { createPassStore, RECORD_FILE_MODE } from '../../src/passes/pass-store.js';
 import { PassError } from '../../src/passes/redaction.js';
 import { memoryFs, type FsOperation, type MemoryFs } from './memory-fs.js';
+import { fakeClock } from './support.js';
 
 // Tests for Pass_Store (boarding-passes, S4, Requirement 3). The store runs over an
 // in-memory FileSystem, so the file mode is asserted at the seam where the contract lives.
@@ -43,7 +44,7 @@ function storeFor(platform: 'win32' | 'linux', fs: MemoryFs = memoryFs()) {
         }
       : { platform, env: { XDG_DATA_HOME: '/home/ada/.local/share' }, homeDir: '/home/ada' },
   );
-  return { fs, store: createPassStore({ appData, fs }) };
+  return { fs, store: createPassStore({ appData, fs, clock: fakeClock() }) };
 }
 
 async function failureOf(promise: Promise<unknown>): Promise<PassError> {
@@ -138,7 +139,10 @@ describe('Feature: boarding-passes, Pass_Store read', () => {
       );
       const error = await failureOf(store.read());
       expect(error.code).toBe('store.corrupt_record');
-      expect(error.message).toBe('The issued-pass record is not valid.');
+      expect(error.message).toContain('forget_me');
+      expect(error.message).toContain('delete the issued-pass-record.json file');
+      expect(error.message).not.toContain('/home/ada');
+      expect(error.message).not.toContain(SENTINEL_EMAIL);
     }
   });
 });
@@ -156,7 +160,8 @@ describe('Feature: boarding-passes, Pass_Store delete and failures', () => {
     type Store = ReturnType<typeof storeFor>['store'];
     const cases: [FsOperation, (store: Store) => Promise<unknown>, string][] = [
       ['readFile', (store) => store.read(), 'store.read_failed'],
-      ['ensureDir', (store) => store.write(RECORD), 'store.write_failed'],
+      ['ensureDir', (store) => store.write(RECORD), 'store.lock_failed'],
+      ['rename', (store) => store.write(RECORD), 'store.write_failed'],
       ['writeFile', (store) => store.write(RECORD), 'store.write_failed'],
       ['remove', (store) => store.deleteRecord(), 'store.delete_failed'],
     ];

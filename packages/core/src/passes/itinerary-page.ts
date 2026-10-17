@@ -16,7 +16,7 @@ import {
   parseInstant,
   validWalkMinutes,
 } from './boarding.js';
-import { ITINERARY_FILE_NAME, joinInFolder, OUTPUT_FOLDER_NAME } from './app-data.js';
+import { APP_DIR_MODE, ITINERARY_FILE_NAME, joinInFolder, OUTPUT_FOLDER_NAME } from './app-data.js';
 import type { AppDataResolver, FileSystem } from './interfaces.js';
 import type { EventWindow, Itinerary, ItineraryCommitment } from './models.js';
 import { passError } from './redaction.js';
@@ -224,7 +224,7 @@ export function createItineraryPage(deps: ItineraryPageDeps): ItineraryPage {
       const folder = joinInFolder(appData.resolve(), OUTPUT_FOLDER_NAME);
       const path = joinInFolder(folder, ITINERARY_FILE_NAME);
       try {
-        await fs.ensureDir(folder);
+        await fs.ensureDir(folder, APP_DIR_MODE);
         await fs.writeFile(path, html, ITINERARY_FILE_MODE);
       } catch {
         throw passError('itinerary.write_failed', 'The itinerary page could not be written.');

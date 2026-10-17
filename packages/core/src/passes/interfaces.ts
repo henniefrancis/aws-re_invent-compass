@@ -49,16 +49,24 @@ export interface AppDataResolver {
 }
 
 /**
- * A minimal filesystem seam. Create modes are explicit so the Pass_Store can request
- * mode 0600. readFile resolves to undefined when the file is absent rather than
- * throwing, so an absent record reads as an empty record.
+ * A minimal filesystem seam. Create modes are explicit so the Pass_Store can request mode
+ * 0600 for files and 0700 for folders. readFile resolves to undefined when the file is
+ * absent rather than throwing, so an absent record reads as an empty record.
  */
 export interface FileSystem {
   readFile(path: string): Promise<string | undefined>;
   writeFile(path: string, data: string, mode: number): Promise<void>;
+  /** Atomically replace the file at `to` with the file at `from` (same folder). */
+  rename(from: string, to: string): Promise<void>;
   /** Delete a file, or a folder with everything under it. An absent path is not an error. */
   remove(path: string): Promise<void>;
-  ensureDir(path: string): Promise<void>;
+  /** Create the folder and any missing parents with the given mode. An existing folder is fine. */
+  ensureDir(path: string, mode: number): Promise<void>;
+  /**
+   * Create a file only if it does not exist yet (open with the wx flag). Resolves to true when
+   * this call created it and false when it already existed. Used for the cross-process lock.
+   */
+  createExclusive(path: string, data: string, mode: number): Promise<boolean>;
 }
 
 /**

@@ -161,14 +161,20 @@ async function driveAllFailurePaths(
     const fs = memoryFs();
     fs.failureText = leakyBody;
     fs.failing.add('writeFile');
-    const store = createPassStore({ appData, fs });
+    const store = createPassStore({ appData, fs, clock: fakeClock() });
     errors.push(await failing(() => store.write({ passes: [] })));
     const corrupt = memoryFs({
       [`${appData.resolve()}/${RECORD_FILE_NAME}`]: JSON.stringify({ passes: [], email: s.email }),
     });
-    errors.push(await failing(() => createPassStore({ appData, fs: corrupt }).read()));
+    errors.push(
+      await failing(() => createPassStore({ appData, fs: corrupt, clock: fakeClock() }).read()),
+    );
     const tainted = { passes: [], idToken: s.token, email: s.email } as never;
-    errors.push(await failing(() => createPassStore({ appData, fs: memoryFs() }).write(tainted)));
+    errors.push(
+      await failing(() =>
+        createPassStore({ appData, fs: memoryFs(), clock: fakeClock() }).write(tainted),
+      ),
+    );
   }
 
   // Pass_Builder: text fallbacks (nothing thrown) and an impossible build (thrown).
@@ -256,7 +262,7 @@ async function driveAllFailurePaths(
     const mock = createContractMock();
     mock.enqueue('issuePasses', problem(400, 'bad_request'));
     const { client } = clientFor(s, mock);
-    const store = createPassStore({ appData, fs: memoryFs() });
+    const store = createPassStore({ appData, fs: memoryFs(), clock: fakeClock() });
     const session = makeSession({ code: 'SYNC01', title: `${REQUEST_MARKER} ${s.email}` });
     errors.push(
       await failing(() =>
@@ -278,7 +284,7 @@ async function driveAllFailurePaths(
     const { client, mock } = clientFor(s);
     mock.enqueue('forgetMe', problem(401, 'unauthorized'));
     const fs = memoryFs();
-    const store = createPassStore({ appData, fs });
+    const store = createPassStore({ appData, fs, clock: fakeClock() });
     errors.push(await failing(() => forgetMe({ client, store, fs, appData })));
     const removal = memoryFs();
     removal.failureText = leakyBody;
@@ -288,7 +294,7 @@ async function driveAllFailurePaths(
       await failing(() =>
         forgetMe({
           client: second.client,
-          store: createPassStore({ appData, fs: removal }),
+          store: createPassStore({ appData, fs: removal, clock: fakeClock() }),
           fs: removal,
           appData,
         }),

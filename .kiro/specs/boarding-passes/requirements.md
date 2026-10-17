@@ -81,11 +81,15 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 #### Acceptance Criteria
 
 1. WHEN the Pass_Store writes the Issued_Pass_Record, THE Pass_Store SHALL write it inside the App_Data_Folder resolved for the current operating system.
-2. THE Pass_Store SHALL resolve the App_Data_Folder as `%APPDATA%` on Windows, as `~/Library/Application Support` on macOS, and as `$XDG_DATA_HOME` with the suffix `/reinvent-compass` on Linux.
+2. THE Pass_Store SHALL resolve the App_Data_Folder as `%LOCALAPPDATA%` on Windows (falling back to an absolute `%APPDATA%`, then to the user's `AppData\Local`), as `~/Library/Application Support` on macOS, and as `$XDG_DATA_HOME` with the suffix `/reinvent-compass` on Linux.
 3. THE Issued_Pass_Record SHALL hold, for each issued pass, the serial number, the session code, a hash of the pass fields and the platform.
 4. WHEN the Pass_Store creates the Issued_Pass_Record file, THE Pass_Store SHALL set the file mode to 0600.
 5. WHEN the Pass_Store reads an absent Issued_Pass_Record, THE Pass_Store SHALL return an empty record.
 6. THE Pass_Store SHALL exclude the ID_Token and the attendee email from the Issued_Pass_Record.
+7. THE Pass_Store SHALL write the record atomically (a temporary file in the same folder renamed over the record), SHALL keep exactly one `.bak` copy of the previous record, and SHALL create the app-data folder with mode 0700.
+8. THE Pass_Store SHALL serialise a read-modify-write run with an in-process mutex per record path and a cross-process lock file created with exclusive-create semantics, and SHALL take over a lock file older than two minutes.
+9. WHEN the Pass_Store reads a record that holds more than one entry for a session code, THE Pass_Store SHALL keep the newest and report the older entries so their passes can be voided.
+10. IF the Issued_Pass_Record is corrupt, THEN THE Pass_Store SHALL raise an error that names the recovery step (the forget_me tool, or deleting the record file) without echoing the path or the content.
 
 ### Requirement 4: Sync passes against the schedule
 

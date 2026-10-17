@@ -37,7 +37,7 @@ function rig() {
     [STRAY_OUTPUT_PATH]: 'left behind',
     [UNRELATED_PATH]: 'keep me',
   });
-  const store = createPassStore({ appData, fs });
+  const store = createPassStore({ appData, fs, clock: fakeClock() });
   const client = createCompassClient({
     baseUrl: 'https://d111111abcdef8.cloudfront.net',
     transport: mock,
@@ -151,11 +151,7 @@ describe('Feature: boarding-passes, forgetMe when a local file cannot be removed
   test('a failure removing only the record still tries the output folder', async () => {
     const { mock, fs, deps } = rig();
     mock.enqueue('forgetMe', jsonResponse(202, { voided: 0, deleted: 0 }));
-    const store = {
-      read: () => deps.store.read(),
-      write: (record: Parameters<typeof deps.store.write>[0]) => deps.store.write(record),
-      deleteRecord: () => Promise.reject(new Error('locked')),
-    };
+    const store = { ...deps.store, deleteRecord: () => Promise.reject(new Error('locked')) };
     await expect(forgetMe({ ...deps, store })).rejects.toMatchObject({
       code: 'forget.local_removal_failed',
     });

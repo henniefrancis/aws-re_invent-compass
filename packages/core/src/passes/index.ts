@@ -78,14 +78,22 @@ export {
   createNodeAppDataResolver,
   joinInFolder,
   APP_FOLDER_NAME,
+  APP_DIR_MODE,
   RECORD_FILE_NAME,
   OUTPUT_FOLDER_NAME,
   CALENDAR_FILE_NAME,
   ITINERARY_FILE_NAME,
 } from './app-data.js';
 export type { AppDataEnvironment } from './app-data.js';
-export { createPassStore, RECORD_FILE_MODE } from './pass-store.js';
-export type { PassStore, PassStoreDeps } from './pass-store.js';
+export {
+  createPassStore,
+  RECORD_FILE_MODE,
+  BACKUP_FILE_NAME,
+  TEMP_FILE_NAME,
+  LOCK_FILE_NAME,
+  STALE_LOCK_MS,
+} from './pass-store.js';
+export type { PassStore, PassStoreDeps, ReadResult } from './pass-store.js';
 
 // Pass_Sync: the four-case diff and the sync driver.
 export { diffSchedule, syncPasses, MAX_ISSUE_CHUNK } from './pass-sync.js';

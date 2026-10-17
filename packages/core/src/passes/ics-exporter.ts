@@ -12,7 +12,7 @@
 // personalTimeId or, when it has none, on a hash of its title and start.
 import { createHash } from 'node:crypto';
 import ical, { ICalAlarmType } from 'ical-generator';
-import { CALENDAR_FILE_NAME, joinInFolder, OUTPUT_FOLDER_NAME } from './app-data.js';
+import { APP_DIR_MODE, CALENDAR_FILE_NAME, joinInFolder, OUTPUT_FOLDER_NAME } from './app-data.js';
 import { BOARDING_CLOSES_MINUTES, parseInstant, validWalkMinutes } from './boarding.js';
 import type { AppDataResolver, Clock, FileSystem } from './interfaces.js';
 import type { EventWindow, Itinerary, ItineraryCommitment } from './models.js';
@@ -159,7 +159,7 @@ export function createIcsExporter(deps: IcsExporterDeps): IcsExporter {
       const folder = joinInFolder(appData.resolve(), OUTPUT_FOLDER_NAME);
       const path = joinInFolder(folder, CALENDAR_FILE_NAME);
       try {
-        await fs.ensureDir(folder);
+        await fs.ensureDir(folder, APP_DIR_MODE);
         await fs.writeFile(path, text, CALENDAR_FILE_MODE);
       } catch {
         throw passError('ics.write_failed', 'The calendar file could not be written.');

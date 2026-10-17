@@ -26,10 +26,10 @@ describe('Feature: boarding-passes, per-OS App_Data_Folder resolution', () => {
       'D:\\Data\\reinvent-compass',
     );
     expect(resolveFor('win32', {}, 'C:\\Users\\Ada')).toBe(
-      'C:\\Users\\Ada\\AppData\\Roaming\\reinvent-compass',
+      'C:\\Users\\Ada\\AppData\\Local\\reinvent-compass',
     );
     expect(resolveFor('win32', { APPDATA: '' }, 'C:\\Users\\Ada')).toBe(
-      'C:\\Users\\Ada\\AppData\\Roaming\\reinvent-compass',
+      'C:\\Users\\Ada\\AppData\\Local\\reinvent-compass',
     );
   });
 
