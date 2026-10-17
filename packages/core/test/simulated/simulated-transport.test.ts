@@ -59,8 +59,8 @@ const freeSession = ((): SessionWire => {
 const notReservable = catalog.find((s) => s.isReservable !== true);
 
 const input: PersonalTimeInput = {
-  startDateTime: '2026-12-01T12:00:00-08:00',
-  endDateTime: '2026-12-01T13:00:00-08:00',
+  startDateTime: '2026-12-01T20:00:00',
+  endDateTime: '2026-12-01T21:00:00',
   title: 'Lunch',
   description: 'Break',
 };
@@ -632,5 +632,135 @@ describe('events-client: an event without a timezone does not stop the simulatio
     const { result } = await reserveSessions(ctx, [clashA.sessionId, clashB.sessionId]);
     expect(result.successful).toEqual([clashA.sessionId]);
     expect(result.failed[0]?.code).toBe('scheduleConflict');
+  });
+});
+
+describe('events-client, QA M5: the simulation enforces the OpenAPI request constraints', () => {
+  const base = {
+    operation: 'ReserveSessions',
+    method: 'POST',
+    path: '/events/reinvent2026/reservations',
+  } as const;
+  const send = (path: string, method: ClientRequest['method'], body: unknown) =>
+    createSimulatedTransport({}, testFixtures()).send({
+      operation: 'ReserveSessions',
+      method,
+      path,
+      body,
+    });
+  const ids = (n: number): string[] =>
+    Array.from({ length: n }, (_, i) => `syn-${String(i + 1).padStart(3, '0')}`);
+
+  test('bulk requests need 1 to 10 unique ids of 1 to 128 characters, else 400 and nothing changes', async () => {
+    const transport = createSimulatedTransport({}, testFixtures());
+    const bad: unknown[] = [
+      undefined,
+      null,
+      'x',
+      {},
+      { sessionIds: 'syn-001' },
+      { sessionIds: [] },
+      { sessionIds: ids(11) },
+      { sessionIds: ['syn-001', 'syn-001'] },
+      { sessionIds: [''] },
+      { sessionIds: ['x'.repeat(129)] },
+      { sessionIds: [1] },
+    ];
+    for (const path of ['/events/reinvent2026/reservations', '/events/reinvent2026/favorites']) {
+      for (const body of bad) {
+        const res = await transport.send({ ...base, path, body });
+        expect(res.status).toBe(400);
+        expect(JSON.stringify(res.body)).not.toContain('syn-001');
+      }
+    }
+    const schedule = await transport.send({
+      operation: 'GetSchedule',
+      method: 'GET',
+      path: '/events/reinvent2026/schedule',
+    });
+    expect(schedule.body).toEqual({ schedule: { reserved: [], favorites: [], personalTime: [] } });
+  });
+
+  test('exactly 1 and exactly 10 ids, and a 128 character id, are accepted', async () => {
+    for (const sessionIds of [ids(1), ids(10), ['x'.repeat(128)]]) {
+      expect((await send(base.path, 'POST', { sessionIds })).status).toBe(200);
+    }
+  });
+
+  const good = {
+    startDateTime: '2026-12-01T20:00:00',
+    endDateTime: '2026-12-01T21:05:00',
+    title: 'T',
+    description: 'D',
+  };
+
+  test('personal time must follow the documented format, order, step and length rules', async () => {
+    const bad: Record<string, unknown>[] = [
+      { ...good, startDateTime: '2026-12-01T20:00:00Z' },
+      { ...good, startDateTime: '2026-12-01T20:00:00-08:00' },
+      { ...good, startDateTime: '2026-12-01T12:00' },
+      { ...good, startDateTime: '2026-12-01 20:00:00' },
+      { ...good, startDateTime: '2026-12-01T20:00:30' },
+      { ...good, endDateTime: '2026-12-01T21:00:30' },
+      { ...good, startDateTime: '2026-02-31T20:00:00' },
+      { ...good, startDateTime: '2026-12-01T25:00:00' },
+      { ...good, endDateTime: '2026-12-01T20:00:00' },
+      { ...good, endDateTime: '2026-12-01T19:00:00' },
+      { ...good, endDateTime: '2026-12-01T21:03:00' },
+      { ...good, startDateTime: 5 },
+      { ...good, title: '' },
+      { ...good, title: 'x'.repeat(129) },
+      { ...good, description: '' },
+      { ...good, description: 'x'.repeat(251) },
+      { ...good, location: '' },
+      { ...good, location: 'x'.repeat(256) },
+      { ...good, location: 7 },
+    ];
+    for (const body of bad) {
+      for (const [method, path] of [
+        ['POST', '/events/reinvent2026/personal-time'],
+        ['PUT', '/events/reinvent2026/personal-time/pt-1'],
+      ] as const) {
+        const res = await send(path, method, body);
+        expect(res.status).toBe(400);
+        expect((res.body as { message: string }).message).toContain('Personal time is invalid');
+      }
+    }
+    expect((await send('/events/reinvent2026/personal-time', 'POST', null)).status).toBe(400);
+  });
+
+  test('valid personal time, including the length limits and a location, is stored', async () => {
+    const { ctx } = simRig();
+    await createPersonalTime(ctx, {
+      ...good,
+      title: 'x'.repeat(128),
+      description: 'y'.repeat(250),
+      location: 'z'.repeat(255),
+    });
+    await createPersonalTime(ctx, good);
+    const { schedule } = await getSchedule(ctx);
+    expect(schedule.personalTime).toHaveLength(2);
+    expect(schedule.personalTime[0]?.location).toHaveLength(255);
+    expect(schedule.personalTime[1]?.location).toBeUndefined();
+    await updatePersonalTime(ctx, 'pt-2', { ...good, endDateTime: '2026-12-01T20:05:00' });
+  });
+
+  test('a scenario for an operation without that fixture is refused when the transport is created', () => {
+    const loader = {
+      ...testFixtures(),
+      fixture: (op: OperationName, scenario: string) => {
+        if (op === 'ListEvents' && scenario.startsWith('error-')) {
+          throw new Error('ENOENT');
+        }
+        return testFixtures().fixture(op, scenario);
+      },
+    };
+    expect(() => createSimulatedTransport({ throttleOps: ['ListEvents'] }, loader)).toThrow(
+      'no error-429 scenario for ListEvents',
+    );
+    expect(() => createSimulatedTransport({ expiredTokenOps: ['ListEvents'] }, loader)).toThrow(
+      'no error-401-expired-token scenario for ListEvents',
+    );
+    expect(() => createSimulatedTransport({ throttleOps: ['GetSchedule'] }, loader)).not.toThrow();
   });
 });

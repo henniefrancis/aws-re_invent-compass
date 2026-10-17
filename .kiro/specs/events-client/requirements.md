@@ -286,6 +286,7 @@ Scope boundary: this stream does not build the guardrails engine (S2 rules), the
 5. WHERE Simulated_Mode is active, WHEN a configured throttle scenario is requested, THE Simulated_Transport SHALL return a 429 response with a `Retry-After` header whose value is a whole number of seconds between 1 and 60 inclusive.
 6. WHERE Simulated_Mode is active, WHEN a configured expired token scenario is requested, THE Simulated_Transport SHALL return a 401 response that indicates the token is expired.
 7. WHILE Simulated_Mode is active, THE Simulated_Transport SHALL NOT send any request to the live Events API.
+8. WHERE Simulated_Mode is active, THE Simulated_Transport SHALL enforce the OpenAPI request constraints and SHALL answer 400 when a request breaks them: ReserveSessions and AssociateFavorites need 1 to 10 unique session ids of 1 to 128 characters, and personal time needs UTC dates in the form YYYY-MM-DDTHH:MM:00 (no Z or offset), an end after the start in whole 5-minute steps, a title of 1 to 128, a description of 1 to 250 and an optional location of 1 to 255 characters.
 
 ### Requirement 19: Fixtures
 
@@ -300,7 +301,8 @@ Scope boundary: this stream does not build the guardrails engine (S2 rules), the
 5. THE events-client stream SHALL provide a ReserveSessions or AssociateFavorites Fixture whose bulk result contains at least one per-session failure whose code is not a known `BulkFailureCode` value.
 6. THE events-client stream SHALL provide a Fixture that represents a 401 response indicating an expired token.
 7. THE events-client stream SHALL name each fixture folder under `fixtures/api/` using the kebab-case operation name, for example `reserve-sessions`, `associate-favorites` and `get-schedule`.
-8. THE events-client stream SHALL place unit tests under `packages/core/test/{auth,api,catalog,simulated}/`.
+8. THE events-client stream SHALL give each Fixture only a status the official OpenAPI document declares for that operation (so ListEvents and GetEvent have no 401 or 429 fixture), and personal time in Fixtures SHALL use the documented UTC format with no offset.
+9. THE events-client stream SHALL place unit tests under `packages/core/test/{auth,api,catalog,simulated}/`.
 
 ### Requirement 20: Security of logs and errors
 

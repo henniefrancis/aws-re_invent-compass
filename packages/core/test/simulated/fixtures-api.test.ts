@@ -50,6 +50,25 @@ const NO_BODY: OperationName[] = [
   'DeletePersonalTime',
 ];
 
+/** The statuses the official OpenAPI document declares for each operation. */
+const openApi = JSON.parse(
+  readFileSync(new URL('../../../contracts/events-api.openapi.json', import.meta.url), 'utf8'),
+) as {
+  paths: Record<
+    string,
+    Record<string, { operationId: string; responses: Record<string, unknown> }>
+  >;
+};
+const declared = new Map<string, Set<number>>();
+for (const item of Object.values(openApi.paths)) {
+  for (const operation of Object.values(item)) {
+    declared.set(operation.operationId, new Set(Object.keys(operation.responses).map(Number)));
+  }
+}
+/** The operations whose document entry declares the given status. */
+const declaring = (status: number): OperationName[] =>
+  OPERATIONS.filter((op) => declared.get(op)?.has(status) === true);
+
 const root = defaultFixturesRoot();
 const apiRoot = join(root, 'api');
 const loader = createFsFixtureLoader(root);
@@ -146,8 +165,39 @@ describe('events-client, task 15.1: error fixtures (Requirements 19.3, 19.6)', (
     }
   });
 
-  test('every operation has a 429 fixture with a whole-second Retry-After from 1 to 60', () => {
-    for (const op of OPERATIONS) {
+  test('every status in every fixture is one the OpenAPI document declares for that operation (QA M6)', () => {
+    for (const [folder, scenario] of allFixtures()) {
+      const op = operationOf(folder);
+      const { status } = loader.fixture(op, scenario);
+      expect(
+        declared.get(op)?.has(status),
+        `${folder}/${scenario} uses status ${String(status)}`,
+      ).toBe(true);
+    }
+  });
+
+  test('ListEvents and GetEvent, which the document gives no 401 or 429, have no such fixtures', () => {
+    for (const op of ['ListEvents', 'GetEvent'] as const) {
+      expect(declaring(401)).not.toContain(op);
+      expect(declaring(429)).not.toContain(op);
+      expect(() => loader.fixture(op, 'error-429')).toThrow();
+      expect(() => loader.fixture(op, 'error-401-expired-token')).toThrow();
+    }
+    expect(declaring(429)).toHaveLength(10);
+  });
+
+  test('the personal time in the schedule fixture uses the documented UTC format with no offset (QA M6)', () => {
+    const { schedule } = GetScheduleSchema.parse(loader.fixture('GetSchedule', 'success').body);
+    expect(schedule.personalTime.length).toBeGreaterThan(0);
+    for (const entry of schedule.personalTime) {
+      for (const value of [entry.startDateTime, entry.endDateTime]) {
+        expect(value).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+      }
+    }
+  });
+
+  test('every operation that declares 429 has a 429 fixture with a whole-second Retry-After from 1 to 60', () => {
+    for (const op of declaring(429)) {
       const file = loader.fixture(op, 'error-429');
       expect(file.status).toBe(429);
       const seconds = Number(file.headers?.['retry-after']);
@@ -157,16 +207,16 @@ describe('events-client, task 15.1: error fixtures (Requirements 19.3, 19.6)', (
     }
   });
 
-  test('every operation has a 401 expired-token fixture that says the token expired', () => {
-    for (const op of OPERATIONS) {
+  test('every operation that declares 401 has an expired-token fixture that says the token expired', () => {
+    for (const op of declaring(401)) {
       const file = loader.fixture(op, 'error-401-expired-token');
       expect(file.status).toBe(401);
       expect(JSON.stringify(file.body)).toContain('expired');
     }
   });
 
-  test('the simulated transport serves these fixtures for every configured operation', async () => {
-    for (const op of OPERATIONS) {
+  test('the simulated transport serves these fixtures for every operation that declares them', async () => {
+    for (const op of declaring(429)) {
       const transport = createSimulatedTransport({ throttleOps: [op] }, loader);
       // Route each operation through its own documented path via the shared route table.
       const routes: Record<OperationName, ['GET' | 'POST' | 'PUT' | 'DELETE', string]> = {

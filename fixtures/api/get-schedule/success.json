@@ -7,8 +7,8 @@
       "personalTime": [
         {
           "personalTimeId": "pt-1",
-          "startDateTime": "2026-12-01T12:00:00-08:00",
-          "endDateTime": "2026-12-01T13:00:00-08:00",
+          "startDateTime": "2026-12-01T20:00:00",
+          "endDateTime": "2026-12-01T21:00:00",
           "title": "Lunch",
           "description": "Break for food and water"
         }

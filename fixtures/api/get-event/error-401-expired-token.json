@@ -1,6 +1,0 @@
-{
-  "status": 401,
-  "body": {
-    "message": "The incoming token has expired"
-  }
-}

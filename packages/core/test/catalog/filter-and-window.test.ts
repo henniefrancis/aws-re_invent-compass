@@ -40,7 +40,17 @@ function matches(entry: CacheEntry, f: CatalogFilter): boolean {
     b === undefined || (list ?? []).some((v) => v.toLowerCase() === b.toLowerCase());
   const text =
     f.text === undefined ||
-    `${session.title} ${wire.abstract ?? ''}`.toLowerCase().includes(f.text.toLowerCase());
+    [
+      session.title,
+      wire.abstract ?? '',
+      session.code,
+      session.room ?? '',
+      session.venue ?? '',
+      ...(wire.speakers ?? []).map((sp) => sp.name ?? ''),
+    ]
+      .join(' ')
+      .toLowerCase()
+      .includes(f.text.toLowerCase());
   const day = f.day === undefined || (session.startsAt ?? '').startsWith(f.day);
   return (
     text &&

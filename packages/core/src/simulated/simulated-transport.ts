@@ -17,10 +17,11 @@
 //     expiredTokenOps answers the 401 expired-token fixture. Each scenario answers the
 //     first `scenarioRepeats` calls of that operation (default 1) and then behaves
 //     normally, so the client's single refresh or wait and retry can succeed.
+//   - Request bodies are checked against the OpenAPI constraints (request-rules.ts) and
+//     answer 400 when they break them.
 //   - Unknown routes and a wrong event id answer 404.
 
-import { z } from 'zod';
-import { PersonalTimeInputSchema, type SessionWire } from '@compass/contracts';
+import type { PersonalTimeInput, SessionWire } from '@compass/contracts';
 import { GetEventResultSchema } from '../api/response-wrappers.js';
 import type {
   ClientRequest,
@@ -30,6 +31,7 @@ import type {
   Transport,
 } from '../api/transport.js';
 import { createInMemorySchedule } from './in-memory-schedule.js';
+import { checkBulkBody, checkPersonalTimeBody } from './request-rules.js';
 import type { FixtureLoader } from './fixtures.js';
 
 /** Scenarios and sizes for the simulated transport. */
@@ -55,8 +57,6 @@ export interface SimulatedConfig {
 const DEFAULT_PAGE_SIZE = 50;
 const MIN_RETRY_AFTER = 1;
 const MAX_RETRY_AFTER = 60;
-
-const BulkBodySchema = z.object({ sessionIds: z.array(z.string()) });
 
 /** Headers over a plain record, with a case-insensitive get. */
 function makeHeaders(record: Record<string, string> = {}): ResponseHeaders {
@@ -127,6 +127,21 @@ function matchRoute(
 
 /** Create the simulated transport. */
 export function createSimulatedTransport(cfg: SimulatedConfig, fixtures: FixtureLoader): Transport {
+  // Fail fast: a configured scenario must have a fixture for its operation. An
+  // operation the OpenAPI document gives no such status (ListEvents and GetEvent have
+  // no 401 or 429) has none, and configuring it is an error, not a silent no-op.
+  for (const [ops, name] of [
+    [cfg.throttleOps ?? [], 'error-429'],
+    [cfg.expiredTokenOps ?? [], 'error-401-expired-token'],
+  ] as const) {
+    for (const op of ops) {
+      try {
+        fixtures.fixture(op, name);
+      } catch {
+        throw new Error(`The simulated API has no ${name} scenario for ${op}`);
+      }
+    }
+  }
   const catalog: readonly SessionWire[] = fixtures.catalog();
   const eventFixture = GetEventResultSchema.parse(fixtures.fixture('GetEvent', 'success').body);
   const knownEventId = eventFixture.event.eventId;
@@ -192,21 +207,21 @@ export function createSimulatedTransport(cfg: SimulatedConfig, fixtures: Fixture
   }
 
   function bulk(body: unknown, apply: (ids: readonly string[]) => unknown): RawResponse {
-    const parsed = BulkBodySchema.safeParse(body);
-    return parsed.success
-      ? json(200, { result: apply(parsed.data.sessionIds) })
-      : message(400, 'Invalid request body');
+    const checked = checkBulkBody(body);
+    return checked.ok
+      ? json(200, { result: apply(checked.value.sessionIds) })
+      : message(400, checked.message);
   }
 
   function personalTimeWrite(
     body: unknown,
-    write: (input: z.infer<typeof PersonalTimeInputSchema>) => boolean,
+    write: (input: PersonalTimeInput) => boolean,
   ): RawResponse {
-    const parsed = PersonalTimeInputSchema.safeParse(body);
-    if (!parsed.success) {
-      return message(400, 'Invalid request body');
+    const checked = checkPersonalTimeBody(body);
+    if (!checked.ok) {
+      return message(400, checked.message);
     }
-    return write(parsed.data) ? noContent() : message(404, 'Personal time not found');
+    return write(checked.value) ? noContent() : message(404, 'Personal time not found');
   }
 
   function handle(req: ClientRequest, route: Route): RawResponse {
