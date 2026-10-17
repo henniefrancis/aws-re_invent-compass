@@ -289,7 +289,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 #### Acceptance Criteria
 
 1. WHEN a Hand_Off_View is accepted, THE Board_Page SHALL show the Ready state: the sessions (code, title and start time in event local time), when the hand-off expires, and the available actions.
-2. THE Ready state SHALL offer one "Add to Apple Wallet" link per Apple bundle path, labelled with the pass numbers it holds when there is more than one bundle; one "Save to Google Wallet" link WHERE `google` is not null; and one "Download calendar" link WHERE `calendarPath` is not null.
+2. THE Ready state SHALL offer one "Add to Apple Wallet" link per Apple bundle path, labelled "bundle N of M" when there is more than one bundle (the contract does not say how passes are split across bundles, so the label never names pass numbers); one "Save to Google Wallet" link WHERE `google` is not null; and one "Download calendar" link WHERE `calendarPath` is not null.
 3. THE Ready state SHALL explain in one short line which action suits which device (Apple Wallet on iPhone, Google Wallet on Android, the calendar file on iPad or any other device), and THE Board_Page SHALL NOT detect the device or browser.
 4. WHEN the response status is 404, THE Board_Page SHALL show the Expired state, with one message for both unknown and expired hand-offs that tells the user to create a new hand-off on their computer.
 5. WHEN the response status is 429, THE Board_Page SHALL show the Rate_Limited state, asking the user to wait a minute and offering "Try again".
@@ -353,6 +353,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 4. THE Playwright tests SHALL wait only on application state (focus, headings and live region text), SHALL NOT wait on URLs or fixed sleeps, and SHALL run with no retries.
 5. THE Playwright tests SHALL serve the built output through the Static_Server and SHALL mock the hand-off routes with contract-shaped fixtures, and no test SHALL call a deployed Compass API or the live Events API.
 6. THE Site SHALL keep Angular components free of decisions beyond binding to Site_Logic outputs, so that the unit-tested Site_Logic holds every decision.
+7. THE Board_Page flow (read the hash once, remove the fragment before any request, send one request per user intent, expire locally) SHALL live in a Board_Controller in Site_Logic behind injected browser functions, so that the unit tests prove its order of effects and the component only wires up the browser globals.
 
 ### Requirement 23: Ownership and delivery
 

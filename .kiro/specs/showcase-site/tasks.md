@@ -150,64 +150,65 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, the build prerenders five routes, and both build checks pass; ask the user if questions arise.
 
-- [ ] 7. Board logic: fragment, request, validation and states
-  - [ ] 7.1 Implement the fragment parser
+- [x] 7. Board logic: fragment, request, validation and states
+  - [x] 7.1 Implement the fragment parser
     - Create `site/src/lib/board/fragment.ts` with `HandoffId`, `FragmentResult` and `parseBoardFragment` (exact `#h=` form, 22 base64url characters, last character in `A`, `Q`, `g`, `w`; no trimming or decoding)
     - _Requirements: 16.1, 16.2, 16.3_
 
-  - [ ] 7.2 Write property test for the fragment parser
+  - [x] 7.2 Write property test for the fragment parser
     - **Property 1: The fragment parser accepts exactly the canonical hand-off ids**
     - **Validates: Requirements 16.1, 16.2, 16.3**
 
-  - [ ] 7.3 Implement the hand-off client
+  - [x] 7.3 Implement the hand-off client
     - Create `site/src/lib/board/handoff-client.ts` with `buildHandoffRequest` (relative `/api/v1/handoffs/<id>`, GET, credentials omitted, `cache: 'no-store'`, `redirect: 'error'`, `referrerPolicy: 'no-referrer'`, Accept JSON, no body) and `fetchHandoff` (one fetch call, injected timers, 10 second abort, outcomes `ok`, `status`, `notJson`, `network`, `timeout`, no retry)
     - _Requirements: 16.6, 17.1, 17.2_
 
-  - [ ] 7.4 Write property test for the hand-off request
+  - [x] 7.4 Write property test for the hand-off request
     - **Property 3: The hand-off request is one same-origin GET carrying the id only in the path**
     - **Validates: Requirements 16.6, 17.1, 17.2**
 
-  - [ ] 7.5 Implement the hand-off view validator
+  - [x] 7.5 Implement the hand-off view validator
     - Create `site/src/lib/board/handoff-view.ts` with `validateHandoffView` enforcing Requirement 17 criteria 3 to 5 (types, no unknown fields, UUID serials, date-times with offset, 1 to 80 sessions, bundle paths for the same id in order and within the bundle limit, calendar path for the same id or null, Google save URL on `https://pay.google.com/gp/v/save/` with no user info or port, or null), returning `ValidatedHandoff` with bundle pass ranges, or `null`
     - Add the two-way compile-time assertion against `CompassApi.components['schemas']['HandoffView']`
     - _Requirements: 17.3, 17.4, 17.5, 17.6_
 
-  - [ ] 7.6 Write property test for hand-off view validation
+  - [x] 7.6 Write property test for hand-off view validation
     - **Property 4: Hand-off view validation is all or nothing**
     - **Validates: Requirements 17.3, 17.4, 17.5, 17.6**
 
-  - [ ] 7.7 Implement the board state machine and view model
-    - Create `site/src/lib/board/board-state.ts` with `BoardState`, `BoardEvent`, `reduceBoard`, `toBoardViewModel` (constant headings and messages from the design error table, device hint, timezone note, expiry text, session rows, actions only in Ready), `bundleLabel` and `msUntilExpiry`
-    - _Requirements: 16.5, 17.7, 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7, 18.9_
+  - [x] 7.7 Implement the board state machine and view model
+    - Create `site/src/lib/board/board-state.ts` with `BoardState`, `BoardEvent`, `reduceBoard`, `toBoardViewModel` (constant headings and messages from the design error table, device hint, timezone note, expiry text, session rows, actions only in Ready), `canRetry`, `bundleLabel` ("bundle N of M") and `msUntilExpiry`
+    - Create `site/src/lib/board/board-controller.ts` with `createBoardController` (design Component 13b, CTO H4): the hash is read once, `replaceState('/board')` runs before any fetch, an invalid hash causes no fetch, each "Try again" makes exactly one fetch, one expiry timer, `dispose`; every browser function is injected
+    - _Requirements: 16.1, 16.3, 16.4, 16.5, 17.2, 17.7, 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7, 18.9, 22.7_
 
-  - [ ] 7.8 Write property test for invalid links
-    - **Property 2: An invalid link never sends a request**
-    - **Validates: Requirements 16.3, 17.1**
+  - [x] 7.8 Write property test for invalid links
+    - **Property 2: An invalid link never sends a request** (against the Board_Controller)
+    - **Validates: Requirements 16.3, 16.4, 17.1, 17.2**
 
-  - [ ] 7.9 Write property test for outcome mapping
+  - [x] 7.9 Write property test for outcome mapping
     - **Property 5: Every request outcome maps to exactly one board state**
     - **Validates: Requirements 17.7, 18.1, 18.4, 18.5, 18.7**
 
-  - [ ] 7.10 Write property test for id secrecy
+  - [x] 7.10 Write property test for id secrecy
     - **Property 6: The hand-off id never reaches visible text, the title or the console**
     - **Validates: Requirements 2.4, 16.5, 16.6**
 
-  - [ ] 7.11 Write property test for local expiry
+  - [x] 7.11 Write property test for local expiry
     - **Property 7: Local expiry removes every action**
     - **Validates: Requirements 18.6**
 
-  - [ ] 7.12 Write property test for Apple bundle labels
-    - **Property 8: Apple bundle labels cover each pass exactly once**
+  - [x] 7.12 Write property test for Apple bundle labels
+    - **Property 8: Apple bundle labels cover each bundle exactly once**
     - **Validates: Requirements 18.2**
 
-  - [ ] 7.13 Commit
+  - [x] 7.13 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 8. Board page component and hand-off fixtures
   - [ ] 8.1 Implement the Board_Page
     - Prerender the Reading state with a `<noscript>` message and `<meta name="robots" content="noindex">` for this route only
-    - In `afterNextRender`: read `location.hash` once, parse it, call `Location.replaceState('/board')`, keep the id in a private field only, then dispatch `requestStarted` and call `fetchHandoff` with the global `fetch` and a 10 second timeout; "Try again" sends one new request
-    - One expiry timer from `msUntilExpiry`, cleared on destroy and on each new state; focus the state heading and update the polite live region after each outcome; `aria-busy` while loading
+    - In `afterNextRender`: build the Board_Controller with the browser globals only (`location.hash`, `Location.replaceState`, global `fetch`, `setTimeout`, `clearTimeout`, `Date.now`) and call `start()`; "Try again" calls `retry()`; `ngOnDestroy` calls `dispose()`. The component holds no flow logic
+    - Focus the state heading and update the polite live region after each state change; `aria-busy` while loading
     - Action links as plain anchors: Apple bundle paths with `type="application/vnd.apple.pkpasses"`, the Google save URL, the calendar path with `download`; first action visible in the first viewport on iPhone portrait
     - _Requirements: 1.7, 16.1, 16.4, 16.5, 16.7, 18.1, 18.2, 18.3, 18.8, 18.9, 18.10, 20.4_
 

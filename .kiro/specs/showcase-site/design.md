@@ -518,8 +518,8 @@ interface BoardSession {
 }
 interface AppleBundle {
   path: string;
-  firstPass: number;
-  lastPass: number;
+  number: number; // 1 for the first bundle
+  of: number; // how many Apple bundles the hand-off holds
 }
 interface ValidatedHandoff {
   expiresAt: string;
@@ -550,8 +550,7 @@ type BoardEvent =
   | { type: 'fragmentRead'; result: FragmentResult }
   | { type: 'requestStarted' }
   | { type: 'outcome'; outcome: HandoffOutcome; validated: ValidatedHandoff | null }
-  | { type: 'clock'; nowMs: number }
-  | { type: 'retry' };
+  | { type: 'clock'; nowMs: number };
 
 interface BoardAction {
   kind: 'apple' | 'google' | 'calendar';
@@ -573,18 +572,44 @@ interface BoardViewModel {
 
 function reduceBoard(state: BoardState, event: BoardEvent): BoardState;
 function toBoardViewModel(state: BoardState, nowMs: number): BoardViewModel;
-function bundleLabel(bundle: AppleBundle, bundleCount: number): string; // "Add to Apple Wallet" or "Add passes 11 to 20 to Apple Wallet"
+function canRetry(state: BoardState): boolean; // only Unavailable and Rate_Limited
+function bundleLabel(bundle: AppleBundle): string; // "Add to Apple Wallet", or "Add to Apple Wallet (bundle 2 of 3)" when there are several
 function msUntilExpiry(handoff: ValidatedHandoff, nowMs: number): number;
 ```
 
 Mapping: `ok` with a validated body is Ready; `ok` with `null` validation, `notJson`, `network`, `timeout` and any status other than 404 and 429 are Unavailable; 404 is Expired; 429 is Rate_Limited. `clock` at or after `expiresAt` turns Ready into Expired. Messages are constants; none is built from the id or from a response body.
 
+### Component 13b: Board controller (`src/lib/board/board-controller.ts`, CTO H4)
+
+The whole /board flow lives in Site_Logic behind injected browser functions, so it is unit tested at 100%. The component only wires up the browser globals.
+
+```ts
+interface BoardControllerDeps {
+  readHash: () => string;
+  replaceState: (path: string) => void;
+  fetch: FetchLike;
+  setTimer: SetTimer;
+  clearTimer: ClearTimer;
+  now: () => number;
+  onChange: (state: BoardState) => void;
+}
+interface BoardController {
+  start(): Promise<void>;
+  retry(): Promise<void>;
+  dispose(): void;
+  state(): BoardState;
+}
+function createBoardController(deps: BoardControllerDeps): BoardController;
+```
+
+Rules: `start()` reads the hash once (a second call does nothing), calls `replaceState('/board')` before any request, whether or not the fragment is valid, and sends no request for an invalid fragment. A valid fragment sends exactly one request, and the id stays in a private variable. `retry()` sends exactly one request, and only from Unavailable or Rate_Limited. One expiry timer switches Ready to Expired when the clock reaches `expiresAt`; a wait longer than the browser timer limit (2^31 - 1 ms) is done in steps; the timer is cleared on every state change and on `dispose()`, after which late answers are ignored.
+
 ### Component 14: Board page component (`src/app/pages/board/`)
 
 - Prerendered in the Reading state with `<noscript>` text and `<meta name="robots" content="noindex">` (set through Angular `Meta` for this route only).
-- In `afterNextRender`: read `location.hash` once, pass it to `parseBoardFragment`, call `Location.replaceState('/board')` from `@angular/common` to drop the fragment, keep the id in a private field, then dispatch `requestStarted` and call `fetchHandoff` with the global `fetch` and a 10 second timeout.
-- A single `setTimeout` to `msUntilExpiry` dispatches `clock`; it is cleared on destroy and on every new state.
-- After each outcome, focus moves to the state heading (`tabindex="-1"`) and the announcement goes to the polite live region.
+- The component holds no flow logic (CTO H4). In `afterNextRender` it builds the Board_Controller (Component 13b) with the browser globals (`location.hash`, `Location.replaceState` from `@angular/common`, the global `fetch`, `setTimeout`, `clearTimeout`, `Date.now`) and calls `start()`; "Try again" calls `retry()`; `ngOnDestroy` calls `dispose()`.
+- The controller's `onChange` writes the state to a signal. The view model comes from `toBoardViewModel(state, Date.now())`.
+- After each state change, focus moves to the state heading (`tabindex="-1"`) and the announcement goes to the polite live region.
 - Action links are plain `<a href>` elements: Apple bundle paths (`type="application/vnd.apple.pkpasses"`), the validated Google save URL, and the calendar path with `download`. No JavaScript download path, so iOS Safari hands the bundle to Wallet natively.
 
 ### Component 15: Time formatting (`src/lib/time/time-format.ts`)
@@ -717,9 +742,9 @@ _For any_ 16 random bytes, `#h=` followed by their unpadded base64url encoding i
 
 ### Property 2: An invalid link never sends a request
 
-_For any_ fragment that the parser refuses, driving the board state machine and the page controller logic leads to the Invalid_Link state and the injected fetch is called zero times.
+_For any_ fragment that the parser refuses, driving the Board_Controller leads to the Invalid_Link state, the hash is read once, `replaceState('/board')` runs, and the injected fetch is called zero times, including after any number of "Try again" calls. _For any_ valid id, `replaceState('/board')` runs before the first fetch, the hash is read once, and each "Try again" makes exactly one fetch.
 
-**Validates: Requirements 16.3, 17.1**
+**Validates: Requirements 16.3, 16.4, 17.1, 17.2**
 
 ### Property 3: The hand-off request is one same-origin GET carrying the id only in the path
 
@@ -751,9 +776,9 @@ _For any_ validated hand-off and _for any_ clock value, the state after a `clock
 
 **Validates: Requirements 18.6**
 
-### Property 8: Apple bundle labels cover each pass exactly once
+### Property 8: Apple bundle labels cover each bundle exactly once
 
-_For any_ session count from 1 to 80 and bundle count from 1 to the count divided by 10 rounded up, the bundle labels name contiguous, non-overlapping pass ranges that start at 1, each at most 10 long, and a single bundle is labelled "Add to Apple Wallet" with no range.
+_For any_ bundle count from 1 to 8, the labels name bundles 1 to N once each as "Add to Apple Wallet (bundle K of N)", and a single bundle is labelled "Add to Apple Wallet" with no number. A hand-off view gives one Apple action per bundle path, in order, each with a different label. (The labels do not name pass ranges: the contract does not say how passes are split across bundles.)
 
 **Validates: Requirements 18.2**
 
@@ -857,26 +882,26 @@ _For any_ generated clean HTML document, `findOutputIssues` reports nothing; _fo
 
 ### Property test mapping and tagging
 
-| Property              | Generators (illustrative)                                                  |
-| --------------------- | -------------------------------------------------------------------------- |
-| 1 fragment            | 16-byte arrays; arbitrary strings; mutations of valid fragments            |
-| 2 invalid no request  | refused fragments with a recording fetch                                   |
-| 3 request             | valid ids; fetch that resolves, rejects or never settles, with fake timers |
-| 4 validator           | bodies built from the `HandoffView` shape and single-field mutations       |
-| 5 outcome mapping     | statuses 100 to 599, bodies, validation results, network and timeout       |
-| 6 id secrecy          | ids plus random event sequences, scanning every view model string          |
-| 7 local expiry        | hand-offs with random `expiresAt` and clocks around the boundary           |
-| 8 bundle labels       | session counts 1 to 80 and valid bundle counts                             |
-| 9 time                | instants, offsets from minus 12 to plus 14 hours, IANA zones               |
-| 10 guardrail fidelity | action sequences over the Demo_Catalog with the real port and the double   |
-| 11 week consistency   | action sequences including remove and reset                                |
-| 12 safe swap          | start states and double answers for the pre-check and `planSafeSwap`       |
-| 13 determinism        | action sequences run twice, with the clock faked to different values       |
-| 14 sample pass        | reachable weeks and long titles                                            |
-| 15 calendar           | reachable weeks, unicode titles and long locations                         |
-| 16 contrast           | random colours and gradients; the fixed token set                          |
-| 17 budgets            | random acyclic import graphs and sizes around the limits                   |
-| 18 output check       | generated clean documents plus one injected violation at random positions  |
+| Property              | Generators (illustrative)                                                        |
+| --------------------- | -------------------------------------------------------------------------------- |
+| 1 fragment            | 16-byte arrays; arbitrary strings; mutations of valid fragments                  |
+| 2 invalid no request  | refused fragments and valid ids against the Board_Controller with recording deps |
+| 3 request             | valid ids; fetch that resolves, rejects or never settles, with fake timers       |
+| 4 validator           | bodies built from the `HandoffView` shape and single-field mutations             |
+| 5 outcome mapping     | statuses 100 to 599, bodies, validation results, network and timeout             |
+| 6 id secrecy          | ids plus random event sequences, scanning every view model string                |
+| 7 local expiry        | hand-offs with random `expiresAt` and clocks around the boundary                 |
+| 8 bundle labels       | bundle counts 1 to 8; validated hand-offs                                        |
+| 9 time                | instants, offsets from minus 12 to plus 14 hours, IANA zones                     |
+| 10 guardrail fidelity | action sequences over the Demo_Catalog with the real port and the double         |
+| 11 week consistency   | action sequences including remove and reset                                      |
+| 12 safe swap          | start states and double answers for the pre-check and `planSafeSwap`             |
+| 13 determinism        | action sequences run twice, with the clock faked to different values             |
+| 14 sample pass        | reachable weeks and long titles                                                  |
+| 15 calendar           | reachable weeks, unicode titles and long locations                               |
+| 16 contrast           | random colours and gradients; the fixed token set                                |
+| 17 budgets            | random acyclic import graphs and sizes around the limits                         |
+| 18 output check       | generated clean documents plus one injected violation at random positions        |
 
 ### Unit and example tests (not properties)
 
@@ -949,3 +974,5 @@ Recorded by the implementer (showcase-site stream). Each item is a change from, 
 8. **Kiro import options (CTO M11).** The Install_Page shows both "Import power from GitHub" options, the repository address and the `power/` folder of the repository, until the day-1 spike SP1 records which one works. The two options are one data entry (`kiroImportOptions` in `content/install.ts`).
 9. **Google save link note (CTO L6).** The research notes no longer repeat a claim about a JWT length limit, which was not checked against the page it cited. The site does not use that figure.
 10. **Build checks (Components 17 and 18).** The tag scanner of the Build_Output_Check is built from sticky regular expressions (comment, declaration, tag with quote-aware attributes), with raw text elements jumped over; a tag whose quote never closes is read as text. `runCli` takes `listFiles` and `readFile`, and `runDefault(distDir)` binds them to the real folder, so the whole wiring is covered in process. The Budget_Check reads the metafile from `dist/site/browser-stats.json` (one folder above the browser output) through a `statsPath` argument. "Initial JavaScript" is the static import closure of the module scripts and modulepreload links of the prerendered `index.html`, so it includes the Home_Page route chunk. The board page sets `<meta name="robots" content="noindex">` in its component constructor (through Angular `Meta`), so it is part of the prerendered head from task 5 on.
+11. **Board logic details (Components 10 to 13b).** `ResponseLike` has only `status` and `text()`; the client reads the body of a 200 response only, never an error body. `src/lib/time/iso.ts` adds a strict ISO 8601 parser (`parseIsoWithOffset`): `Date.parse` accepts 30 February and the hour 24, so the validator uses the strict one, and the validated hand-off carries `expiresAtMs`. A Google save link is accepted only when it starts with the literal `https://pay.google.com/gp/v/save/` and the rest is a token of letters, digits, dots, hyphens and underscores (a JWT), so userinfo, a port, a query, a different host and any other spelling of the host are all refused. The `retry` event is gone from the state machine: the controller checks `canRetry` and then sends `requestStarted`. A wait for expiry longer than the browser timer limit is done in steps. The Board_Controller (Component 13b) is the CTO H4 change; Requirement 22 criterion 7 and Property 2 were updated with it.
+12. **Bundle labels (CTO L8).** Apple bundles are labelled "bundle N of M" (design Component 13, Property 8, Requirement 18 criterion 2) because the contract does not say how passes are split across bundles.
