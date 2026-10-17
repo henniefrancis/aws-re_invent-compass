@@ -43,22 +43,22 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 1.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Include `.kiro/specs/pass-service/` in this first commit. Verify every edit landed. Never push.
 
-- [ ] 2. Implement the HTTP primitives and the request logger
-  - [ ] 2.1 Implement proxy types, responses, problems and the router
+- [x] 2. Implement the HTTP primitives and the request logger
+  - [x] 2.1 Implement proxy types, responses, problems and the router
     - Create `src/http/event.ts` (`ProxyEvent`, `ProxyResult`, case-insensitive `header`), `src/http/problem.ts` (`ProblemCode`, `ProblemError`, `problem()` with `type: "about:blank"` and the fixed reason-phrase table), `src/http/responses.ts` (`json`, `binary` with base64 and `isBase64Encoded: true`, `empty`) and `src/http/router.ts` (`createRouter` keyed by `${method} ${resource}`)
     - `problem()` has no parameter that can carry request input; every Problem body validates with `ProblemSchema` from `@compass/contracts`
     - _Requirements: 2.5, 2.6, 2.7, 2.8_
 
-  - [ ] 2.2 Implement the request logger, metrics and console guard
+  - [x] 2.2 Implement the request logger, metrics and console guard
     - Create `src/observability/request-logger.ts` (one JSON line built from an allowlist: `requestId`, `route`, `status`, `latencyMs`, `outcome`, `Function`, `_aws` in CloudWatch embedded metric format with namespace `Compass` and the single dimension `Function`, `Latency` and the metric counts), `src/observability/metrics.ts` (the six metric names) and `src/observability/console-guard.ts` (`withConsoleGuard` silencing `console` during a request)
     - `route` is `${method} ${resource}` or `UNMATCHED`, never the raw path
     - _Requirements: 22.1, 22.2, 22.4, 22.5_
 
-  - [ ] 2.3 Write unit tests for the HTTP primitives and logger
+  - [x] 2.3 Write unit tests for the HTTP primitives and logger
     - Problem bodies for each status and code parse with `ProblemSchema`; binary responses are base64 with the given content type; the router returns undefined for unknown keys; a log line has exactly the allowlisted keys; the console guard restores `console` after success and after a throw
     - _Requirements: 2.5, 2.7, 2.8, 22.1, 22.5_
 
-  - [ ] 2.4 Commit
+  - [x] 2.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 3. Implement the secrets provider
