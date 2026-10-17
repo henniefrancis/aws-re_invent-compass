@@ -61,14 +61,17 @@ export {
   type ConfirmedWriteResult,
 } from './confirmed-write.js';
 
+// Capped body reads (finding L3): the size limits and the typed oversize error.
+export { MAX_API_BODY_BYTES, MAX_OAUTH_BODY_BYTES, BodyTooLargeError } from './capped-body.js';
+
 // Shared operation executor (Component 2, operation path).
 export { executeOperation, type ResponseHandler, type QuotaSpec } from './execute-operation.js';
 
 // The twelve Events API operation functions (Component 2), one file each.
-export { listEvents } from './list-events.js';
+export { listEvents, type ListEventsParams } from './list-events.js';
 export { getEvent } from './get-event.js';
 export { listSessions, type ListSessionsParams } from './list-sessions.js';
-export { getSession } from './get-session.js';
+export { getSession, type GetSessionParams } from './get-session.js';
 export { getSchedule } from './get-schedule.js';
 export { reserveSessions } from './reserve-sessions.js';
 export { associateFavorites } from './associate-favorites.js';
@@ -116,5 +119,6 @@ export {
   UnexpectedResponseError,
   EventWindowError,
   QuotaExceededError,
+  ResponseTooLargeError,
   errorForStatus,
 } from './errors.js';

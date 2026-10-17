@@ -1,0 +1,36 @@
+import { describe, expect, test } from 'vitest';
+import * as catalog from '../../src/catalog/index.js';
+
+// Structural export test for the catalog entry point (events-client, S1, task 16.1).
+// The list is explicit so the public surface changes only on purpose.
+
+const EXPECTED = [
+  'APP_DATA_DIR_NAME',
+  'CACHE_DIR_MODE',
+  'CACHE_FILE_MODE',
+  'CACHE_FILE_NAME',
+  'CacheWriteError',
+  'CatalogIncompleteError',
+  'cacheFilePath',
+  'computeSessionInterval',
+  'fetchAllSessions',
+  'filterCatalog',
+  'isValidTimeZone',
+  'isoWithOffset',
+  'normaliseSession',
+  'parseVenues',
+  'readCache',
+  'readCatalog',
+  'realFs',
+  'recoverVenue',
+  'refreshCatalog',
+  'resolveAppDataDir',
+  'resolveEventWindow',
+  'writeCache',
+];
+
+describe('events-client, task 16.1: the catalog entry point', () => {
+  test('exports exactly the listed runtime names', () => {
+    expect(Object.keys(catalog).sort()).toEqual([...EXPECTED].sort());
+  });
+});

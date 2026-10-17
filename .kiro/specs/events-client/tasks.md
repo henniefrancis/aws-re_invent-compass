@@ -360,16 +360,16 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 15.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 16. Wire the subpath exports and the structural checks
-  - [ ] 16.1 Wire the api, auth, catalog and simulated index exports
+- [x] 16. Wire the subpath exports and the structural checks
+  - [x] 16.1 Wire the api, auth, catalog and simulated index exports
     - Fill `src/api/index.ts` (exactly the twelve operation functions plus the confirmed-write helper and selector), `src/auth/index.ts`, `src/catalog/index.ts` and `src/simulated/index.ts` as the subpath entry points, with no shared barrel across streams
     - _Requirements: 6.1_
 
-  - [ ] 16.2 Write the structural export test for the twelve operations
+  - [x] 16.2 Write the structural export test for the twelve operations
     - Assert the `api` index exposes exactly the twelve operation functions, one file each, in `packages/core/test/api/`
     - _Requirements: 6.1_
 
-  - [ ] 16.3 Commit
+  - [x] 16.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 17. Implement the required security test
