@@ -121,6 +121,7 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 2. WHEN the Handoff_Builder has the Board_URL, THE Handoff_Builder SHALL render the Board_URL as a QR code for the terminal using ASCII or Unicode block characters.
 3. WHEN the Handoff_Builder has the Board_URL, THE Handoff_Builder SHALL render the Board_URL as a QR code for chat both as text and as a PNG image.
 4. THE Handoff_Builder SHALL carry the hand-off id in the URL fragment of the Board_URL that is encoded in each QR code.
+5. THE Handoff_Builder SHALL refuse a Board_URL unless its origin equals the origin of the client base URL, its path is exactly `/board`, its query is empty, it carries no credentials, its fragment is exactly `#h=<id>` where the id matches `^[A-Za-z0-9_-]{22}$` and equals the hand-off id of the same response, and the expiry is at most 24 hours ahead; and SHALL encode the parsed href in each QR code.
 
 ### Requirement 6: Export the itinerary as an .ics calendar
 

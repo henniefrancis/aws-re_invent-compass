@@ -110,6 +110,7 @@ export {
   renderChatText,
   QUIET_ZONE,
   PNG_SCALE,
+  BOARD_PATH,
 } from './handoff-builder.js';
 export type { HandoffBuilder, HandoffBuilderDeps, HandoffRenders } from './handoff-builder.js';
 

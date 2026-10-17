@@ -6,12 +6,15 @@
 // per module) and as a PNG for chat. All three come from the same QR symbol of the same
 // string, so they encode the same data.
 //
-// The Board_URL carries the hand-off id in its URL fragment, so it is a secret: it is encoded
-// exactly as the server returned it and is never written to a log line or an error. Before
-// anything is encoded the URL is checked to be https, free of credentials, and to carry the
-// hand-off id in its fragment.
+// The Board_URL carries the hand-off id in its URL fragment, so it is a secret: it is never
+// written to a log line or an error. Before anything is encoded the URL is held to the exact
+// shape S5 issues and S7 serves: the origin of the client's own base URL, the path /board, no
+// query, no credentials, and the fragment exactly #h=<id> where the id is the 22-character
+// base64url hand-off id from the same response. The expiry must be at most 24 hours ahead.
+// The QR encodes the parsed, normalised href, never the server's raw string.
 import QRCode, { type BitMatrix } from 'qrcode';
 import type { CompassClient } from './compass-client.js';
+import type { Clock } from './interfaces.js';
 import type { IncludeFlags } from './models.js';
 import { passError } from './redaction.js';
 
@@ -19,6 +22,13 @@ import { passError } from './redaction.js';
 export const QUIET_ZONE = 4;
 /** Pixels per module in the PNG. */
 export const PNG_SCALE = 6;
+
+/** The path of the board page, served by the site at the root of the distribution. */
+export const BOARD_PATH = '/board';
+/** A hand-off id is 128 bits in base64url, 22 characters. */
+const HANDOFF_ID_PATTERN = /^[A-Za-z0-9_-]{22}$/;
+/** A hand-off lives for 15 minutes; anything beyond a day ahead is not one. */
+const MAX_EXPIRY_AHEAD_MS = 24 * 60 * 60 * 1000;
 
 /** The error correction level used by every render. */
 const ERROR_CORRECTION = 'M';
@@ -49,32 +59,41 @@ export interface HandoffBuilder {
 /** What the builder needs from the client. */
 export interface HandoffBuilderDeps {
   client: Pick<CompassClient, 'createHandoff'>;
+  /** The same base URL the client was built with: the board link must be on its origin. */
+  baseUrl: string;
+  /** Supplies now, for the expiry check. */
+  clock: Clock;
 }
 
-/** The board URL must be https, carry no credentials and hold the hand-off id in its fragment. */
-function checkBoardUrl(boardUrl: string, handoffId: string): void {
+/**
+ * Check the Board_URL against the exact shape and return its parsed href: origin of the
+ * client base URL, path /board, no query, no credentials, fragment exactly #h=<id>.
+ */
+function checkedBoardHref(boardUrl: string, handoffId: string, expectedOrigin: string): string {
   let parsed: URL;
   try {
     parsed = new URL(boardUrl);
   } catch {
     throw invalidBoardUrl();
   }
-  const fragment = parsed.hash.slice(1);
   if (
-    parsed.protocol !== 'https:' ||
+    parsed.origin !== expectedOrigin ||
     parsed.username !== '' ||
     parsed.password !== '' ||
-    handoffId === '' ||
-    !fragment.includes(handoffId)
+    parsed.pathname !== BOARD_PATH ||
+    parsed.search !== '' ||
+    !HANDOFF_ID_PATTERN.test(handoffId) ||
+    parsed.hash !== `#h=${handoffId}`
   ) {
     throw invalidBoardUrl();
   }
+  return parsed.href;
 }
 
 function invalidBoardUrl(): Error {
   return passError(
     'handoff.invalid_board_url',
-    'The hand-off link from the server is not a secure link that carries the hand-off id.',
+    'The hand-off link from the server is not the expected board link for this service.',
   );
 }
 
@@ -116,13 +135,28 @@ export function renderChatText(modules: BitMatrix): string {
 
 /** Build the Handoff_Builder over the client. */
 export function createHandoffBuilder(deps: HandoffBuilderDeps): HandoffBuilder {
+  let expectedOrigin: string;
+  try {
+    expectedOrigin = new URL(deps.baseUrl).origin;
+  } catch {
+    throw passError(
+      'handoff.invalid_config',
+      'The base URL for the hand-off builder is not valid.',
+    );
+  }
   return {
     async handoff(serialNumbers, include) {
       const created = await deps.client.createHandoff({ serialNumbers, include });
-      checkBoardUrl(created.boardUrl, created.handoffId);
+      const href = checkedBoardHref(created.boardUrl, created.handoffId, expectedOrigin);
+      if (Date.parse(created.expiresAt) - deps.clock.now().getTime() > MAX_EXPIRY_AHEAD_MS) {
+        throw passError(
+          'handoff.invalid_expiry',
+          'The hand-off expiry is further ahead than a hand-off can last.',
+        );
+      }
       try {
-        const symbol = QRCode.create(created.boardUrl, { errorCorrectionLevel: ERROR_CORRECTION });
-        const png = await QRCode.toBuffer(created.boardUrl, {
+        const symbol = QRCode.create(href, { errorCorrectionLevel: ERROR_CORRECTION });
+        const png = await QRCode.toBuffer(href, {
           errorCorrectionLevel: ERROR_CORRECTION,
           margin: QUIET_ZONE,
           scale: PNG_SCALE,

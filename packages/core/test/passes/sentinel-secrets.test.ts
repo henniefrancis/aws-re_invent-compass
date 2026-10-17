@@ -42,7 +42,7 @@ const sentinelsArb: fc.Arbitrary<Sentinels> = fc
     token,
     email,
     handoffId,
-    boardUrl: `https://${host}.cloudfront.net/board#${handoffId}`,
+    boardUrl: `https://${host}.cloudfront.net/board#h=${handoffId}`,
   }));
 
 const appData = createAppDataResolver({
@@ -217,7 +217,9 @@ async function driveAllFailurePaths(
 
   // Handoff_Builder: an insecure board URL and a link too long for a QR code.
   {
+    const handoffDeps = { baseUrl: new URL(s.boardUrl).origin, clock: fakeClock() };
     const bad = {
+      ...handoffDeps,
       client: {
         createHandoff: () =>
           Promise.resolve({
@@ -237,6 +239,7 @@ async function driveAllFailurePaths(
       ),
     );
     const long = {
+      ...handoffDeps,
       client: {
         createHandoff: () =>
           Promise.resolve({
@@ -387,7 +390,7 @@ describe('Feature: boarding-passes, Property 26: no secret reaches logs or error
       token: fakeIdToken('aaaaaaaaaaaaaaaa'),
       email: 'first.timer@example.com',
       handoffId: 'Zk3pQ9sLw2VnR8xT5yBc7A',
-      boardUrl: 'https://d111111abcdef8.cloudfront.net/board#Zk3pQ9sLw2VnR8xT5yBc7A',
+      boardUrl: 'https://d111111abcdef8.cloudfront.net/board#h=Zk3pQ9sLw2VnR8xT5yBc7A',
     };
     const { client, mock } = clientFor(s);
     const calls: Promise<unknown>[] = [

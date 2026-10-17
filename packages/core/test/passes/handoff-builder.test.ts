@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { inflateSync } from 'node:zlib';
 import QRCode from 'qrcode';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { createCompassClient } from '../../src/passes/compass-client.js';
 import {
   createHandoffBuilder,
@@ -26,7 +26,8 @@ const ESC = String.fromCharCode(0x1b);
 const ANSI_PREFIX = `${ESC}[30;47m`;
 const ANSI_SUFFIX = `${ESC}[0m`;
 const SENTINEL_HANDOFF_ID = 'Zk3pQ9sLw2VnR8xT5yBc7A';
-const SENTINEL_BOARD_URL = `https://d111111abcdef8.cloudfront.net/board#${SENTINEL_HANDOFF_ID}`;
+const BASE_URL = 'https://d111111abcdef8.cloudfront.net';
+const SENTINEL_BOARD_URL = `${BASE_URL}/board#h=${SENTINEL_HANDOFF_ID}`;
 
 type Matrix = boolean[][];
 
@@ -143,18 +144,25 @@ function decodePngMatrix(bytes: Uint8Array, size: number): Matrix {
   );
 }
 
-/** Put a fixed hand-off answer behind the client seam. */
+/** Put a fixed hand-off answer behind the client seam, with the clock fixed at 08:00 UTC. */
 function depsAnswering(
   handoffId: string,
   boardUrl: string,
+  options: { baseUrl?: string; expiresAt?: string } = {},
 ): HandoffBuilderDeps & { requests: unknown[] } {
   const requests: unknown[] = [];
   return {
     requests,
+    baseUrl: options.baseUrl ?? BASE_URL,
+    clock: fakeClock(),
     client: {
       createHandoff(request) {
         requests.push(request);
-        return Promise.resolve({ handoffId, boardUrl, expiresAt: '2026-12-01T10:15:00Z' });
+        return Promise.resolve({
+          handoffId,
+          boardUrl,
+          expiresAt: options.expiresAt ?? '2026-12-01T08:15:00Z',
+        });
       },
     },
   };
@@ -172,21 +180,17 @@ async function failureOf(promise: Promise<unknown>): Promise<PassError> {
 
 describe('Feature: boarding-passes, Property 18: the three QR renders encode the same Board_URL data', () => {
   const boardUrlArb = fc
-    .tuple(
-      fc.stringMatching(/^[a-z0-9]{8,14}$/),
-      fc.stringMatching(/^[A-Za-z0-9_-]{22}$/),
-      fc.constantFrom('/board', '/b', '/passes/board'),
-      fc.option(fc.stringMatching(/^[a-z]{1,6}=[a-z0-9]{1,8}$/), { nil: undefined }),
-    )
-    .map(([host, capability, path, query]) => ({
+    .tuple(fc.stringMatching(/^[a-z0-9]{8,14}$/), fc.stringMatching(/^[A-Za-z0-9_-]{22}$/))
+    .map(([host, capability]) => ({
       handoffId: capability,
-      boardUrl: `https://${host}.cloudfront.net${path}${query ? `?${query}` : ''}#${capability}`,
+      baseUrl: `https://${host}.cloudfront.net`,
+      boardUrl: `https://${host}.cloudfront.net/board#h=${capability}`,
     }));
 
   test('all three renders read back to the matrix of one QRCode.create, fragment intact', async () => {
     await fc.assert(
-      fc.asyncProperty(boardUrlArb, async ({ handoffId, boardUrl }) => {
-        const deps = depsAnswering(handoffId, boardUrl);
+      fc.asyncProperty(boardUrlArb, async ({ handoffId, baseUrl, boardUrl }) => {
+        const deps = depsAnswering(handoffId, boardUrl, { baseUrl });
         const renders = await createHandoffBuilder(deps).handoff([SERIAL], INCLUDE);
 
         const reference = QRCode.create(boardUrl, { errorCorrectionLevel: 'M' });
@@ -199,7 +203,7 @@ describe('Feature: boarding-passes, Property 18: the three QR renders encode the
           )
           .join('');
         expect(encoded).toBe(boardUrl);
-        expect(encoded.endsWith(`#${handoffId}`)).toBe(true);
+        expect(encoded.endsWith(`#h=${handoffId}`)).toBe(true);
 
         expect(decodeTerminal(renders.terminalQr, size)).toEqual(matrix);
         expect(decodeChat(renders.chatText, size)).toEqual(matrix);
@@ -220,16 +224,20 @@ describe('Feature: boarding-passes, Handoff_Builder example tests', () => {
       jsonResponse(201, {
         handoffId: SENTINEL_HANDOFF_ID,
         boardUrl: SENTINEL_BOARD_URL,
-        expiresAt: '2026-12-01T10:15:00Z',
+        expiresAt: '2026-12-01T08:15:00Z',
       }),
     );
+    const clock = fakeClock();
     const client = createCompassClient({
-      baseUrl: 'https://d111111abcdef8.cloudfront.net',
+      baseUrl: BASE_URL,
       transport: mock,
-      clock: fakeClock(),
+      clock,
       idToken: { getIdToken: () => Promise.resolve(fakeIdToken('attendee')) },
     });
-    const renders = await createHandoffBuilder({ client }).handoff([SERIAL], INCLUDE);
+    const renders = await createHandoffBuilder({ client, baseUrl: BASE_URL, clock }).handoff(
+      [SERIAL],
+      INCLUDE,
+    );
     expect(mock.requests[0]?.body).toEqual({ serialNumbers: [SERIAL], include: INCLUDE });
     expect(mock.requests[0]?.violations).toEqual([]);
     expect(renders.terminalQr.length).toBeGreaterThan(0);
@@ -258,20 +266,36 @@ describe('Feature: boarding-passes, Handoff_Builder example tests', () => {
     expect(renderTerminalQr(modules).split(ESC).join('<ESC>')).toMatchSnapshot();
   });
 
-  test('a board URL that is not a secure link carrying the hand-off id is refused without echo', async () => {
-    const bad: [string, string][] = [
-      [SENTINEL_HANDOFF_ID, 'not a url'],
-      [SENTINEL_HANDOFF_ID, `http://d111111abcdef8.cloudfront.net/board#${SENTINEL_HANDOFF_ID}`],
+  test('the QR encodes the parsed, normalised href, not the server string', async () => {
+    const shouting = `https://D111111ABCDEF8.cloudfront.net/board#h=${SENTINEL_HANDOFF_ID}`;
+    const renders = await createHandoffBuilder(
+      depsAnswering(SENTINEL_HANDOFF_ID, shouting),
+    ).handoff([SERIAL], INCLUDE);
+    const { matrix, size } = referenceMatrix(SENTINEL_BOARD_URL);
+    expect(decodeChat(renders.chatText, size)).toEqual(matrix);
+  });
+
+  test('a board URL that is not the exact expected link is refused without echo (QA M6, security M3)', async () => {
+    const id = SENTINEL_HANDOFF_ID;
+    const bad: [string, string, string?][] = [
+      [id, 'not a url'],
+      [id, `http://d111111abcdef8.cloudfront.net/board#h=${id}`],
+      [id, `https://user:pw@d111111abcdef8.cloudfront.net/board#h=${id}`],
+      [id, `https://evilevil1234.cloudfront.net/board#h=${id}`],
+      [id, `https://d111111abcdef8.cloudfront.net/board/#h=${id}`],
+      [id, `https://d111111abcdef8.cloudfront.net/other#h=${id}`],
+      [id, `https://d111111abcdef8.cloudfront.net/board?x=1#h=${id}`],
+      [id, `https://d111111abcdef8.cloudfront.net/board?id=${id}`],
+      [id, `https://d111111abcdef8.cloudfront.net/board#${id}`],
+      [id, `https://d111111abcdef8.cloudfront.net/board#h=${id}x`],
+      [id, `https://d111111abcdef8.cloudfront.net/board#h=${id.slice(1)}A`],
+      [id, 'https://d111111abcdef8.cloudfront.net/board#h='],
+      ['short', 'https://d111111abcdef8.cloudfront.net/board#h=short'],
+      ['', 'https://d111111abcdef8.cloudfront.net/board#h='],
       [
-        SENTINEL_HANDOFF_ID,
-        `https://user:pw@d111111abcdef8.cloudfront.net/board#${SENTINEL_HANDOFF_ID}`,
+        'not url safe!not url!',
+        'https://d111111abcdef8.cloudfront.net/board#h=not url safe!not url!',
       ],
-      [
-        SENTINEL_HANDOFF_ID,
-        `https://d111111abcdef8.cloudfront.net/board?id=${SENTINEL_HANDOFF_ID}`,
-      ],
-      [SENTINEL_HANDOFF_ID, 'https://d111111abcdef8.cloudfront.net/board#someOtherValue'],
-      ['', 'https://d111111abcdef8.cloudfront.net/board#abc'],
     ];
     for (const [handoffId, boardUrl] of bad) {
       const error = await failureOf(
@@ -283,13 +307,46 @@ describe('Feature: boarding-passes, Handoff_Builder example tests', () => {
     }
   });
 
-  test('a link too long for any QR code is a fixed PassError that names nothing', async () => {
-    const longId = 'a'.repeat(3000);
+  test('an expiry more than 24 hours ahead is refused, and exactly 24 hours is accepted', async () => {
+    const deps = (expiresAt: string) =>
+      depsAnswering(SENTINEL_HANDOFF_ID, SENTINEL_BOARD_URL, { expiresAt });
     const error = await failureOf(
-      createHandoffBuilder(
-        depsAnswering(longId, `https://d111111abcdef8.cloudfront.net/board#${longId}`),
-      ).handoff([SERIAL], INCLUDE),
+      createHandoffBuilder(deps('2026-12-02T08:00:01Z')).handoff([SERIAL], INCLUDE),
     );
+    expect(error.code).toBe('handoff.invalid_expiry');
+    expect(error.message).not.toContain(SENTINEL_HANDOFF_ID);
+    await expect(
+      createHandoffBuilder(deps('2026-12-02T08:00:00Z')).handoff([SERIAL], INCLUDE),
+    ).resolves.toBeDefined();
+  });
+
+  test('a base URL that cannot be parsed is a fixed PassError that echoes nothing', () => {
+    expect(() =>
+      createHandoffBuilder(
+        depsAnswering(SENTINEL_HANDOFF_ID, SENTINEL_BOARD_URL, { baseUrl: 'secret nonsense' }),
+      ),
+    ).toThrow(PassError);
+    try {
+      createHandoffBuilder(
+        depsAnswering(SENTINEL_HANDOFF_ID, SENTINEL_BOARD_URL, { baseUrl: 'secret nonsense' }),
+      );
+    } catch (error) {
+      expect((error as PassError).code).toBe('handoff.invalid_config');
+      expect((error as PassError).message).not.toContain('secret');
+    }
+  });
+
+  test('a QR library failure is a fixed PassError that names nothing', async () => {
+    const create = vi.spyOn(QRCode, 'create').mockImplementationOnce(() => {
+      throw new Error(`library says ${SENTINEL_BOARD_URL}`);
+    });
+    const error = await failureOf(
+      createHandoffBuilder(depsAnswering(SENTINEL_HANDOFF_ID, SENTINEL_BOARD_URL)).handoff(
+        [SERIAL],
+        INCLUDE,
+      ),
+    );
+    create.mockRestore();
     expect(error.code).toBe('handoff.qr_failed');
     expect(error.message).toBe('The hand-off link could not be turned into a QR code.');
   });
