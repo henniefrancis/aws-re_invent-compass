@@ -247,85 +247,85 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
 - [x] 12. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 13. Implement the catalog module
-  - [ ] 13.1 Implement app-data directory resolution
+- [x] 13. Implement the catalog module
+  - [x] 13.1 Implement app-data directory resolution
     - Create `src/catalog/app-data-dir.ts` with `resolveAppDataDir(env, homeDir, platform)` for Windows `%APPDATA%`, macOS `~/Library/Application Support`, Linux `$XDG_DATA_HOME` or `~/.local/share`, each joined with `reinvent-compass`
     - _Requirements: 14.1, 14.2, 14.3_
 
-  - [ ] 13.2 Write property test for app-data directory resolution
+  - [x] 13.2 Write property test for app-data directory resolution
     - **Property 25: App-data directory resolves per platform**
     - **Validates: Requirements 14.1, 14.2, 14.3**
 
-  - [ ] 13.3 Implement pagination
+  - [x] 13.3 Implement pagination
     - Create `src/catalog/paginate.ts` with `fetchAllSessions(ctx, { includeAbstracts })` requesting pages until a response omits `nextToken`, following a non-empty `nextToken` even on a short page, sending `includeAbstracts=false` on a fast pass, doing no retry of its own, and surfacing a did-not-complete error on a non-retryable page error or a persistent 429 after the operation's single wait
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6_
 
-  - [ ] 13.4 Write property test for pagination ordering and stop condition
+  - [x] 13.4 Write property test for pagination ordering and stop condition
     - **Property 23: Pagination returns every page in order and stops only when nextToken is absent**
     - **Validates: Requirements 13.1, 13.2, 13.3, 13.4**
 
-  - [ ] 13.5 Write property test for page failure handling
+  - [x] 13.5 Write property test for page failure handling
     - **Property 24: Page 429 waits once then fails; non-retryable stops without completing**
     - **Validates: Requirements 13.5, 13.6**
 
-  - [ ] 13.6 Implement venue recovery and session normalisation
+  - [x] 13.6 Implement venue recovery and session normalisation
     - Create `src/catalog/venue-recovery.ts` with `recoverVenue(roomText, venues)` and `src/catalog/normalise.ts` with `normaliseSession(wire, venues, eventTimezone)` producing a value valid against `NormalisedSessionSchema`, setting offset-aware `startsAt`/`endsAt` through `Intl` when usable else recording them in `missingFields`, deriving `repeatOf` from `-R[0-9]?$`, recovering venue from the injected `VenueSchema`-parsed list, applying documented defaults (`isAllDay=false`, `isReservable=false`, `seatAvailability="unknown"`, `code=""`) while recording omissions, reading but never writing `data/venues.json`, and never inventing values
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8, 15.9, 15.10_
 
-  - [ ] 13.7 Write property test for normalisation validity
+  - [x] 13.7 Write property test for normalisation validity
     - **Property 29: Normalisation always produces a valid normalised session**
     - **Validates: Requirements 15.1**
 
-  - [ ] 13.8 Write property test for session times
+  - [x] 13.8 Write property test for session times
     - **Property 30: Session times are offset-aware when usable, absent and recorded otherwise**
     - **Validates: Requirements 15.2, 15.3**
 
-  - [ ] 13.9 Write property test for repeatOf derivation
+  - [x] 13.9 Write property test for repeatOf derivation
     - **Property 31: repeatOf is derived from the -R suffix**
     - **Validates: Requirements 15.4**
 
-  - [ ] 13.10 Write property test for venue recovery
+  - [x] 13.10 Write property test for venue recovery
     - **Property 32: Venue is taken from the wire, else recovered, else absent and recorded**
     - **Validates: Requirements 15.5, 15.6, 15.7**
 
-  - [ ] 13.11 Write property test for missingFields and defaults
+  - [x] 13.11 Write property test for missingFields and defaults
     - **Property 33: missingFields records exactly the absent tracked fields with documented defaults applied**
     - **Validates: Requirements 15.8, 15.10**
 
-  - [ ] 13.12 Write unit test that the normaliser never writes data/venues.json
+  - [x] 13.12 Write unit test that the normaliser never writes data/venues.json
     - Assert through a recording fs that no write targets `data/venues.json`
     - _Requirements: 15.9_
 
-  - [ ] 13.13 Implement the on-disk cache
+  - [x] 13.13 Implement the on-disk cache
     - Create `src/catalog/cache.ts` with `writeCache` (atomic temp-then-rename, dir created `0o700`, file mode `0o600` on POSIX, leaves old file on failure), `readCache`, `readCatalog` (refetch when older than configured max age), and `refreshCatalog` (overwrite in place with new data and ISO 8601 `fetchedAt` with offset), storing `{ fetchedAt, entries }` where each entry is `{ session, wire }`
     - _Requirements: 14.4, 14.5, 14.6, 14.7, 14.8_
 
-  - [ ] 13.14 Write property test for cache round-trip
+  - [x] 13.14 Write property test for cache round-trip
     - **Property 26: Cache write and read round-trip atomically with an ISO-8601 timestamp** (mode asserted on POSIX only)
     - **Validates: Requirements 14.4, 14.5, 14.6**
 
-  - [ ] 13.15 Write property test for stale-cache refetch
+  - [x] 13.15 Write property test for stale-cache refetch
     - **Property 27: Stale cache is refetched**
     - **Validates: Requirements 14.7**
 
-  - [ ] 13.16 Write property test for failed cache write
+  - [x] 13.16 Write property test for failed cache write
     - **Property 28: A failed cache write leaves the existing file unchanged**
     - **Validates: Requirements 14.8**
 
-  - [ ] 13.17 Implement local filtering and the event window
+  - [x] 13.17 Implement local filtering and the event window
     - Create `src/catalog/filter.ts` with `filterCatalog(sessions, filter)` combining text (title and abstract), type, level, day (local date of `startsAt`), venue, service and topic conjunctively, returning all when empty, and sending no API request
     - Create `src/catalog/event-window.ts` with `resolveEventWindow(listEvents, getEvent)` reading start, end and timezone from the API, erroring (`EventWindowError`) when any is absent or the timezone is not a valid IANA id, and never substituting a default
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 17.1, 17.2, 17.3, 17.4_
 
-  - [ ] 13.18 Write property test for local filtering
+  - [x] 13.18 Write property test for local filtering
     - **Property 34: Local filtering is a conjunctive subset with no API call**
     - **Validates: Requirements 16.1, 16.2, 16.3, 16.4**
 
-  - [ ] 13.19 Write property test for the event window
+  - [x] 13.19 Write property test for the event window
     - **Property 35: Event window comes from the API or errors, never a default**
     - **Validates: Requirements 17.1, 17.2, 17.3, 17.4**
 
-  - [ ] 13.20 Commit
+  - [x] 13.20 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 14. Implement the simulated transport
