@@ -227,24 +227,24 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 9. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, coverage of Site_Logic is 100%, and both build checks pass; ask the user if questions arise.
 
-- [ ] 10. Rules port, demo catalog and demo context
-  - [ ] 10.1 Implement the Rules_Port and the test double
+- [x] 10. Rules port, demo catalog and demo context
+  - [x] 10.1 Implement the Rules_Port and the test double
     - Confirm what `@compass/core/rules` exports on `develop` (execution rule 8); create `site/src/lib/demo/rules-port.ts` with `RulesPort`, `createRulesPort`, `connectionsForDay` and `createDemoContext`, taking every type through `Parameters` and `ReturnType`
     - If `resolveCommitment` (or a connections helper) or `withContextDefaults` is not exported, use the fallback in design Open Questions 1 and keep the Integrator request open
     - Create `site/test/doubles/rules-double.ts` implementing `RulesPort` with scripted answers
     - _Requirements: 8.3, 8.11, 9.1, 9.2, 9.3, 10.1, 10.4, 10.5_
 
-  - [ ] 10.2 Curate the Demo_Catalog and the demo context
+  - [x] 10.2 Curate the Demo_Catalog and the demo context
     - Pick 12 to 24 records from `fixtures/synthetic/catalog.json` covering every pattern in Requirement 7 criterion 3; copy each into `site/src/lib/demo/demo-catalog.ts` normalised to `NormalisedSession` (S1 mapping), with `DEMO_SOURCE_IDS`, `STARTER_WEEK`, `GUIDED_CLASH` and `DEMO_EVENT` (timezone from the records; fixed `now` at 18:00 event local time on the day before the first demo day; window from 00:00 on the first demo day to 23:59 on the last)
     - Create `site/src/lib/demo/venue-data.ts` importing `data/venues.json` read only
     - If a pattern is missing, stop and ask the integrator for an S0 catalog change (execution rule 9)
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.6_
 
-  - [ ] 10.3 Write example tests for catalog provenance and venue data
+  - [x] 10.3 Write example tests for catalog provenance and venue data
     - Every `DEMO_SESSIONS` entry equals the normalised synthetic record with the same id (S1 `normaliseSession` from `@compass/core/catalog` if merged, else a test-local mapping per the S1 design); every source record validates with `SessionWireSchema`; Requirement 7 criterion 3 coverage holds; `GUIDED_CLASH` reaches a block within three actions; `data/venues.json` validates with the S2 venue data schema
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 8.10_
 
-  - [ ] 10.4 Commit
+  - [x] 10.4 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 11. Demo reducer and week view
@@ -392,7 +392,9 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 12. **Links after release.** The Builder Center post and video URLs ship in a one-file `hotfix/1.0.1` change to `site/src/lib/content/links.ts` after submission (design Open Questions 6).
 13. **Root ESLint and `.html` files.** The root `eslint.config.js` lints `site/**/*.html` with the type-aware rules, which the Angular template parser cannot satisfy, so `npx eslint .` fails on any template or on `site/src/index.html`. Add `extends: [tseslint.configs.disableTypeChecked]` to the root `site/**/*.html` block. Until then `site/eslint.config.mjs` does this for the site; delete it afterwards (design deviation 2).
 14. **Coverage exclusion ADR (CTO M10).** Record an ADR that `site/src/app/**` is a named coverage exclusion, with the site `vitest.config.ts` coverage scope as the evidence, and add it to the build plan section 11.2 list.
-15. **Slow S0 property test.** `packages/contracts/test/placeholder-safety.test.ts` (Property 9) timed out once on a loaded machine (20 s for one case) and passed on the next run. Consider a longer timeout.
+15. **Wire S2 into the demo at merge (two small edits in `site/`, both marked in the source).** (a) `site/src/lib/demo/venue-data.ts`: replace the null seam with `import venueFile from '../../../../data/venues.json'; export const DEMO_VENUE_DATA: unknown = venueFile;`. (b) `site/src/lib/demo/rules-port.ts`: replace the namespace import with named imports of the eight functions (so the bundler drops unused engine code and zod), then run `check-budgets` to confirm the Demo_Page chunk stays under 150 kB gzip. Until both are done the Demo_Page shows that the demo cannot run. After the merge, also run the demo unit tests once against the real engine (swap `createFakeEngine()` for `REAL_ENGINE`) and re-check the guided clash and the safe swap by eye.
+16. **S1 normaliser at merge.** `site/test/demo/demo-catalog.test.ts` compares the demo catalog with a test-local normaliser written from the S1 design (`site/test/support/normalise-wire.ts`). When S1 merges, switch it to `normaliseSession` from `@compass/core/catalog` and confirm the `startsAt` format.
+17. **Slow S0 property test.** `packages/contracts/test/placeholder-safety.test.ts` (Property 9) timed out once on a loaded machine (20 s for one case) and passed on the next run. Consider a longer timeout.
 
 ## Task Dependency Graph
 
