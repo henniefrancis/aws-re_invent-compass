@@ -474,16 +474,16 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 24.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 25. Write the README and the S6 hand-off
-  - [ ] 25.1 Complete the package README
+- [x] 25. Write the README and the S6 hand-off
+  - [x] 25.1 Complete the package README
     - Document both bundles (path, handler `index.handler`, `nodejs24.x`, `arm64`, the plan's memory and timeouts), every environment variable with meaning and default, the secret JSON keys per secret, how the owner converts the Apple `.p12` to the PEM values (per the `passkit-generator` documentation) without echoing them, the DynamoDB key schema and TTL attribute, the metrics and their meaning for S6's alarms, the permissions per Lambda, the harness variables and how to run it, the SP2, SP3 and SP4 settings, and the ADR-026 re-check result
     - _Requirements: 1.7, 26.1_
 
-  - [ ] 25.2 Record the integrator requests
+  - [x] 25.2 Record the integrator requests
     - Make sure the Notes section of this file lists every request for another stream that arose while building (dependencies, contract questions, S6 alignment items), with no change made outside `packages/pass-service/**`
     - _Requirements: 26.3_
 
-  - [ ] 25.3 Commit
+  - [x] 25.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 26. Apply the SP2 result (waits on the owner)
@@ -538,6 +538,15 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - Tasks 26, 27 and 28 wait on the owner's spike results. Until each arrives, the configuration defaults are the build plan's expected values and fallbacks, and the rest of the plan does not depend on them.
 
 - **Security review amendments.** The review items (SR-H1 to SR-L5 in design.md, Requirement 27) are built inside the tasks they name; the tasks above are otherwise unchanged. Task 18.1 reads "delete first, then fan out", the counters in 9.1 include `forgetMe`, `updates`, `passUpdate` and the hand-off read counter, and 4.1 uses HKDF sub-keys with `tokenSalt`.
+
+- **Requests for the integrator recorded while building (task 25.2).** No change was made outside `packages/pass-service/**` and this spec folder.
+  - Dependencies: none beyond the declared ones. `zod`, `ical-generator`, `node-forge` (tests only) and the rest were declared by the integrator.
+  - `.gitignore`: the bare `build/` rule ignores `packages/pass-service/src/build/` and `test/build/`. They were added with `git add -f`; please add `!packages/pass-service/src/build/` and `!packages/pass-service/test/build/`.
+  - Build plan 4.1 and 4.2 and ADR-012 wording: SubHash and DeviceHash are HKDF-SHA256 sub-keys of the pepper (info `compass/sub/v1`, `compass/device/v1`); the Auth_Token is HMAC of the serial and a per-pass random `tokenSalt`; every record stores `pepperId`; there are new counters (`forgetMe`, `updates`, `passUpdate`, hand-off reads); forget_me keeps counters; at most 10 registrations per pass.
+  - S6 alignment: secrets `compass/<env>/app` (`pepper`, `pepperId`) and `compass/<env>/origin-verify` (`originVerify`, optional `originVerifyPrevious`) named by `APP_SECRET_ID` and `ORIGIN_VERIFY_SECRET_ID` on both Lambdas; both roles read `app`, `origin-verify` and `apple-pass`, only `api` reads `google-wallet`; `PUBLIC_BASE_URL` is set in the second apply; the table keys, GSIs and `ttl` attribute in the README; `dynamodb:BatchWriteItem` for `api`; the passkit role limited with `dynamodb:LeadingKeys` to `DEV#*` for writes; the `api` timeout of 10 s is close to the forget_me fan-out budget (8 s), so 15 s is advised (or `APNS_BUDGET_MS=3000`).
+  - Contract: no change requested. 403 for a missing or wrong origin-verify header is outside the contract on purpose. logMessages answers 200 for an unreadable body and registerDevice answers 401 for a bad body, because the contract lists no other status for them. The `x-api-key` header is enforced by API Gateway and never read by the Lambdas.
+  - Binary media types: the three pass and calendar types are returned base64 with `isBase64Encoded: true`; SP3 step 8 still has to confirm it through the real edge (design Open Question 6).
+  - Apple image sizes could not be checked against the live Wallet pages (they are script rendered); confirm on a device in SP3.
 
 ## Task Dependency Graph
 
