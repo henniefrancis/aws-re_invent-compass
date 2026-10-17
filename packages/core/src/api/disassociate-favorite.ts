@@ -5,6 +5,7 @@
 // follows the ordinary non-reserve retry policy.
 
 import { executeOperation } from './execute-operation.js';
+import { eventPath, segment } from './event-path.js';
 import { assertNoBody } from './validate.js';
 import type { ClientContext } from './transport.js';
 
@@ -15,7 +16,7 @@ export function disassociateFavorite(ctx: ClientContext, sessionId: string): Pro
     {
       operation: 'DisassociateFavorite',
       method: 'DELETE',
-      path: `/schedule/favorites/${encodeURIComponent(sessionId)}`,
+      path: eventPath(ctx, `/favorites/${segment(sessionId)}`),
     },
     { units: 1 },
     (response) => {

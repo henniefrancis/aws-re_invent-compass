@@ -53,17 +53,24 @@ export interface HarnessOptions {
   responses: RawResponse[];
   /** Make forceRefresh reject, to exercise the failed-refresh path. */
   refreshFails?: boolean;
+  /** Override the event id on the context. Defaults to HARNESS_EVENT_ID. */
+  eventId?: string;
 }
+
+/** The event id the harness context targets unless a test overrides it. */
+export const HARNESS_EVENT_ID = 'reinvent2026';
 
 /**
  * Build a ClientContext whose transport replays the scripted responses in order.
- * now() is fixed and sleep() resolves immediately while recording its argument.
+ * now() starts fixed and sleep() resolves immediately while recording its argument
+ * and advancing the clock by that many milliseconds, as a real wait would.
  */
 export function createHarness(options: HarnessOptions): Harness {
   const sent: ClientRequest[] = [];
   const queue = [...options.responses];
   let refreshCount = 0;
   const sleepArgs: number[] = [];
+  let clock = 1_000_000;
 
   const transport: Transport = {
     send: (req: ClientRequest) => {
@@ -77,6 +84,7 @@ export function createHarness(options: HarnessOptions): Harness {
   };
 
   const ctx: ClientContext = {
+    eventId: options.eventId ?? HARNESS_EVENT_ID,
     transport,
     accessToken: {
       getAccessTokenForEventsApi: () => Promise.resolve('access-token'),
@@ -93,9 +101,10 @@ export function createHarness(options: HarnessOptions): Harness {
       warn: () => undefined,
       error: () => undefined,
     }),
-    now: () => 1_000_000,
+    now: () => clock,
     sleep: (ms: number) => {
       sleepArgs.push(ms);
+      clock += ms;
       return Promise.resolve();
     },
   };

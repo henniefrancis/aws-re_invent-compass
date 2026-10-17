@@ -6,6 +6,7 @@
 // input is a contract PersonalTimeInput; it is sent as the request body as given.
 
 import { executeOperation } from './execute-operation.js';
+import { eventPath } from './event-path.js';
 import { assertNoBody } from './validate.js';
 import type { PersonalTimeInput } from '@compass/contracts';
 import type { ClientContext } from './transport.js';
@@ -17,7 +18,7 @@ export function createPersonalTime(ctx: ClientContext, input: PersonalTimeInput)
     {
       operation: 'CreatePersonalTime',
       method: 'POST',
-      path: '/schedule/personal-time',
+      path: eventPath(ctx, '/personal-time'),
       body: input,
     },
     { units: 1 },

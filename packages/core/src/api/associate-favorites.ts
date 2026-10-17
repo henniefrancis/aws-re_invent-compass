@@ -9,6 +9,7 @@
 // refusal (Requirements 10.4, 10.6).
 
 import { executeOperation } from './execute-operation.js';
+import { eventPath } from './event-path.js';
 import { assertBulkInput } from './bulk-input.js';
 import { validateBody } from './validate.js';
 import { BulkWriteResultSchema, type BulkWriteResult } from './response-wrappers.js';
@@ -25,7 +26,7 @@ export function associateFavorites(
     {
       operation: 'AssociateFavorites',
       method: 'POST',
-      path: '/schedule/favorites',
+      path: eventPath(ctx, '/favorites'),
       body: { sessionIds: [...sessionIds] },
     },
     { units: sessionIds.length },

@@ -40,9 +40,17 @@ describe('events-client, task 8.1: read operations', () => {
   test('listEvents returns the wrapped items on a 200', async () => {
     const h = createHarness({ responses: [response(200, { items: [sampleEvent] })] });
     const result = await listEvents(h.ctx);
+    expect(h.sent[0]?.path).toBe('/events');
+    expect(h.sent[0]?.query).toEqual({});
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.eventId).toBe('reinvent2026');
     expect(h.sent[0]?.operation).toBe('ListEvents');
+  });
+
+  test('listEvents sends includePast as a query parameter', async () => {
+    const h = createHarness({ responses: [response(200, { items: [] })] });
+    await listEvents(h.ctx, { includePast: true });
+    expect(h.sent[0]?.query).toEqual({ includePast: 'true' });
   });
 
   test('getEvent returns the wrapped event and encodes the id in the path', async () => {
@@ -58,7 +66,18 @@ describe('events-client, task 8.1: read operations', () => {
     });
     const result = await listSessions(h.ctx, { nextToken: 't', includeAbstracts: false });
     expect(result.nextToken).toBe('next');
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/sessions');
     expect(h.sent[0]?.query).toEqual({ nextToken: 't', includeAbstracts: 'false' });
+  });
+
+  test('listSessions sends locale and url-encodes the event id from the context', async () => {
+    const h = createHarness({
+      eventId: 'a b/c',
+      responses: [response(200, { items: [], totalCount: 0 })],
+    });
+    await listSessions(h.ctx, { locale: 'en-US' });
+    expect(h.sent[0]?.path).toBe('/events/a%20b%2Fc/sessions');
+    expect(h.sent[0]?.query).toEqual({ locale: 'en-US' });
   });
 
   test('listSessions with no params sends no query keys', async () => {
@@ -72,6 +91,16 @@ describe('events-client, task 8.1: read operations', () => {
     const h = createHarness({ responses: [response(200, { session })] });
     const result = await getSession(h.ctx, 'DAT302');
     expect(result.session.sessionId).toBe('DAT302');
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/sessions/DAT302');
+    expect(h.sent[0]?.query).toEqual({});
+  });
+
+  test('getSession encodes the session id and sends locale', async () => {
+    const session = { sessionId: 'a/b', title: 'Deep dive' };
+    const h = createHarness({ responses: [response(200, { session })] });
+    await getSession(h.ctx, 'a/b', { locale: 'ja-JP' });
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/sessions/a%2Fb');
+    expect(h.sent[0]?.query).toEqual({ locale: 'ja-JP' });
   });
 
   test('getSchedule validates the envelope', async () => {
@@ -80,6 +109,7 @@ describe('events-client, task 8.1: read operations', () => {
     });
     const result = await getSchedule(h.ctx);
     expect(result.schedule.reserved).toEqual([]);
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/schedule');
   });
 
   test('an invalid 2xx body yields a ValidationError and never the raw body', async () => {
@@ -176,6 +206,7 @@ describe('events-client, task 8.1: ReserveSessions is never automatically re-sen
     const h = createHarness({ responses: [response(200, { result })] });
     const got = await reserveSessions(h.ctx, ['S1']);
     expect(got.result.successful).toEqual(['S1']);
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/reservations');
   });
 
   test('a 401 refreshes once then fails without re-sending', async () => {
@@ -213,6 +244,60 @@ describe('events-client, task 8.1: AssociateFavorites follows the ordinary retry
     });
     const got = await associateFavorites(h.ctx, ['S1']);
     expect(got.result.successful).toEqual(['S1']);
+    expect(h.sent).toHaveLength(2);
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/favorites');
+  });
+});
+
+describe('events-client: the single retry counts against the quota', () => {
+  const schedule = { schedule: { reserved: [], favorites: [], personalTime: [] } };
+  const ok = response(200, schedule);
+
+  test('a 401 retry that would exceed the limit throws QuotaExceededError and is not sent', async () => {
+    // GetSchedule allows 60 per minute. 59 calls, then a call whose first send is the
+    // 60th unit; its 401 retry would be the 61st and must be blocked.
+    const h = createHarness({
+      responses: [...Array.from({ length: 59 }, () => ok), response(401, undefined)],
+    });
+    for (let i = 0; i < 59; i += 1) {
+      await getSchedule(h.ctx);
+    }
+    await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(QuotaExceededError);
+    expect(h.refreshes()).toBe(1);
+    expect(h.sent).toHaveLength(60);
+  });
+
+  test('a 401 retry within the limit is recorded as a second unit', async () => {
+    const h = createHarness({
+      responses: [response(401, undefined), ok, ...Array.from({ length: 58 }, () => ok)],
+    });
+    await getSchedule(h.ctx);
+    // 2 units used by the first call; 58 more fill the window to 60.
+    for (let i = 0; i < 58; i += 1) {
+      await getSchedule(h.ctx);
+    }
+    await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(QuotaExceededError);
+  });
+
+  test('a 429 retry blocked by the quota throws QuotaExceededError and is not sent', async () => {
+    // The tracker blocks the operation until Retry-After has elapsed. The wrapped
+    // sleep waits one millisecond too little, so the retry is still blocked.
+    const h = createHarness({
+      responses: [response(429, undefined, { 'retry-after': '5' })],
+    });
+    const realSleep = h.ctx.sleep;
+    h.ctx.sleep = async (ms: number) => {
+      await realSleep(ms - 1);
+    };
+    await expect(getSchedule(h.ctx)).rejects.toBeInstanceOf(QuotaExceededError);
+    expect(h.sent).toHaveLength(1);
+  });
+
+  test('an unmetered operation 401 retry is never blocked by the tracker', async () => {
+    const h = createHarness({
+      responses: [response(401, undefined), response(200, { items: [] })],
+    });
+    await listEvents(h.ctx);
     expect(h.sent).toHaveLength(2);
   });
 });

@@ -5,6 +5,7 @@
 // is also the read the confirmed-write helper uses to confirm every write.
 
 import { executeOperation } from './execute-operation.js';
+import { eventPath } from './event-path.js';
 import { validateBody } from './validate.js';
 import { GetScheduleSchema, type GetSchedule } from '@compass/contracts';
 import type { ClientContext } from './transport.js';
@@ -13,7 +14,7 @@ import type { ClientContext } from './transport.js';
 export function getSchedule(ctx: ClientContext): Promise<GetSchedule> {
   return executeOperation(
     ctx,
-    { operation: 'GetSchedule', method: 'GET', path: '/schedule' },
+    { operation: 'GetSchedule', method: 'GET', path: eventPath(ctx, '/schedule') },
     { units: 1 },
     (response) => validateBody('GetSchedule', GetScheduleSchema, response.body),
   );

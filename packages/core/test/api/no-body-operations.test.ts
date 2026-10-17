@@ -32,20 +32,20 @@ describe('events-client, task 8.3: no-body operations succeed on 204', () => {
     const h = createHarness({ responses: [response(204, undefined)] });
     await expect(cancelReservation(h.ctx, 'S1')).resolves.toBeUndefined();
     expect(h.sent[0]?.method).toBe('DELETE');
-    expect(h.sent[0]?.path).toBe('/schedule/reservations/S1');
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/reservations/S1');
   });
 
   test('disassociateFavorite sends a DELETE and resolves on 204', async () => {
     const h = createHarness({ responses: [response(204, undefined)] });
     await expect(disassociateFavorite(h.ctx, 'S1')).resolves.toBeUndefined();
-    expect(h.sent[0]?.path).toBe('/schedule/favorites/S1');
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/favorites/S1');
   });
 
   test('createPersonalTime sends a POST with the input body and resolves on 204', async () => {
     const h = createHarness({ responses: [response(204, undefined)] });
     await expect(createPersonalTime(h.ctx, input)).resolves.toBeUndefined();
     expect(h.sent[0]?.method).toBe('POST');
-    expect(h.sent[0]?.path).toBe('/schedule/personal-time');
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/personal-time');
     expect(h.sent[0]?.body).toEqual(input);
   });
 
@@ -53,7 +53,7 @@ describe('events-client, task 8.3: no-body operations succeed on 204', () => {
     const h = createHarness({ responses: [response(204, undefined)] });
     await expect(updatePersonalTime(h.ctx, 'p1', input)).resolves.toBeUndefined();
     expect(h.sent[0]?.method).toBe('PUT');
-    expect(h.sent[0]?.path).toBe('/schedule/personal-time/p1');
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/personal-time/p1');
     expect(h.sent[0]?.body).toEqual(input);
   });
 
@@ -61,7 +61,7 @@ describe('events-client, task 8.3: no-body operations succeed on 204', () => {
     const h = createHarness({ responses: [response(204, undefined)] });
     await expect(deletePersonalTime(h.ctx, 'p1')).resolves.toBeUndefined();
     expect(h.sent[0]?.method).toBe('DELETE');
-    expect(h.sent[0]?.path).toBe('/schedule/personal-time/p1');
+    expect(h.sent[0]?.path).toBe('/events/reinvent2026/personal-time/p1');
   });
 
   test('a body present where none is expected is a ValidationError', async () => {

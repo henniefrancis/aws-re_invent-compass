@@ -122,6 +122,12 @@ export interface QuotaTracker {
  * IdTokenProvider used by the passes module.
  */
 export interface ClientContext {
+  /**
+   * The event every event-scoped operation targets (for example "reinvent2026"). It
+   * fills the {eventId} segment of the official Events API paths and is URL-encoded
+   * when the path is built.
+   */
+  eventId: string;
   transport: Transport;
   accessToken: EventsApiCredential;
   quota: QuotaTracker;

@@ -10,11 +10,24 @@ import { validateBody } from './validate.js';
 import { ListEventsResultSchema, type ListEventsResult } from './response-wrappers.js';
 import type { ClientContext } from './transport.js';
 
+/** Optional parameters for ListEvents. */
+export interface ListEventsParams {
+  /** Whether to include events that have already ended. Sent as the includePast query. */
+  includePast?: boolean;
+}
+
 /** List the available events. */
-export function listEvents(ctx: ClientContext): Promise<ListEventsResult> {
+export function listEvents(
+  ctx: ClientContext,
+  params: ListEventsParams = {},
+): Promise<ListEventsResult> {
+  const query: Record<string, string> = {};
+  if (params.includePast !== undefined) {
+    query.includePast = String(params.includePast);
+  }
   return executeOperation(
     ctx,
-    { operation: 'ListEvents', method: 'GET', path: '/events' },
+    { operation: 'ListEvents', method: 'GET', path: '/events', query },
     { units: 0 },
     (response) => validateBody('ListEvents', ListEventsResultSchema, response.body),
   );

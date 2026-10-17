@@ -9,6 +9,7 @@
 // any unrecognised failure code is a refusal (Requirements 10.4, 10.6).
 
 import { executeOperation } from './execute-operation.js';
+import { eventPath } from './event-path.js';
 import { assertBulkInput } from './bulk-input.js';
 import { validateBody } from './validate.js';
 import { BulkWriteResultSchema, type BulkWriteResult } from './response-wrappers.js';
@@ -25,7 +26,7 @@ export function reserveSessions(
     {
       operation: 'ReserveSessions',
       method: 'POST',
-      path: '/schedule/reservations',
+      path: eventPath(ctx, '/reservations'),
       body: { sessionIds: [...sessionIds] },
     },
     { units: sessionIds.length },

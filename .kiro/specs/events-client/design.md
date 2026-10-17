@@ -265,6 +265,7 @@ function selectTransport(env: NodeJS.ProcessEnv, deps: TransportDeps): Transport
 
 // ClientContext carries everything an operation needs.
 interface ClientContext {
+  eventId: string; // fills {eventId} in every event-scoped path, URL-encoded
   transport: Transport;
   accessToken: EventsApiCredential; // access token provider; the ID token is never here
   quota: QuotaTracker;
@@ -289,10 +290,17 @@ interface AssociateResult {
 }
 
 // operation signatures (illustrative)
-function listEvents(ctx: ClientContext): Promise<ListEventsResult>;
+function listEvents(
+  ctx: ClientContext,
+  params?: { includePast?: boolean },
+): Promise<ListEventsResult>;
 function getEvent(ctx: ClientContext, eventId: string): Promise<GetEventResult>;
 function listSessions(ctx: ClientContext, params: ListSessionsParams): Promise<ListSessions>;
-function getSession(ctx: ClientContext, sessionId: string): Promise<GetSession>;
+function getSession(
+  ctx: ClientContext,
+  sessionId: string,
+  params?: { locale?: string },
+): Promise<GetSession>;
 function getSchedule(ctx: ClientContext): Promise<GetSchedule>;
 function reserveSessions(ctx: ClientContext, sessionIds: string[]): Promise<ReserveResult>; // no auto retry
 function cancelReservation(ctx: ClientContext, sessionId: string): Promise<void>; // 204 success, no body validation
@@ -307,7 +315,11 @@ function updatePersonalTime(
 function deletePersonalTime(ctx: ClientContext, id: string): Promise<void>;
 ```
 
-`ClientContext` is `{ transport, accessToken, quota, logger, now, sleep }`: the `Transport`, the `EventsApiCredential` access-token provider, the `QuotaTracker`, the redacting logger and injected `now`/`sleep` clocks. The ID token is never carried here; it is reached only through the separate `IdTokenProvider` used by the passes module. The 2xx path validates the body against the matching contract schema and returns the parsed value; a 204 for the five no-body operations returns success without validation; a validation failure returns a typed validation error and never returns the raw body (Requirement 6).
+**Official paths (change after the task 8 review).** Every path is built from the official OpenAPI document `packages/contracts/events-api.openapi.json`, relative to the base URL `https://api.awsevents.com/v1` that the transport prefixes: `GET /events` (query `includePast`), `GET /events/{eventId}`, `POST /events/{eventId}/favorites`, `DELETE /events/{eventId}/favorites/{sessionId}`, `POST /events/{eventId}/personal-time`, `PUT` and `DELETE /events/{eventId}/personal-time/{personalTimeId}`, `POST /events/{eventId}/reservations`, `DELETE /events/{eventId}/reservations/{sessionId}`, `GET /events/{eventId}/schedule`, `GET /events/{eventId}/sessions` (query `locale`, `includeAbstracts`, `nextToken`) and `GET /events/{eventId}/sessions/{sessionId}` (query `locale`). `ClientContext` gained `eventId: string` for the `{eventId}` segment (`GetEvent` still takes its id as an argument), and a shared helper `src/api/event-path.ts` (`eventPath`, `segment`) URL-encodes every dynamic segment. `listEvents` takes optional `includePast`, `listSessions` optional `locale`, and `getSession` an optional `params.locale`. A structural test (`test/api/openapi-conformance.test.ts`) reads the document at test time and asserts method, path template and query names for all twelve operations.
+
+**Quota on the retry.** The single retry after a 401 or 429 is a second send, so `executeOperation` checks and records the units again before it (a shared `reserveQuota`), throwing `QuotaExceededError` if blocked. After a 429 the tracker is blocked until `Retry-After` elapses, so the retry proceeds only once the wait has really elapsed.
+
+`ClientContext` is `{ eventId, transport, accessToken, quota, logger, now, sleep }`: the event id, the `Transport`, the `EventsApiCredential` access-token provider, the `QuotaTracker`, the redacting logger and injected `now`/`sleep` clocks. The ID token is never carried here; it is reached only through the separate `IdTokenProvider` used by the passes module. The 2xx path validates the body against the matching contract schema and returns the parsed value; a 204 for the five no-body operations returns success without validation; a validation failure returns a typed validation error and never returns the raw body (Requirement 6).
 
 The response wrappers are built in `core/src/api` with `z.object` composed from the exported contract schemas (`EventSchema`, `BulkResultSchema`, `SessionWireSchema`) now that `zod` is declared in `packages/core`; this stream never edits `packages/contracts`.
 

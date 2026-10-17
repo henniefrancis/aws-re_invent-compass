@@ -6,6 +6,7 @@
 // includeAbstracts to control the fast pass (Requirements 6.1, 6.3, 6.4).
 
 import { executeOperation } from './execute-operation.js';
+import { eventPath } from './event-path.js';
 import { validateBody } from './validate.js';
 import { ListSessionsSchema, type ListSessions } from '@compass/contracts';
 import type { ClientContext } from './transport.js';
@@ -16,6 +17,8 @@ export interface ListSessionsParams {
   nextToken?: string;
   /** Whether to include session abstracts. A fast pass sends false. */
   includeAbstracts?: boolean;
+  /** The locale for localised session text, sent as the locale query. */
+  locale?: string;
 }
 
 /** List one page of sessions. */
@@ -24,6 +27,9 @@ export function listSessions(
   params: ListSessionsParams = {},
 ): Promise<ListSessions> {
   const query: Record<string, string> = {};
+  if (params.locale !== undefined) {
+    query.locale = params.locale;
+  }
   if (params.nextToken !== undefined) {
     query.nextToken = params.nextToken;
   }
@@ -32,7 +38,7 @@ export function listSessions(
   }
   return executeOperation(
     ctx,
-    { operation: 'ListSessions', method: 'GET', path: '/sessions', query },
+    { operation: 'ListSessions', method: 'GET', path: eventPath(ctx, '/sessions'), query },
     { units: 1 },
     (response) => validateBody('ListSessions', ListSessionsSchema, response.body),
   );

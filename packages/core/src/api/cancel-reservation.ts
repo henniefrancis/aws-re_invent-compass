@@ -5,6 +5,7 @@
 // follows the ordinary non-reserve retry policy.
 
 import { executeOperation } from './execute-operation.js';
+import { eventPath, segment } from './event-path.js';
 import { assertNoBody } from './validate.js';
 import type { ClientContext } from './transport.js';
 
@@ -15,7 +16,7 @@ export function cancelReservation(ctx: ClientContext, sessionId: string): Promis
     {
       operation: 'CancelReservation',
       method: 'DELETE',
-      path: `/schedule/reservations/${encodeURIComponent(sessionId)}`,
+      path: eventPath(ctx, `/reservations/${segment(sessionId)}`),
     },
     { units: 1 },
     (response) => {

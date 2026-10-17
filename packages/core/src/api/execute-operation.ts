@@ -22,7 +22,7 @@
 
 import { createRetryPolicy, parseRetryAfter, type RetryPolicy } from './retry.js';
 import { errorForStatus, QuotaExceededError } from './errors.js';
-import type { ClientContext, ClientRequest, RawResponse } from './transport.js';
+import type { ClientContext, ClientRequest, OperationName, RawResponse } from './transport.js';
 
 /** One shared, stateless retry policy for the whole client. */
 const retryPolicy: RetryPolicy = createRetryPolicy();
@@ -46,6 +46,25 @@ function isSuccess(status: number): boolean {
 }
 
 /**
+ * Check then record quota units for one send, throwing QuotaExceededError before the
+ * request leaves when the tracker blocks it. Used for the first send and again for
+ * the single 401 or 429 retry, because every send counts against the limit.
+ */
+function reserveQuota(ctx: ClientContext, operation: OperationName, units: number): void {
+  // Unmetered operations (ListEvents, GetEvent) pass 0 units and are never blocked.
+  if (units <= 0) {
+    return;
+  }
+  if (ctx.quota.check(operation, units, ctx.now()) === 'blocked-until-reset') {
+    throw new QuotaExceededError(
+      operation,
+      `${operation} would exceed its client-side per-minute quota`,
+    );
+  }
+  ctx.quota.record(operation, units, ctx.now());
+}
+
+/**
  * Execute one Events API operation end to end: quota, send, retry, error mapping and
  * response handling. `handle` runs only on a 2xx response.
  */
@@ -59,15 +78,7 @@ export async function executeOperation<T>(
 
   // Quota gate before any send. Metered operations pass units > 0; unmetered ones
   // (ListEvents, GetEvent) pass 0 and are never blocked by the tracker.
-  if (quota.units > 0) {
-    if (ctx.quota.check(operation, quota.units, ctx.now()) === 'blocked-until-reset') {
-      throw new QuotaExceededError(
-        operation,
-        `${operation} would exceed its client-side per-minute quota`,
-      );
-    }
-    ctx.quota.record(operation, quota.units, ctx.now());
-  }
+  reserveQuota(ctx, operation, quota.units);
 
   // First attempt.
   let response = await ctx.transport.send(request);
@@ -82,6 +93,8 @@ export async function executeOperation<T>(
       throw errorForStatus(operation, 401);
     }
     if (decision === 'refresh-and-retry-once') {
+      // The retry is a second send, so its units are checked and recorded again.
+      reserveQuota(ctx, operation, quota.units);
       response = await ctx.transport.send(request);
     } else {
       // refresh-then-fail (ReserveSessions): never re-send.
@@ -93,6 +106,9 @@ export async function executeOperation<T>(
     if (decision === 'wait-and-retry-once' && retryAfter !== undefined) {
       ctx.quota.note429(operation, retryAfter, ctx.now());
       await ctx.sleep(retryAfter * 1000);
+      // The retry is a second send, so it is checked and recorded again. note429 and
+      // the elapsed wait may leave the operation blocked, which stops the retry.
+      reserveQuota(ctx, operation, quota.units);
       response = await ctx.transport.send(request);
     } else {
       throw errorForStatus(operation, 429);

@@ -6,6 +6,7 @@
 // PersonalTimeInput sent as the request body.
 
 import { executeOperation } from './execute-operation.js';
+import { eventPath, segment } from './event-path.js';
 import { assertNoBody } from './validate.js';
 import type { PersonalTimeInput } from '@compass/contracts';
 import type { ClientContext } from './transport.js';
@@ -21,7 +22,7 @@ export function updatePersonalTime(
     {
       operation: 'UpdatePersonalTime',
       method: 'PUT',
-      path: `/schedule/personal-time/${encodeURIComponent(id)}`,
+      path: eventPath(ctx, `/personal-time/${segment(id)}`),
       body: input,
     },
     { units: 1 },
