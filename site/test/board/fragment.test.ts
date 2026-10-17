@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, test } from 'vitest';
-import { parseBoardFragment } from '../../src/lib/board/fragment';
+import { parseBoardFragment, rawFragment } from '../../src/lib/board/fragment';
 import { FIXED_ID, idArb, idFromBytes } from '../support/handoff-data';
 
 describe('parseBoardFragment examples', () => {
@@ -95,5 +95,23 @@ describe('Property 1: The fragment parser accepts exactly the canonical hand-off
       ),
       { numRuns: 300 },
     );
+  });
+});
+
+describe('rawFragment (QA L8)', () => {
+  test('is everything from the first # of the address, exactly as written', () => {
+    expect(rawFragment(`https://x.invalid/board#h=${FIXED_ID}`)).toBe(`#h=${FIXED_ID}`);
+    expect(rawFragment('https://x.invalid/board')).toBe('');
+    expect(rawFragment('https://x.invalid/board?a=1#h=%41bc#more')).toBe('#h=%41bc#more');
+    expect(rawFragment('https://x.invalid/board#')).toBe('#');
+  });
+
+  test('a percent-encoded id is never decoded, so the parser refuses it', () => {
+    const encoded = `#h=%41${FIXED_ID.slice(1)}`;
+    expect(rawFragment(`https://x.invalid/board${encoded}`)).toBe(encoded);
+    expect(parseBoardFragment(rawFragment(`https://x.invalid/board${encoded}`))).toEqual({
+      ok: false,
+    });
+    expect(parseBoardFragment(rawFragment(`https://x.invalid/board#h=${FIXED_ID}`)).ok).toBe(true);
   });
 });

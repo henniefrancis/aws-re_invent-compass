@@ -17,6 +17,7 @@ import {
   toBoardViewModel,
   type BoardState,
 } from '../../../lib/board/board-state';
+import { FRAGMENT_HOLDER } from '../../fragment-holder';
 import { createBoardController, type BoardController } from '../../../lib/board/board-controller';
 import { watchVisibility } from '../../../lib/board/visibility';
 
@@ -31,6 +32,7 @@ import { watchVisibility } from '../../../lib/board/visibility';
 })
 export class BoardPage implements OnDestroy {
   private readonly location = inject(Location);
+  private readonly fragment = inject(FRAGMENT_HOLDER);
   private readonly injector = inject(Injector);
   private controller: BoardController | null = null;
 
@@ -51,7 +53,8 @@ export class BoardPage implements OnDestroy {
       this.scriptRuns.set(true);
       this.nowMs.set(Date.now());
       this.controller = createBoardController({
-        readHash: () => location.hash,
+        // Taken from the address (raw, not router normalised) before the router started.
+        readHash: () => this.fragment.take(),
         replaceState: (path) => {
           this.location.replaceState(path);
         },

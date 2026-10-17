@@ -175,6 +175,54 @@ test.describe('the suite does not depend on the date', () => {
   }
 });
 
+test.describe('history (security L-3)', () => {
+  test('Back and Forward never bring the fragment back', async ({ page }) => {
+    await mockHandoff(page, 'ready-one-bundle');
+    await openBoard(page);
+    await expect(heading(page)).toHaveText('Your boarding passes are ready');
+    expect(page.url()).not.toContain('#');
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('link', { name: 'Install' })
+      .click();
+    await expect(heading(page)).toHaveText('Install');
+    await page.goBack();
+    await expect(heading(page)).toBeVisible();
+    expect(page.url()).not.toContain('#');
+    expect(page.url()).not.toContain(HANDOFF_ID);
+    await page.goForward();
+    await expect(heading(page)).toHaveText('Install');
+    expect(page.url()).not.toContain('#');
+    const entries = await page.evaluate(() => history.length);
+    expect(entries).toBeGreaterThan(0);
+  });
+
+  test('the address has no fragment from the first moment the page runs', async ({ page }) => {
+    await page.addInitScript(() => {
+      const seen: string[] = [];
+      (window as unknown as { __urls: string[] }).__urls = seen;
+      const original = history.replaceState.bind(history);
+      history.replaceState = (state: unknown, unused: string, url?: string | URL | null) => {
+        seen.push(String(url));
+        original(state, unused, url);
+      };
+      const originalPush = history.pushState.bind(history);
+      history.pushState = (state: unknown, unused: string, url?: string | URL | null) => {
+        seen.push(String(url));
+        originalPush(state, unused, url);
+      };
+    });
+    await mockHandoff(page, 'ready-one-bundle');
+    await openBoard(page);
+    await expect(heading(page)).toHaveText('Your boarding passes are ready');
+    const urls = await page.evaluate(() => (window as unknown as { __urls: string[] }).__urls);
+    expect(urls.length).toBeGreaterThan(0);
+    for (const url of urls) {
+      expect(url).not.toContain('#');
+    }
+  });
+});
+
 test.describe('local expiry', () => {
   test('the page switches to expired and removes every action when the clock reaches expiresAt', async ({
     page,

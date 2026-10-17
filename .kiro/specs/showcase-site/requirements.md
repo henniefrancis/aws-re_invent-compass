@@ -267,6 +267,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 5. THE Board_Page SHALL keep the Hand_Off_Id in page memory only, and SHALL NOT write it to cookies, web storage, IndexedDB, the console, the document title or any visible text.
 6. THE Board_Page SHALL send the Hand_Off_Id only in the path of same-origin requests to the hand-off routes of `contracts/compass-api.openapi.yaml`, and to no analytics, log, error report or other origin.
 7. THE Board_Page SHALL include `<meta name="robots" content="noindex">`.
+8. THE Site SHALL take the fragment from the raw address and remove it from the address bar before the router's first navigation, so that neither the router nor the history ever holds it; Back and Forward SHALL never restore it, and the page SHALL refuse a percent-encoded id without decoding it.
 
 ### Requirement 17: Hand-off request and response validation
 

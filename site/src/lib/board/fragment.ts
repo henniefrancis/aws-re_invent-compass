@@ -20,3 +20,12 @@ export function parseBoardFragment(hash: string): FragmentResult {
   const match = HANDOFF_FRAGMENT.exec(hash);
   return match === null ? { ok: false } : { ok: true, id: match[1] as HandoffId };
 }
+
+/**
+ * The fragment of an address exactly as written: everything from the first "#". It is not decoded
+ * or normalised, so a percent-encoded id reaches the parser as it is and is refused there.
+ */
+export function rawFragment(href: string): string {
+  const at = href.indexOf('#');
+  return at < 0 ? '' : href.slice(at);
+}
