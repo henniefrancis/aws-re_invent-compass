@@ -152,36 +152,36 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 8.5 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
-- [ ] 9. Implement PKCE, the loopback server and the credential provider seam
-  - [ ] 9.1 Implement PKCE and state generation
+- [x] 9. Implement PKCE, the loopback server and the credential provider seam
+  - [x] 9.1 Implement PKCE and state generation
     - Create `src/auth/pkce.ts` with `createPkcePair` (challenge is base64url of SHA-256 of the verifier, no padding) and `createState`
     - _Requirements: 1.7, 1.8_
 
-  - [ ] 9.2 Write property test for the PKCE S256 challenge
+  - [x] 9.2 Write property test for the PKCE S256 challenge
     - **Property 1: PKCE S256 challenge is correct base64url without padding**
     - **Validates: Requirements 1.8**
 
-  - [ ] 9.3 Implement the loopback server and port binding
+  - [x] 9.3 Implement the loopback server and port binding
     - Create `src/auth/loopback-server.ts` with `bindLoopback` trying 8484 to 8489 in ascending order (a port is free only if `127.0.0.1:P` binds and `[::1]:P` binds or is unsupported), erroring if none bind, and `awaitCallback` handling one `/callback` request then shutting down, 404 on other paths without shutdown, rejecting `/callback?error=` at once, and timing out
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-  - [ ] 9.4 Write property test for port selection
+  - [x] 9.4 Write property test for port selection
     - **Property 2: Loopback binds the lowest free port in range**
     - **Validates: Requirements 1.2, 1.3**
 
-  - [ ] 9.5 Write unit tests for loopback request handling
+  - [x] 9.5 Write unit tests for loopback request handling
     - Single `/callback` request then shutdown; 404 on other paths with the server still up; sign-in timeout
     - _Requirements: 1.1, 1.4, 1.5, 1.6_
 
-  - [ ] 9.6 Implement the credential provider and audience guard
+  - [x] 9.6 Implement the credential provider and audience guard
     - Create `src/auth/credential-provider.ts` with `EventsApiCredential` (access token to the api layer, refreshes within 300s of expiry), a separate `IdTokenProvider` for the passes module only, and `assertAudience(credentialKind, targetHost)` refusing any mismatch
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 6.2_
 
-  - [ ] 9.7 Write property test for audience separation
+  - [x] 9.7 Write property test for audience separation
     - **Property 11: Credentials are released only to their own audience**
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 6.2**
 
-  - [ ] 9.8 Commit
+  - [x] 9.8 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 - [ ] 10. Implement the token store
