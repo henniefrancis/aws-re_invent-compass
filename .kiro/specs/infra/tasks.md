@@ -183,22 +183,22 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit the bootstrap and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
 
-- [ ] 10. Checkpoint - all six modules and the bootstrap
+- [x] 10. Checkpoint - all six modules and the bootstrap
   - Ensure all offline checks pass. Ask the user if questions arise.
 
-- [ ] 11. Compose the environment roots (`infra/envs/dev`, `infra/envs/prod`)
-  - [ ] 11.1 Implement the `dev` environment root composing all six modules
+- [x] 11. Compose the environment roots (`infra/envs/dev`, `infra/envs/prod`)
+  - [x] 11.1 Implement the `dev` environment root composing all six modules
     - Write `versions.tf` (with the `cloud` block reading `TF_CLOUD_ORGANIZATION`, `TF_CLOUD_PROJECT`, `TF_WORKSPACE`, no `-backend-config`), `provider.tf` (AWS region us-east-1 with `default_tags` for `project` and `environment`), `variables.tf` (with validation on `env` restricted to `dev|prod` and the alarm email), `locals.tf`, `main.tf` (composition of Site, Edge, Api, Data, Secrets, Observability), `outputs.tf` (non-sensitive only)
     - Wire the modules together (Secrets `origin_verify_secret_value` into Edge in-graph, Site/Edge distribution ARN and OAC exchange, Api stage host into Edge, Data table name and secret ARNs into Api, Api identifiers into Observability)
     - Commit `cloud.auto.tfbackend.example` and `terraform.tfvars.example`; keep the real files git-ignored
     - _Requirements: 1.1, 1.4, 1.5, 1.8, 1.9, 1.10, 10.1, 10.2, 10.3_
 
-  - [ ] 11.2 Implement the `prod` environment root with the same composition
+  - [x] 11.2 Implement the `prod` environment root with the same composition
     - Create `infra/envs/prod` with the same file shape and the same six-module composition as `dev` (no module present in one and absent from the other)
     - Commit `prod` `cloud.auto.tfbackend.example` and `terraform.tfvars.example`; keep the real files git-ignored
     - _Requirements: 1.1, 1.4, 1.5, 1.8, 1.9, 1.10, 10.1, 10.2, 10.3_
 
-  - [ ] 11.3 Run the offline checks and commit the environment roots
+  - [x] 11.3 Run the offline checks and commit the environment roots
     - For each of `dev` and `prod`, run `terraform fmt`, `terraform validate` (`init -backend=false`), and `tflint`; run a Trivy config scan over the composed roots; fix any finding. Confirm the only `.tfbackend`/`.tfvars` committed are `.example` placeholders
     - Commit both environment roots with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 1.1, 1.4, 1.5, 1.8, 1.9, 1.10, 10.1, 10.2, 10.3_

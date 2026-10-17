@@ -1,0 +1,16 @@
+# Copy this file to terraform.tfvars (git-ignored) and replace every placeholder.
+# HCP Terraform does not receive terraform.tfvars (infra/.terraformignore), so set
+# alarm_email as a sensitive variable in the HCP workspace as well.
+
+env = "dev"
+
+# Sensitive. Never commit the real address.
+alarm_email = "REPLACE_WITH_ALARM_EMAIL_ADDRESS"
+
+# Optional. Null (omit the line) selects compass-<env>.
+# table_name = "compass-dev"
+
+throttle_rate  = 50
+throttle_burst = 100
+
+kill_switch_enabled = false
