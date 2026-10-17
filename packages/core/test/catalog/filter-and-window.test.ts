@@ -165,7 +165,7 @@ describe('Feature: events-client, Property 35: Event window comes from the API o
   // Validates: Requirements 17.1, 17.2, 17.3, 17.4
   const maybe = (arb: fc.Arbitrary<string>): fc.Arbitrary<string | undefined> =>
     fc.option(arb, { nil: undefined });
-  const GOOD_ZONES = ['America/Los_Angeles', 'Europe/Paris', 'Asia/Calcutta', 'UTC'];
+  const GOOD_ZONES = ['America/Los_Angeles', 'Europe/Paris', 'Asia/Kolkata', 'UTC'];
   const zoneArb = fc.constantFrom(
     ...GOOD_ZONES,
     'Not/AZone',
@@ -264,7 +264,7 @@ describe('Feature: events-client, Property 35: Event window comes from the API o
         EventWindowError,
       );
     }
-    for (const timezone of ['America/Los_Angeles', 'Asia/Calcutta', 'UTC', 'Etc/GMT+8']) {
+    for (const timezone of ['America/Los_Angeles', 'Asia/Kolkata', 'UTC', 'Etc/GMT+8']) {
       expect(resolveEventWindow({ items: [] }, { event: { ...event, timezone } }).timezone).toBe(
         timezone,
       );

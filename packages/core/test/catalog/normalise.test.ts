@@ -127,7 +127,7 @@ describe('Feature: events-client, Property 30: Session times are offset-aware wh
   test('a half-hour offset zone renders its offset', () => {
     expect(
       computeSessionInterval(
-        { date: '2026-12-01', time: '10:00', length: '30', timezone: 'Asia/Calcutta' },
+        { date: '2026-12-01', time: '10:00', length: '30', timezone: 'Asia/Kolkata' },
         'UTC',
       )?.startsAt,
     ).toBe('2026-12-01T10:00:00+05:30');
@@ -299,7 +299,7 @@ describe('events-client, N6: the zone formatter cache is bounded', () => {
 
   test('wrong-case and alias spellings are judged strictly', () => {
     expect(isValidTimeZone('America/Los_Angeles')).toBe(true);
-    expect(isValidTimeZone('Asia/Kolkata')).toBe(false); // the runtime's canonical name is Asia/Calcutta
+    expect(isValidTimeZone('Asia/Kolkata')).toBe(true);
     expect(isValidTimeZone('america/los_angeles')).toBe(false);
     expect(isValidTimeZone('AMERICA/LOS_ANGELES')).toBe(false);
     expect(isValidTimeZone('Europe/PARIS')).toBe(false);

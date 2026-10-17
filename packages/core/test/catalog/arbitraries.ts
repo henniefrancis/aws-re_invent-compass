@@ -36,7 +36,7 @@ export const lengthArb: fc.Arbitrary<string> = fc.oneof(
   { weight: 1, arbitrary: fc.constantFrom('abc', '-5', '', '1.5', '123456') },
 );
 
-export const ZONES = ['America/Los_Angeles', 'Europe/London', 'Asia/Calcutta', 'UTC'] as const;
+export const ZONES = ['America/Los_Angeles', 'Europe/London', 'Asia/Kolkata', 'UTC'] as const;
 
 export const zoneArb: fc.Arbitrary<string> = fc.oneof(
   { weight: 6, arbitrary: fc.constantFrom(...ZONES) },
