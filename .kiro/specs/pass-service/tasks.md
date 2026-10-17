@@ -89,20 +89,20 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 4.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 5. Implement the origin guard and the request pipeline
-  - [ ] 5.1 Implement the origin guard
+- [x] 5. Implement the origin guard and the request pipeline
+  - [x] 5.1 Implement the origin guard
     - Create `src/security/origin-guard.ts` with `checkOrigin(event, appSecret)` comparing `x-origin-verify` in constant time; an absent header is false
     - _Requirements: 3.1_
 
-  - [ ] 5.2 Implement the request pipeline and the two app factories
+  - [x] 5.2 Implement the request pipeline and the two app factories
     - Create `src/app/pipeline.ts` (timer, console guard, origin guard before anything else with a 403 `forbidden`, router lookup with 404 for unknown keys, `ProblemError` mapping, any other throw mapped to 500 `internal_error` and never rethrown, one log line per request) and `src/app/api-app.ts` and `src/app/passkit-app.ts` (`createApiApp(deps)`, `createPasskitApp(deps)` with empty route tables filled by later tasks); export both from `src/index.ts`
     - _Requirements: 2.7, 3.2, 3.3, 22.1, 22.3_
 
-  - [ ] 5.3 Write property test for the origin guard
+  - [x] 5.3 Write property test for the origin guard
     - **Property 3: The Origin_Guard admits exactly the matching header**
     - **Validates: Requirements 3.1, 3.2, 3.3**
 
-  - [ ] 5.4 Commit
+  - [x] 5.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 6. Implement the ID token verifier
