@@ -108,15 +108,15 @@
     "venue": "MGM Grand"
   },
   {
-    "abbreviation": "AIM487-R2",
-    "abstract": "A made-up abstract for Identity and access: From zero to production. Synthetic data for testing only.",
+    "abbreviation": "ARC121-R2",
+    "abstract": "A made-up abstract for Edge delivery: From zero to production. Synthetic data for testing only.",
     "isAllDaySession": false,
-    "isReservable": false,
-    "level": "100",
+    "isReservable": true,
+    "level": "300",
     "room": "Room 132",
-    "seatAvailability": "walkUp",
+    "seatAvailability": "available",
     "services": [
-      "machine-learning"
+      "containers"
     ],
     "sessionId": "syn-005",
     "sessionTime": {
@@ -127,11 +127,11 @@
     },
     "speakers": [
       {
-        "name": "Alex Eriksson"
+        "name": "Emery Diaz"
       }
     ],
-    "title": "Identity and access: From zero to production",
-    "type": "Breakout session",
+    "title": "Edge delivery: From zero to production",
+    "type": "Code talk",
     "venue": "Encore"
   },
   {
@@ -212,11 +212,11 @@
     "type": "Builders session"
   },
   {
-    "abbreviation": "ANT163-R",
-    "abstract": "A made-up abstract for Data lakes: A builder guide. Synthetic data for testing only.",
+    "abbreviation": "AIM482-R",
+    "abstract": "A made-up abstract for Observability: From zero to production. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "400",
+    "level": "300",
     "room": "Room 102",
     "seatAvailability": "available",
     "services": [
@@ -231,11 +231,11 @@
     },
     "speakers": [
       {
-        "name": "Harper Bello"
+        "name": "Emery Farrell"
       }
     ],
-    "title": "Data lakes: A builder guide",
-    "type": "Chalk talk",
+    "title": "Observability: From zero to production",
+    "type": "Builders session",
     "venue": "MGM Grand"
   },
   {
@@ -319,15 +319,15 @@
     "venue": "MGM Grand"
   },
   {
-    "abbreviation": "CMP448-R2",
-    "abstract": "A made-up abstract for Edge delivery: From zero to production. Synthetic data for testing only.",
+    "abbreviation": "CMP136-R2",
+    "abstract": "A made-up abstract for Event-driven systems: Lessons from the field. Synthetic data for testing only.",
     "isAllDaySession": false,
-    "isReservable": true,
-    "level": "300",
+    "isReservable": false,
+    "level": "100",
     "room": "Room 114",
-    "seatAvailability": "available",
+    "seatAvailability": "walkUp",
     "services": [
-      "compute"
+      "database"
     ],
     "sessionId": "syn-013",
     "sessionTime": {
@@ -338,11 +338,11 @@
     },
     "speakers": [
       {
-        "name": "Blair Diaz"
+        "name": "Blair Eriksson"
       }
     ],
-    "title": "Edge delivery: From zero to production",
-    "type": "Workshop",
+    "title": "Event-driven systems: Lessons from the field",
+    "type": "Breakout session",
     "venue": "Caesars Forum"
   },
   {
@@ -427,11 +427,11 @@
     "venue": "Mandalay Bay"
   },
   {
-    "abbreviation": "STG335-R",
-    "abstract": "A made-up abstract for Edge delivery: A builder guide. Synthetic data for testing only.",
+    "abbreviation": "ANT398-R",
+    "abstract": "A made-up abstract for Serverless APIs: Hands on workshop. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "100",
+    "level": "400",
     "room": "Room 104",
     "seatAvailability": "available",
     "services": [
@@ -446,11 +446,11 @@
     },
     "speakers": [
       {
-        "name": "Blair Chen"
+        "name": "Gray Gupta"
       }
     ],
-    "title": "Edge delivery: A builder guide",
-    "type": "Builders session",
+    "title": "Serverless APIs: Hands on workshop",
+    "type": "Workshop",
     "venue": "Mandalay Bay"
   },
   {
@@ -535,15 +535,15 @@
     "venue": "The Venetian"
   },
   {
-    "abbreviation": "DEV190-R2",
-    "abstract": "A made-up abstract for Event-driven systems: Hands on workshop. Synthetic data for testing only.",
+    "abbreviation": "NET392-R2",
+    "abstract": "A made-up abstract for Zero-downtime deploys: Hands on workshop. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "300",
+    "level": "200",
     "room": "Room 119",
     "seatAvailability": "limited",
     "services": [
-      "compute"
+      "security"
     ],
     "sessionId": "syn-021",
     "sessionTime": {
@@ -554,11 +554,11 @@
     },
     "speakers": [
       {
-        "name": "Finley Bello"
+        "name": "Emery Bello"
       }
     ],
-    "title": "Event-driven systems: Hands on workshop",
-    "type": "Chalk talk",
+    "title": "Zero-downtime deploys: Hands on workshop",
+    "type": "Code talk",
     "venue": "MGM Grand"
   },
   {
@@ -643,15 +643,15 @@
     "venue": "MGM Grand"
   },
   {
-    "abbreviation": "CMP367-R",
-    "abstract": "A made-up abstract for Event-driven systems: Hands on workshop. Synthetic data for testing only.",
+    "abbreviation": "BWP213-R",
+    "abstract": "A made-up abstract for Data lakes: A builder guide. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "300",
+    "level": "400",
     "room": "Room 135",
     "seatAvailability": "available",
     "services": [
-      "compute"
+      "machine-learning"
     ],
     "sessionId": "syn-025",
     "sessionTime": {
@@ -662,11 +662,11 @@
     },
     "speakers": [
       {
-        "name": "Devon Eriksson"
+        "name": "Harper Gupta"
       }
     ],
-    "title": "Event-driven systems: Hands on workshop",
-    "type": "Builders session",
+    "title": "Data lakes: A builder guide",
+    "type": "Workshop",
     "venue": "The Venetian"
   },
   {
@@ -751,15 +751,15 @@
     "venue": "The Venetian"
   },
   {
-    "abbreviation": "ANT149-R2",
-    "abstract": "A made-up abstract for Machine learning pipelines: Lessons from the field. Synthetic data for testing only.",
+    "abbreviation": "NET217-R2",
+    "abstract": "A made-up abstract for Event-driven systems: Patterns and practice. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "400",
+    "level": "200",
     "room": "Room 118",
     "seatAvailability": "unavailable",
     "services": [
-      "database"
+      "storage"
     ],
     "sessionId": "syn-029",
     "sessionTime": {
@@ -770,11 +770,11 @@
     },
     "speakers": [
       {
-        "name": "Finley Haddad"
+        "name": "Harper Adams"
       }
     ],
-    "title": "Machine learning pipelines: Lessons from the field",
-    "type": "Workshop",
+    "title": "Event-driven systems: Patterns and practice",
+    "type": "Chalk talk",
     "venue": "The Venetian"
   },
   {
@@ -859,15 +859,15 @@
     "venue": "Caesars Forum"
   },
   {
-    "abbreviation": "STG398-R",
-    "abstract": "A made-up abstract for Data lakes: Patterns and practice. Synthetic data for testing only.",
+    "abbreviation": "BWP291-R",
+    "abstract": "A made-up abstract for Observability: Deep dive. Synthetic data for testing only.",
     "isAllDaySession": false,
-    "isReservable": false,
-    "level": "100",
+    "isReservable": true,
+    "level": "300",
     "room": "Room 113",
-    "seatAvailability": "walkUp",
+    "seatAvailability": "available",
     "services": [
-      "machine-learning"
+      "networking"
     ],
     "sessionId": "syn-033",
     "sessionTime": {
@@ -881,8 +881,8 @@
         "name": "Gray Adams"
       }
     ],
-    "title": "Data lakes: Patterns and practice",
-    "type": "Breakout session",
+    "title": "Observability: Deep dive",
+    "type": "Builders session",
     "venue": "The Venetian"
   },
   {
@@ -967,30 +967,30 @@
     "venue": "Encore"
   },
   {
-    "abbreviation": "CMP287-R2",
-    "abstract": "A made-up abstract for Data lakes: A builder guide. Synthetic data for testing only.",
+    "abbreviation": "ANT493-R2",
+    "abstract": "A made-up abstract for Zero-downtime deploys: Deep dive. Synthetic data for testing only.",
     "isAllDaySession": false,
-    "isReservable": true,
-    "level": "400",
+    "isReservable": false,
+    "level": "100",
     "room": "Room 116",
-    "seatAvailability": "veryLimited",
+    "seatAvailability": "walkUp",
     "services": [
-      "machine-learning"
+      "security"
     ],
     "sessionId": "syn-037",
     "sessionTime": {
-      "date": "2026-12-02",
+      "date": "2026-12-03",
       "length": "60",
       "time": "10:00",
       "timezone": "America/Los_Angeles"
     },
     "speakers": [
       {
-        "name": "Devon Gupta"
+        "name": "Casey Adams"
       }
     ],
-    "title": "Data lakes: A builder guide",
-    "type": "Builders session",
+    "title": "Zero-downtime deploys: Deep dive",
+    "type": "Breakout session",
     "venue": "Caesars Forum"
   },
   {
@@ -1075,15 +1075,15 @@
     "venue": "Encore"
   },
   {
-    "abbreviation": "STG278-R",
-    "abstract": "A made-up abstract for Serverless APIs: From zero to production. Synthetic data for testing only.",
+    "abbreviation": "BWP344-R",
+    "abstract": "A made-up abstract for Event-driven systems: Hands on workshop. Synthetic data for testing only.",
     "isAllDaySession": false,
-    "isReservable": true,
-    "level": "300",
+    "isReservable": false,
+    "level": "200",
     "room": "Room 124",
-    "seatAvailability": "available",
+    "seatAvailability": "walkUp",
     "services": [
-      "analytics"
+      "compute"
     ],
     "sessionId": "syn-041",
     "sessionTime": {
@@ -1094,11 +1094,11 @@
     },
     "speakers": [
       {
-        "name": "Alex Gupta"
+        "name": "Gray Farrell"
       }
     ],
-    "title": "Serverless APIs: From zero to production",
-    "type": "Chalk talk",
+    "title": "Event-driven systems: Hands on workshop",
+    "type": "Breakout session",
     "venue": "Wynn"
   },
   {
@@ -1183,13 +1183,13 @@
     "venue": "MGM Grand"
   },
   {
-    "abbreviation": "DAT400-R2",
-    "abstract": "A made-up abstract for Machine learning pipelines: A builder guide. Synthetic data for testing only.",
+    "abbreviation": "CMP353-R2",
+    "abstract": "A made-up abstract for Identity and access: Deep dive. Synthetic data for testing only.",
     "isAllDaySession": false,
-    "isReservable": true,
-    "level": "200",
+    "isReservable": false,
+    "level": "400",
     "room": "Room 117",
-    "seatAvailability": "veryLimited",
+    "seatAvailability": "walkUp",
     "services": [
       "containers"
     ],
@@ -1202,11 +1202,11 @@
     },
     "speakers": [
       {
-        "name": "Gray Bello"
+        "name": "Finley Gupta"
       }
     ],
-    "title": "Machine learning pipelines: A builder guide",
-    "type": "Builders session",
+    "title": "Identity and access: Deep dive",
+    "type": "Breakout session",
     "venue": "The Venetian"
   },
   {
@@ -1291,15 +1291,15 @@
     "venue": "The Venetian"
   },
   {
-    "abbreviation": "STG296-R",
+    "abbreviation": "ANT435-R",
     "abstract": "A made-up abstract for Container platforms: Deep dive. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "400",
+    "level": "100",
     "room": "Room 139",
     "seatAvailability": "veryLimited",
     "services": [
-      "machine-learning"
+      "database"
     ],
     "sessionId": "syn-049",
     "sessionTime": {
@@ -1310,11 +1310,11 @@
     },
     "speakers": [
       {
-        "name": "Emery Haddad"
+        "name": "Casey Eriksson"
       }
     ],
     "title": "Container platforms: Deep dive",
-    "type": "Workshop",
+    "type": "Chalk talk",
     "venue": "Caesars Forum"
   },
   {
@@ -1399,15 +1399,15 @@
     "venue": "Wynn"
   },
   {
-    "abbreviation": "CMP249-R2",
-    "abstract": "A made-up abstract for Machine learning pipelines: Patterns and practice. Synthetic data for testing only.",
+    "abbreviation": "CMP160-R2",
+    "abstract": "A made-up abstract for Data lakes: From zero to production. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
     "level": "200",
     "room": "Room 120",
     "seatAvailability": "unavailable",
     "services": [
-      "compute"
+      "containers"
     ],
     "sessionId": "syn-053",
     "sessionTime": {
@@ -1418,11 +1418,11 @@
     },
     "speakers": [
       {
-        "name": "Devon Farrell"
+        "name": "Alex Bello"
       }
     ],
-    "title": "Machine learning pipelines: Patterns and practice",
-    "type": "Builders session",
+    "title": "Data lakes: From zero to production",
+    "type": "Code talk",
     "venue": "Encore"
   },
   {
@@ -1507,15 +1507,15 @@
     "venue": "The Venetian"
   },
   {
-    "abbreviation": "ARC288-R",
-    "abstract": "A made-up abstract for Container platforms: Deep dive. Synthetic data for testing only.",
+    "abbreviation": "STG175-R",
+    "abstract": "A made-up abstract for Machine learning pipelines: A builder guide. Synthetic data for testing only.",
     "isAllDaySession": false,
-    "isReservable": true,
-    "level": "300",
+    "isReservable": false,
+    "level": "100",
     "room": "Room 135",
-    "seatAvailability": "limited",
+    "seatAvailability": "walkUp",
     "services": [
-      "database"
+      "analytics"
     ],
     "sessionId": "syn-057",
     "sessionTime": {
@@ -1526,11 +1526,11 @@
     },
     "speakers": [
       {
-        "name": "Devon Haddad"
+        "name": "Finley Haddad"
       }
     ],
-    "title": "Container platforms: Deep dive",
-    "type": "Chalk talk",
+    "title": "Machine learning pipelines: A builder guide",
+    "type": "Breakout session",
     "venue": "Mandalay Bay"
   },
   {
@@ -1615,15 +1615,15 @@
     "venue": "Wynn"
   },
   {
-    "abbreviation": "DEV174-R2",
-    "abstract": "A made-up abstract for Machine learning pipelines: Hands on workshop. Synthetic data for testing only.",
+    "abbreviation": "CMP168-R2",
+    "abstract": "A made-up abstract for Machine learning pipelines: From zero to production. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "300",
+    "level": "200",
     "room": "Room 134",
     "seatAvailability": "unavailable",
     "services": [
-      "compute"
+      "containers"
     ],
     "sessionId": "syn-061",
     "sessionTime": {
@@ -1634,10 +1634,10 @@
     },
     "speakers": [
       {
-        "name": "Casey Eriksson"
+        "name": "Casey Farrell"
       }
     ],
-    "title": "Machine learning pipelines: Hands on workshop",
+    "title": "Machine learning pipelines: From zero to production",
     "type": "Code talk",
     "venue": "Mandalay Bay"
   },
@@ -1723,15 +1723,15 @@
     "venue": "MGM Grand"
   },
   {
-    "abbreviation": "DEV412-R",
-    "abstract": "A made-up abstract for Machine learning pipelines: Deep dive. Synthetic data for testing only.",
+    "abbreviation": "DEV247-R",
+    "abstract": "A made-up abstract for Event-driven systems: From zero to production. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "300",
+    "level": "400",
     "room": "Room 120",
     "seatAvailability": "unavailable",
     "services": [
-      "compute"
+      "database"
     ],
     "sessionId": "syn-065",
     "sessionTime": {
@@ -1742,11 +1742,11 @@
     },
     "speakers": [
       {
-        "name": "Gray Eriksson"
+        "name": "Gray Chen"
       }
     ],
-    "title": "Machine learning pipelines: Deep dive",
-    "type": "Code talk",
+    "title": "Event-driven systems: From zero to production",
+    "type": "Builders session",
     "venue": "Wynn"
   },
   {
@@ -1831,15 +1831,15 @@
     "venue": "Encore"
   },
   {
-    "abbreviation": "ARC445-R2",
-    "abstract": "A made-up abstract for Identity and access: From zero to production. Synthetic data for testing only.",
+    "abbreviation": "SEC431-R2",
+    "abstract": "A made-up abstract for Identity and access: Hands on workshop. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "200",
+    "level": "400",
     "room": "Room 112",
     "seatAvailability": "limited",
     "services": [
-      "database"
+      "analytics"
     ],
     "sessionId": "syn-069",
     "sessionTime": {
@@ -1850,10 +1850,10 @@
     },
     "speakers": [
       {
-        "name": "Emery Adams"
+        "name": "Blair Eriksson"
       }
     ],
-    "title": "Identity and access: From zero to production",
+    "title": "Identity and access: Hands on workshop",
     "type": "Workshop",
     "venue": "Encore"
   },
@@ -1939,15 +1939,15 @@
     "venue": "Wynn"
   },
   {
-    "abbreviation": "ARC394-R",
-    "abstract": "A made-up abstract for Data lakes: Patterns and practice. Synthetic data for testing only.",
+    "abbreviation": "DAT138-R",
+    "abstract": "A made-up abstract for Container platforms: A builder guide. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "300",
+    "level": "400",
     "room": "Room 134",
     "seatAvailability": "veryLimited",
     "services": [
-      "database"
+      "security"
     ],
     "sessionId": "syn-073",
     "sessionTime": {
@@ -1958,11 +1958,11 @@
     },
     "speakers": [
       {
-        "name": "Gray Bello"
+        "name": "Alex Eriksson"
       }
     ],
-    "title": "Data lakes: Patterns and practice",
-    "type": "Chalk talk",
+    "title": "Container platforms: A builder guide",
+    "type": "Code talk",
     "venue": "Wynn"
   },
   {
@@ -2047,15 +2047,15 @@
     "venue": "The Venetian"
   },
   {
-    "abbreviation": "SEC455-R2",
-    "abstract": "A made-up abstract for Machine learning pipelines: Deep dive. Synthetic data for testing only.",
+    "abbreviation": "ARC228-R2",
+    "abstract": "A made-up abstract for Zero-downtime deploys: Deep dive. Synthetic data for testing only.",
     "isAllDaySession": false,
-    "isReservable": false,
+    "isReservable": true,
     "level": "400",
     "room": "Room 115",
-    "seatAvailability": "walkUp",
+    "seatAvailability": "available",
     "services": [
-      "storage"
+      "compute"
     ],
     "sessionId": "syn-077",
     "sessionTime": {
@@ -2066,11 +2066,11 @@
     },
     "speakers": [
       {
-        "name": "Blair Gupta"
+        "name": "Blair Bello"
       }
     ],
-    "title": "Machine learning pipelines: Deep dive",
-    "type": "Breakout session",
+    "title": "Zero-downtime deploys: Deep dive",
+    "type": "Code talk",
     "venue": "The Venetian"
   },
   {
@@ -2155,15 +2155,15 @@
     "venue": "Encore"
   },
   {
-    "abbreviation": "NET396-R",
-    "abstract": "A made-up abstract for Identity and access: Lessons from the field. Synthetic data for testing only.",
+    "abbreviation": "ANT184-R",
+    "abstract": "A made-up abstract for Edge delivery: A builder guide. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
     "level": "200",
     "room": "Room 124",
     "seatAvailability": "unavailable",
     "services": [
-      "database"
+      "security"
     ],
     "sessionId": "syn-081",
     "sessionTime": {
@@ -2174,11 +2174,11 @@
     },
     "speakers": [
       {
-        "name": "Devon Bello"
+        "name": "Devon Gupta"
       }
     ],
-    "title": "Identity and access: Lessons from the field",
-    "type": "Chalk talk",
+    "title": "Edge delivery: A builder guide",
+    "type": "Builders session",
     "venue": "Wynn"
   },
   {
@@ -2263,15 +2263,15 @@
     "venue": "MGM Grand"
   },
   {
-    "abbreviation": "STG145-R2",
-    "abstract": "A made-up abstract for Machine learning pipelines: Deep dive. Synthetic data for testing only.",
+    "abbreviation": "NET404-R2",
+    "abstract": "A made-up abstract for Data lakes: Patterns and practice. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "300",
+    "level": "200",
     "room": "Room 106",
     "seatAvailability": "limited",
     "services": [
-      "analytics"
+      "containers"
     ],
     "sessionId": "syn-085",
     "sessionTime": {
@@ -2282,11 +2282,11 @@
     },
     "speakers": [
       {
-        "name": "Casey Gupta"
+        "name": "Harper Haddad"
       }
     ],
-    "title": "Machine learning pipelines: Deep dive",
-    "type": "Chalk talk",
+    "title": "Data lakes: Patterns and practice",
+    "type": "Code talk",
     "venue": "The Venetian"
   },
   {
@@ -2371,15 +2371,15 @@
     "venue": "Caesars Forum"
   },
   {
-    "abbreviation": "NET416-R",
-    "abstract": "A made-up abstract for Serverless APIs: Deep dive. Synthetic data for testing only.",
+    "abbreviation": "AIM147-R",
+    "abstract": "A made-up abstract for Observability: Deep dive. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "400",
+    "level": "200",
     "room": "Room 133",
     "seatAvailability": "limited",
     "services": [
-      "networking"
+      "database"
     ],
     "sessionId": "syn-089",
     "sessionTime": {
@@ -2390,11 +2390,11 @@
     },
     "speakers": [
       {
-        "name": "Casey Diaz"
+        "name": "Harper Haddad"
       }
     ],
-    "title": "Serverless APIs: Deep dive",
-    "type": "Code talk",
+    "title": "Observability: Deep dive",
+    "type": "Chalk talk",
     "venue": "Caesars Forum"
   },
   {
@@ -2479,15 +2479,15 @@
     "venue": "The Venetian"
   },
   {
-    "abbreviation": "SEC453-R2",
-    "abstract": "A made-up abstract for Identity and access: A builder guide. Synthetic data for testing only.",
+    "abbreviation": "BWP447-R2",
+    "abstract": "A made-up abstract for Edge delivery: Patterns and practice. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "300",
+    "level": "100",
     "room": "Room 134",
     "seatAvailability": "limited",
     "services": [
-      "containers"
+      "database"
     ],
     "sessionId": "syn-093",
     "sessionTime": {
@@ -2498,10 +2498,10 @@
     },
     "speakers": [
       {
-        "name": "Alex Adams"
+        "name": "Blair Haddad"
       }
     ],
-    "title": "Identity and access: A builder guide",
+    "title": "Edge delivery: Patterns and practice",
     "type": "Code talk",
     "venue": "MGM Grand"
   },
@@ -2587,15 +2587,15 @@
     "venue": "The Venetian"
   },
   {
-    "abbreviation": "ANT423-R",
-    "abstract": "A made-up abstract for Event-driven systems: Lessons from the field. Synthetic data for testing only.",
+    "abbreviation": "ANT163-R",
+    "abstract": "A made-up abstract for Identity and access: Hands on workshop. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "200",
+    "level": "300",
     "room": "Room 118",
     "seatAvailability": "veryLimited",
     "services": [
-      "compute"
+      "containers"
     ],
     "sessionId": "syn-097",
     "sessionTime": {
@@ -2609,7 +2609,7 @@
         "name": "Casey Adams"
       }
     ],
-    "title": "Event-driven systems: Lessons from the field",
+    "title": "Identity and access: Hands on workshop",
     "type": "Workshop",
     "venue": "Caesars Forum"
   },
@@ -2695,15 +2695,15 @@
     "venue": "Encore"
   },
   {
-    "abbreviation": "DEV217-R2",
-    "abstract": "A made-up abstract for Container platforms: A builder guide. Synthetic data for testing only.",
+    "abbreviation": "BWP388-R2",
+    "abstract": "A made-up abstract for Zero-downtime deploys: A builder guide. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
     "level": "300",
     "room": "Room 123",
     "seatAvailability": "unavailable",
     "services": [
-      "analytics"
+      "machine-learning"
     ],
     "sessionId": "syn-101",
     "sessionTime": {
@@ -2714,10 +2714,10 @@
     },
     "speakers": [
       {
-        "name": "Gray Chen"
+        "name": "Blair Diaz"
       }
     ],
-    "title": "Container platforms: A builder guide",
+    "title": "Zero-downtime deploys: A builder guide",
     "type": "Builders session",
     "venue": "Caesars Forum"
   },
@@ -2803,15 +2803,15 @@
     "venue": "Wynn"
   },
   {
-    "abbreviation": "DAT401-R",
-    "abstract": "A made-up abstract for Event-driven systems: Lessons from the field. Synthetic data for testing only.",
+    "abbreviation": "DEV358-R",
+    "abstract": "A made-up abstract for Serverless APIs: Deep dive. Synthetic data for testing only.",
     "isAllDaySession": false,
-    "isReservable": true,
-    "level": "100",
+    "isReservable": false,
+    "level": "300",
     "room": "Room 111",
-    "seatAvailability": "unavailable",
+    "seatAvailability": "walkUp",
     "services": [
-      "security"
+      "networking"
     ],
     "sessionId": "syn-105",
     "sessionTime": {
@@ -2822,11 +2822,11 @@
     },
     "speakers": [
       {
-        "name": "Finley Gupta"
+        "name": "Casey Farrell"
       }
     ],
-    "title": "Event-driven systems: Lessons from the field",
-    "type": "Chalk talk",
+    "title": "Serverless APIs: Deep dive",
+    "type": "Breakout session",
     "venue": "Mandalay Bay"
   },
   {
@@ -2911,15 +2911,15 @@
     "venue": "Wynn"
   },
   {
-    "abbreviation": "STG185-R2",
-    "abstract": "A made-up abstract for Zero-downtime deploys: Patterns and practice. Synthetic data for testing only.",
+    "abbreviation": "ANT269-R2",
+    "abstract": "A made-up abstract for Zero-downtime deploys: Deep dive. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": false,
     "level": "100",
     "room": "Room 132",
     "seatAvailability": "walkUp",
     "services": [
-      "containers"
+      "analytics"
     ],
     "sessionId": "syn-109",
     "sessionTime": {
@@ -2930,10 +2930,10 @@
     },
     "speakers": [
       {
-        "name": "Alex Adams"
+        "name": "Emery Gupta"
       }
     ],
-    "title": "Zero-downtime deploys: Patterns and practice",
+    "title": "Zero-downtime deploys: Deep dive",
     "type": "Breakout session",
     "venue": "MGM Grand"
   },
@@ -3019,15 +3019,15 @@
     "venue": "Wynn"
   },
   {
-    "abbreviation": "STG464-R",
-    "abstract": "A made-up abstract for Edge delivery: Hands on workshop. Synthetic data for testing only.",
+    "abbreviation": "CMP236-R",
+    "abstract": "A made-up abstract for Edge delivery: From zero to production. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "100",
+    "level": "200",
     "room": "Room 100",
     "seatAvailability": "veryLimited",
     "services": [
-      "storage"
+      "security"
     ],
     "sessionId": "syn-113",
     "sessionTime": {
@@ -3038,11 +3038,11 @@
     },
     "speakers": [
       {
-        "name": "Alex Eriksson"
+        "name": "Emery Chen"
       }
     ],
-    "title": "Edge delivery: Hands on workshop",
-    "type": "Builders session",
+    "title": "Edge delivery: From zero to production",
+    "type": "Chalk talk",
     "venue": "The Venetian"
   },
   {
@@ -3127,15 +3127,15 @@
     "venue": "Mandalay Bay"
   },
   {
-    "abbreviation": "CMP327-R2",
-    "abstract": "A made-up abstract for Cost optimisation: Patterns and practice. Synthetic data for testing only.",
+    "abbreviation": "AIM407-R2",
+    "abstract": "A made-up abstract for Container platforms: Patterns and practice. Synthetic data for testing only.",
     "isAllDaySession": false,
     "isReservable": true,
-    "level": "200",
+    "level": "300",
     "room": "Room 136",
     "seatAvailability": "unavailable",
     "services": [
-      "storage"
+      "compute"
     ],
     "sessionId": "syn-117",
     "sessionTime": {
@@ -3146,11 +3146,11 @@
     },
     "speakers": [
       {
-        "name": "Devon Eriksson"
+        "name": "Harper Gupta"
       }
     ],
-    "title": "Cost optimisation: Patterns and practice",
-    "type": "Chalk talk",
+    "title": "Container platforms: Patterns and practice",
+    "type": "Workshop",
     "venue": "Caesars Forum"
   },
   {
