@@ -13,3 +13,16 @@ export type {
 } from './planner.js';
 export { formatLocal, renderWeekSpec, sanitiseCatalogText } from './render.js';
 export type { ConnectionLine, EnergyLine, WeekSpecFiles, WeekSpecInput } from './render.js';
+export { applyDiff, lineDiff } from './diff.js';
+export type { DiffResult } from './diff.js';
+export { createNodeSpecFs, hasAllowedShape } from './node-spec-fs.js';
+export { SpecWriteRefusedError } from './spec-errors.js';
+export {
+  WEEK_SPEC_FILE_NAMES,
+  assertWritable,
+  isAllowedWritePath,
+  weekSpecDirectory,
+  writeWeekSpec,
+} from './write.js';
+export type { WriteOutcome } from './write.js';
+export { WEEK_SPEC_ENTRY, addWeekSpecToGitignore, isWeekSpecIgnored } from './gitignore-entry.js';

@@ -178,26 +178,26 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 8.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 9. Build the spec writer, the line diff and the gitignore entry
-  - [ ] 9.1 Implement the line diff
+- [x] 9. Build the spec writer, the line diff and the gitignore entry
+  - [x] 9.1 Implement the line diff
     - Create `src/spec/diff.ts` with `lineDiff` (longest common subsequence, `+ `, `- `, `  ` prefixes, at most 400 lines with `truncated`) and `applyDiff`
     - _Requirements: 7.2_
-  - [ ] 9.2 Implement the writer and the gitignore helpers
+  - [x] 9.2 Implement the writer and the gitignore helpers
     - Create `src/spec/write.ts` (`writeWeekSpec`, allowed write set enforced, first run creates three files, re-run writes `week-<YYYY-MM-DD>[-n].md` and returns the diff, refuses a missing root) and `src/spec/gitignore-entry.ts` (`isWeekSpecIgnored` using the scanner matcher, `addWeekSpecToGitignore`), plus `src/spec/index.ts` exporting the public surface by name
     - _Requirements: 7.1, 7.2, 7.3, 7.7_
-  - [ ] 9.3 Write property test for re-runs and the diff
+  - [x] 9.3 Write property test for re-runs and the diff
     - **Property 23: Re-planning never overwrites and the diff is faithful**
     - **Validates: Requirements 7.1, 7.2**
-  - [ ] 9.4 Write property test for the gitignore entry
+  - [x] 9.4 Write property test for the gitignore entry
     - **Property 24: Adding the gitignore entry is idempotent and preserving**
     - **Validates: Requirements 7.7**
-  - [ ] 9.5 Write unit tests for refused writes
+  - [x] 9.5 Write unit tests for refused writes
     - Missing root; a path outside the allowed set is refused
     - _Requirements: 7.3_
-  - [ ] 9.6 Commit
+  - [x] 9.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 10. Checkpoint: ensure all tests pass
+- [x] 10. Checkpoint: ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 11. Build the server core
