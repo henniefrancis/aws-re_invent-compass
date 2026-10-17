@@ -376,18 +376,19 @@ export function createFakeEngine(overrides: Partial<RulesEngine> = {}): RulesEng
   };
 }
 
-/** The engine wrapped so that every call is recorded as [function name, arguments]. */
+/** The engine wrapped so that every call is recorded as [function name, arguments, result]. */
 export function createRecordingEngine(engine: RulesEngine): {
   engine: RulesEngine;
-  calls: [string, unknown[]][];
+  calls: [string, unknown[], unknown][];
 } {
-  const calls: [string, unknown[]][] = [];
+  const calls: [string, unknown[], unknown][] = [];
   const wrapped = Object.fromEntries(
     (Object.keys(engine) as (keyof RulesEngine)[]).map((name) => [
       name,
       (...args: unknown[]) => {
-        calls.push([name, args]);
-        return (engine[name] as (...a: unknown[]) => unknown)(...args);
+        const result = (engine[name] as (...a: unknown[]) => unknown)(...args);
+        calls.push([name, args, result]);
+        return result;
       },
     ]),
   ) as unknown as RulesEngine;

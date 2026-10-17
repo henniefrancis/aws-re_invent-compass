@@ -53,7 +53,7 @@ describe('rules port', () => {
     const { engine, calls } = createRecordingEngine(createFakeEngine());
     const input = { now: DEMO_EVENT.now, eventTimezone: DEMO_EVENT.timezone, venueData: {} };
     expect(createDemoContext(engine, input)).toMatchObject(input);
-    expect(calls).toEqual([['withContextDefaults', [input]]]);
+    expect(calls.map(([name, args]) => [name, args])).toEqual([['withContextDefaults', [input]]]);
   });
 
   test('the engine is ready only when every function the site calls is present', () => {

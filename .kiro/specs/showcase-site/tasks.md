@@ -247,32 +247,32 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 10.4 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 11. Demo reducer and week view
-  - [ ] 11.1 Implement the demo reducer
+- [x] 11. Demo reducer and week view
+  - [x] 11.1 Implement the demo reducer
     - Create `site/src/lib/demo/demo-state.ts` with `DemoState`, `DemoAction`, `DemoDeps`, `EMPTY_DEMO` and `reduceDemo` following the reducer rules in design Component 7 (allow adds; warn waits for `confirmWarn`; block offers rebooking and a safe swap; the swap pre-check and three steps; layovers; remove; reset; announcements with reasons copied unchanged; no clock)
     - _Requirements: 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8, 13.1, 13.2_
 
-  - [ ] 11.2 Implement the week and catalog views
+  - [x] 11.2 Implement the week and catalog views
     - Create `site/src/lib/demo/week-view.ts` with `toScheduleInput`, `buildWeekView` (boarding text, connections with the class in words and the Rules_Engine reason, layover lines and suggestions, unknown reasons shown, event local times with one timezone note) and `buildCatalogView` (sessions by day with code, title, type, level, gate or "Venue not published", times and boarding closes)
     - _Requirements: 7.7, 8.1, 9.1, 9.2, 9.3, 9.5, 9.6, 19.12_
 
-  - [ ] 11.3 Write property test for guardrail fidelity
+  - [x] 11.3 Write property test for guardrail fidelity
     - **Property 10: The demo week follows the guardrail exactly**
     - **Validates: Requirements 8.3, 8.4, 8.5, 8.6, 8.7, 8.11**
 
-  - [ ] 11.4 Write property test for week consistency
+  - [x] 11.4 Write property test for week consistency
     - **Property 11: The demo week stays consistent**
     - **Validates: Requirements 8.9, 9.4, 13.2**
 
-  - [ ] 11.5 Write property test for the safe swap
+  - [x] 11.5 Write property test for the safe swap
     - **Property 12: The safe swap runs in order and cancels only after a safe confirmation**
     - **Validates: Requirements 10.4, 10.5, 10.6, 10.7**
 
-  - [ ] 11.6 Write property test for determinism
+  - [x] 11.6 Write property test for determinism
     - **Property 13: The demo is deterministic and clock free**
     - **Validates: Requirements 7.6, 13.1**
 
-  - [ ] 11.7 Commit
+  - [x] 11.7 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 12. Sample pass and sample calendar
