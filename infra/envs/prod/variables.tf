@@ -63,6 +63,16 @@ variable "route_throttles" {
     "api/v1/passes/POST"   = { rate = 5, burst = 10 }
     "api/v1/handoffs/POST" = { rate = 5, burst = 10 }
     "api/v1/me/DELETE"     = { rate = 2, burst = 4 }
+
+    # Attendee pass routes, keyed by the OpenAPI path with the serial number parameter.
+    "api/v1/passes/{serialNumber}/apple/GET" = { rate = 5, burst = 10 }
+    "api/v1/passes/{serialNumber}/PUT"       = { rate = 5, burst = 10 }
+    "api/v1/passes/{serialNumber}/void/POST" = { rate = 5, burst = 10 }
+
+    # Apple PassKit web service routes: register, unregister and latest pass.
+    "api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}/POST"   = { rate = 10, burst = 20 }
+    "api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}/DELETE" = { rate = 10, burst = 20 }
+    "api/passkit/v1/passes/{passTypeIdentifier}/{serialNumber}/GET"                                             = { rate = 10, burst = 20 }
   }
 }
 
