@@ -79,9 +79,15 @@ test.describe('axe on the demo states', () => {
 
   test('a warning', async ({ page }) => {
     await page.goto('/demo');
-    await page.getByRole('button', { name: 'Start with a sample week' }).click();
-    await addButton(page, 'AIM147').click();
-    await expect(page.getByRole('status')).toContainText('AIM147');
+    await addButton(page, 'AIM482').click();
+    await expect(page.getByRole('status')).toContainText('AIM482');
+    await expectNoAxeViolations(page);
+    await page.getByRole('button', { name: 'Add anyway' }).click();
+    await addButton(page, 'CMP327').click();
+    await expect(page.getByRole('status')).toContainText('CMP327');
+    await expectNoAxeViolations(page);
+    await page.getByRole('button', { name: 'Add anyway' }).click();
+    await expect(page.getByRole('button', { name: /^Add this layover/ })).toBeVisible();
     await expectNoAxeViolations(page);
   });
 });

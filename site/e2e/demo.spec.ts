@@ -148,6 +148,25 @@ test.describe('the demo', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
+  test('a warning can be confirmed, and the suggested layover can be added to the week', async ({
+    page,
+  }) => {
+    await page.goto('/demo');
+    await addButton(page, 'AIM482').click();
+    await expect(status(page)).toContainText('AIM482');
+    await page.getByRole('button', { name: 'Add anyway' }).click();
+    await addButton(page, 'CMP327').click();
+    await expect(page.locator('.verdict').first()).toContainText('removes your only meal break');
+    await page.getByRole('button', { name: 'Add anyway' }).click();
+    const layover = page.getByRole('button', { name: /^Add this layover/ });
+    await expect(layover).toBeVisible();
+    await layover.click();
+    await expect(page.getByRole('heading', { name: 'Your week' })).toBeFocused();
+    const names = await page.getByRole('button', { name: /^Remove / }).allTextContents();
+    expect(names.some((n) => n.includes('Layover at'))).toBe(true);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
   test('Start over empties the week', async ({ page }) => {
     await loadSample(page);
     await page.getByRole('button', { name: 'Start over' }).click();
