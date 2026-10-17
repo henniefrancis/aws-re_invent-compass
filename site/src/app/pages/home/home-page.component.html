@@ -1,0 +1,95 @@
+<section class="hero stack" aria-labelledby="home-title">
+  <h1 id="home-title" tabindex="-1">{{ productName }}</h1>
+  <p class="hero__tagline">{{ tagline }}</p>
+  <p>{{ intro }}</p>
+</section>
+
+<section class="stack" aria-labelledby="home-actions">
+  <h2 id="home-actions">Try it, then install it</h2>
+  <p class="measure">{{ tryIt }}</p>
+  <div class="cluster">
+    <a class="button" routerLink="/demo">Try the demo</a>
+    <a class="button button--secondary" routerLink="/install">Install Compass</a>
+  </div>
+</section>
+
+<section class="stack" aria-labelledby="home-seat">
+  <h2 id="home-seat">The seat is released before the session starts</h2>
+  <p class="measure">{{ seatRule.text }}. {{ seatRuleSource }}</p>
+  <div class="grid-3">
+    <div class="card">
+      <p>{{ mostToolsLead }}</p>
+      <p class="big-time">{{ mostToolsShow }}</p>
+    </div>
+    <div class="card">
+      <p>{{ compassLead }}</p>
+      <p class="big-time">{{ compassShows }}</p>
+      <p>{{ walkNote }}</p>
+    </div>
+  </div>
+  <img
+    class="illustration"
+    src="artwork/seat-release.svg"
+    width="480"
+    height="140"
+    alt="A timeline: the seat is released at 10:20, ten minutes before the session starts at 10:30."
+  />
+  <p class="measure">{{ firstTimerLoss }}</p>
+</section>
+
+<section class="stack" aria-labelledby="home-metaphor">
+  <h2 id="home-metaphor">Re:Invent already works like an airline</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th scope="col">{{ metaphorHeaders[0] }}</th>
+        <th scope="col">{{ metaphorHeaders[1] }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of metaphorRows; track row.term.id) {
+        <tr>
+          <th scope="row">{{ row.term.text }}</th>
+          <td>{{ row.meaning.text }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>
+
+<section class="stack" aria-labelledby="home-acts">
+  <h2 id="home-acts">Plan, Board, Fly</h2>
+  <div class="grid-3">
+    @for (act of acts; track act.id) {
+      <article class="card">
+        <h3>{{ act.title }}</h3>
+        <p>{{ act.summary.text }}</p>
+        <ul>
+          @for (point of act.points; track point.id) {
+            <li>{{ point.text }}</li>
+          }
+        </ul>
+      </article>
+    }
+  </div>
+</section>
+
+<section class="stack" aria-labelledby="home-principles">
+  <h2 id="home-principles">Three promises</h2>
+  <div class="grid-3">
+    @for (principle of principles; track principle.title.id) {
+      <article class="card">
+        <h3>{{ principle.title.text }}</h3>
+        @for (line of principle.body; track line.id) {
+          <p>{{ line.text }}</p>
+        }
+      </article>
+    }
+  </div>
+</section>
+
+<section class="stack" aria-labelledby="home-unofficial">
+  <h2 id="home-unofficial">Unofficial, and proud of it</h2>
+  <p class="measure">{{ unofficial }}</p>
+  <p class="big-time">{{ disclaimer }}</p>
+</section>

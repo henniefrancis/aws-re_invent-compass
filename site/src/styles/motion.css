@@ -1,0 +1,11 @@
+/* The site has no animation. Anything that could move or fade is switched off for people
+   who ask for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

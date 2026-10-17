@@ -1,0 +1,4 @@
+.angular/
+dist/
+test-results/
+playwright-report/
