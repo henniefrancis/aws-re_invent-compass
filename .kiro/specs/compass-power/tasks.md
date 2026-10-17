@@ -434,15 +434,15 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [ ] 25.2 Commit
     - After `npx eslint .` and `npx prettier --check .` both pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 26. Integrate the merged S1, S2 and S4 modules
-  - [ ] 26.1 Implement the real adapters and createRuntime
+- [x] 26. Integrate the merged S1, S2 and S4 modules
+  - [x] 26.1 Implement the real adapters and createRuntime
     - Only after S1, S2 and S4 are merged into `develop` and this branch is rebased (otherwise stop and ask). In `src/adapters/`, implement `EventsPort` over the S1 auth, api, catalog and simulated exports, `RulesPort` over the S2 rules exports with the context built through `ContextSchema` from the clock, the event window and `data/venues.json`, and `PassesPort` over the S4 passes exports with the in-process pass service in simulated mode; wrap S1's `getIdTokenForCompassApi` as S4's `getIdToken`; apply the identifier check before every S1 call that takes an id (including the event id); swap the logger's redaction for S1's redacting logger and S4 `redact`; implement `src/runtime/create-runtime.ts` selecting live or simulated
     - Record any interface that differs from the design (for example S2 not exporting a resolver, or S4 hand-off fields) in a "Deviations recorded with task 26" paragraph in design.md and follow Open Questions 5 and 6
     - _Requirements: 11.1, 23.1, 23.2, 23.3, 23.4, 23.5_
-  - [ ] 26.2 Write adapter tests against the real modules
+  - [x] 26.2 Write adapter tests against the real modules
     - Each adapter in simulated mode with the real S1 simulated transport, the real S2 rules and the real S4 modules; the ID token never reaches the Events transport
     - _Requirements: 23.2, 23.5_
-  - [ ] 26.3 Commit
+  - [x] 26.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 27. Run the simulated end-to-end acceptance test

@@ -32,7 +32,7 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
   SpecWriteRefused: 'Compass could not write that file safely, so it wrote nothing.',
   MaxPerDayRange: 'maxPerDay must be a whole number from 1 to 8.',
   LayoverInvalid:
-    'The layover times are not valid. Give a start and an end with time zone offsets, inside the event dates, with the end after the start.',
+    'The layover times are not valid. Give a start and an end with time zone offsets, on 5 minute steps, inside the event dates, with the end after the start.',
   LimitInvalid: 'limit must be a whole number from 0 to 50.',
   NoPassesIssued: 'No boarding passes have been issued yet. Run issue_boarding_passes first.',
   BulkVoidRefused:

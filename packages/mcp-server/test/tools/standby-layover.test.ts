@@ -166,7 +166,7 @@ describe('add_layover', () => {
     expect(fake.snapshot.writes.at(-1)?.schedule.personalTime).toHaveLength(1);
   });
 
-  test('refuses times without an offset, with the end not after the start, or outside the window, before any call', async () => {
+  test('refuses times without an offset, off the 5 minute steps, with the end not after the start, or outside the window, before any call', async () => {
     const { fake, ctx } = setup();
     await fake.runtime.snapshot.write({
       version: 1,
@@ -185,6 +185,8 @@ describe('add_layover', () => {
         endDateTime: '2026-11-20T12:30:00-08:00',
       }),
       layover({ endDateTime: '2026-12-09T12:30:00-08:00' }),
+      layover({ startDateTime: '2026-12-01T12:01:00-08:00' }),
+      layover({ endDateTime: '2026-12-01T13:03:00-08:00' }),
     ];
     for (const input of bad) {
       await expect(addLayover(input, ctx)).rejects.toMatchObject({ code: 'LayoverInvalid' });

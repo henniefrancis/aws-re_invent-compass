@@ -60,7 +60,7 @@ function register<K extends McpToolName>(
       }
       try {
         const input = mcpTools[name].input.parse(args) as McpToolInput<K>;
-        return toCallToolResult(name, await spec.handler(input, ctx));
+        return toCallToolResult(name, await spec.handler(input, ctx), runtime.mode === 'simulated');
       } catch (error) {
         runtime.logger.warn('tool failed', { tool: name, code: codeFor(error) });
         return failureResult(messageFor(error));

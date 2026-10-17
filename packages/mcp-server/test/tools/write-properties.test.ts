@@ -236,6 +236,8 @@ describe('Property 34: invalid layovers never reach S1', () => {
           spec.startKind === 'offset' &&
           spec.endKind === 'offset' &&
           end > start &&
+          start % 300000 === 0 &&
+          end % 300000 === 0 &&
           start >= windowStart &&
           end <= windowEnd;
         const input = {

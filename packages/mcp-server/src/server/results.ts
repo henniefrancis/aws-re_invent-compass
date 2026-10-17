@@ -9,6 +9,9 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { INTERNAL_MESSAGE } from './error-messages.js';
 import type { ToolOutcome } from './types.js';
 
+/** The first line of every success in simulated mode, so nothing there reads as real data. */
+export const SIMULATED_LABEL = 'SIMULATED MODE: no real data.';
+
 /** A failure result: text only. */
 export function failureResult(message: string): CallToolResult {
   return { content: [{ type: 'text', text: message }], isError: true };
@@ -18,6 +21,7 @@ export function failureResult(message: string): CallToolResult {
 export function toCallToolResult<K extends McpToolName>(
   name: K,
   outcome: ToolOutcome<K>,
+  simulated = false,
 ): CallToolResult {
   if (!outcome.ok) {
     return failureResult(outcome.message);
@@ -27,7 +31,13 @@ export function toCallToolResult<K extends McpToolName>(
     return failureResult(INTERNAL_MESSAGE);
   }
   return {
-    content: [{ type: 'text', text: outcome.text }, ...(outcome.extra ?? [])],
+    content: [
+      {
+        type: 'text',
+        text: simulated ? [SIMULATED_LABEL, outcome.text].join('\n') : outcome.text,
+      },
+      ...(outcome.extra ?? []),
+    ],
     structuredContent: parsed.data,
   };
 }

@@ -26,6 +26,9 @@ export type LayoverAction = { kind: 'create'; personalTime: PersonalTimeInput };
 /** The marker title used when asking S2 about the new layover's overlaps. */
 const NEW_LAYOVER = 'Your new layover';
 
+/** The Events API takes personal time in whole 5 minute steps. */
+const FIVE_MINUTES_MS = 5 * 60_000;
+
 const OFFSET_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 function instantOf(value: string): number {
@@ -46,7 +49,13 @@ export async function addLayover(
   const { personalTime } = action;
   const start = instantOf(personalTime.startDateTime);
   const end = instantOf(personalTime.endDateTime);
-  if (Number.isNaN(start) || Number.isNaN(end) || end <= start) {
+  if (
+    Number.isNaN(start) ||
+    Number.isNaN(end) ||
+    end <= start ||
+    start % FIVE_MINUTES_MS !== 0 ||
+    end % FIVE_MINUTES_MS !== 0
+  ) {
     throw new CompassError('LayoverInvalid');
   }
   const window = await windowFor(ctx);

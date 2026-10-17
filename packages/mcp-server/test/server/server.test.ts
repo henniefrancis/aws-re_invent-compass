@@ -6,7 +6,7 @@ import { SpecWriteRefusedError } from '@compass/core/spec';
 import { Writable } from 'node:stream';
 import { CompassError } from '../../src/ports/errors.js';
 import { codeFor, INTERNAL_MESSAGE, messageFor } from '../../src/server/error-messages.js';
-import { failureResult, toCallToolResult } from '../../src/server/results.js';
+import { failureResult, SIMULATED_LABEL, toCallToolResult } from '../../src/server/results.js';
 import {
   DESCRIPTIONS,
   FORGET_SENTENCE,
@@ -182,6 +182,19 @@ describe('handler wrapping', () => {
     });
     expect(result.isError).toBe(true);
     expect(failureResult('x').structuredContent).toBeUndefined();
+  });
+});
+
+describe('the simulated label', () => {
+  const outcome = { ok: true as const, structured: { signedIn: true }, text: 'Signed in.' };
+
+  test('is the first line of a success in simulated mode and absent otherwise', () => {
+    const labelled = toCallToolResult('sign_in', outcome, true);
+    expect(labelled.content).toEqual([
+      { type: 'text', text: [SIMULATED_LABEL, 'Signed in.'].join('\n') },
+    ]);
+    const plain = toCallToolResult('sign_in', outcome, false);
+    expect(plain.content).toEqual([{ type: 'text', text: 'Signed in.' }]);
   });
 });
 
