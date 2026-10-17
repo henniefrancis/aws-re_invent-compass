@@ -356,26 +356,26 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - [x] 20. Checkpoint: ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 21. Write the cross-cutting contract and security tests
-  - [ ] 21.1 Write property test for tool results against the contract
+- [x] 21. Write the cross-cutting contract and security tests
+  - [x] 21.1 Write property test for tool results against the contract
     - **Property 26: Every tool result matches its contract**
     - **Validates: Requirements 3.7, 8.2, 8.5, 17.1**
-  - [ ] 21.2 Write property test that read-side handlers never write
+  - [x] 21.2 Write property test that read-side handlers never write
     - **Property 19: Read-side handlers never write**
     - **Validates: Requirements 5.9, 8.7, 10.3, 10.4**
-  - [ ] 21.3 Write property test for secrets
+  - [x] 21.3 Write property test for secrets
     - **Property 37: No secret reaches logs or errors**
     - **Validates: Requirements 17.2, 17.3**
-  - [ ] 21.4 Write property test for simulated mode and the network
+  - [x] 21.4 Write property test for simulated mode and the network
     - **Property 43: Simulated mode never touches the network**
     - **Validates: Requirements 18.2, 22.1**
-  - [ ] 21.5 Write the required prompt-injection test
+  - [x] 21.5 Write the required prompt-injection test
     - A catalog session whose title and abstract tell the agent to book everything; run `find_sessions`, `plan_week` and `check_itinerary`; assert zero writes, the title only inside the Labelled_Data_Block, no abstract text anywhere
     - _Requirements: 10.2, 10.3, 10.4, 25.4_
-  - [ ] 21.6 Write the required security scenario and the stdout test
+  - [x] 21.6 Write the required security scenario and the stdout test
     - Sign-in, a failing reserve, a failing issue and a hand-off with secret needles, asserting no needle in stderr or error text; every tool run writes nothing to stdout outside the MCP transport
     - _Requirements: 8.6, 17.2, 17.3_
-  - [ ] 21.7 Commit
+  - [x] 21.7 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 22. Build the hook runner

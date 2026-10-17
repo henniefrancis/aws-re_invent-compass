@@ -12,6 +12,7 @@ describe('redactText', () => {
       'Authorization: Bearer abc123def456',
       'https://compass.invalid/board#h=AAAAAAAAAAAAAAAAAAAAAA',
       'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+      'Zk3kqN7m1xVf0aB9cD2eFg',
     ];
     for (const sample of samples) {
       const out = redactText(`before ${sample} after`);

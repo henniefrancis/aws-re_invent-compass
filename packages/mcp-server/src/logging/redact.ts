@@ -11,7 +11,7 @@ const PATTERNS: readonly RegExp[] = [
   /\b(?:authorization|bearer|basic)\s*[:=]?\s*[^\s"',;]+(?:\s+[^\s"',;]+)?/gi,
   /\b[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g,
   /[^\s@"'<>]+@[^\s@"'<>]+\.[^\s@"'<>]+/g,
-  /[A-Za-z0-9_+/=-]{32,}/g,
+  /[A-Za-z0-9_+/=-]{22,}/g,
 ];
 
 /** Replaces token-shaped, email-shaped, header-shaped and URL-shaped values. */
