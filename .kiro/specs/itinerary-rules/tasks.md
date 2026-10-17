@@ -234,7 +234,7 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 16.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 17. Final checkpoint - full suite, coverage, and dash gate
+- [x] 17. Final checkpoint - full suite, coverage, and dash gate
   - Ensure all tests pass, confirm 100 percent coverage over owned files with only the permitted generated-type exclusions, and confirm the no-dash and self-made-data gates hold. Ask the user if questions arise.
 
 - [ ] 18. Capture proof-of-working screenshots or terminal captures
