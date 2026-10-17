@@ -147,22 +147,22 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Handoff_Builder with three QR renders" -m "Creates the hand-off through the client and renders the Board_URL as terminal, chat-text and chat-PNG QR codes with the fragment intact."`
 
-- [ ] 8. Implement Ics_Exporter
+- [x] 8. Implement Ics_Exporter
   - Implement `buildCalendar(itinerary, window)` with `ical-generator` producing RFC 5545 text, one VEVENT per Commitment, all times in UTC with the `Z` designator and no `TZID` or `VTIMEZONE`.
   - Derive Boarding_Closes locally as session start minus ten minutes; add a boarding-closes alarm for every reserved session, and a leave-now alarm at Boarding_Closes minus the carried walk minutes when an earlier commitment exists.
   - Assign a stable UID per commitment (session code for a reserved session; `personalTimeId` or a hash of title and start for a layover) and implement `writeCalendar` to write only inside the app-data `output/` folder.
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
-  - [ ] 8.1 Write property test: calendar is valid RFC 5545 with one event per commitment
+  - [x] 8.1 Write property test: calendar is valid RFC 5545 with one event per commitment
     - **Property 19: Calendar is valid RFC 5545 with one event per commitment**
     - Wire an RFC 5545 validator into this property (Requirement 9.3).
     - **Validates: Requirements 6.1, 6.2, 9.3**
-  - [ ] 8.2 Write property test: alarm rules
+  - [x] 8.2 Write property test: alarm rules
     - **Property 20: Alarm rules**
     - **Validates: Requirements 6.3, 6.4**
-  - [ ] 8.3 Write example and snapshot tests for Boarding_Closes, stable UID and output path
+  - [x] 8.3 Write example and snapshot tests for Boarding_Closes, stable UID and output path
     - Snapshot the calendar over a representative itinerary (Requirement 9.1); assert Boarding_Closes equals session start minus ten minutes over representative starts (1.2, former Property 2); assert building twice yields identical UIDs for a reserved session and a layover (with and without a `personalTimeId`) and that the file is written inside `output/` (6.5, former Property 21).
     - _Requirements: 1.2, 6.5_
-  - [ ] 8.4 Run this task's tests, then commit locally
+  - [x] 8.4 Run this task's tests, then commit locally
     - Run `npm test` for `packages/core`; only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add Ics_Exporter with UTC times and boarding alarms" -m "Builds RFC 5545 with one VEVENT per commitment, boarding-closes and leave-now alarms, stable UIDs and output written only to the app-data output folder."`
 

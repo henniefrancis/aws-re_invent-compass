@@ -104,3 +104,8 @@ export {
   PNG_SCALE,
 } from './handoff-builder.js';
 export type { HandoffBuilder, HandoffBuilderDeps, HandoffRenders } from './handoff-builder.js';
+
+// Boarding_Closes helpers and the Ics_Exporter.
+export { BOARDING_CLOSES_MINUTES, boardingClosesAt, parseInstant } from './boarding.js';
+export { createIcsExporter, CALENDAR_FILE_MODE } from './ics-exporter.js';
+export type { IcsExporter, IcsExporterDeps } from './ics-exporter.js';

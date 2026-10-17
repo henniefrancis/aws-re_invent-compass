@@ -1,0 +1,60 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Feature: boarding-passes, calendar snapshot and structure (Requirement 9.1) > the representative itinerary matches its snapshot 1`] = `
+"BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//reinvent-compass//boarding-passes//EN
+NAME:re:Invent Compass itinerary
+X-WR-CALNAME:re:Invent Compass itinerary
+X-WR-CALDESC:Event times are written in UTC. The event timezone is America
+ /Los_Angeles.
+BEGIN:VEVENT
+UID:session-sess-0001@reinvent-compass
+SEQUENCE:0
+DTSTAMP:20261201T080000Z
+DTSTART:20261201T183000Z
+DTEND:20261201T193000Z
+SUMMARY:Build on AWS\\, the boarding pass pattern
+LOCATION:Venetian
+DESCRIPTION:Reserved session. Boarding closes 10 minutes before the start\\
+ , when your seat can be released to walk-ups.
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT10M
+DESCRIPTION:Boarding closes: Build on AWS\\, the boarding pass pattern
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:layover-pt-1@reinvent-compass
+SEQUENCE:0
+DTSTAMP:20261201T080000Z
+DTSTART:20261201T200000Z
+DTEND:20261201T210000Z
+SUMMARY:Lunch and a walk
+LOCATION:Lounge
+DESCRIPTION:Layover (personal time).
+END:VEVENT
+BEGIN:VEVENT
+UID:session-sess-0002@reinvent-compass
+SEQUENCE:0
+DTSTAMP:20261201T080000Z
+DTSTART:20261201T220000Z
+DTEND:20261201T230000Z
+SUMMARY:Networking deep dive
+LOCATION:Caesars Forum
+DESCRIPTION:Reserved session. Boarding closes 10 minutes before the start\\
+ , when your seat can be released to walk-ups.
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT22M
+DESCRIPTION:Leave now: Networking deep dive
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT10M
+DESCRIPTION:Boarding closes: Networking deep dive
+END:VALARM
+END:VEVENT
+END:VCALENDAR
+"
+`;
