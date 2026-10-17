@@ -105,28 +105,28 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 5.4 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 6. Implement the ID token verifier
-  - [ ] 6.1 Implement the token verifier
+- [x] 6. Implement the ID token verifier
+  - [x] 6.1 Implement the token verifier
     - Create `src/auth/bearer.ts` (`parseBearer`, at most 8192 characters, three base64url segments) and `src/auth/token-verifier.ts` (`createTokenVerifier`): `decomposeUnverifiedJwt` from `aws-jwt-verify/jwt` and an `alg === 'RS256'` check first; `CognitoJwtVerifier.create({userPoolId, tokenUse: 'id', clientId}, {jwksCache})` in `cognito` mode; `JwtVerifier.create({issuer, audience: clientId, jwksUri}, {jwksCache})` plus a `token_use === 'id'` check in `oidc` mode; `subHash(pepper, sub)` as the only output; every failure mapped to the same 401 `unauthorized`; the `email` claim never read
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9_
 
-  - [ ] 6.2 Create the throwaway token helpers
+  - [x] 6.2 Create the throwaway token helpers
     - Create `test/helpers/jwt-factory.ts`: RSA key pairs and a JWKS from `node:crypto` (`generateKeyPairSync`, `KeyObject.export({format: 'jwk'})`), tokens with any header and claims signed with `createSign('RSA-SHA256')`, plus `alg: none` and HS256 variants; and a counting fake `fetcher` for `SimpleJwksCache` with a short `SimplePenaltyBox`
     - _Requirements: 25.5, 25.8_
 
-  - [ ] 6.3 Write property test for token acceptance
+  - [x] 6.3 Write property test for token acceptance
     - **Property 4: A token is accepted exactly when every rule holds**
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5**
 
-  - [ ] 6.4 Write property test for the JWKS cache
+  - [x] 6.4 Write property test for the JWKS cache
     - **Property 5: The JWKS is fetched at most once per kid, with one refetch for an unknown kid**
     - **Validates: Requirements 4.6**
 
-  - [ ] 6.5 Write the named JWT negative tests
+  - [x] 6.5 Write the named JWT negative tests
     - One test each for wrong `aud`, wrong `iss`, `alg: none`, expired, unknown `kid`, plus bad signature and wrong `token_use`, each asserting the identical 401 body
     - _Requirements: 4.5, 25.3_
 
-  - [ ] 6.6 Commit
+  - [x] 6.6 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 7. Checkpoint - Ensure all tests pass

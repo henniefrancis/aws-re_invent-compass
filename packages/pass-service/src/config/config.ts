@@ -14,6 +14,10 @@ export interface EventWindow {
   timezone: string;
 }
 
+export type IdTokenConfig =
+  | { mode: 'cognito'; issuer: string; clientId: string; userPoolId: string }
+  | { mode: 'oidc'; issuer: string; clientId: string; jwksUri: string };
+
 export interface ApiConfig {
   tableName: string;
   appSecretId: string;
@@ -21,13 +25,7 @@ export interface ApiConfig {
   googleSecretId?: string; // required when google.enabled
   publicBaseUrl: string; // origin only: scheme, host and optional port
   passkitPath: string; // starts with '/', no trailing '/', default '/api/passkit'
-  idToken: {
-    mode: VerifierMode;
-    issuer: string;
-    clientId: string;
-    jwksUri?: string;
-    userPoolId?: string;
-  };
+  idToken: IdTokenConfig;
   eventWindow: EventWindow;
   apns: {
     enabled: boolean;
@@ -254,7 +252,7 @@ function clientIdOf(env: Env): string {
   return clientId;
 }
 
-function idToken(env: Env): ApiConfig['idToken'] {
+function idToken(env: Env): IdTokenConfig {
   const mode = verifierMode(env);
   const issuer = required(env, 'ID_TOKEN_ISSUER');
   if (mode === 'cognito') {
@@ -262,7 +260,7 @@ function idToken(env: Env): ApiConfig['idToken'] {
     if (userPoolId === undefined) {
       throw new ConfigError('ID_TOKEN_ISSUER');
     }
-    return { mode, issuer, clientId: clientIdOf(env), userPoolId };
+    return { mode: 'cognito', issuer, clientId: clientIdOf(env), userPoolId };
   }
   const issuerUrl = parseUrl(issuer);
   if (issuerUrl?.protocol !== 'https:') {
@@ -275,7 +273,7 @@ function idToken(env: Env): ApiConfig['idToken'] {
   if (jwksUrl?.protocol !== 'https:' || jwksUrl.host !== issuerUrl.host) {
     throw new ConfigError('ID_TOKEN_JWKS_URI');
   }
-  return { mode, issuer, clientId, jwksUri };
+  return { mode: 'oidc', issuer, clientId, jwksUri };
 }
 
 function apns(env: Env): ApiConfig['apns'] {
