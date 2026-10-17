@@ -228,6 +228,10 @@ Scope boundary: this stream does not build the guardrails engine (S2 rules), the
 6. WHEN a refresh is requested, THE Catalog_Module SHALL refetch the catalog and SHALL overwrite the existing Catalog_Cache file in place with the newly fetched data and a new fetch timestamp.
 7. WHERE a maximum cache age is configured as a positive duration in seconds, WHEN the Catalog_Module is asked to read the catalog and the difference between the current time and the cached fetch timestamp is greater than the configured maximum cache age, THE Catalog_Module SHALL refetch the catalog before returning sessions.
 8. IF the Catalog_Module cannot write the Catalog_Cache, THEN THE Catalog_Module SHALL leave any existing Catalog_Cache file unchanged and SHALL surface an error indicating the cache write failed.
+9. THE Catalog_Cache SHALL record the event id and whether abstracts were included, SHALL be stored in a file named by a safe form of the event id, and a cache whose recorded event id or abstracts setting differs from the request SHALL be treated as stale.
+10. WHERE no maximum cache age is configured, THE Catalog_Module SHALL treat a cache older than 24 hours as stale, and SHALL treat a fetch timestamp in the future as the current time.
+11. WHEN the Catalog_Module loads the Catalog_Cache, THE Catalog_Module SHALL treat the file as untrusted: it SHALL refuse a cache directory that is a symlink or junction, SHALL NOT read a file larger than 50 MB, SHALL sanitise the cached wire sessions and recompute each normalised session from them, and when it writes SHALL create the temp file exclusively and remove orphaned temp files older than one hour.
+12. IF refetching the catalog fails and a cache for the same event exists, THEN THE Catalog_Module SHALL return that cache flagged as stale instead of failing, and IF no such cache exists, THEN it SHALL surface the fetch error.
 
 ### Requirement 15: Session normalisation
 

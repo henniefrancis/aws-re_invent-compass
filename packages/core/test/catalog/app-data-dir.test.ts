@@ -22,7 +22,7 @@ describe('Feature: events-client, Property 25: App-data directory resolves per p
   });
 
   test('Windows without %APPDATA% uses the standard roaming default under home', () => {
-    for (const env of [{}, { APPDATA: '' }]) {
+    for (const env of [{}, { APPDATA: '' }, { APPDATA: 'relative\\dir' }, { APPDATA: '..\\up' }]) {
       expect(resolveAppDataDir(env, 'C:\\Users\\Pat', 'win32')).toBe(
         'C:\\Users\\Pat\\AppData\\Roaming\\reinvent-compass',
       );

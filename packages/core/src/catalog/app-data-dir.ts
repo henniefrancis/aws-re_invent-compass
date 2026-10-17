@@ -22,13 +22,19 @@ function isSet(value: string | undefined): value is string {
 
 /**
  * Resolve the cache directory for a platform. `platform` is a Node platform name
- * ("win32", "darwin", "linux", ...). On Windows, if %APPDATA% is unset the standard
- * default location under the home directory is used. On Linux an XDG_DATA_HOME that
+ * ("win32", "darwin", "linux", ...). On Windows, if %APPDATA% is unset or not an
+ * absolute path the standard default location under the home directory is used. On Linux an XDG_DATA_HOME that
  * is not an absolute path is ignored, as the XDG specification requires.
  */
 export function resolveAppDataDir(env: AppDataEnv, homeDir: string, platform: string): string {
   if (platform === 'win32') {
-    const base = isSet(env.APPDATA) ? env.APPDATA : win32.join(homeDir, 'AppData', 'Roaming');
+    const appData = env.APPDATA;
+    // A relative %APPDATA% is refused (security N5), as is an unset one: the standard
+    // roaming location under the home directory is used instead.
+    const base =
+      isSet(appData) && win32.isAbsolute(appData)
+        ? appData
+        : win32.join(homeDir, 'AppData', 'Roaming');
     return win32.join(base, APP_DATA_DIR_NAME);
   }
   if (platform === 'darwin') {

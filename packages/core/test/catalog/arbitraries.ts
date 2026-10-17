@@ -96,15 +96,24 @@ export const wireArb: fc.Arbitrary<SessionWire> = fc
 export interface FakeFs extends FsLike {
   files: Map<string, string>;
   modes: Map<string, number>;
+  /** Modification times in epoch milliseconds; missing means 0. */
+  mtimes: Map<string, number>;
+  /** Directories that are symlinks or junctions. */
+  links: Set<string>;
+  /** Reported file sizes that override the real length. */
+  sizes: Map<string, number>;
   dirs: { path: string; mode: number }[];
   calls: string[];
-  failOn: Set<'mkdir' | 'write' | 'rename' | 'rm' | 'read'>;
+  failOn: Set<'mkdir' | 'write' | 'rename' | 'rm' | 'read' | 'lstat' | 'stat' | 'readdir'>;
 }
 
 export function fakeFs(): FakeFs {
   const fs: FakeFs = {
     files: new Map(),
     modes: new Map(),
+    mtimes: new Map(),
+    links: new Set(),
+    sizes: new Map(),
     dirs: [],
     calls: [],
     failOn: new Set(),
@@ -116,8 +125,8 @@ export function fakeFs(): FakeFs {
       fs.dirs.push({ path, mode: options.mode });
     },
     writeFileSync(path, data, options) {
-      fs.calls.push(`write ${path}`);
-      if (fs.failOn.has('write')) {
+      fs.calls.push(`write ${path} ${options.flag}`);
+      if (fs.failOn.has('write') || fs.files.has(path)) {
         throw new Error('write failed');
       }
       fs.files.set(path, data);
@@ -150,6 +159,28 @@ export function fakeFs(): FakeFs {
         throw new Error('rm failed');
       }
       fs.files.delete(path);
+    },
+    lstatSync(path) {
+      fs.calls.push(`lstat ${path}`);
+      if (fs.failOn.has('lstat')) {
+        throw new Error('ENOENT');
+      }
+      return { isSymbolicLink: () => fs.links.has(path) };
+    },
+    statSync(path) {
+      fs.calls.push(`stat ${path}`);
+      const data = fs.files.get(path);
+      if (fs.failOn.has('stat') || data === undefined) {
+        throw new Error('stat failed');
+      }
+      return { size: fs.sizes.get(path) ?? data.length, mtimeMs: fs.mtimes.get(path) ?? 0 };
+    },
+    readdirSync() {
+      fs.calls.push('readdir');
+      if (fs.failOn.has('readdir')) {
+        throw new Error('readdir failed');
+      }
+      return [...fs.files.keys()].map((p) => p.slice(p.lastIndexOf('/') + 1));
     },
   };
   return fs;
