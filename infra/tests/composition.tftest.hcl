@@ -90,3 +90,52 @@ run "roots_are_identical_apart_from_the_env_default" {
     error_message = "The dev and prod variables must differ only in the env default."
   }
 }
+
+# S5 review N9: the pass routes carry per-route throttles in both roots. The dev
+# root is read through its variables; prod is covered by the identical-roots run
+# above, and the key scan below reads both files.
+run "pass_routes_have_conservative_throttles" {
+  command = plan
+
+  module {
+    source = "./envs/dev"
+  }
+
+  assert {
+    condition = alltrue([
+      for k in [
+        "api/v1/passes/{serialNumber}/apple/GET",
+        "api/v1/passes/{serialNumber}/PUT",
+        "api/v1/passes/{serialNumber}/void/POST",
+      ] : var.route_throttles[k].rate == 5 && var.route_throttles[k].burst == 10
+    ])
+    error_message = "The attendee pass routes must be limited to 5 rps with a burst of 10."
+  }
+
+  assert {
+    condition = alltrue([
+      for k in [
+        "api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}/POST",
+        "api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}/DELETE",
+        "api/passkit/v1/passes/{passTypeIdentifier}/{serialNumber}/GET",
+      ] : var.route_throttles[k].rate == 10 && var.route_throttles[k].burst == 20
+    ])
+    error_message = "The PassKit register, unregister and latest-pass routes must be limited to 10 rps with a burst of 20."
+  }
+
+  assert {
+    condition = alltrue([
+      for env in ["dev", "prod"] : alltrue([
+        for k in [
+          "api/v1/passes/{serialNumber}/apple/GET",
+          "api/v1/passes/{serialNumber}/PUT",
+          "api/v1/passes/{serialNumber}/void/POST",
+          "api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}/POST",
+          "api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}/DELETE",
+          "api/passkit/v1/passes/{passTypeIdentifier}/{serialNumber}/GET",
+        ] : strcontains(file("${path.module}/../${env}/variables.tf"), "\"${k}\"")
+      ])
+    ])
+    error_message = "Both roots must set a route throttle for every pass and PassKit route."
+  }
+}

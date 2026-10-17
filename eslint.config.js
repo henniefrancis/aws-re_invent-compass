@@ -70,10 +70,10 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
-          patterns: crossPackageRelativeImportPatterns,
-          paths: [
+          patterns: [
+            ...crossPackageRelativeImportPatterns,
             {
-              name: 'node-forge',
+              group: ['node-forge', 'node-forge/*'],
               message: 'node-forge is test-only in pass-service (ADR-026).',
             },
           ],
