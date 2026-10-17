@@ -147,19 +147,19 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit the module and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10, 5.11, 5.12, 5.13, 5.14_
 
-- [ ] 8. Implement the Observability_Module (`infra/modules/observability`)
-  - [ ] 8.1 Implement the KMS-encrypted SNS topic, alarms, and budget
+- [x] 8. Implement the Observability_Module (`infra/modules/observability`)
+  - [x] 8.1 Implement the KMS-encrypted SNS topic, alarms, and budget
     - Write `versions.tf`, `variables.tf` (`env`, `alarm_email` sensitive with a non-empty email validation, `rest_api_id`, `api_lambda_name`, `passkit_lambda_name`), `locals.tf`, `main.tf`, `outputs.tf` (`sns_topic_arn` only)
     - Create one customer managed `aws_kms_key` and `aws_kms_alias` whose policy allows account-root administration and grants `cloudwatch.amazonaws.com` `kms:GenerateDataKey*` and `kms:Decrypt` scoped by `aws:SourceAccount`; create one `aws_sns_topic` encrypted with it and one email `aws_sns_topic_subscription` from `alarm_email`
     - Create four `aws_cloudwatch_metric_alarm` (API 5xx, API or Lambda throttles, APNs push failures, Lambda function errors), each with `alarm_actions = [sns_topic_arn]` on the ALARM state; create one monthly `aws_budgets_budget` with a 20 USD limit and notifications at 50, 80 and 100 percent of actual spend to `alarm_email`
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
 
-  - [ ] 8.2 Write plan assertions and the empty-email edge case for the Observability_Module
+  - [x] 8.2 Write plan assertions and the empty-email edge case for the Observability_Module
     - Native test asserting one SNS topic encrypted with a customer managed KMS key whose policy allows `cloudwatch.amazonaws.com`, one email subscription, four alarms wired to the topic, and one monthly 20 USD budget at 50/80/100 percent
     - Edge-case assertion that an empty `alarm_email` fails at plan time
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
 
-  - [ ] 8.3 Run the offline checks and commit the Observability_Module
+  - [x] 8.3 Run the offline checks and commit the Observability_Module
     - Run `terraform fmt`, `terraform validate` (`init -backend=false`), `tflint`, `terraform test` (mock providers), and a Trivy config scan; fix any finding
     - Commit the module and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
