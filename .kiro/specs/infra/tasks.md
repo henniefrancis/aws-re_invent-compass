@@ -274,13 +274,13 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit the scripts and their tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9, 12.10, 12.11, 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 14.1, 14.2, 14.3, 14.4, 17.2_
 
-- [ ] 16. Author the operations runbooks (`docs/runbooks/**`)
-  - [ ] 16.1 Write all five runbooks
+- [x] 16. Author the operations runbooks (`docs/runbooks/**`)
+  - [x] 16.1 Write all five runbooks
     - `release.md` (command, preconditions, numbered steps, expected success outcome), `rollback.md` (roll-forward from the previous commit's bundle plus a roll-forward note for each of the six Retained_Resources by name), `secrets.md` (steps plus an instruction never to print or paste a secret value), `google-class.md` (command, preconditions, expected success outcome), `kill-switch.md` (how to enable and disable the WAF kill-switch rule)
     - Use placeholders only; no real org, workspace, account ID, email, or ARN
     - _Requirements: 9.6, 15.1, 15.2, 15.3, 15.4, 15.5_
 
-  - [ ] 16.2 Commit the runbooks
+  - [x] 16.2 Commit the runbooks
     - Confirm the runbooks carry no account ID, org, workspace, email, or ARN, then run the repo-wide leakage scan (task 13.1) over `docs/runbooks/**`
     - Commit the runbooks with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 9.6, 15.1, 15.2, 15.3, 15.4, 15.5, 17.6_
