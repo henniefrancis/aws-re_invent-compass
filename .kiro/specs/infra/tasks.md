@@ -226,18 +226,18 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit the cross-cutting tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 1.9, 7.4, 9.1, 9.2, 9.3, 9.4, 10.1, 16.2, 16.4, 17.1_
 
-- [ ] 13. Implement the repo-wide leakage scan test
-  - [ ] 13.1 Write property test for no account id, account-bearing ARN, or email in owned files
+- [x] 13. Implement the repo-wide leakage scan test
+  - [x] 13.1 Write property test for no account id, account-bearing ARN, or email in owned files
     - **Property 7: No committed owned file embeds an account id, account-bearing ARN, or email**
     - Scan every committed file under `infra/**`, `scripts/**`, and `docs/runbooks/**` (runnable in CI and locally, no AWS); fail on a 12-digit account id, an `arn:aws` embedding an account id, or an email address
     - **Validates: Requirements 17.6**
 
-  - [ ] 13.2 Run the leakage scan offline and commit it
+  - [x] 13.2 Run the leakage scan offline and commit it
     - Run the leakage scan over the owned files and confirm it passes; fix any finding
     - Commit the scan with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 17.6_
 
-- [ ] 14. Checkpoint - environments composed and invariants verified
+- [x] 14. Checkpoint - environments composed and invariants verified
   - Ensure all offline checks pass. Ask the user if questions arise.
 
 - [ ] 15. Implement the owner-run deploy and setup scripts (`scripts/**`)
