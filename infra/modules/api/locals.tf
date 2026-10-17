@@ -69,8 +69,8 @@ locals {
   # Key prefixes of the single table, from the pass-service data model. Writes
   # are limited to them with dynamodb:LeadingKeys, so a bug or a stolen role
   # cannot write any other item.
-  api_write_key_prefixes     = ["PASS#*", "DEV#*", "HANDOFF#*", "RATE#*"]
-  passkit_write_key_prefixes = ["DEV#*"]
+  api_write_key_prefixes     = ["PASS#*", "DEV#*", "HANDOFF#*", "RATE#*", "ACTIVE#*", "PASSREG#*"]
+  passkit_write_key_prefixes = ["DEV#*", "PASSREG#*"]
 
   # The api Lambda reads and writes pass, hand-off and rate records, reads device
   # registrations to push, and reads all three secrets (it signs Apple passes and

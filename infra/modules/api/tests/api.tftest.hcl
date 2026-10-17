@@ -287,7 +287,7 @@ run "lambda_role_policies_follow_least_privilege" {
     condition = alltrue([
       for s in jsondecode(aws_iam_role_policy.passkit.policy).Statement :
       !anytrue([for a in try(tolist(s.Action), [s.Action]) : contains(["dynamodb:PutItem", "dynamodb:DeleteItem"], a)]) ||
-      s.Condition["ForAllValues:StringLike"]["dynamodb:LeadingKeys"] == ["DEV#*"]
+      s.Condition["ForAllValues:StringLike"]["dynamodb:LeadingKeys"] == ["DEV#*", "PASSREG#*"]
     ])
     error_message = "The passkit role may write only DEV# items."
   }
@@ -296,7 +296,7 @@ run "lambda_role_policies_follow_least_privilege" {
     condition = alltrue([
       for s in jsondecode(aws_iam_role_policy.api.policy).Statement :
       !anytrue([for a in try(tolist(s.Action), [s.Action]) : contains(["dynamodb:PutItem", "dynamodb:DeleteItem", "dynamodb:UpdateItem"], a)]) ||
-      toset(s.Condition["ForAllValues:StringLike"]["dynamodb:LeadingKeys"]) == toset(["PASS#*", "DEV#*", "HANDOFF#*", "RATE#*"])
+      toset(s.Condition["ForAllValues:StringLike"]["dynamodb:LeadingKeys"]) == toset(["PASS#*", "DEV#*", "HANDOFF#*", "RATE#*", "ACTIVE#*", "PASSREG#*"])
     ])
     error_message = "The api role may write only the known key prefixes."
   }
