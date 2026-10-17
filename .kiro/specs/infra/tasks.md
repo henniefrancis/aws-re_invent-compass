@@ -285,7 +285,7 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit the runbooks with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 9.6, 15.1, 15.2, 15.3, 15.4, 15.5, 17.6_
 
-- [ ] 17. Final checkpoint - full quality gate
+- [x] 17. Final checkpoint - full quality gate
   - Ensure all native tests pass under `mock_provider`/`command = plan`, `terraform fmt -check`, `terraform validate` (`init -backend=false`), `tflint`, and a Trivy config scan report no HIGH or CRITICAL findings (with only the documented AVD-AWS-0132 site-bucket suppression), and `shellcheck` is clean. Ask the user if questions arise.
 
 - [ ] 18. Save terminal captures for the Builder Center post
