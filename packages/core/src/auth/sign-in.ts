@@ -40,6 +40,11 @@ export type BrowserOpener = (url: string) => void;
 /** How long to wait for the browser redirect by default: five minutes. */
 export const DEFAULT_SIGN_IN_TIMEOUT_MS = 300_000;
 
+/** The notice returned when a keychain stopped working after it had been in use. */
+export const KEYCHAIN_FAILED_NOTICE =
+  'The OS keychain could not be written, so your tokens are now held in memory only. ' +
+  'They will not be there next session, and you will need to sign in again then.';
+
 /** The notice returned when tokens are held in memory only (Requirement 2.3). */
 export const MEMORY_ONLY_NOTICE =
   'No OS keychain is available, so your tokens are held in memory only. ' +
@@ -134,10 +139,15 @@ export async function startSignIn(deps: SignInDeps): Promise<PendingSignIn> {
       deps.logger.addSecret(tokens.accessToken);
       deps.logger.addSecret(tokens.refreshToken);
       deps.logger.addSecret(tokens.idToken);
+      const keychainBefore = deps.store.kind === 'keychain';
       const storage = deps.store.save(tokens);
       deps.logger.info('Signed in');
       return storage === 'memory'
-        ? { storage, memoryOnlyNotice: MEMORY_ONLY_NOTICE, authorizeUrl }
+        ? {
+            storage,
+            memoryOnlyNotice: keychainBefore ? KEYCHAIN_FAILED_NOTICE : MEMORY_ONLY_NOTICE,
+            authorizeUrl,
+          }
         : { storage, authorizeUrl };
     },
   };

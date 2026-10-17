@@ -26,6 +26,7 @@ const EXPECTED = [
   'LOOPBACK_PORTS',
   'MAX_HEADER_SIZE_BYTES',
   'MEMORY_ONLY_NOTICE',
+  'KEYCHAIN_FAILED_NOTICE',
   'NoLoopbackPortError',
   'NotSignedInError',
   'OAUTH_HOST',

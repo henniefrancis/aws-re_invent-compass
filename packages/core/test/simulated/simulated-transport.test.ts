@@ -572,14 +572,14 @@ describe('events-client, task 14.5: signed-in presentation and the expired-token
 describe('events-client, S3 change request: the demo catalog and clock', () => {
   const DEMO_NOW = Date.parse('2026-11-29T18:00:00-08:00');
 
-  test('the base ANT163 (syn-096) and its repeat ANT163-R (syn-009) are both served by list and get', async () => {
+  test('the base BWP213 (syn-024) and its repeat BWP213-R (syn-025) are both served by list and get', async () => {
     const { ctx } = simRig();
     const all = await fetchAllSessions(ctx, { includeAbstracts: true });
     expect(all).toHaveLength(120);
-    expect(all.find((s) => s.sessionId === 'syn-096')?.abbreviation).toBe('ANT163');
-    expect(all.find((s) => s.sessionId === 'syn-009')?.abbreviation).toBe('ANT163-R');
-    expect((await getSession(ctx, 'syn-096')).session.abbreviation).toBe('ANT163');
-    expect((await getSession(ctx, 'syn-009')).session.abbreviation).toBe('ANT163-R');
+    expect(all.find((s) => s.sessionId === 'syn-024')?.abbreviation).toBe('BWP213');
+    expect(all.find((s) => s.sessionId === 'syn-025')?.abbreviation).toBe('BWP213-R');
+    expect((await getSession(ctx, 'syn-024')).session.abbreviation).toBe('BWP213');
+    expect((await getSession(ctx, 'syn-025')).session.abbreviation).toBe('BWP213-R');
   });
 
   test('the simulated event is 30 Nov to 4 Dec with an IANA timezone', async () => {
