@@ -110,12 +110,12 @@ Table `compass-<env>`: partition key `pk` (S), sort key `sk` (S), on demand, TTL
 (number, epoch seconds), point-in-time recovery and deletion protection. GSI2 (`gsi2pk`, `gsi2sk`), strings, projection ALL. GSI1 is no longer used (the pass-keyed registration
 copies below replaced it); S6 may drop it.
 
-| Item | pk | sk | gsi2pk | gsi2sk |
-| ------------------- | ------------------ | ----------------------------------- | --------------- | ------------------ | --------------- | ---------------------------------------- |
-| Pass_Record | `PASS#<serial>` | `PASS` | `SUB#<subHash>` | `PASS#<serial>` |
-| Device_Registration | `DEV#<deviceHash>` | `REG#<serial>` | `SUB#<subHash>` | `REG#<deviceHash>#<serial>` |
-| Handoff_Record | `HANDOFF#<sha256>` | `HANDOFF` | `SUB#<subHash>` | `HANDOFF#<sha256>` |
-| Rate_Counter | `RATE#<subHash>` | `<kind>[:<scope>]#<windowStartSec>` | `SUB#<subHash>` | `RATE#<kind>[:<scope>]#<windowStartSec>` |
+| Item                | pk                 | sk                                  | gsi2pk          | gsi2sk                                   |
+| ------------------- | ------------------ | ----------------------------------- | --------------- | ---------------------------------------- |
+| Pass_Record         | `PASS#<serial>`    | `PASS`                              | `SUB#<subHash>` | `PASS#<serial>`                          |
+| Device_Registration | `DEV#<deviceHash>` | `REG#<serial>`                      | `SUB#<subHash>` | `REG#<deviceHash>#<serial>`              |
+| Handoff_Record      | `HANDOFF#<sha256>` | `HANDOFF`                           | `SUB#<subHash>` | `HANDOFF#<sha256>`                       |
+| Rate_Counter        | `RATE#<subHash>`   | `<kind>[:<scope>]#<windowStartSec>` | `SUB#<subHash>` | `RATE#<kind>[:<scope>]#<windowStartSec>` |
 
 Two bookkeeping items per live record keep the caps exact when requests race, because the base table
 can be read with a strongly consistent query and an index cannot: `ACTIVE#<subHash>` / `<serial>` (one

@@ -344,7 +344,7 @@ describe.each(['cognito', 'oidc'] as const)(
             expect(fetcher.calls).toBeLessThanOrEqual(2);
           },
         ),
-        { numRuns: 60 },
+        { numRuns: 100 },
       );
     });
   },

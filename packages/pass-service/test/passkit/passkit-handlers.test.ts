@@ -368,7 +368,7 @@ describe('Feature: pass-service, PassKit properties', () => {
         }
         expect(JSON.stringify(fixture.table.snapshot())).not.toContain('lib-d');
       }),
-      { numRuns: 60 },
+      { numRuns: 100 },
     );
   });
 

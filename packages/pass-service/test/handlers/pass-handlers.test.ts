@@ -437,7 +437,7 @@ describe('Feature: pass-service, update and void handlers', () => {
         }
         expect(JSON.stringify(fixture.table.snapshot())).toBe(before);
       }),
-      { numRuns: 30 },
+      { numRuns: 100 },
     );
   });
 });

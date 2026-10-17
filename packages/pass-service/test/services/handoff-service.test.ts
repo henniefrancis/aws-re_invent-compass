@@ -147,7 +147,7 @@ describe('Feature: pass-service, hand-off creation', () => {
           expect(fixture.table.snapshot().some((i) => i.pk.startsWith('RATE#'))).toBe(false);
         },
       ),
-      { numRuns: 60 },
+      { numRuns: 100 },
     );
     const fixture = createApiFixture();
     const serials = await seed(fixture, 1);
@@ -437,7 +437,7 @@ describe('Feature: pass-service, hand-off calendar', () => {
           );
         });
       }),
-      { numRuns: 60 },
+      { numRuns: 100 },
     );
   });
 

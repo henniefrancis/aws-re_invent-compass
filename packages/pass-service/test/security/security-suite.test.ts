@@ -333,7 +333,7 @@ describe('Feature: pass-service, Property 32', () => {
         expect(fixture.table.snapshot().some((item) => item.pk === `PASS#${serial}`)).toBe(true);
         ttlsHold(fixture);
       }),
-      { numRuns: 60 },
+      { numRuns: 100 },
     );
   });
 
@@ -398,7 +398,7 @@ describe('Feature: pass-service, Property 32', () => {
         expect(fixture.table.snapshot().some((i) => i.pk.startsWith('DEV#'))).toBe(true);
         ttlsHold(fixture);
       }),
-      { numRuns: 60 },
+      { numRuns: 100 },
     );
   }
 
@@ -433,7 +433,7 @@ describe('Feature: pass-service, Property 32', () => {
         const decision = await fixture.deps.limiter.consume(SUB, 'handoffs', 10, next);
         expect(decision.allowed).toBe(true);
       }),
-      { numRuns: 60 },
+      { numRuns: 100 },
     );
   });
 });
