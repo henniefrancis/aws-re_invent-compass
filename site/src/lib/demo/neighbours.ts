@@ -6,6 +6,7 @@
 
 import type { Commitment } from '@compass/contracts';
 import type { DemoDeps } from './demo-deps';
+import type { ConnectionClass } from './rules-port';
 import type { DemoState } from './demo-state';
 import { commitmentRef, dayOfIso, toScheduleInput } from './schedule';
 import { gateText } from './week-view';
@@ -20,6 +21,8 @@ export interface NeighbourStop {
   readonly venue: string;
   /** Walk plus buffer in minutes, or null when the engine could not say. */
   readonly walkMinutes: number | null;
+  /** How the engine classed this walk (comfortable, tight, impossible, unknown), or null. */
+  readonly walkClass: ConnectionClass | null;
 }
 
 export interface Neighbours {
@@ -33,7 +36,12 @@ function refOf(commitment: Commitment, deps: DemoDeps): string {
     : (deps.catalog.get(commitment.sessionId)?.code ?? commitment.sessionId);
 }
 
-function stopOf(commitment: Commitment, walkMinutes: number | null, deps: DemoDeps): NeighbourStop {
+interface Walk {
+  readonly minutes: number | null;
+  readonly cls: ConnectionClass | null;
+}
+
+function stopOf(commitment: Commitment, walk: Walk, deps: DemoDeps): NeighbourStop {
   const ref = refOf(commitment, deps);
   if (commitment.kind === 'personalTime') {
     return {
@@ -42,7 +50,8 @@ function stopOf(commitment: Commitment, walkMinutes: number | null, deps: DemoDe
       startsAt: commitment.startsAt,
       gate: gateText(commitment.location, undefined),
       venue: commitment.location ?? '',
-      walkMinutes,
+      walkMinutes: walk.minutes,
+      walkClass: walk.cls,
     };
   }
   const session = deps.catalog.get(commitment.sessionId);
@@ -52,7 +61,8 @@ function stopOf(commitment: Commitment, walkMinutes: number | null, deps: DemoDe
     startsAt: commitment.startsAt,
     gate: gateText(session?.venue ?? commitment.venue, session?.room),
     venue: session?.venue ?? commitment.venue ?? '',
-    walkMinutes,
+    walkMinutes: walk.minutes,
+    walkClass: walk.cls,
   };
 }
 
@@ -73,14 +83,15 @@ export function neighboursOf(ref: string, state: DemoState, deps: DemoDeps): Nei
     deps.context,
     day,
   );
-  const walk = (from: Commitment, to: Commitment): number | null => {
-    if (report.status !== 'ok') {
-      return null;
-    }
-    const found = report.connections.find(
-      (c) => c.from === refOf(from, deps) && c.to === refOf(to, deps),
-    );
-    return found?.result.walkingMinutes ?? null;
+  const walk = (from: Commitment, to: Commitment): Walk => {
+    const found =
+      report.status === 'ok'
+        ? report.connections.find((c) => c.from === refOf(from, deps) && c.to === refOf(to, deps))
+        : undefined;
+    return {
+      minutes: found?.result.walkingMinutes ?? null,
+      cls: found?.result.classification ?? null,
+    };
   };
   return {
     previous: before === undefined ? null : stopOf(before, walk(before, mine), deps),

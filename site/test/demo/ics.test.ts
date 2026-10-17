@@ -87,16 +87,49 @@ describe('the sample calendar of the starter week', () => {
     expect(byUid['syn-003']?.alarms).toEqual([
       { minutesBeforeStart: 10, description: 'Boarding closes' },
     ]);
-    expect(byUid['syn-026']?.alarms).toEqual([
+    expect(byUid['syn-002']?.alarms).toEqual([
       { minutesBeforeStart: 10, description: 'Boarding closes' },
       { minutesBeforeStart: 50, description: 'Leave now' },
     ]);
     expect(byUid['syn-003']?.description).toContain(
       'The walk from the previous session is unknown',
     );
-    expect(byUid['syn-026']?.description).toContain('walk plus buffer: 40 minutes');
+    expect(byUid['syn-002']?.description).toContain('walk plus buffer: 40 minutes');
     expect(byUid['syn-003']?.description).toContain('Made-up session');
     expect(byUid['syn-003']?.description).toContain('Unofficial. Your badge is your ticket.');
+  });
+
+  test('no Leave now alarm when the connection is impossible, and the description says so (QA L4)', () => {
+    const impossible = makeDeps({
+      connectionsForDay: () => ({
+        status: 'ok',
+        connections: [
+          {
+            from: 'NET381',
+            to: 'CMP327',
+            result: { classification: 'impossible', walkingMinutes: 75, reason: 'x' },
+          },
+          {
+            from: 'AIM321',
+            to: 'DAT204',
+            result: { classification: 'tight', walkingMinutes: 75, reason: 'y' },
+          },
+        ],
+        skipped: [],
+      }),
+    });
+    const events = demoCalendarEvents(starter, impossible);
+    const byCode = (code: string) => events.find((e) => e.summary.startsWith(code));
+    expect(byCode('CMP327')?.alarms).toEqual([
+      { minutesBeforeStart: 10, description: 'Boarding closes' },
+    ]);
+    expect(byCode('CMP327')?.description).toContain(
+      'does not fit in the time available, so there is no Leave now alarm',
+    );
+    expect(byCode('DAT204')?.alarms.map((a) => a.description)).toEqual([
+      'Boarding closes',
+      'Leave now',
+    ]);
   });
 
   test('summary, location and personal time', () => {
@@ -217,10 +250,11 @@ describe('Property 15: The sample calendar is valid RFC 5545 with the right alar
             expect(seen).toEqual([]);
             return;
           }
-          const walk =
-            neighboursOf(commitmentRef(commitment), state, deps).previous?.walkMinutes ?? null;
+          const previous = neighboursOf(commitmentRef(commitment), state, deps).previous;
+          const walk = previous?.walkMinutes ?? null;
+          const impossible = previous?.walkClass === 'impossible';
           expect(seen).toEqual(
-            walk === null
+            walk === null || impossible
               ? [['Boarding closes', 10]]
               : [
                   ['Boarding closes', 10],
@@ -230,6 +264,9 @@ describe('Property 15: The sample calendar is valid RFC 5545 with the right alar
           const description = String(events[index]?.getFirstPropertyValue('description'));
           expect(description.includes('The walk from the previous session is unknown')).toBe(
             walk === null,
+          );
+          expect(description.includes('does not fit in the time available')).toBe(
+            walk !== null && impossible,
           );
         });
       }),

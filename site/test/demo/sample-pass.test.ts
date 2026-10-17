@@ -49,7 +49,9 @@ describe('fitTitle and clampWalk', () => {
     expect(fitted).toBe(`${'B'.repeat(77)}...`);
     expect(fitted).toHaveLength(80);
     expect(fitTitle(`${'word '.repeat(20)}end`).endsWith('...')).toBe(true);
-    expect(fitTitle(`${'x'.repeat(76)} ${'y'.repeat(20)}`)).toBe(`${'x'.repeat(76)}...`);
+    // Exactly the first 77 characters, even when the 77th is a space (S4 and Requirement 11.2).
+    expect(fitTitle(`${'x'.repeat(76)} ${'y'.repeat(20)}`)).toBe(`${'x'.repeat(76)} ...`);
+    expect(fitTitle(`${'x'.repeat(76)} ${'y'.repeat(20)}`)).toHaveLength(80);
   });
 
   test('walk minutes are clamped to 0 to 90 and rounded', () => {

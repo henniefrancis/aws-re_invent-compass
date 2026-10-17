@@ -54,7 +54,7 @@ export interface SamplePass {
 /** Normalise a title, and keep 77 characters plus three dots when it is longer than 80. */
 export function fitTitle(title: string): string {
   const text = normalisePassText(title);
-  return text.length > MAX_TITLE ? `${text.slice(0, TITLE_KEPT).trimEnd()}...` : text;
+  return text.length > MAX_TITLE ? `${text.slice(0, TITLE_KEPT)}...` : text;
 }
 
 /** A walk in whole minutes from 0 to 90, as the pass accepts it. */

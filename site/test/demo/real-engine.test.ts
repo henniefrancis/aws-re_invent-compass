@@ -136,8 +136,8 @@ describe('the guided path on the real engine', () => {
       ICAL.parse(demoCalendarText(starter, deps)) as unknown[],
     ).getAllSubcomponents('vevent');
     starter.commitments.forEach((commitment, index) => {
-      const walk =
-        neighboursOf(commitmentRef(commitment), starter, deps).previous?.walkMinutes ?? null;
+      const previous = neighboursOf(commitmentRef(commitment), starter, deps).previous;
+      const walk = previous?.walkClass === 'impossible' ? null : (previous?.walkMinutes ?? null);
       const alarms = events[index]
         ?.getAllSubcomponents('valarm')
         .map((a) => -(a.getFirstPropertyValue('trigger') as ICAL.Duration).toSeconds() / 60);

@@ -102,16 +102,19 @@ export function demoCalendarEvents(state: DemoState, deps: DemoDeps): readonly I
     const session = deps.catalog.get(commitment.sessionId);
     const { previous } = neighboursOf(ref, state, deps);
     const walk = previous?.walkMinutes ?? null;
+    const impossible = previous?.walkClass === 'impossible';
     const alarms: IcsAlarm[] = [
       { minutesBeforeStart: BOARDING_MINUTES, description: 'Boarding closes' },
-      ...(walk === null
+      ...(walk === null || impossible
         ? []
         : [{ minutesBeforeStart: BOARDING_MINUTES + walk, description: 'Leave now' as const }]),
     ];
     const walkNote =
       walk === null
         ? 'The walk from the previous session is unknown, so there is no Leave now alarm.'
-        : `The Leave now alarm uses the walk plus buffer: ${String(walk)} minutes.`;
+        : impossible
+          ? 'The walk from the previous session does not fit in the time available, so there is no Leave now alarm.'
+          : `The Leave now alarm uses the walk plus buffer: ${String(walk)} minutes.`;
     return {
       uid: `${sanitiseUid(ref)}@${UID_DOMAIN}`,
       start: commitment.startsAt,
