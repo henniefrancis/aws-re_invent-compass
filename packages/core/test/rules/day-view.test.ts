@@ -163,13 +163,19 @@ describe('connectionsForDay and stay-put personal time', () => {
     }
   });
 
-  test('stay-put time with nothing before it has no venue to leave from: skipped, not unknown', () => {
+  test('stay-put time with nothing before it has no venue to leave from: skipped with a reason, not guessed', () => {
     const b = slot('BBB1', clock(11), clock(12), 'Alpha Hall');
     const result = connectionsForDay(
       scheduleOf([b], [rest('Rest', clock(8), clock(9))]),
       testContext(),
     );
-    expect(result).toMatchObject({ status: 'ok', connections: [] });
+    expect(result).toEqual({
+      status: 'ok',
+      connections: [],
+      skipped: [
+        { ref: 'Rest', reason: 'The venue before "Rest" is unknown. The connection is unknown.' },
+      ],
+    });
   });
 });
 

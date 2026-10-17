@@ -92,7 +92,12 @@ export function connectionsForDay(
   for (let i = 1; i < filled.length; i += 1) {
     const from = filled[i - 1] as ResolvedCommitment;
     const to = filled[i] as ResolvedCommitment;
-    if (to.stayPut === true || (from.stayPut === true && from.venue === undefined)) {
+    if (to.stayPut === true) {
+      continue;
+    }
+    // Stay-put time with nothing before it has no venue to leave from: say so, do not guess.
+    if (from.stayPut === true && from.venue === undefined) {
+      skipped.push({ ref: from.ref, reason: reason.connectionStayPutUnknown(from.ref) });
       continue;
     }
     const toBoarding = boardingFor(

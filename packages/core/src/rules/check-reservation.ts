@@ -16,14 +16,13 @@
 //               case applies, else allow. There is one reason for every rule that applied.
 import type { NormalisedSession, Verdict } from '@compass/contracts';
 import { boardingFor } from './boarding.js';
-import { findClashes, intervalOf, type ClashReport, type Interval } from './clashes.js';
-import { classifyConnection, type ConnectionResult } from './connections.js';
+import { findClashes, intervalOf, type ClashReport } from './clashes.js';
 import { ContextSchema, type Context } from './context.js';
 import { isOverloaded } from './energy.js';
 import { checkLayovers, type LayoverReport } from './layovers.js';
+import { connectionsAround } from './neighbours.js';
 import * as reason from './reasons.js';
 import {
-  inheritStayPutVenues,
   isSeatFull,
   resolveCommitment,
   sessionToCommitment,
@@ -40,19 +39,8 @@ const RULES: readonly reason.RuleName[] = [
   reason.RULE_NAMES.energy,
 ];
 
-/** How far away, in either direction and across midnight, a neighbouring commitment can be. */
-export const NEIGHBOUR_WINDOW_HOURS = 12;
-const NEIGHBOUR_WINDOW_MS = NEIGHBOUR_WINDOW_HOURS * 3_600_000;
-
 type OkClashReport = Extract<ClashReport, { status: 'ok' }>;
 type OkLayoverReport = Extract<LayoverReport, { status: 'ok' }>;
-
-/** A resolved neighbour of the candidate, with the interval it occupies. */
-interface Neighbour {
-  resolved: ResolvedCommitment;
-  interval: Interval;
-  isCandidate: boolean;
-}
 
 function mealMissingOn(report: OkLayoverReport, day: string): boolean {
   return report.days.find((entry) => entry.day === day)?.mealLayoverMissing ?? false;
@@ -61,13 +49,25 @@ function mealMissingOn(report: OkLayoverReport, day: string): boolean {
 /** The most commitments in a schedule that the guardrail will judge in one call. */
 export const MAX_COMMITMENTS = 200;
 
+/** The most sessions in the sessions lookup that the guardrail will accept in one call. */
+export const MAX_SESSIONS = 2000;
+
+/**
+ * The guardrail verdict. It is a Verdict, plus `internal: true` on the one verdict that means the
+ * check itself failed (an unexpected error), so a consumer can tell that apart from a verdict
+ * about the reservation.
+ */
+export type CheckedVerdict = Verdict & { internal?: true };
+
 /**
  * Check whether a candidate session can be reserved, given the current schedule.
  *
  * schedule is the attendee's commitments plus the sessions they refer to. A candidate that is
  * already in the schedule is ignored there, so it never clashes with itself.
  *
- * This function never throws. It fails closed: if anything unexpected goes wrong, it returns a
+ * This function never throws, unlike the other exported rule functions, which trust their typed
+ * inputs and may throw on malformed ones. Consumers call checkReservation, or wrap the others in a
+ * try/catch and treat a throw as "block" or "unknown". It fails closed: if anything unexpected goes wrong, it returns a
  * "block" verdict with a fixed internal-error reason. Consumers must still treat a throw (from a
  * caller bug outside this function) as a block. A Context that is not valid (a bad tuning value
  * or bad venue data) and a schedule with more than MAX_COMMITMENTS commitments both give "warn"
@@ -77,11 +77,11 @@ export function checkReservation(
   candidate: NormalisedSession,
   schedule: ScheduleInput,
   context: Context,
-): Verdict {
+): CheckedVerdict {
   try {
     return judgeReservation(candidate, schedule, context);
   } catch {
-    return { decision: 'block', reasons: [reason.guardInternalError()] };
+    return { decision: 'block', reasons: [reason.guardInternalError()], internal: true };
   }
 }
 
@@ -89,7 +89,7 @@ function judgeReservation(
   candidate: NormalisedSession,
   schedule: ScheduleInput,
   context: Context,
-): Verdict {
+): CheckedVerdict {
   const validation = ContextSchema.safeParse(context);
   if (!validation.success) {
     const first = validation.error.issues[0] as { path: PropertyKey[] };
@@ -98,6 +98,9 @@ function judgeReservation(
   }
   if (schedule.commitments.length > MAX_COMMITMENTS) {
     return { decision: 'warn', reasons: [reason.guardScheduleTooLarge(MAX_COMMITMENTS)] };
+  }
+  if (Object.keys(schedule.sessions).length > MAX_SESSIONS) {
+    return { decision: 'warn', reasons: [reason.guardTooManySessions(MAX_SESSIONS)] };
   }
 
   const blocks: string[] = [];
@@ -157,59 +160,16 @@ function judgeReservation(
 
   // Rule 2: connections to the nearest earlier and later commitment within 12 hours, across
   // midnight. A commitment that clashes is already reported above, so it is not judged again.
-  // Personal time with no location means "stay put": it takes the venue of the commitment before
-  // it, and no connection is drawn into it.
   if (!resolvedCandidate.isAllDay) {
-    const entries: Neighbour[] = [
-      { resolved: resolvedCandidate, interval: candidateInterval, isCandidate: true },
-    ];
-    others.forEach((commitment, index) => {
-      const resolved = resolveCommitment(commitment, sessions);
-      const interval = intervalOf(resolved, zone.zone);
-      if ('missing' in interval || resolved.isAllDay || clashing.has(index)) {
-        return;
-      }
-      entries.push({ resolved, interval, isCandidate: false });
-    });
-    entries.sort((a, b) => a.interval.start - b.interval.start);
-    const filled = inheritStayPutVenues(entries.map((entry) => entry.resolved));
-    const view = entries.map((entry, i) => ({
-      ...entry,
-      resolved: filled[i] as ResolvedCommitment,
-    }));
-    const me = view.find((entry) => entry.isCandidate) as Neighbour;
-    const earlier = view
-      .filter(
-        (n) =>
-          !n.isCandidate &&
-          n.interval.end <= me.interval.start &&
-          me.interval.start - n.interval.end <= NEIGHBOUR_WINDOW_MS,
-      )
-      .sort((a, b) => b.interval.end - a.interval.end)[0];
-    const later = view
-      .filter(
-        (n) =>
-          !n.isCandidate &&
-          n.interval.start >= me.interval.end &&
-          n.interval.start - me.interval.end <= NEIGHBOUR_WINDOW_MS,
-      )
-      .sort((a, b) => a.interval.start - b.interval.start)[0];
-    const boardingOf = (item: ResolvedCommitment) =>
-      boardingFor({ isReservable: item.isReservable, startsAt: item.startsAt }, context);
-    const results: ConnectionResult[] = [];
-    // Stay-put time with nothing before it has no venue to leave from, so there is no connection.
-    if (
-      earlier !== undefined &&
-      !(earlier.resolved.stayPut === true && earlier.resolved.venue === undefined)
-    ) {
-      const toBoarding = boardingOf(me.resolved);
-      results.push(classifyConnection(earlier.resolved, me.resolved, toBoarding, context));
-    }
-    // Nobody walks anywhere to stay put, so no connection is drawn into stay-put time.
-    if (later !== undefined && later.resolved.stayPut !== true) {
-      const toBoarding = boardingOf(later.resolved);
-      results.push(classifyConnection(me.resolved, later.resolved, toBoarding, context));
-    }
+    const results = connectionsAround(
+      resolvedCandidate,
+      candidateInterval,
+      others,
+      sessions,
+      zone.zone,
+      context,
+      clashing,
+    );
     for (const result of results) {
       if (result.classification === 'impossible' && result.certain !== true) {
         // Late at the full estimated walk, but not at half of it: a warning, not a block.

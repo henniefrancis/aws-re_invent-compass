@@ -23,6 +23,7 @@ const DASHES = new RegExp(
 // characters (zero width joiners, bidirectional overrides and the like) are removed.
 const BREAKS = /[\p{Cc}\p{Zl}\p{Zp}]/gu;
 const FORMATS = /\p{Cf}/gu;
+const LETTER_OR_NUMBER = /[\p{L}\p{N}]/u;
 
 /** Replace every em dash and en dash with a hyphen. */
 export function clean(text: string): string {
@@ -47,7 +48,8 @@ function plain(text: unknown): string {
 export function label(text: unknown): string {
   const words = plain(text).split(/\s+/).filter(Boolean).slice(0, 4).join(' ');
   const short = Array.from(words).slice(0, 30).join('').trim();
-  return short === '' ? 'unnamed item' : short;
+  // A name with no letter or number (only marks or symbols) says nothing, so it is unnamed.
+  return LETTER_OR_NUMBER.test(short) ? short : 'unnamed item';
 }
 
 /** A name in double quotes, ready for a sentence. Reasons are plain text: show them as text only. */
@@ -176,6 +178,10 @@ export function connectionBoardingMissing(ref: string): string {
 
 export function connectionTimeMissing(ref: string, what: TimeProblem): string {
   return `${missingTime(ref, what)} The connection is unknown.`;
+}
+
+export function connectionStayPutUnknown(ref: string): string {
+  return `The venue before ${q(ref)} is unknown. The connection is unknown.`;
 }
 
 export function connectionSpareUnknown(): string {
@@ -380,6 +386,10 @@ export function guardContextInvalid(setting: string): string {
 
 export function guardScheduleTooLarge(limit: number): string {
   return `The schedule is too large. It has more than ${Math.round(limit)} commitments. It could not be checked.`;
+}
+
+export function guardTooManySessions(limit: number): string {
+  return `The sessions list is too large. It has more than ${Math.round(limit)} sessions. It could not be checked.`;
 }
 
 export function guardInternalError(): string {

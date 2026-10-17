@@ -12,6 +12,7 @@
 
 // The guardrail and the rule functions.
 export { checkReservation } from './check-reservation.js';
+export type { CheckedVerdict } from './check-reservation.js';
 export { computeBoarding, boardingFor } from './boarding.js';
 export { classifyConnection } from './connections.js';
 export { findClashes } from './clashes.js';

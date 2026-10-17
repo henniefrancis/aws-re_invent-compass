@@ -103,6 +103,8 @@ const builders: Array<[string, fc.Arbitrary<string>]> = [
   ['guardNowUnusable', fc.constant(reasons.guardNowUnusable())],
   ['swapRepeatPast', freeText.map((r) => reasons.swapRepeatPast(r))],
   ['swapNowUnusable', fc.constant(reasons.swapNowUnusable())],
+  ['connectionStayPutUnknown', freeText.map((r) => reasons.connectionStayPutUnknown(r))],
+  ['guardTooManySessions', num.map((n) => reasons.guardTooManySessions(n))],
   ['energyEstimateNote', fc.constant(reasons.energyEstimateNote())],
   ['connectionSpareUnknown', fc.constant(reasons.connectionSpareUnknown())],
   ['guardContextInvalid', freeText.map((r) => reasons.guardContextInvalid(r))],

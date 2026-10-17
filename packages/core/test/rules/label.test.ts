@@ -23,12 +23,36 @@ describe('label and quoting hardening', () => {
 
   test('counts code points, so an emoji is never split in half', () => {
     const emoji = cp(0x1f600);
-    const name = emoji.repeat(40);
+    const name = `a${emoji.repeat(40)}`;
     expect(Array.from(reasons.label(name))).toHaveLength(30);
-    expect(reasons.label(name)).toBe(emoji.repeat(30));
+    expect(reasons.label(name)).toBe(`a${emoji.repeat(29)}`);
     expect(Array.from(reasons.stamp(emoji.repeat(40)))).toHaveLength(20);
     // No lone surrogate halves are left behind.
     expect(reasons.label(name).isWellFormed()).toBe(true);
+  });
+
+  test('a name with no letter or number is shown as unnamed item', () => {
+    const emoji = cp(0x1f600);
+    for (const value of [
+      '!!!',
+      '---',
+      '...',
+      '()',
+      '?!',
+      emoji,
+      `${emoji}${emoji}`,
+      '"',
+      '  _ ',
+      '#%&',
+    ]) {
+      expect(reasons.label(value), value).toBe('unnamed item');
+      expect(reasons.q(value), value).toBe('"unnamed item"');
+    }
+    // A single letter or number is enough, wherever it is, in any script.
+    for (const value of ['a!', '!a', '7', '#7', '\u00e9', '\u4e2d\u6587', '\u0661']) {
+      expect(reasons.label(value), value).not.toBe('unnamed item');
+    }
+    expect(reasons.label('DAT302-R')).toBe('DAT302-R');
   });
 
   test('names are quoted, and a double quote inside a name cannot close the quotes', () => {

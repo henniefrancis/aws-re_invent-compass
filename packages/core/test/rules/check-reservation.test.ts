@@ -533,6 +533,7 @@ describe('hardening: invalid context, bad data, size and failure', () => {
       expect(verdict).toEqual({
         decision: 'block',
         reasons: ['An internal error stopped the check. The reservation is blocked to be safe.'],
+        internal: true,
       });
     }
   });
@@ -680,11 +681,16 @@ describe('personal time with no location means stay put', () => {
     expect(verdict).toEqual({ decision: 'allow', reasons: [] });
   });
 
-  test('a stay-put item with nothing before it has no venue to leave from, and no unknown', () => {
+  test('a stay-put item with nothing before it has no venue to leave from: warn, not a silent allow', () => {
     const verdict = check(slot('NEW1', clock(10), clock(11)), [], testContext(), [
       rest('Rest', clock(8), clock(8, 30)),
     ]);
-    expect(verdict).toEqual({ decision: 'allow', reasons: [] });
+    expect(verdict).toEqual({
+      decision: 'warn',
+      reasons: [
+        'The connection check could not be judged because data was missing. The venue before "Rest" is unknown. The connection is unknown.',
+      ],
+    });
   });
 });
 
@@ -723,5 +729,46 @@ describe('walk policy: certainly impossible blocks, likely impossible warns', ()
     expect(check(slot('NEW1', clock(10), clock(11)), [later], walk40()).decision).toBe('block');
     const farther = slot('OLD2', clock(11, 35), clock(12), { venue: 'Beta Tower' });
     expect(check(slot('NEW1', clock(10), clock(11)), [farther], walk40()).decision).toBe('warn');
+  });
+});
+
+describe('limits and the fail-closed flag', () => {
+  const candidate = () => slot('NEW1', clock(10), clock(11));
+
+  test('more than 2000 sessions in the lookup gives warn, and 2000 is accepted', () => {
+    const many = Object.fromEntries(
+      Array.from({ length: 2001 }, (_, i) => [`k${i}`, slot(`S${i}`, clock(8), clock(9))]),
+    );
+    const verdict = checkReservation(
+      candidate(),
+      { commitments: [], sessions: many },
+      testContext(),
+    );
+    expect(verdict).toEqual({
+      decision: 'warn',
+      reasons: [
+        'The sessions list is too large. It has more than 2000 sessions. It could not be checked.',
+      ],
+    });
+    const within = Object.fromEntries(Object.entries(many).slice(0, 2000));
+    const ok = checkReservation(candidate(), { commitments: [], sessions: within }, testContext());
+    expect(ok.reasons.join(' ')).not.toContain('too large');
+  });
+
+  test('only the fail-closed verdict is flagged internal', () => {
+    const broken = checkReservation(candidate(), null as never, testContext());
+    expect(broken).toMatchObject({ decision: 'block', internal: true });
+    for (const verdict of [
+      checkReservation(candidate(), scheduleOf([]), testContext()),
+      checkReservation(
+        candidate(),
+        scheduleOf([slot('OLD1', clock(10, 30), clock(11, 30))]),
+        testContext(),
+      ),
+      checkReservation(candidate(), scheduleOf([]), testContext({ bufferMinutes: 500 })),
+    ]) {
+      expect('internal' in verdict).toBe(false);
+    }
+    expect(VerdictSchema.safeParse(broken).success).toBe(true);
   });
 });
