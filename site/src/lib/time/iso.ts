@@ -47,3 +47,11 @@ export function parseIsoWithOffset(text: string): number | null {
     sign * (offsetHours * 60 + offsetMinutes) * 60_000
   );
 }
+
+/** An instant as an iCalendar UTC stamp, YYYYMMDDTHHMMSSZ, or null when the text is not a real date-time. */
+export function toUtcStamp(iso: string): string | null {
+  const ms = parseIsoWithOffset(iso);
+  return ms === null
+    ? null
+    : `${new Date(ms).toISOString().slice(0, 19).split('-').join('').split(':').join('')}Z`;
+}

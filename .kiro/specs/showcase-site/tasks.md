@@ -275,24 +275,24 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 11.7 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 12. Sample pass and sample calendar
-  - [ ] 12.1 Implement the sample pass builder
-    - Create `site/src/lib/demo/sample-pass.ts` with `truncateTitle` (80 characters with the ellipsis character) and `buildSamplePass` (code, title, gate or "Venue not published", seat released time, walk from previous and next connection when known, fixed label and disclaimer, accessible name, PassFields input shape)
+- [x] 12. Sample pass and sample calendar
+  - [x] 12.1 Implement the sample pass builder
+    - Create `site/src/lib/demo/sample-pass.ts` with `fitTitle` (`normalisePassText`, then 77 characters plus three ASCII dots when longer than 80), `clampWalk` (0 to 90) and `buildSamplePass` (code, title, gate or "Venue not published", seat released time, walk from previous and next connection when known, fixed label and disclaimer, accessible name, PassFields input shape)
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
-  - [ ] 12.2 Write property test for the sample pass
+  - [x] 12.2 Write property test for the sample pass
     - **Property 14: Sample pass fields follow the pass rules**
     - **Validates: Requirements 11.2, 11.3, 11.4**
 
-  - [ ] 12.3 Implement the sample calendar
+  - [x] 12.3 Implement the sample calendar
     - Create `site/src/lib/demo/ics.ts` with `escapeText`, `foldLine`, `toUtcStamp`, `demoCalendarEvents` and `serialiseCalendar` per design Component 9 (fixed `DTSTAMP`, `.invalid` UIDs, "Boarding closes" and "Leave now" alarms, no alarm for personal time, made-up and unofficial descriptions)
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-  - [ ] 12.4 Write property test for the sample calendar
+  - [x] 12.4 Write property test for the sample calendar
     - **Property 15: The sample calendar is valid RFC 5545 with the right alarms**
     - **Validates: Requirements 12.2, 12.3, 12.4, 12.5**
 
-  - [ ] 12.5 Commit
+  - [x] 12.5 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 13. Demo page components

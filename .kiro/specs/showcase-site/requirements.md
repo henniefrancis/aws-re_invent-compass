@@ -199,7 +199,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 #### Acceptance Criteria
 
 1. WHEN the user chooses a reserved session in the Demo_Week, THE Demo_Page SHALL show a Sample_Pass for it.
-2. THE Sample_Pass SHALL show the session code; the title truncated to at most 80 characters with the ellipsis character; the gate (venue and room, or "Venue not published"); "Seat released at" with the boarding closes time; the walk from the previous commitment where known; the next connection where known; the label "Sample pass. Made-up session."; and the disclaimer "Unofficial. Your badge is your ticket."
+2. THE Sample_Pass SHALL show the session code; the title as `normalisePassText` leaves it and, when that is longer than 80 characters, its first 77 characters followed by three ASCII dots (the ellipsis character is not in the pass text allowlist); the gate (venue and room, or "Venue not published"); "Seat released at" with the boarding closes time; the walk from the previous commitment where known; the next connection where known; the label "Sample pass. Made-up session."; and the disclaimer "Unofficial. Your badge is your ticket."
 3. THE Sample_Pass SHALL show no barcode, no QR code, no AWS logo and no AWS brand colour.
 4. THE Sample_Pass fields SHALL validate against the PassFields schema from `@compass/contracts` built for the demo event window.
 5. THE Sample_Pass SHALL be rendered as inline SVG with `role="img"` and an accessible name that states every field shown.
@@ -212,7 +212,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 
 1. THE Demo_Page SHALL offer a "Download sample calendar" action that saves a `.ics` file of the current Demo_Week, built in the browser with no request.
 2. THE Sample_Calendar SHALL be valid RFC 5545: CRLF line endings, content lines folded at 75 octets, escaped text values, one `VCALENDAR` with `VERSION:2.0` and a `PRODID`, and one `VEVENT` per commitment with `UID`, `DTSTAMP`, `DTSTART`, `DTEND` and `SUMMARY`.
-3. THE Sample_Calendar SHALL give each reserved session a "Boarding closes" alarm 10 minutes before its start, and a "Leave now" alarm at the boarding closes time minus the walking minutes from the previous commitment WHERE that walk is known.
+3. THE Sample_Calendar SHALL, where it says "walking minutes", mean the Rules_Engine walk plus its buffer (`walkingMinutes`), and the Demo_Page SHALL say so. THE Sample_Calendar SHALL give each reserved session a "Boarding closes" alarm 10 minutes before its start, and a "Leave now" alarm at the boarding closes time minus the walking minutes from the previous commitment WHERE that walk is known.
 4. WHERE the walk from the previous commitment is unknown or there is no previous commitment that day, THE Sample_Calendar SHALL omit the "Leave now" alarm for that session and say in its description that the walk is unknown.
 5. THE Sample_Calendar SHALL use the fixed demo instant for `DTSTAMP`, UIDs under the reserved `.invalid` domain, and descriptions that say the session is made up and that the pass is unofficial.
 6. WHILE the Demo_Week is empty, THE Demo_Page SHALL disable the download action and say why.
