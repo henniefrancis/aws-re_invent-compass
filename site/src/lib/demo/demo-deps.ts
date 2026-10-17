@@ -8,6 +8,7 @@ import {
   createRulesPort,
   isRulesEngineReady,
   type Context,
+  type ContextInput,
   type RulesEngine,
   type RulesPort,
 } from './rules-port';
@@ -36,7 +37,7 @@ export function createDemoRuntime(
     context: createDemoContext(engine, {
       now: DEMO_EVENT.now,
       eventTimezone: DEMO_EVENT.timezone,
-      venueData,
+      venueData: venueData as ContextInput['venueData'],
     }),
   };
 }

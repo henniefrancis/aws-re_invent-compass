@@ -5,132 +5,51 @@
 // reimplements no rule: boarding, connection, clash, layover, rebooking and swap results all
 // come from the engine.
 //
-// The result types below are written out from the committed S2 design (the engine is not
-// merged into this branch yet, and its module is still empty here). They are structural, so
-// the real engine satisfies them and a test double can stand in for it.
+// The result types below are written out from the S2 design (structural, so the real engine
+// satisfies them and a test double can stand in for it). The engine is imported by name, so the
+// bundler keeps only the functions the demo calls.
 //
-// WHEN S2 IS MERGED (Integrator note, see tasks.md):
-//   1. Replace the cast on REAL_ENGINE with named imports of the eight functions, so the
-//      bundler can drop the engine code the demo does not use (a namespace object keeps all
-//      of it, including the zod schemas), then check the Budget_Check.
-//   2. Optionally replace the local result types with ReturnType and Parameters of the real
-//      functions.
 
 import type { Commitment, NormalisedSession, Verdict } from '@compass/contracts';
-import * as rulesModule from '@compass/core/rules';
+import {
+  checkLayovers,
+  checkReservation,
+  computeBoarding,
+  connectionsForDay,
+  findClashes,
+  findRebookingOptions,
+  planSafeSwap,
+  withContextDefaults,
+} from '@compass/core/rules';
 
-/** The rules engine context. The site builds one with the engine's own defaults. */
-export type Context = Readonly<Record<string, unknown>>;
+export type { Context, ContextInput, ScheduleInput } from '@compass/core/rules';
+import type { Context, ContextInput, ScheduleInput } from '@compass/core/rules';
 
-export interface ContextInput {
-  readonly now: string;
-  readonly eventTimezone?: string;
-  readonly venueData: unknown;
-}
-
-export interface ScheduleInput {
-  readonly commitments: readonly Commitment[];
-  readonly sessions: Readonly<Record<string, NormalisedSession>>;
-}
-
-export type BoardingResult =
-  | { readonly status: 'closes'; readonly at: string; readonly reason: string }
-  | { readonly status: 'notApplicable'; readonly reason: string }
-  | { readonly status: 'unknown'; readonly reason: string };
-
-export type ConnectionClass = 'comfortable' | 'tight' | 'impossible' | 'unknown';
-
-export interface ConnectionResult {
-  readonly classification: ConnectionClass;
-  /** The walk plus the buffer, in minutes. Absent when the connection is unknown. */
-  readonly walkingMinutes?: number;
-  readonly spareMinutes?: number;
-  readonly reason: string;
-}
-
-export interface DayConnection {
-  readonly from: string;
-  readonly to: string;
-  readonly result: ConnectionResult;
-}
-
-export type DayConnections =
-  | {
-      readonly status: 'ok';
-      readonly connections: readonly DayConnection[];
-      readonly skipped: readonly { readonly ref: string; readonly reason: string }[];
-    }
-  | { readonly status: 'unknown'; readonly reason: string };
-
-export interface ClashPair {
-  readonly a: string;
-  readonly b: string;
-  readonly overlap: string;
-  readonly reason: string;
-  /** Positions in the commitments of the schedule that was checked. */
-  readonly aIndex: number;
-  readonly bIndex: number;
-}
-
-export type ClashReport =
-  | {
-      readonly status: 'ok';
-      readonly clashes: readonly ClashPair[];
-      readonly unknown: readonly unknown[];
-    }
-  | { readonly status: 'unknown'; readonly reason: string };
-
-export interface SuggestedBlock {
-  readonly start: string;
-  readonly end: string;
-  readonly reason: string;
-}
-
-export interface DayLayover {
-  /** The event local day, YYYY-MM-DD. */
-  readonly day: string;
-  readonly mealLayoverMissing: boolean;
-  readonly freeMealMinutes: number;
-  readonly longStretchMinutes?: number;
-  readonly reasons: readonly string[];
-  readonly suggestions: readonly SuggestedBlock[];
-  readonly noPlacementReason?: string;
-}
-
-export type LayoverReport =
-  | {
-      readonly status: 'ok';
-      readonly days: readonly DayLayover[];
-      readonly skipped: readonly unknown[];
-    }
-  | { readonly status: 'unknown'; readonly reason: string };
-
-export interface RebookOption {
-  readonly kind: 'repeat' | 'standby' | 'walkUp';
-  readonly sessionId: string;
-  readonly startsAt: string;
-  readonly reason: string;
-}
-
-export interface RebookResult {
-  readonly status: 'ok' | 'unknown';
-  readonly options: readonly RebookOption[];
-  readonly message: string;
-}
-
-export interface SwapStep {
-  readonly order: 1 | 2 | 3;
-  readonly action: 'reserveRepeat' | 'confirmHeld' | 'cancelOriginal';
-  readonly blockedUntilConfirmed: boolean;
-  readonly reason: string;
-}
-
-export interface SwapPlan {
-  readonly outcome: 'safe' | 'unsafe' | 'failed';
-  readonly steps: readonly SwapStep[];
-  readonly clashesWith: readonly string[];
-  readonly reason: string;
-}
+// The result types are the engine's own.
+export type {
+  BoardingResult,
+  ClashPair,
+  ClashReport,
+  ConnectionClass,
+  ConnectionResult,
+  DayConnection,
+  DayConnections,
+  DayLayover,
+  LayoverReport,
+  RebookOption,
+  RebookResult,
+  SuggestedBlock,
+  SwapPlan,
+  SwapStep,
+} from '@compass/core/rules';
+import type {
+  BoardingResult,
+  ClashReport,
+  DayConnections,
+  LayoverReport,
+  RebookResult,
+  SwapPlan,
+} from '@compass/core/rules';
 
 /** The functions of `@compass/core/rules` that the site calls. */
 export interface RulesEngine {
@@ -162,11 +81,16 @@ export interface RulesEngine {
 export type RulesPort = Omit<RulesEngine, 'withContextDefaults'>;
 
 /** The real engine, as far as the types go. See the note at the top of this file. */
-function asEngine(module: object): Partial<RulesEngine> {
-  return module;
-}
-
-export const REAL_ENGINE: Partial<RulesEngine> = asEngine(rulesModule);
+export const REAL_ENGINE: Partial<RulesEngine> = {
+  checkReservation,
+  computeBoarding,
+  connectionsForDay,
+  findClashes,
+  checkLayovers,
+  findRebookingOptions,
+  planSafeSwap,
+  withContextDefaults,
+};
 
 const ENGINE_FUNCTIONS = [
   'checkReservation',

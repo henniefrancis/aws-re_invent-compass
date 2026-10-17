@@ -358,7 +358,7 @@ function planSafeSwap(
 }
 
 function withContextDefaults(input: ContextInput): Context {
-  return { ...input, defaults: 'fake' };
+  return { ...input, defaults: 'fake' } as unknown as Context;
 }
 
 /** A working engine with simple answers. Pass overrides to script any function. */

@@ -10,10 +10,15 @@ import {
   type ScheduleInput,
 } from '../../src/lib/demo/rules-port';
 import { createFakeEngine, createRecordingEngine } from '../doubles/rules-double';
+import { VENUE_DATA } from '../support/demo-harness';
 
 const session = DEMO_SESSIONS[0] as (typeof DEMO_SESSIONS)[number];
 const schedule: ScheduleInput = { commitments: [], sessions: {} };
-const context = { now: DEMO_EVENT.now, eventTimezone: DEMO_EVENT.timezone };
+const context = createFakeEngine().withContextDefaults({
+  now: DEMO_EVENT.now,
+  eventTimezone: DEMO_EVENT.timezone,
+  venueData: VENUE_DATA,
+});
 
 describe('rules port', () => {
   test('every port method hands its arguments to the engine and returns its answer', () => {
@@ -51,7 +56,11 @@ describe('rules port', () => {
 
   test('the demo context comes from the engine defaults', () => {
     const { engine, calls } = createRecordingEngine(createFakeEngine());
-    const input = { now: DEMO_EVENT.now, eventTimezone: DEMO_EVENT.timezone, venueData: {} };
+    const input = {
+      now: DEMO_EVENT.now,
+      eventTimezone: DEMO_EVENT.timezone,
+      venueData: VENUE_DATA,
+    };
     expect(createDemoContext(engine, input)).toMatchObject(input);
     expect(calls.map(([name, args]) => [name, args])).toEqual([['withContextDefaults', [input]]]);
   });

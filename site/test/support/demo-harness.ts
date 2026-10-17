@@ -1,6 +1,6 @@
 // Helpers for the demo tests: deps built on a test double engine, and a fold over actions.
 
-import type { RulesEngine } from '../../src/lib/demo/rules-port';
+import type { ContextInput, RulesEngine } from '../../src/lib/demo/rules-port';
 import { createDemoRuntime, type DemoDeps } from '../../src/lib/demo/demo-deps';
 import {
   EMPTY_DEMO,
@@ -10,7 +10,7 @@ import {
 } from '../../src/lib/demo/demo-state';
 import { createFakeEngine } from '../doubles/rules-double';
 
-export const VENUE_DATA = { venues: [], walkingTimes: [] };
+export const VENUE_DATA = { venues: [], walkingTimes: [] } as unknown as ContextInput['venueData'];
 
 /** Demo deps on a fake engine, with any function scripted. */
 export function makeDeps(overrides: Partial<RulesEngine> = {}): DemoDeps {
