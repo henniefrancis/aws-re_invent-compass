@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
-import { join } from 'node:path';
+
 import { planWeekTool } from '../../src/tools/plan-week.js';
 import { scanRepoTool } from '../../src/tools/scan-repo.js';
 import { contextFor } from '../support/context.js';
@@ -52,7 +52,8 @@ describe('Property 12: no file name, path or content leaves the scanner', () => 
           }
           const scanFs = new MemoryScanFs(tree);
           const specFs = new MemorySpecFs();
-          const root = join('/', 'workspace');
+          // the workspace is the scanned folder, so the scan needs no confirmation
+          const root = scanFs.root;
           specFs.directories.add(root);
           const fake = createFakeRuntime({
             catalog: syntheticCatalogView(),
@@ -62,8 +63,6 @@ describe('Property 12: no file name, path or content leaves the scanner', () => 
           });
           const ctx = contextFor(fake);
           const scan = await scanRepoTool({ path: scanFs.root }, ctx);
-          // the scanned folder is the workspace root, so make it a directory in the spec fs
-          specFs.directories.add(scanFs.root);
           const plan = await planWeekTool({ goals: ['workshop'] }, ctx);
           const everything = JSON.stringify([scan, plan, [...specFs.files.values()]]);
           for (const marker of markers) {

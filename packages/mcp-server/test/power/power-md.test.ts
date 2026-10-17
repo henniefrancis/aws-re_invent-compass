@@ -75,7 +75,7 @@ describe('POWER.md (QA H3: Kiro needs a valid plugin.json or POWER.md at the pow
     expect(body).toContain('Unofficial. Your badge is your ticket.');
     expect(body).toContain('not affiliated with AWS or Amazon');
     const reads = Object.values(TOOL_SPECS)
-      .filter((spec) => spec.class === 'read')
+      .filter((spec) => spec.class === 'read' && spec.name !== 'scan_repo')
       .map((spec) => spec.name);
     for (const name of reads) {
       expect(body).toContain(`\`${name}\``);
@@ -85,6 +85,7 @@ describe('POWER.md (QA H3: Kiro needs a valid plugin.json or POWER.md at the pow
     }
     expect(body).toContain('`sync_passes` can void passes, so it is a write tool');
     expect(body).toContain('Never auto-approve a write tool');
+    expect(body).toContain('`scan_repo` reads a folder of yours, so approve each scan');
   });
 
   test('the front matter reader handles both quote styles, continued lines and refuses junk', () => {

@@ -21,7 +21,25 @@ export const WEEK_SPEC_FILE_NAMES = ['requirements.md', 'design.md', 'tasks.md']
 /** What a write did. */
 export type WriteOutcome =
   | { kind: 'created'; files: ['requirements.md', 'design.md', 'tasks.md'] }
-  | { kind: 'dated'; fileName: string; diff: DiffResult };
+  | { kind: 'dated'; fileName: string; diff: DiffResult }
+  /** A re-run whose documents equal the existing ones: nothing is written. */
+  | { kind: 'unchanged' };
+
+/**
+ * A write that stopped part way (QA M5): `written` lists the files that were created before the
+ * failure and `missing` the ones that were not. It never carries a path or the cause's text.
+ */
+export class PartialWriteError extends Error {
+  readonly written: readonly string[];
+  readonly missing: readonly string[];
+
+  constructor(written: readonly string[], missing: readonly string[]) {
+    super('The plan was only partly written.');
+    this.name = 'PartialWriteError';
+    this.written = written;
+    this.missing = missing;
+  }
+}
 
 const DATED_NAME = /^week-\d{4}-\d{2}-\d{2}(?:-\d+)?\.md$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -62,6 +80,11 @@ export async function assertWritable(root: string, path: string, fs: SpecFs): Pr
       ? [join(root, '.kiro'), join(root, '.kiro', 'specs'), directory, path]
       : [path];
   await assertNoSymlinks(chain, fs);
+}
+
+/** The documents without the line that says when they were generated, which differs on every run. */
+function withoutTimestamp(text: string): string {
+  return text.replace(/^Generated on .*$/gm, '');
 }
 
 function joinDocuments(texts: readonly string[]): string {
@@ -112,17 +135,33 @@ export async function writeWeekSpec(
     }
   }
   if (!anyExists) {
+    const written: string[] = [];
     for (const [name, text] of documents) {
-      await create(name, text);
+      try {
+        await create(name, text);
+      } catch (error) {
+        if (written.length === 0) {
+          throw error;
+        }
+        throw new PartialWriteError(
+          written,
+          documents.map(([missing]) => missing).filter((missing) => !written.includes(missing)),
+        );
+      }
+      written.push(name);
     }
     return { kind: 'created', files: ['requirements.md', 'design.md', 'tasks.md'] };
+  }
+  const after = joinDocuments(documents.map(([, text]) => text));
+  const before = joinDocuments(current);
+  if (withoutTimestamp(after) === withoutTimestamp(before)) {
+    return { kind: 'unchanged' };
   }
 
   let fileName = `week-${today}.md`;
   for (let n = 2; await fs.exists(join(directory, fileName)); n += 1) {
     fileName = `week-${today}-${n}.md`;
   }
-  const after = joinDocuments(documents.map(([, text]) => text));
   await create(fileName, after);
-  return { kind: 'dated', fileName, diff: lineDiff(joinDocuments(current), after) };
+  return { kind: 'dated', fileName, diff: lineDiff(before, after) };
 }

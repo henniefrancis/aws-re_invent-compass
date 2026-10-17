@@ -252,7 +252,10 @@ describe('the scan worker in the runtime', () => {
         logLevel: 'silent',
       });
       for (const env of [{ COMPASS_MODE: 'simulated' }, {}]) {
-        const t = await testEnvironment({ scanWorkerPath });
+        const t = await testEnvironment({
+          scanWorkerPath,
+          cwd: join(repoRoot(), 'fixtures', 'sample-repo'),
+        });
         const runtime = await createRuntime(t.environment, env);
         expect(runtime.scanRunner).toBeDefined();
         const conn = await connect(runtime);

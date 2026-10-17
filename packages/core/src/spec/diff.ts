@@ -93,6 +93,44 @@ export function lineDiff(
     : { lines, truncated: false };
 }
 
+/** The number of unchanged lines kept around each change when a diff is trimmed. */
+export const DIFF_CONTEXT_LINES = 3;
+
+/** True for a line that was added or removed. */
+function isChange(line: string): boolean {
+  return line.startsWith('+ ') || line.startsWith('- ');
+}
+
+/**
+ * Keeps only the changed lines of a diff with `context` unchanged lines around each change; a run of
+ * dropped lines (at the start, between changes or at the end) becomes one `  ...` line. A diff with no change gives no lines. `truncated` is kept.
+ */
+export function trimDiff(diff: DiffResult, context = DIFF_CONTEXT_LINES): DiffResult {
+  if (!diff.lines.some(isChange)) {
+    return { lines: [], truncated: diff.truncated };
+  }
+  const keep = new Set<number>();
+  diff.lines.forEach((line, index) => {
+    if (isChange(line)) {
+      for (let near = index - context; near <= index + context; near += 1) {
+        keep.add(near);
+      }
+    }
+  });
+  const lines: string[] = [];
+  let skipping = false;
+  diff.lines.forEach((line, index) => {
+    if (keep.has(index)) {
+      lines.push(line);
+      skipping = false;
+    } else if (!skipping) {
+      lines.push('  ...');
+      skipping = true;
+    }
+  });
+  return { lines, truncated: diff.truncated };
+}
+
 /**
  * Rebuilds the new text from the old text and a complete (not truncated) diff. Throws when
  * the diff does not describe `before`.

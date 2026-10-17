@@ -27,6 +27,7 @@ function runtimeFor(tree: MemoryTree, withCatalog = true) {
   const fs = new MemoryScanFs(tree);
   const fake = createFakeRuntime({
     scanFs: fs,
+    cwd: fs.root,
     ...(withCatalog
       ? { catalog: buildCatalogView([wireSession('a', { services: ['storage'] })]) }
       : {}),
@@ -35,7 +36,7 @@ function runtimeFor(tree: MemoryTree, withCatalog = true) {
 }
 
 describe('scan_repo', () => {
-  test('reports services with depth and level, keeps the result and sets the workspace root', async () => {
+  test('reports services with depth and level, keeps the result and keeps the scan result for the plan', async () => {
     const { fake, fs } = runtimeFor({
       'infra/main.tf': TF('aws_s3_bucket', 2),
       'src/q.ts': SDK,
@@ -65,7 +66,6 @@ describe('scan_repo', () => {
       labels: ['storage'],
       inCatalog: true,
     });
-    expect(ctx.state.workspaceRoot('/cwd')).toBe(fs.root);
     expect(fake.events.writeCalls).toEqual([]);
   });
 
@@ -129,7 +129,10 @@ describe('scan_repo', () => {
   });
 
   test('scans the real sample repo through the MCP client', async () => {
-    const fake = createFakeRuntime({ scanFs: createNodeScanFs() });
+    const fake = createFakeRuntime({
+      scanFs: createNodeScanFs(),
+      cwd: join(repoRoot(), 'fixtures', 'sample-repo'),
+    });
     const connection = await connect(fake.runtime);
     const result = await connection.call('scan_repo', {
       path: join(repoRoot(), 'fixtures', 'sample-repo'),
@@ -202,5 +205,69 @@ describe('scan_repo with a scan runner', () => {
     expect(result.isError).toBe(true);
     expect(textOf(result)).toBe('The scan took too long and was stopped. Try a smaller folder.');
     await connection.close();
+  });
+});
+
+describe('scan_repo scope (security M2)', () => {
+  const tree = { 'infra/main.tf': TF('aws_s3_bucket') };
+
+  test('a folder inside the working directory is scanned without any confirmation, even for a client that cannot ask', async () => {
+    const { fake, fs } = runtimeFor(tree);
+    fake.runtime.cwd = fs.root;
+    const outcome = await scanRepoTool({ path: `${fs.root}/infra` }, contextFor(fake));
+    expect(outcome.ok).toBe(true);
+  });
+
+  test('a folder outside it is refused for a client that cannot ask, and nothing is scanned or kept', async () => {
+    const { fake, fs } = runtimeFor(tree);
+    fake.runtime.cwd = join(fs.root, 'elsewhere');
+    const ctx = contextFor(fake);
+    await expect(scanRepoTool({ path: fs.root }, ctx)).rejects.toMatchObject({
+      code: 'ScanOutsideWorkspace',
+    });
+    expect(ctx.state.lastScan).toBeUndefined();
+    const connection = await connect(fake.runtime);
+    const result = await connection.call('scan_repo', { path: fs.root });
+    expect(textOf(result)).toContain('outside the workspace Compass was started in');
+    await connection.close();
+  });
+
+  test('a client that can ask is asked with the folder named, and only an accept scans it', async () => {
+    for (const answer of ['accept', 'decline', 'cancel'] as const) {
+      const { fake, fs } = runtimeFor(tree);
+      fake.runtime.cwd = '/not/the/scanned/folder';
+      const asked: string[] = [];
+      const ctx = contextFor(fake, {
+        elicit: (question) => {
+          asked.push(question.message);
+          return Promise.resolve(answer);
+        },
+      });
+      const outcome = await scanRepoTool({ path: fs.root }, ctx);
+      expect(asked).toHaveLength(1);
+      expect(asked[0]).toContain(fs.root);
+      expect(asked[0]).toContain('outside the workspace');
+      if (answer === 'accept') {
+        expect(outcome.ok).toBe(true);
+        expect(ctx.state.lastScan?.root).toBe(fs.root);
+      } else {
+        expect(outcome).toEqual({
+          ok: false,
+          message: 'Nothing was scanned, because you did not confirm the folder.',
+        });
+        expect(ctx.state.lastScan).toBeUndefined();
+      }
+    }
+  });
+
+  test('an unresolvable working directory is judged as given', async () => {
+    const { fake, fs } = runtimeFor(tree);
+    const real = fs.realpath.bind(fs);
+    fs.realpath = (path) =>
+      path === 'unresolvable' ? Promise.reject(new Error('ENOENT')) : real(path);
+    fake.runtime.cwd = 'unresolvable';
+    await expect(scanRepoTool({ path: fs.root }, contextFor(fake))).rejects.toMatchObject({
+      code: 'ScanOutsideWorkspace',
+    });
   });
 });

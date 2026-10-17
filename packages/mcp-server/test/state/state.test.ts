@@ -49,33 +49,6 @@ describe('swap ledger', () => {
   });
 });
 
-describe('session state', () => {
-  test('the workspace root is the last scanned folder, otherwise the working directory', () => {
-    const state = createSessionState(createSwapLedger(fixedClock()));
-    expect(state.workspaceRoot('/cwd')).toBe('/cwd');
-    state.lastScan = {
-      result: {
-        services: [],
-        unmappedCount: 0,
-        filesRead: 0,
-        skipped: {
-          excludedDirectory: 0,
-          gitignored: 0,
-          tooLarge: 0,
-          binary: 0,
-          symlink: 0,
-          unsupportedType: 0,
-        },
-        truncated: false,
-        pythonAnalysed: false,
-      },
-      taxonomy: [],
-      root: '/scanned',
-    };
-    expect(state.workspaceRoot('/cwd')).toBe('/scanned');
-  });
-});
-
 describe('snapshot store with a recording fs', () => {
   function recordingFs() {
     const files = new Map<string, string>();
@@ -177,4 +150,13 @@ describe('snapshot store on the real file system', () => {
       await writeFile(join(temp, 'unused'), 'x');
     },
   );
+});
+
+describe('session state', () => {
+  test('starts with no scan and just the swap ledger (the plan is written to the working directory, never to a scanned folder)', () => {
+    const ledger = createSwapLedger(fixedClock());
+    const state = createSessionState(ledger);
+    expect(state).toEqual({ swaps: ledger });
+    expect(state.lastScan).toBeUndefined();
+  });
 });

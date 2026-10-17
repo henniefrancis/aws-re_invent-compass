@@ -27,10 +27,11 @@ describe('the package README', () => {
     expect(names).toHaveLength(17);
   });
 
-  test('allows only the four read tools to be auto-approved and says write tools never are', async () => {
+  test('allows only the three read tools that read nothing of yours to be auto-approved and says write tools never are', async () => {
     const text = await readme;
-    const reads = names.filter((n) => TOOL_SPECS[n].class === 'read');
-    expect(reads).toHaveLength(4);
+    const reads = names.filter((n) => TOOL_SPECS[n].class === 'read' && n !== 'scan_repo');
+    expect(reads).toHaveLength(3);
+    expect(text).toContain('`scan_repo` is read-only too, but it reads a folder on your machine');
     expect(text).toContain(`"autoApprove": [${reads.map((n) => `"${n}"`).join(', ')}]`);
     expect(text).toContain('**Write tools must never be auto-approved.**');
     expect(text).toContain('including `sync_passes`, which can void passes');

@@ -16,15 +16,9 @@ export interface LastScan {
 export interface SessionState {
   lastScan?: LastScan;
   swaps: SwapLedger;
-  /** The Workspace_Root: the last scanned folder, otherwise `cwd`. */
-  workspaceRoot(cwd: string): string;
 }
 
 /** Creates empty session state around a ledger. */
 export function createSessionState(swaps: SwapLedger): SessionState {
-  const state: SessionState = {
-    swaps,
-    workspaceRoot: (cwd) => state.lastScan?.root ?? cwd,
-  };
-  return state;
+  return { swaps };
 }

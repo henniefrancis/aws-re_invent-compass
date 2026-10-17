@@ -158,10 +158,65 @@ describe('writeWeekSpec', () => {
       expect(second.diff.lines.some((l) => l === '+ D1 changed')).toBe(true);
     }
     for (const [path, text] of before) expect(fs.files.get(path)).toBe(text);
-    const third = await writeWeekSpec(ROOT, FILES, { fs, today: '2026-12-01' });
+    const third = await writeWeekSpec(
+      ROOT,
+      { ...FILES, designMd: 'D1 third\n' },
+      { fs, today: '2026-12-01' },
+    );
     expect(third.kind === 'dated' && third.fileName).toBe('week-2026-12-01-2.md');
-    const fourth = await writeWeekSpec(ROOT, FILES, { fs, today: '2026-12-01' });
+    const fourth = await writeWeekSpec(
+      ROOT,
+      { ...FILES, designMd: 'D1 fourth\n' },
+      { fs, today: '2026-12-01' },
+    );
     expect(fourth.kind === 'dated' && fourth.fileName).toBe('week-2026-12-01-3.md');
+  });
+
+  test('a re-run whose documents equal the existing ones writes nothing (QA M8)', async () => {
+    const fs = workspace();
+    await writeWeekSpec(ROOT, FILES, { fs, today: '2026-12-01' });
+    const before = new Map(fs.files);
+    const again = await writeWeekSpec(ROOT, FILES, { fs, today: '2026-12-01' });
+    expect(again).toEqual({ kind: 'unchanged' });
+    expect(fs.files).toEqual(before);
+  });
+
+  test('only the generated-on line differing still counts as unchanged', async () => {
+    const fs = workspace();
+    const withStamp = (stamp: string) => ({
+      ...FILES,
+      designMd: `Intro\nGenerated on ${stamp}.\nBody\n`,
+    });
+    await writeWeekSpec(ROOT, withStamp('Mon 30 Nov 10:00'), { fs, today: '2026-12-01' });
+    const again = await writeWeekSpec(ROOT, withStamp('Mon 30 Nov 10:07'), {
+      fs,
+      today: '2026-12-01',
+    });
+    expect(again).toEqual({ kind: 'unchanged' });
+    const changed = await writeWeekSpec(
+      ROOT,
+      { ...withStamp('Mon 30 Nov 10:09'), tasksMd: 'T changed\n' },
+      { fs, today: '2026-12-01' },
+    );
+    expect(changed.kind).toBe('dated');
+  });
+
+  test('a write that fails after the first file reports what was and was not written', async () => {
+    const fs = workspace();
+    const original = fs.createExclusive.bind(fs);
+    fs.createExclusive = (path, text) =>
+      path.endsWith('design.md') ? Promise.reject(new Error('disk full')) : original(path, text);
+    const failure = await writeWeekSpec(ROOT, FILES, { fs, today: '2026-12-01' }).catch(
+      (error: unknown) => error,
+    );
+    expect(failure).toBeInstanceOf(PartialWriteError);
+    expect((failure as PartialWriteError).written).toEqual(['requirements.md']);
+    expect((failure as PartialWriteError).missing).toEqual(['design.md', 'tasks.md']);
+    const early = workspace();
+    early.createExclusive = () => Promise.reject(new Error('read only'));
+    await expect(writeWeekSpec(ROOT, FILES, { fs: early, today: '2026-12-01' })).rejects.toThrow(
+      'read only',
+    );
   });
 
   test('a partial folder is treated as a re-run and missing files count as empty', async () => {
@@ -215,6 +270,11 @@ describe('Property 23: re-planning never overwrites and the diff is faithful', (
             expect(outcome.kind).toBe('created');
             return;
           }
+          if (outcome.kind === 'unchanged') {
+            // The regenerated documents equal the existing ones: nothing at all is written.
+            expect(fs.files).toEqual(snapshot);
+            return;
+          }
           expect(outcome.kind).toBe('dated');
           for (const [path, text] of snapshot) expect(fs.files.get(path)).toBe(text);
           expect(fs.files.size).toBe(snapshot.size + 1);
@@ -233,5 +293,58 @@ describe('Property 23: re-planning never overwrites and the diff is faithful', (
       ),
       { numRuns: 150 },
     );
+  });
+});
+
+import { DIFF_CONTEXT_LINES, trimDiff } from '../../src/spec/diff.js';
+import { PartialWriteError } from '../../src/spec/write.js';
+
+describe('trimDiff (QA M8)', () => {
+  const diffOf = (before: string[], after: string[]) =>
+    lineDiff(before.join('\n'), after.join('\n'));
+  const numbered = (n: number): string[] => Array.from({ length: n }, (_, i) => `line ${i}`);
+
+  test('keeps the changes with context lines around them and marks each dropped run', () => {
+    const before = numbered(40);
+    const after = [...before];
+    after[20] = 'changed';
+    const trimmed = trimDiff(diffOf(before, after));
+    expect(trimmed.lines).toEqual([
+      '  ...',
+      ...numbered(40)
+        .slice(20 - DIFF_CONTEXT_LINES, 20)
+        .map((l) => `  ${l}`),
+      '- line 20',
+      '+ changed',
+      ...numbered(40)
+        .slice(21, 21 + DIFF_CONTEXT_LINES)
+        .map((l) => `  ${l}`),
+      '  ...',
+    ]);
+    expect(trimmed.truncated).toBe(false);
+  });
+
+  test('two nearby changes share their context and a change at the start has no leading marker', () => {
+    const before = numbered(30);
+    const after = [...before];
+    after[0] = 'first';
+    after[3] = 'fourth';
+    const trimmed = trimDiff(diffOf(before, after), 1);
+    expect(trimmed.lines[0]).toBe('- line 0');
+    expect(trimmed.lines.filter((l) => l === '  ...')).toHaveLength(1);
+  });
+
+  test('a diff with no change has no lines, and truncation is kept', () => {
+    expect(trimDiff(diffOf(['a', 'b'], ['a', 'b']))).toEqual({ lines: [], truncated: false });
+    expect(trimDiff({ lines: ['  a', '+ b'], truncated: true }).truncated).toBe(true);
+  });
+});
+
+describe('PartialWriteError', () => {
+  test('lists what was written and what was not, with fixed text', () => {
+    const error = new PartialWriteError(['a'], ['b', 'c']);
+    expect(error.written).toEqual(['a']);
+    expect(error.missing).toEqual(['b', 'c']);
+    expect(error.message).toBe('The plan was only partly written.');
   });
 });

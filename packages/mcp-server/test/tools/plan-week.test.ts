@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
-import { cp, mkdtemp, readFile, readdir, realpath, rm } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mcpTools, CommitmentSchema } from '@compass/contracts';
@@ -291,11 +291,13 @@ describe('plan_week with elicitation', () => {
     expect(specFs.files.get(GITIGNORE)).toBe('x\n');
   });
 
-  test('another gitignore write failure is not swallowed', async () => {
+  test('another gitignore failure never hides that the plan was written (QA M5)', async () => {
     const { elicit } = elicitWith({ folder: 'accept', gitignore: 'accept' });
     const { specFs, ctx } = setup({ elicit, gitignore: 'x\n' });
     specFs.appendText = () => Promise.reject(new CompassError('Server'));
-    await expect(planWeekTool(GOALS, ctx)).rejects.toMatchObject({ code: 'Server' });
+    const outcome = await planWeekTool(GOALS, ctx);
+    expect(outcome.ok && outcome.text).toContain('Created requirements.md, design.md and tasks.md');
+    expect(outcome.ok && outcome.text).toContain('could not read or change .gitignore safely');
   });
 });
 
@@ -345,13 +347,13 @@ describe('plan_week on the real file system', () => {
         catalog: syntheticCatalogView(),
         scanFs: createNodeScanFs(),
         specFs: createNodeSpecFs(),
-        cwd: tmpdir(),
+        cwd: temp,
       });
       const connection = await connect(fake.runtime);
       await connection.call('scan_repo', { path: temp });
       const result = await connection.call('plan_week', { goals: ['workshop'] });
       expect(result.isError).toBeUndefined();
-      const dir = weekSpecDirectory(await realpath(temp));
+      const dir = weekSpecDirectory(temp);
       expect((await readdir(dir)).sort()).toEqual(['design.md', 'requirements.md', 'tasks.md']);
       expect(textOf(result)).toContain(dir);
       expect(await readFile(join(dir, 'design.md'), 'utf8')).toContain(
@@ -414,5 +416,107 @@ describe('plan_week verdict preference (QA M3)', () => {
     fake.events.schedule.reserved.push(existing?.session.sessionId ?? '');
     fake.rules.connectionLines = badFor(new Set([existing?.session.sessionId ?? '']), 'impossible');
     expect(idsOf(await planWeekTool(GOALS, ctx)).length).toBeGreaterThan(0);
+  });
+});
+
+describe('plan_week writing (security M2, QA M5 and M8)', () => {
+  test('a client that cannot ask gets a plan written only to the working directory, and the text says so', async () => {
+    const { specFs, ctx } = setup();
+    const outcome = await planWeekTool(GOALS, ctx);
+    const text = outcome.ok ? outcome.text : '';
+    expect(text).toContain('This client cannot ask for confirmation');
+    expect(text).toContain('writes only to the folder it was started in');
+    expect([...specFs.files.keys()].every((path) => path.startsWith(weekSpecDirectory(ROOT)))).toBe(
+      true,
+    );
+  });
+
+  test('a scan of another folder never moves where the plan is written', async () => {
+    const { specFs, fake, ctx } = setup();
+    ctx.state.lastScan = {
+      result: {
+        services: [],
+        unmappedCount: 0,
+        filesRead: 0,
+        skipped: {
+          excludedDirectory: 0,
+          gitignored: 0,
+          tooLarge: 0,
+          binary: 0,
+          symlink: 0,
+          unsupportedType: 0,
+        },
+        truncated: false,
+        pythonAnalysed: true,
+      },
+      taxonomy: [],
+      root: join('/', 'somewhere', 'else'),
+    };
+    await planWeekTool(GOALS, ctx);
+    expect(fake.runtime.cwd).toBe(ROOT);
+    expect([...specFs.files.keys()].every((path) => path.startsWith(ROOT))).toBe(true);
+    expect(specFs.files.size).toBe(3);
+  });
+
+  test('a write that stops part way says what was and was not written and leaves .gitignore alone', async () => {
+    const { specFs, ctx } = setup({ gitignore: 'node_modules/\n' });
+    const original = specFs.createExclusive.bind(specFs);
+    specFs.createExclusive = (path, text) =>
+      path.endsWith('tasks.md') ? Promise.reject(new Error('disk full')) : original(path, text);
+    const outcome = await planWeekTool(GOALS, ctx);
+    const text = outcome.ok ? outcome.text : '';
+    expect(text).toContain('could not finish writing the plan');
+    expect(text).toContain('It wrote: requirements.md, design.md.');
+    expect(text).toContain('It did not write: tasks.md.');
+    expect(text).toContain('It did not touch .gitignore');
+    expect(text).not.toContain('disk full');
+    expect(specFs.files.get(GITIGNORE)).toBe('node_modules/\n');
+    expect(specFs.calls.some((call) => call.method === 'appendText')).toBe(false);
+  });
+
+  test('a failure before any file is written is raised, not reported as partial', async () => {
+    const { specFs, ctx } = setup();
+    specFs.createExclusive = () => Promise.reject(new Error('read only'));
+    await expect(planWeekTool(GOALS, ctx)).rejects.toThrow('read only');
+  });
+
+  test('a re-run that changes nothing says there are no differences and writes nothing', async () => {
+    const { specFs, ctx } = setup();
+    await planWeekTool(GOALS, ctx);
+    const before = new Map(specFs.files);
+    const second = await planWeekTool(GOALS, ctx);
+    expect(second.ok && second.text).toContain(
+      'has no differences from it, so Compass wrote nothing',
+    );
+    expect(specFs.files).toEqual(before);
+  });
+
+  test('a re-run that changes things shows only the changes with a few lines of context', async () => {
+    const { specFs, ctx } = setup();
+    await planWeekTool(GOALS, ctx);
+    // One line of the existing design differs, so the re-run has exactly one change to show.
+    const designPath = join(weekSpecDirectory(ROOT), 'design.md');
+    const design = specFs.files.get(designPath) ?? '';
+    specFs.files.set(designPath, design.replace('# Design: my re:Invent week', '# Design: edited'));
+    const second = await planWeekTool(GOALS, ctx);
+    const text = second.ok ? second.text : '';
+    expect(text).toContain('with a few lines of context');
+    expect(text).toContain('"- # Design: edited"');
+    expect(text).toContain('"+ # Design: my re:Invent week"');
+    expect(text).toContain('"  ..."');
+    const added = [...specFs.files.entries()].find(([path]) => path.includes('week-'));
+    const full = added === undefined ? 0 : added[1].split('\n').length;
+    const shown = text.split('\n').filter((line) => /^\s+"(\+|-| {2})/.test(line)).length;
+    expect(full).toBeGreaterThan(20);
+    expect(shown).toBeLessThan(20);
+  });
+
+  test('an unreadable .gitignore never hides that the plan was written', async () => {
+    const { elicit } = (() => ({ elicit: (): Promise<'accept'> => Promise.resolve('accept') }))();
+    const { specFs, ctx } = setup({ elicit, gitignore: 'x\n' });
+    specFs.readText = () => Promise.reject(new CompassError('SpecWriteRefused'));
+    const outcome = await planWeekTool(GOALS, ctx);
+    expect(outcome.ok && outcome.text).toContain('Created requirements.md, design.md and tasks.md');
+    expect(outcome.ok && outcome.text).toContain('could not read or change .gitignore safely');
   });
 });

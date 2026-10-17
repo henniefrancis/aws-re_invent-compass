@@ -427,3 +427,7 @@ R2.5. **Confirmation means a ticked box.** WHERE the client supports Elicitation
 R2.6. **One write at a time.** THE Compass_Server SHALL run write tools one at a time, and each SHALL read the schedule again when its turn starts.
 
 R2.7. **Planner preference.** THE planner SHALL pick sessions the guardrail allows before any it only warns about, SHALL take a warned session only as a last resort within the day cap and never when its venue is missing, its walk would be impossible or unknown, or the session is full.
+
+R2.8. **Write root and scan scope.** THE plan SHALL be written only to the folder the Compass_Server was started in, never moved by a scan; a scan outside that folder SHALL need the human to confirm it, and a client that cannot ask SHALL be refused; `scan_repo` SHALL not be in the recommended `autoApprove` list (this replaces the four read tools of 21.3 with three).
+
+R2.9. **Plan files.** THE `.gitignore` SHALL be written after the plan files, a partial write SHALL report exactly what was written, and a re-run with no differences SHALL write nothing and say so, showing only changed lines with context otherwise.

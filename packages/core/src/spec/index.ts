@@ -13,7 +13,7 @@ export type {
 } from './planner.js';
 export { formatLocal, renderWeekSpec, sanitiseCatalogText } from './render.js';
 export type { ConnectionLine, EnergyLine, WeekSpecFiles, WeekSpecInput } from './render.js';
-export { applyDiff, lineDiff } from './diff.js';
+export { applyDiff, DIFF_CONTEXT_LINES, lineDiff, trimDiff } from './diff.js';
 export type { DiffResult } from './diff.js';
 export { createNodeSpecFs, hasAllowedShape } from './node-spec-fs.js';
 export { SpecWriteRefusedError } from './spec-errors.js';
@@ -22,6 +22,7 @@ export {
   assertWritable,
   isAllowedWritePath,
   weekSpecDirectory,
+  PartialWriteError,
   writeWeekSpec,
 } from './write.js';
 export type { WriteOutcome } from './write.js';

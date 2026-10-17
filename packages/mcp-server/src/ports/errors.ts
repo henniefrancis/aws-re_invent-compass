@@ -31,6 +31,7 @@ export type CompassErrorCode =
   | 'BulkVoidRefused'
   | 'Network'
   | 'ScanTimeout'
+  | 'ScanOutsideWorkspace'
   | 'UnsafePath'
   | 'Internal';
 

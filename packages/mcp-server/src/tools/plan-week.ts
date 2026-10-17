@@ -12,14 +12,16 @@ import {
   addWeekSpecToGitignore,
   eventDay,
   isWeekSpecIgnored,
+  PartialWriteError,
   planWeek,
   renderWeekSpec,
   SpecWriteRefusedError,
+  trimDiff,
   WEEK_SPEC_ENTRY,
   weekSpecDirectory,
   writeWeekSpec,
 } from '@compass/core/spec';
-import type { PlannerFinding, PlannerRules, WriteOutcome } from '@compass/core/spec';
+import type { PlannerFinding, PlannerRules, WeekSpecFiles, WriteOutcome } from '@compass/core/spec';
 import { CompassError } from '../ports/errors.js';
 import type { CatalogView } from '../ports/events-port.js';
 import { labelUntrusted } from '../safety/labelled-data.js';
@@ -124,11 +126,54 @@ function describeWrite(outcome: WriteOutcome, directory: string): string {
   if (outcome.kind === 'created') {
     return `Created requirements.md, design.md and tasks.md in ${directory}.`;
   }
+  if (outcome.kind === 'unchanged') {
+    return `A plan already exists in ${directory} and the new plan has no differences from it, so Compass wrote nothing.`;
+  }
+  const changes = trimDiff(outcome.diff);
   return [
     `A plan already exists in ${directory}, so Compass left it unchanged and wrote ${outcome.fileName} instead.`,
-    `Changes from the existing plan${outcome.diff.truncated ? ' (shortened)' : ''}:`,
-    labelUntrusted('catalog', outcome.diff.lines),
+    `Changes from the existing plan, with a few lines of context${outcome.diff.truncated ? ' (shortened)' : ''}:`,
+    labelUntrusted('catalog', changes.lines),
   ].join('\n');
+}
+
+/**
+ * Writes the plan and then, last, the `.gitignore` offer, and reports exactly what happened (QA M5).
+ * A write that stops part way says which files exist and which do not, and leaves `.gitignore`
+ * alone. A `.gitignore` that cannot be read or changed safely never hides that the plan was written.
+ */
+async function writeAndReport(
+  root: string,
+  files: WeekSpecFiles,
+  ctx: ToolContext,
+  directory: string,
+  timezone: string,
+): Promise<string[]> {
+  const { runtime } = ctx;
+  let outcome: WriteOutcome;
+  try {
+    outcome = await writeWeekSpec(root, files, {
+      fs: runtime.specFs,
+      today: eventDay(runtime.clock.now().toISOString(), timezone),
+    });
+  } catch (error) {
+    if (error instanceof PartialWriteError) {
+      return [
+        `Compass could not finish writing the plan in ${directory}.`,
+        `It wrote: ${error.written.join(', ')}.`,
+        `It did not write: ${error.missing.join(', ')}.`,
+        'It did not touch .gitignore. Check the folder, then run plan_week again; existing files are never overwritten.',
+      ];
+    }
+    throw error;
+  }
+  const lines = [describeWrite(outcome, directory)];
+  try {
+    lines.push(await offerGitignore(root, ctx));
+  } catch {
+    lines.push('Compass could not read or change .gitignore safely, so it left it as it was.');
+  }
+  return lines;
 }
 
 /** plan_week. */
@@ -175,7 +220,9 @@ export async function planWeekTool(
     generatedAt: runtime.clock.now().toISOString(),
   });
 
-  const root = state.workspaceRoot(runtime.cwd);
+  // The plan is only ever written to the folder the server was started in. A scan of another folder
+  // never moves it (security M2).
+  const root = runtime.cwd;
   const directory = weekSpecDirectory(root);
   const lines = [
     `Planned ${plan.picks.length} sessions and ${plan.layovers.length} layovers. Nothing has been booked.`,
@@ -189,6 +236,13 @@ export async function planWeekTool(
     );
   }
   lines.push(`The plan will be written to ${directory}.`);
+  if (ctx.elicit === undefined) {
+    // The plan_week contract has no confirmWrite argument, so a client that cannot ask gets the plan
+    // written, only ever to the folder the server was started in, and the text says so.
+    lines.push(
+      'This client cannot ask for confirmation, so Compass writes only to the folder it was started in. It never overwrites a file.',
+    );
+  }
 
   const confirmedFolder =
     ctx.elicit === undefined
@@ -197,12 +251,7 @@ export async function planWeekTool(
           message: `Compass will write your week plan to ${directory}. Write it there?`,
         });
   if (confirmedFolder === 'accept') {
-    const outcome = await writeWeekSpec(root, files, {
-      fs: runtime.specFs,
-      today: eventDay(runtime.clock.now().toISOString(), window.timezone),
-    });
-    lines.push(describeWrite(outcome, directory));
-    lines.push(await offerGitignore(root, ctx));
+    lines.push(...(await writeAndReport(root, files, ctx, directory, window.timezone)));
   } else {
     lines.push('Nothing was written, because you did not confirm the folder.');
   }

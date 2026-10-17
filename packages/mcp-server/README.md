@@ -39,7 +39,7 @@ Without the Power, add the server to `.kiro/settings/mcp.json` (this workspace) 
     "compass": {
       "command": "npx",
       "args": ["--yes", "reinvent-compass@<version>"],
-      "autoApprove": ["refresh_catalog", "find_sessions", "scan_repo", "check_itinerary"]
+      "autoApprove": ["refresh_catalog", "find_sessions", "check_itinerary"]
     }
   }
 }
@@ -112,11 +112,11 @@ Replace `<version>` with the version you want, for example the one on the npm pa
 
 ## Approvals
 
-Only the four read tools may be auto-approved: `refresh_catalog`, `find_sessions`, `scan_repo` and `check_itinerary`. They change nothing.
+Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. They change nothing and read nothing of yours. `scan_repo` is read-only too, but it reads a folder on your machine, so approve each scan yourself. It scans freely only inside the folder Compass was started in; for any other folder it asks you to confirm first, and a client that cannot ask cannot scan one. A scan never changes where the plan is written: that is always the folder Compass was started in.
 
 **Write tools must never be auto-approved.** That means every tool marked write above, including `sync_passes`, which can void passes. Approve each call yourself. Where your client supports it, Compass also asks you to confirm in the client before it changes your schedule, listing the session ids, codes, titles and any warnings. Declining writes nothing.
 
-The Power does not ship an `autoApprove` list. If you add one in your own configuration, list only the four read tools.
+The Power does not ship an `autoApprove` list. If you add one in your own configuration, list only those three read tools.
 
 ## Hooks (Kiro only)
 

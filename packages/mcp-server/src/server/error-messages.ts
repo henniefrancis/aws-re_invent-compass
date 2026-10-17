@@ -39,6 +39,8 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
     'This sync would void every pass or more than five passes. Compass needs your explicit confirmation for that, and this client cannot ask. Name fewer sessions in sessionIds, or use a client that supports confirmation.',
   Network: 'Compass could not reach the service. Check your connection, then try again.',
   ScanTimeout: 'The scan took too long and was stopped. Try a smaller folder.',
+  ScanOutsideWorkspace:
+    'That folder is outside the workspace Compass was started in, and this client cannot ask you to confirm it. Start Compass in that folder, or use a client that can ask.',
   UnsafePath: 'Compass will not write through a symbolic link, so it wrote nothing.',
   Internal: INTERNAL_MESSAGE,
 };

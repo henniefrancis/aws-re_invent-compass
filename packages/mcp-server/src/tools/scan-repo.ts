@@ -6,8 +6,39 @@
 
 import { depthToNumber, mapToTaxonomy, scanRepo as scan } from '@compass/core/scanner';
 import { CompassError } from '../ports/errors.js';
+import { isInside } from '../safety/paths.js';
 import { labelUntrusted } from '../safety/labelled-data.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
+
+/**
+ * A folder outside the workspace the server was started in is scanned only after the human
+ * confirms it (security M2); a client that cannot ask cannot scan one. A scan never changes where
+ * plan_week writes.
+ */
+async function confirmOutsideWorkspace(
+  root: string,
+  ctx: ToolContext,
+): Promise<{ ok: false; message: string } | undefined> {
+  const { scanFs, cwd } = ctx.runtime;
+  let workspace = cwd;
+  try {
+    workspace = await scanFs.realpath(cwd);
+  } catch {
+    // An unresolvable working directory stays as given, so a folder is judged against what we know.
+  }
+  if (isInside(root, workspace)) {
+    return undefined;
+  }
+  if (ctx.elicit === undefined) {
+    throw new CompassError('ScanOutsideWorkspace');
+  }
+  const answer = await ctx.elicit({
+    message: `Compass will read the folder ${root} to count the AWS services in it. It only reads; no file name or content is sent anywhere. That folder is outside the workspace Compass was started in. Scan it?`,
+  });
+  return answer === 'accept'
+    ? undefined
+    : { ok: false, message: 'Nothing was scanned, because you did not confirm the folder.' };
+}
 
 /** scan_repo. */
 export async function scanRepoTool(
@@ -20,6 +51,10 @@ export async function scanRepoTool(
     root = await scanFs.realpath(input.path);
   } catch {
     throw new CompassError('FolderNotFound');
+  }
+  const declined = await confirmOutsideWorkspace(root, ctx);
+  if (declined !== undefined) {
+    return declined;
   }
   const { scanDetectors, scanRunner } = ctx.runtime;
   const result =
