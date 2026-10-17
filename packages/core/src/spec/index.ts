@@ -11,3 +11,5 @@ export type {
   PlannerSession,
   Pick,
 } from './planner.js';
+export { formatLocal, renderWeekSpec, sanitiseCatalogText } from './render.js';
+export type { ConnectionLine, EnergyLine, WeekSpecFiles, WeekSpecInput } from './render.js';

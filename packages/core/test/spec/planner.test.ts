@@ -41,7 +41,11 @@ describe('planWeek examples', () => {
   test('picks matching sessions, marks walk-ups and builds commitments', async () => {
     const rules = new FakePlannerRules();
     rules.layovers = () => [
-      { start: '2026-12-01T20:00:00.000Z', end: '2026-12-01T20:30:00.000Z', reason: 'Lunch – eat' },
+      {
+        start: '2026-12-01T20:00:00.000Z',
+        end: '2026-12-01T20:30:00.000Z',
+        reason: `Lunch ${String.fromCharCode(0x2013)} eat`,
+      },
     ];
     const result = await planWeek(
       input([
