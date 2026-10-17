@@ -164,8 +164,8 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit the module and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
 
-- [ ] 9. Implement the Bootstrap_Config (`infra/bootstrap`)
-  - [ ] 9.1 Implement the OIDC provider, four roles, and the account API Gateway role
+- [x] 9. Implement the Bootstrap_Config (`infra/bootstrap`)
+  - [x] 9.1 Implement the OIDC provider, four roles, and the account API Gateway role
     - Write `versions.tf` (local-execution `cloud` block per ADR-001), `provider.tf`, `variables.tf` (organisation name, project, never committed literally), `locals.tf`, `oidc.tf`, `roles-plan.tf`, `roles-apply.tf`, `apigw-account.tf`, `outputs.tf`, and `terraform.tfvars.example`
     - Create exactly one `aws_iam_openid_connect_provider` for `https://app.terraform.io` with client ID list `["aws.workload.identity"]`
     - Create four roles (dev/prod Plan_Role and Apply_Role), each trust policy conditioning with `StringEquals` on `app.terraform.io:aud = aws.workload.identity` and `app.terraform.io:sub` matching `organization:<org>:project:reinvent-compass:workspace:<workspace>:run_phase:<plan|apply>` using variable references only, never a literal org or workspace name in a committed file
@@ -174,11 +174,11 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Create the account-level API Gateway CloudWatch role and `aws_api_gateway_account` exactly once; create no long-lived access or secret key
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
 
-  - [ ] 9.2 Write plan assertions for the Bootstrap_Config
+  - [x] 9.2 Write plan assertions for the Bootstrap_Config
     - Native test (`mock_provider`, `command = plan`) asserting exactly one OIDC provider with the correct URL and audience, four roles with trust subjects matching workspace and run phase, the Plan_Role read-only policy with the Secrets Manager deny, the Apply_Role tag and `iam:PassRole` scoping, the account API Gateway role and `aws_api_gateway_account`, and no `aws_iam_access_key`
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
 
-  - [ ] 9.3 Run the offline checks and commit the Bootstrap_Config
+  - [x] 9.3 Run the offline checks and commit the Bootstrap_Config
     - Run `terraform fmt`, `terraform validate` (`init -backend=false`), `tflint`, `terraform test` (mock providers), and a Trivy config scan; fix any finding. Confirm `terraform.tfvars.example` carries only placeholder shapes, never a real org, workspace, account ID, email, or ARN
     - Commit the bootstrap and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
