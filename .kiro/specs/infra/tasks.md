@@ -70,18 +70,18 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit the module and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 9.3, 17.1_
 
-- [ ] 4. Implement the Site_Module (`infra/modules/site`)
-  - [ ] 4.1 Implement the private, versioned S3 bucket with OAC and bucket policy
+- [x] 4. Implement the Site_Module (`infra/modules/site`)
+  - [x] 4.1 Implement the private, versioned S3 bucket with OAC and bucket policy
     - Write `versions.tf`, `variables.tf` (`bucket_name_prefix`, `distribution_arn`), `locals.tf`, `main.tf`, `outputs.tf` (`bucket_regional_domain_name`, `bucket_arn`, `oac_id`)
     - Create one `aws_s3_bucket` with `lifecycle { prevent_destroy = true }`, an `aws_s3_bucket_public_access_block` with all four settings true, SSE-S3 (AES256) default encryption, versioning enabled, one `aws_cloudfront_origin_access_control` (signing `sigv4`), and a bucket policy allowing `s3:GetObject` only when `AWS:SourceArn` equals the distribution ARN and denying all other principals
     - Add an inline `trivy:ignore:AVD-AWS-0132` comment on the encryption block citing Requirement 3.2 (SSE-S3 mandated for the public site bucket)
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 9.4_
 
-  - [ ] 4.2 Write plan assertions for the Site_Module
+  - [x] 4.2 Write plan assertions for the Site_Module
     - Native test asserting public-access-block all true, SSE-S3 AES256, versioning enabled, bucket policy scoped to the distribution ARN, one OAC, and `prevent_destroy = true` on the bucket
     - _Requirements: 3.1, 3.2, 3.3, 3.5, 9.4_
 
-  - [ ] 4.3 Run the offline checks and commit the Site_Module
+  - [x] 4.3 Run the offline checks and commit the Site_Module
     - Run `terraform fmt`, `terraform validate` (`init -backend=false`), `tflint`, `terraform test` (mock providers), and a Trivy config scan (only the documented AVD-AWS-0132 suppression is allowed); fix any other finding
     - Commit the module and its tests with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 9.4_
