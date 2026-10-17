@@ -205,8 +205,8 @@ describe('add_layover', () => {
     fake.events.schedule.reserved.push(TRIPLE.a);
     const outcome = await addLayover(
       layover({
-        startDateTime: '2026-12-04T10:15:00-08:00',
-        endDateTime: '2026-12-04T10:45:00-08:00',
+        startDateTime: '2026-12-01T13:15:00-08:00',
+        endDateTime: '2026-12-01T13:45:00-08:00',
       }),
       ctx,
     );

@@ -142,7 +142,7 @@ describe('catalog and window', () => {
     const view = await events.catalog();
     expect(requests.length).toBe(before);
     expect(view.byId.size).toBe(120);
-    expect(view.byId.get(TRIPLE.a)?.session.code).toBe('ANT163');
+    expect(view.byId.get(TRIPLE.a)?.session.code).toBe(`${TRIPLE.codes.a}`);
     expect(view.labels.length).toBeGreaterThan(0);
     expect(view.labels).toEqual([...view.labels].sort());
   });
@@ -168,7 +168,7 @@ describe('catalog and window', () => {
       expect(services.map((s) => s.toLowerCase())).toContain(label.toLowerCase());
     }
     expect(view.filter({ services: ['no-such-service'] })).toEqual([]);
-    expect(view.filter({ text: 'ANT163' }).map((s) => s.sessionId)).toContain(TRIPLE.a);
+    expect(view.filter({ text: `${TRIPLE.codes.a}` }).map((s) => s.sessionId)).toContain(TRIPLE.a);
   });
 
   test('the event window is read once and kept; a failure is not kept', async () => {
@@ -236,8 +236,8 @@ describe('schedule reads and writes', () => {
     const { events } = await arrange();
     expect(await events.getSchedule()).toMatchObject({ reserved: [] });
     const session = await events.getSession(TRIPLE.a);
-    expect(session.code).toBe('ANT163');
-    expect(session.startsAt).toBe('2026-12-04T10:00:00-08:00');
+    expect(session.code).toBe(`${TRIPLE.codes.a}`);
+    expect(session.startsAt).toBe('2026-12-01T13:00:00-08:00');
 
     const reserved = await events.reserve([TRIPLE.a]);
     expect(reserved).toMatchObject({

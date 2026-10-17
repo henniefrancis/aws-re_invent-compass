@@ -115,14 +115,14 @@ describe('the passes adapter over the real S4', () => {
     const second = await adapter.issue([A], view(A, AR, B));
     expect(second).toHaveLength(1);
     const record = (await store.read()).passes;
-    expect(record.map((p) => p.sessionCode).sort()).toEqual(['ANT163', 'ANT163-R', 'BWP304']);
+    expect(record.map((p) => p.sessionCode).sort()).toEqual(
+      [`${TRIPLE.codes.a}`, `${TRIPLE.codes.aRepeat}`, `${TRIPLE.codes.b}`].sort(),
+    );
     expect(record.every((p) => p.fieldsHash.length === 64)).toBe(true);
     expect([...service.passes().values()].every((p) => p.status === 'active')).toBe(true);
-    expect((await adapter.issuedRecord()).map((r) => r.sessionCode).sort()).toEqual([
-      'ANT163',
-      'ANT163-R',
-      'BWP304',
-    ]);
+    expect((await adapter.issuedRecord()).map((r) => r.sessionCode).sort()).toEqual(
+      [`${TRIPLE.codes.a}`, `${TRIPLE.codes.aRepeat}`, `${TRIPLE.codes.b}`].sort(),
+    );
   });
 
   test('re-issuing a session replaces its record entry', async () => {
@@ -135,7 +135,7 @@ describe('the passes adapter over the real S4', () => {
     await adapter.issue([AR, B], view(AR, B));
     const plan = await adapter.previewSync(scope([A, B]));
     expect(plan.toIssue).toEqual([TRIPLE.a]);
-    expect(plan.toVoid.map((v) => v.sessionCode)).toEqual(['ANT163-R']);
+    expect(plan.toVoid.map((v) => v.sessionCode)).toEqual([`${TRIPLE.codes.aRepeat}`]);
     const result = await adapter.sync({
       ...scope([A, B]),
       confirmEmpty: false,
@@ -155,7 +155,7 @@ describe('the passes adapter over the real S4', () => {
       confirmEmpty: true,
       allowBulkVoid: false,
     });
-    expect(result.voided).toEqual(['ANT163-R']);
+    expect(result.voided).toEqual([`${TRIPLE.codes.aRepeat}`]);
   });
 
   test('a narrowed sync never touches passes outside the narrowing (CTO review H1)', async () => {
@@ -174,11 +174,9 @@ describe('the passes adapter over the real S4', () => {
     for (const [serial, pass] of service.passes()) {
       expect(pass.status).toBe(before.get(serial));
     }
-    expect((await store.read()).passes.map((p) => p.sessionCode).sort()).toEqual([
-      'ANT163',
-      'ANT163-R',
-      'BWP304',
-    ]);
+    expect((await store.read()).passes.map((p) => p.sessionCode).sort()).toEqual(
+      [`${TRIPLE.codes.a}`, `${TRIPLE.codes.aRepeat}`, `${TRIPLE.codes.b}`].sort(),
+    );
   });
 
   test('a narrowed sync that cancels one session voids only that one', async () => {
@@ -189,7 +187,7 @@ describe('the passes adapter over the real S4', () => {
       allowBulkVoid: false,
     });
     expect(result.voided).toEqual([TRIPLE.b]);
-    expect((await store.read()).passes.map((p) => p.sessionCode)).toEqual(['ANT163']);
+    expect((await store.read()).passes.map((p) => p.sessionCode)).toEqual([`${TRIPLE.codes.a}`]);
   });
 
   test('S4 refuses an empty or bulk void without the flags, and the adapter maps that to a pass error', async () => {

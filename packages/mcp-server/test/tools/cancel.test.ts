@@ -70,7 +70,7 @@ describe('cancel_reservation without a swap', () => {
 
   test('tells the attendee to sync when a pass was issued for the session', async () => {
     const { fake, ctx } = setup();
-    fake.passes.seed(TRIPLE.a, 'ANT163');
+    fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
     const outcome = await cancelReservation({ sessionId: TRIPLE.a }, ctx);
     expect(outcome.ok && outcome.text).toContain('Run sync_passes to void it.');
     const other = setup();
@@ -119,7 +119,7 @@ describe('cancel_reservation confirmation (CTO review M4)', () => {
       elicit: (q) => (asked.push(q.message), Promise.resolve('accept')),
     });
     await cancelReservation({ sessionId: TRIPLE.a }, ctx);
-    expect(asked[0]).toContain(`ANT163 "Identity and access: Hands on workshop" (id ${TRIPLE.a})`);
+    expect(asked[0]).toContain(`${TRIPLE.codes.a} "${TRIPLE.titles.a}" (id ${TRIPLE.a})`);
     expect(fake.events.callsTo('cancel')).toHaveLength(1);
     for (const answer of ['decline', 'cancel'] as const) {
       const declined = setup({ elicit: answering(answer) });

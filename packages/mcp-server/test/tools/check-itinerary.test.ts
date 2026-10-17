@@ -30,8 +30,8 @@ describe('check_itinerary', () => {
       'allow',
     );
     expect(outcome.text).toContain('Verdict: allow.');
-    expect(outcome.text).toContain('ANT163');
-    expect(outcome.text).toContain('Identity and access: Hands on workshop');
+    expect(outcome.text).toContain(`${TRIPLE.codes.a}`);
+    expect(outcome.text).toContain(`${TRIPLE.titles.a}`);
     expect(fake.events.writeCalls).toEqual([]);
     expect(fake.snapshot.writes).toHaveLength(1);
   });
@@ -42,7 +42,7 @@ describe('check_itinerary', () => {
     const outcome = await checkItinerary({ commitments: [reserved(TRIPLE.b)] }, ctx);
     expect(outcome.ok && outcome.text).toContain('Verdict: block.');
     expect(outcome.ok && outcome.text).toContain('Do not reserve these sessions as they are.');
-    expect(outcome.ok && outcome.text).toContain('ANT163-R');
+    expect(outcome.ok && outcome.text).toContain(`${TRIPLE.codes.aRepeat}`);
     expect(outcome.ok && outcome.text).toContain('safeSwap');
     const internal = await checkItinerary(
       { commitments: [reserved(TRIPLE.a), reserved(TRIPLE.b)] },
@@ -70,8 +70,8 @@ describe('check_itinerary', () => {
           {
             kind: 'personalTime',
             title: 'Lunch',
-            startsAt: '2026-12-04T18:00:00.000Z',
-            endsAt: '2026-12-04T19:00:00.000Z',
+            startsAt: '2026-12-01T21:00:00.000Z',
+            endsAt: '2026-12-01T22:00:00.000Z',
           },
           reserved(TRIPLE.a),
         ],
@@ -88,7 +88,7 @@ describe('check_itinerary', () => {
     fake.rules.verdictFor = () => ({ decision: 'warn', reasons: ['Tight walk.'] });
     const outcome = await checkItinerary({ commitments: [reserved(TRIPLE.a)] }, ctx);
     expect(outcome.ok && outcome.text).toContain('Verdict: warn.');
-    expect(outcome.ok && outcome.text).toContain('ANT163: Tight walk.');
+    expect(outcome.ok && outcome.text).toContain(`${TRIPLE.codes.a}: Tight walk.`);
   });
 
   test('rejects bad identifiers before any S1 call and never echoes them', async () => {

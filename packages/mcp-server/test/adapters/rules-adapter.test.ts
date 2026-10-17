@@ -50,7 +50,11 @@ describe('the rules adapter over the real S2 engine', () => {
     expect(open).toBeDefined();
     const allow = await rules.checkReservation(open as NormalisedSession, [], catalog);
     expect(allow).toEqual({ decision: 'allow', reasons: [] });
-    const full = await rules.checkReservation(session(TRIPLE.a), [], catalog);
+    const crowded = [...catalog.byId.values()]
+      .map((e) => e.session)
+      .find((s) => s.seatAvailability === 'unavailable' && s.isReservable);
+    expect(crowded).toBeDefined();
+    const full = await rules.checkReservation(crowded as NormalisedSession, [], catalog);
     expect(full.decision).toBe('warn');
     const clash = await rules.checkReservation(
       session(TRIPLE.b),
@@ -86,8 +90,8 @@ describe('the rules adapter over the real S2 engine', () => {
     const layover: Commitment = {
       kind: 'personalTime',
       title: 'Your new layover',
-      startsAt: '2026-12-04T10:15:00-08:00',
-      endsAt: '2026-12-04T10:45:00-08:00',
+      startsAt: '2026-12-01T13:15:00-08:00',
+      endsAt: '2026-12-01T13:45:00-08:00',
     };
     const report = await rules.findClashes([commitmentFor(session(TRIPLE.a)), layover], catalog);
     expect(report.clashes).toHaveLength(1);
@@ -155,13 +159,13 @@ describe('the rules adapter over the real S2 engine', () => {
 
   test('rebooking offers the repeat as a repeat and never the original itself', async () => {
     const rules = adapter();
-    const options = await rules.rebooking('ANT163', catalog, [TRIPLE.b], TRIPLE.a);
+    const options = await rules.rebooking(`${TRIPLE.codes.a}`, catalog, [TRIPLE.b], TRIPLE.a);
     const repeat = options.find((o) => o.session.sessionId === TRIPLE.aRepeat);
     expect(repeat?.kind).toBe('repeat');
     expect(options.some((o) => o.session.sessionId === TRIPLE.a)).toBe(false);
-    const withUnknownFavorite = await rules.rebooking('ANT163', catalog, ['ghost']);
+    const withUnknownFavorite = await rules.rebooking(`${TRIPLE.codes.a}`, catalog, ['ghost']);
     expect(withUnknownFavorite.length).toBeGreaterThan(0);
-    const similar = await rules.rebooking('BWP304', catalog, [TRIPLE.b]);
+    const similar = await rules.rebooking(`${TRIPLE.codes.b}`, catalog, [TRIPLE.b]);
     expect(similar.every((o) => o.kind === 'repeat' || o.kind === 'similar')).toBe(true);
   });
 
@@ -190,6 +194,22 @@ describe('the rules adapter over the real S2 engine', () => {
       catalog,
     );
     expect(missingOriginal.outcome).toBe('unknown');
+  });
+
+  test('the pinned triple behaves as the end-to-end flow needs under the real engine', async () => {
+    const rules = adapter();
+    const a = commitmentFor(session(TRIPLE.a));
+    const repeat = commitmentFor(session(TRIPLE.aRepeat));
+    expect((await rules.checkReservation(session(TRIPLE.aRepeat), [a], catalog)).decision).not.toBe(
+      'block',
+    );
+    expect((await rules.checkReservation(session(TRIPLE.b), [a], catalog)).decision).toBe('block');
+    expect((await rules.checkReservation(session(TRIPLE.b), [repeat], catalog)).decision).not.toBe(
+      'block',
+    );
+    expect(
+      (await rules.planSafeSwap(a, session(TRIPLE.aRepeat), [a, repeat], catalog)).outcome,
+    ).toBe('safe');
   });
 
   test('an unusable timezone gives empty views instead of guesses', async () => {

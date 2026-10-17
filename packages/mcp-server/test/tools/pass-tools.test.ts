@@ -111,8 +111,8 @@ describe('Property 35: passes are issued only for confirmed reservations', () =>
 describe('send_to_phone', () => {
   test('hands off all issued passes with the URL, expiry, text QR and a PNG image', async () => {
     const { fake, ctx } = setup();
-    fake.passes.seed(TRIPLE.a, 'ANT163');
-    fake.passes.seed(TRIPLE.b, 'BWP304');
+    fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
+    fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
     const outcome = await sendToPhone({}, ctx);
     expect(outcome.ok && outcome.structured).toEqual({
       handoffUrl: fake.passes.handoffResult.boardUrl,
@@ -132,8 +132,8 @@ describe('send_to_phone', () => {
 
   test('narrows to the chosen sessions and refuses when none were issued', async () => {
     const { fake, ctx } = setup();
-    fake.passes.seed(TRIPLE.a, 'ANT163');
-    fake.passes.seed(TRIPLE.b, 'BWP304');
+    fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
+    fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
     await sendToPhone({ sessionIds: [TRIPLE.b] }, ctx);
     expect(fake.passes.calls.find((c) => c.method === 'handoff')?.args[0]).toEqual(['serial-2']);
     await expect(sendToPhone({ sessionIds: [TRIPLE.aRepeat] }, ctx)).rejects.toMatchObject({
@@ -146,7 +146,7 @@ describe('send_to_phone', () => {
 
   test('a decline creates no link; bad ids, unknown sessions and sign-out are refused', async () => {
     const declined = setup(answering('cancel'));
-    declined.fake.passes.seed(TRIPLE.a, 'ANT163');
+    declined.fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
     const outcome = await sendToPhone({}, declined.ctx);
     expect(outcome.ok).toBe(false);
     expect(declined.fake.passes.writeCalls).toEqual([]);
@@ -166,8 +166,8 @@ describe('sync_passes', () => {
   test('issues, updates and voids against the fresh schedule, with the void note', async () => {
     const { fake, ctx } = setup();
     fake.events.schedule.reserved.push(TRIPLE.a, TRIPLE.aRepeat);
-    fake.passes.seed(TRIPLE.a, 'ANT163');
-    fake.passes.seed(TRIPLE.b, 'BWP304');
+    fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
+    fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
     const outcome = await syncPasses({}, ctx);
     expect(outcome.ok && outcome.structured).toEqual({
       issued: [TRIPLE.aRepeat],
@@ -175,7 +175,7 @@ describe('sync_passes', () => {
       voided: [TRIPLE.b],
     });
     expect(outcome.ok && outcome.text).toContain('expired passes');
-    expect(outcome.ok && outcome.text).toContain('BWP304');
+    expect(outcome.ok && outcome.text).toContain(`${TRIPLE.codes.b}`);
   });
 
   test('voiding a pass whose session is not in the catalog still works', async () => {
@@ -196,8 +196,8 @@ describe('sync_passes', () => {
   test('a narrowed sync hands S4 only the narrowed sessions and never touches other passes', async () => {
     const { fake, ctx } = setup();
     fake.events.schedule.reserved.push(TRIPLE.a, TRIPLE.aRepeat);
-    fake.passes.seed(TRIPLE.a, 'ANT163');
-    fake.passes.seed(TRIPLE.b, 'BWP304');
+    fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
+    fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
     const outcome = await syncPasses({ sessionIds: [TRIPLE.aRepeat] }, ctx);
     expect(outcome.ok && outcome.structured).toEqual({
       issued: [TRIPLE.aRepeat],
@@ -209,7 +209,7 @@ describe('sync_passes', () => {
     );
     const call = fake.passes.calls.find((c) => c.method === 'sync');
     expect(call?.args[0]).toEqual([TRIPLE.aRepeat]);
-    expect(call?.args[1]).toEqual(['ANT163-R']);
+    expect(call?.args[1]).toEqual([`${TRIPLE.codes.aRepeat}`]);
   });
 
   test('voiding more than five passes needs an elicited confirmation and sets allowBulkVoid', async () => {
@@ -230,7 +230,7 @@ describe('sync_passes', () => {
 
   test('voiding every pass sets confirmEmpty after an explicit accept', async () => {
     const { fake, ctx } = setup(answering('accept'));
-    fake.passes.seed(TRIPLE.a, 'ANT163');
+    fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
     const outcome = await syncPasses({}, ctx);
     expect(outcome.ok && outcome.structured).toMatchObject({ voided: [TRIPLE.a] });
     expect(fake.passes.calls.find((c) => c.method === 'sync')?.args.slice(2)).toEqual([
@@ -252,8 +252,8 @@ describe('sync_passes', () => {
   test('a small void goes ahead without a question when the client cannot ask', async () => {
     const { fake, ctx } = setup();
     fake.events.schedule.reserved.push(TRIPLE.a);
-    fake.passes.seed(TRIPLE.a, 'ANT163');
-    fake.passes.seed(TRIPLE.b, 'BWP304');
+    fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
+    fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
     const outcome = await syncPasses({}, ctx);
     expect(outcome.ok && outcome.structured).toMatchObject({ voided: [TRIPLE.b] });
   });
@@ -261,7 +261,7 @@ describe('sync_passes', () => {
   test('a decline or cancel syncs nothing', async () => {
     for (const answer of ['decline', 'cancel'] as const) {
       const { fake, ctx } = setup(answering(answer));
-      fake.passes.seed(TRIPLE.b, 'BWP304');
+      fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
       const outcome = await syncPasses({}, ctx);
       expect(outcome.ok && outcome.structured).toEqual({ issued: [], updated: [], voided: [] });
       expect(fake.passes.calls.filter((c) => c.method === 'sync')).toEqual([]);

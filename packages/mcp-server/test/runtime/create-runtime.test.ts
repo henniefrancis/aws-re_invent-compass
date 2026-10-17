@@ -33,8 +33,8 @@ describe('simulated composition', () => {
     const signedIn = await conn.call('sign_in');
     expect(textOf(signedIn).startsWith(SIMULATED_LABEL)).toBe(true);
     expect((await conn.call('refresh_catalog')).isError).not.toBe(true);
-    const found = await conn.call('find_sessions', { query: 'ANT163' });
-    expect(textOf(found)).toContain('ANT163');
+    const found = await conn.call('find_sessions', { query: `${TRIPLE.codes.a}` });
+    expect(textOf(found)).toContain(`${TRIPLE.codes.a}`);
     expect(textOf(found).startsWith(SIMULATED_LABEL)).toBe(true);
     const failed = await conn.call('cancel_reservation', { sessionId: 'syn-none' });
     expect(textOf(failed)).not.toContain(SIMULATED_LABEL);

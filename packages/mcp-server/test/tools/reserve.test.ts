@@ -33,7 +33,7 @@ describe('reserve_with_guardrails', () => {
     expect(fake.events.callsTo('reserve')[0]?.args).toEqual([[TRIPLE.a]]);
     expect(output.result).toEqual({ successful: [TRIPLE.a], failed: [] });
     expect(text).toContain('1 of 1 sessions are reserved and confirmed');
-    expect(text).toContain('ANT163');
+    expect(text).toContain(`${TRIPLE.codes.a}`);
     expect(fake.snapshot.writes).toHaveLength(2);
     expect(fake.snapshot.writes[1]?.schedule.reserved).toEqual([TRIPLE.a]);
   });
@@ -46,7 +46,7 @@ describe('reserve_with_guardrails', () => {
     expect(output.result).toBeUndefined();
     expect(fake.events.writeCalls).toEqual([]);
     expect(text).toContain('Nothing was reserved, because the booking guardrail blocked it.');
-    expect(text).toContain('ANT163-R');
+    expect(text).toContain(`${TRIPLE.codes.aRepeat}`);
     expect(ctx.state.swaps.forOriginal(TRIPLE.a)).toMatchObject({
       repeatId: TRIPLE.aRepeat,
       blockedId: TRIPLE.b,
@@ -58,7 +58,7 @@ describe('reserve_with_guardrails', () => {
     fake.events.schedule.reserved.push(TRIPLE.b);
     const { output, text } = parsed(await reserveWithGuardrails({ sessionIds: [TRIPLE.a] }, ctx));
     expect(output.verdict.decision).toBe('block');
-    expect(text).toContain('"code": "ANT163-R"');
+    expect(text).toContain(`"code": "${TRIPLE.codes.aRepeat}"`);
   });
 
   test('two requested sessions that clash with each other block the whole request', async () => {
@@ -80,7 +80,7 @@ describe('reserve_with_guardrails', () => {
       failed: [{ sessionId: TRIPLE.a, code: 'sessionFull' }],
     });
     expect(text).toContain('This session is full.');
-    expect(text).toContain('ANT163-R');
+    expect(text).toContain(`${TRIPLE.codes.aRepeat}`);
   });
 
   test('a refusal for a code Compass does not know is reported without echoing it', async () => {
@@ -98,7 +98,7 @@ describe('reserve_with_guardrails', () => {
       await reserveWithGuardrails({ sessionIds: [TRIPLE.a, TRIPLE.aRepeat] }, ctx),
     );
     expect(output.result?.successful).toEqual([TRIPLE.aRepeat]);
-    expect(text).toContain('"forCode": "ANT163"');
+    expect(text).toContain(`"forCode": "${TRIPLE.codes.a}"`);
   });
 
   test('a conflict refusal without clash ids or with unknown ids stays general', async () => {
@@ -120,7 +120,7 @@ describe('reserve_with_guardrails', () => {
       conflictsWith: [TRIPLE.b, 'ghost'],
     });
     const { text } = parsed(await reserveWithGuardrails({ sessionIds: [TRIPLE.a] }, ctx));
-    expect(text).toContain('This session overlaps BWP304');
+    expect(text).toContain(`This session overlaps ${TRIPLE.codes.b}`);
   });
 
   test('an unconfirmed write is reported as unconfirmed and is never resent', async () => {
@@ -173,7 +173,7 @@ describe('reserve_with_guardrails', () => {
     const { output, text } = parsed(await reserveWithGuardrails({ sessionIds: [TRIPLE.a] }, ctx));
     expect(output.verdict.decision).toBe('warn');
     expect(text.startsWith('Warnings first:')).toBe(true);
-    expect(text).toContain('ANT163: \\"Tight walk\\" between rooms.');
+    expect(text).toContain(`${TRIPLE.codes.a}: \\"Tight walk\\" between rooms.`);
     expect(fake.events.callsTo('reserve')).toHaveLength(1);
   });
 
@@ -209,8 +209,8 @@ describe('reserve_with_guardrails confirmation (CTO review M4)', () => {
     fake.rules.verdictFor = () => ({ decision: 'warn', reasons: ['Tight walk.'] });
     await reserveWithGuardrails({ sessionIds: [TRIPLE.a] }, ctx);
     expect(asked).toHaveLength(1);
-    expect(asked[0]).toContain(`ANT163 "Identity and access: Hands on workshop" (id ${TRIPLE.a})`);
-    expect(asked[0]).toContain('Warning: ANT163: Tight walk.');
+    expect(asked[0]).toContain(`${TRIPLE.codes.a} "${TRIPLE.titles.a}" (id ${TRIPLE.a})`);
+    expect(asked[0]).toContain(`Warning: ${TRIPLE.codes.a}: Tight walk.`);
     expect(fake.events.callsTo('reserve')).toHaveLength(1);
   });
 
