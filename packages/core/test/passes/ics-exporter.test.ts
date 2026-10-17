@@ -191,15 +191,13 @@ describe('Feature: boarding-passes, calendar snapshot and structure (Requirement
     expect(
       validateRfc5545(
         good.replace(
-          'UID:session-sess-0002-20261201T220000Z@reinvent-compass',
-          'UID:session-sess-0001-20261201T183000Z@reinvent-compass',
+          'UID:session-sess-0002@reinvent-compass',
+          'UID:session-sess-0001@reinvent-compass',
         ),
       ),
     ).toContain('duplicate UID');
     expect(
-      validateRfc5545(
-        good.replace('UID:session-sess-0002-20261201T220000Z@reinvent-compass', 'UID:'),
-      ),
+      validateRfc5545(good.replace('UID:session-sess-0002@reinvent-compass', 'UID:')),
     ).toContain('event without UID');
     expect(
       validateRfc5545(good.replace('DTSTAMP:20261201T080000Z', 'DTSTAMP;X-A=b:20261201T080000')),
@@ -284,9 +282,9 @@ describe('Feature: boarding-passes, stable UID and output path (Requirement 6.5)
     const first = uidsOf(ics.buildCalendar(itinerary, WINDOW));
     const second = uidsOf(ics.buildCalendar(itinerary, WINDOW));
     expect(second).toEqual(first);
-    expect(first[0]).toBe('session-sess-0001-20261201T183000Z@reinvent-compass');
-    expect(first[1]).toBe('layover-pt-1-20261201T200000Z@reinvent-compass');
-    expect(first[2]).toMatch(/^layover-[0-9a-f]{24}-20261202T000000Z@reinvent-compass$/);
+    expect(first[0]).toBe('session-sess-0001@reinvent-compass');
+    expect(first[1]).toBe('layover-pt-1@reinvent-compass');
+    expect(first[2]).toMatch(/^layover-[0-9a-f]{24}@reinvent-compass$/);
   });
 
   test('a layover with no id keys on its title and start, so a different start is a different UID', () => {
@@ -317,9 +315,9 @@ describe('Feature: boarding-passes, stable UID and output path (Requirement 6.5)
       ),
     );
     expect(uids).toEqual([
-      'session-sess-0001-20261201T183000Z@reinvent-compass',
-      'session-sess-0001-20261201T183000Z-1@reinvent-compass',
-      'session-sess-0001-20261201T183000Z-2@reinvent-compass',
+      'session-sess-0001@reinvent-compass',
+      'session-sess-0001-2@reinvent-compass',
+      'session-sess-0001-3@reinvent-compass',
     ]);
   });
 
@@ -496,9 +494,7 @@ describe('Feature: boarding-passes, calendar injection safety (security M1, QA L
           (event) => event.getFirstPropertyValue('uid') as string,
         );
         for (const uid of uids) {
-          expect(uid).toMatch(
-            /^(session|layover)-[A-Za-z0-9_-]{1,64}-\d{8}T\d{6}Z(-\d+)?@reinvent-compass$/,
-          );
+          expect(uid).toMatch(/^(session|layover)-[A-Za-z0-9_-]{1,64}(-\d+)?@reinvent-compass$/);
         }
         expect(new Set(uids).size).toBe(uids.length);
       }),
@@ -522,14 +518,14 @@ describe('Feature: boarding-passes, calendar injection safety (security M1, QA L
         WINDOW,
       ),
     ).map((event) => event.getFirstPropertyValue('uid') as string);
-    expect(uids[0]).toBe('session-ok_id-1-20261201T183000Z@reinvent-compass');
-    expect(uids[1]).toMatch(/^session-[0-9a-f]{24}-20261201T183000Z@reinvent-compass$/);
-    expect(uids[2]).toMatch(/^session-[0-9a-f]{24}-20261201T183000Z@reinvent-compass$/);
-    expect(uids[3]).toMatch(/^layover-[0-9a-f]{24}-20261201T183000Z@reinvent-compass$/);
+    expect(uids[0]).toBe('session-ok_id-1@reinvent-compass');
+    expect(uids[1]).toMatch(/^session-[0-9a-f]{24}@reinvent-compass$/);
+    expect(uids[2]).toMatch(/^session-[0-9a-f]{24}@reinvent-compass$/);
+    expect(uids[3]).toMatch(/^layover-[0-9a-f]{24}@reinvent-compass$/);
     expect(new Set(uids).size).toBe(4);
   });
 
-  test('the UID changes when a session moves, and stays when it does not', () => {
+  test('the UID stays the same when a session moves (requirement 6.5)', () => {
     const { exporter: ics } = exporter();
     const at = (startsAt: string, endsAt: string) => ({
       commitments: [
@@ -539,8 +535,39 @@ describe('Feature: boarding-passes, calendar injection safety (security M1, QA L
     const uid = (itinerary: Itinerary) =>
       eventsOf(ics.buildCalendar(itinerary, WINDOW))[0]?.getFirstPropertyValue('uid');
     const original = uid(at('2026-12-01T10:30:00-08:00', '2026-12-01T11:30:00-08:00'));
-    expect(uid(at('2026-12-01T10:30:00-08:00', '2026-12-01T12:00:00-08:00'))).toBe(original);
-    expect(uid(at('2026-12-01T11:30:00-08:00', '2026-12-01T12:30:00-08:00'))).not.toBe(original);
+    expect(original).toBe('session-s1@reinvent-compass');
+    expect(uid(at('2026-12-01T11:30:00-08:00', '2026-12-01T12:30:00-08:00'))).toBe(original);
+    expect(uid(at('2026-12-03T09:00:00-08:00', '2026-12-03T10:00:00-08:00'))).toBe(original);
+  });
+
+  test('duplicate ids are numbered by start time, and moving one past the other swaps the suffixes', () => {
+    const { exporter: ics } = exporter();
+    const dup = (startsAt: string, endsAt: string, title: string) => ({
+      commitment: { kind: 'reservedSession' as const, sessionId: 's1', title, startsAt, endsAt },
+    });
+    const early = dup('2026-12-01T09:00:00-08:00', '2026-12-01T10:00:00-08:00', 'early');
+    const middle = dup('2026-12-01T11:00:00-08:00', '2026-12-01T12:00:00-08:00', 'middle');
+    const late = dup('2026-12-01T13:00:00-08:00', '2026-12-01T14:00:00-08:00', 'late');
+    const byTitle = (itinerary: Itinerary) =>
+      Object.fromEntries(
+        eventsOf(ics.buildCalendar(itinerary, WINDOW)).map((event) => [
+          event.getFirstPropertyValue('summary') as string,
+          event.getFirstPropertyValue('uid') as string,
+        ]),
+      );
+    // Input order does not matter: the start time decides.
+    expect(byTitle({ commitments: [late, early, middle] })).toEqual({
+      early: 'session-s1@reinvent-compass',
+      middle: 'session-s1-2@reinvent-compass',
+      late: 'session-s1-3@reinvent-compass',
+    });
+    // Moving the early one after the late one swaps the suffixes between them.
+    const moved = dup('2026-12-01T15:00:00-08:00', '2026-12-01T16:00:00-08:00', 'early');
+    expect(byTitle({ commitments: [moved, middle, late] })).toEqual({
+      middle: 'session-s1@reinvent-compass',
+      late: 'session-s1-2@reinvent-compass',
+      early: 'session-s1-3@reinvent-compass',
+    });
   });
 
   test('bidirectional and format characters are removed, separators become spaces', () => {

@@ -133,8 +133,8 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 2. THE Ics_Exporter SHALL write one calendar event per Commitment.
 3. WHERE a Commitment is a reserved session with an earlier commitment, THE Ics_Exporter SHALL add a "leave now" alarm triggered at Boarding_Closes minus the Connection walk minutes. WHERE a reserved session has no earlier commitment, THE Ics_Exporter SHALL add only the "boarding closes" alarm.
 4. WHERE a Commitment is a reserved session, THE Ics_Exporter SHALL add a "boarding closes" alarm set to the session start minus ten minutes.
-5. THE Ics_Exporter SHALL make every identifier and text it writes injection-safe: control characters become spaces and format and bidirectional characters are removed from all text, identifiers outside `^[A-Za-z0-9_-]{1,64}$` are replaced by a hash, the event timezone must be a real IANA zone, and each UID SHALL include the session start time.
-6. THE Ics_Exporter SHALL write the calendar as a local file only, into the app-data `output/` folder, with a stable UID per session.
+5. THE Ics_Exporter SHALL make every identifier and text it writes injection-safe: control characters become spaces and format and bidirectional characters are removed from all text, identifiers outside `^[A-Za-z0-9_-]{1,64}$` are replaced by a hash, the event timezone must be a real IANA zone.
+6. THE Ics_Exporter SHALL write the calendar as a local file only, into the app-data `output/` folder, with a stable UID per session, keyed on the session id (or the personal time id) alone so that it does not change when the event moves; commitments that share an id SHALL be numbered -2, -3 in the order of their start time.
 
 ### Requirement 7: Render an offline itinerary page
 

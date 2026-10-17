@@ -9,7 +9,7 @@ X-WR-CALNAME:re:Invent Compass itinerary
 X-WR-CALDESC:Event times are written in UTC. The event timezone is America
  /Los_Angeles.
 BEGIN:VEVENT
-UID:session-sess-0001-20261201T183000Z@reinvent-compass
+UID:session-sess-0001@reinvent-compass
 SEQUENCE:0
 DTSTAMP:20261201T080000Z
 DTSTART:20261201T183000Z
@@ -25,7 +25,7 @@ DESCRIPTION:Boarding closes: Build on AWS\\, the boarding pass pattern
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:layover-pt-1-20261201T200000Z@reinvent-compass
+UID:layover-pt-1@reinvent-compass
 SEQUENCE:0
 DTSTAMP:20261201T080000Z
 DTSTART:20261201T200000Z
@@ -35,7 +35,7 @@ LOCATION:Lounge
 DESCRIPTION:Layover (personal time).
 END:VEVENT
 BEGIN:VEVENT
-UID:session-sess-0002-20261201T220000Z@reinvent-compass
+UID:session-sess-0002@reinvent-compass
 SEQUENCE:0
 DTSTAMP:20261201T080000Z
 DTSTART:20261201T220000Z

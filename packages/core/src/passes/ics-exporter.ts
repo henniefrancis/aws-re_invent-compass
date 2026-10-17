@@ -53,23 +53,42 @@ function safeId(id: string): string {
   return SAFE_ID.test(id) ? id : shortHash(id);
 }
 
-/** An instant as compact UTC, for example 20261201T183000Z, for the UID. */
-function compactUtc(at: Date): string {
-  return `${at.toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`;
+/**
+ * The UID local part for a commitment, before any duplicate suffix. A reserved session keys on
+ * its session id and a layover on its personalTimeId, so the UID does not change when the event
+ * moves and a re-import updates the event instead of duplicating it. A layover with no id keys
+ * on a hash of its title and start.
+ */
+function uidKey(entry: ItineraryCommitment): string {
+  const { commitment } = entry;
+  if (commitment.kind === 'reservedSession') {
+    return `session-${safeId(commitment.sessionId)}`;
+  }
+  return `layover-${safeId(commitment.personalTimeId ?? shortHash(`${commitment.title}|${commitment.startsAt}`))}`;
 }
 
 /**
- * The UID local part for a commitment, before any duplicate suffix. It includes the start time,
- * so a session that moves gets a new UID rather than silently rewriting an old event.
+ * One UID per commitment, in itinerary order. Commitments that share a key are numbered in the
+ * order of their start time: the earliest keeps the plain UID, the next gets -2, then -3. If a
+ * duplicate is moved past another, the suffixes swap between them (a known limit of keying on
+ * the id alone).
  */
-function uidKey(entry: ItineraryCommitment, start: Date): string {
-  const { commitment } = entry;
-  const when = compactUtc(start);
-  if (commitment.kind === 'reservedSession') {
-    return `session-${safeId(commitment.sessionId)}-${when}`;
+function assignUids(entries: ItineraryCommitment[]): string[] {
+  const starts = entries.map((entry) => parseInstant(entry.commitment.startsAt).getTime());
+  const groups = new Map<string, number[]>();
+  entries.forEach((entry, index) => {
+    const key = uidKey(entry);
+    groups.set(key, [...(groups.get(key) ?? []), index]);
+  });
+  const uids: string[] = [];
+  for (const [key, indices] of groups) {
+    indices
+      .sort((a, b) => (starts[a] as number) - (starts[b] as number))
+      .forEach((index, order) => {
+        uids[index] = `${order === 0 ? key : `${key}-${String(order + 1)}`}@${UID_DOMAIN}`;
+      });
   }
-  const id = commitment.personalTimeId ?? shortHash(commitment.title);
-  return `layover-${safeId(id)}-${when}`;
+  return uids;
 }
 
 /** Display text for an iCalendar TEXT value, with a fallback when nothing is left. */
@@ -107,9 +126,9 @@ export function createIcsExporter(deps: IcsExporterDeps): IcsExporter {
       prodId: { company: UID_DOMAIN, product: 'boarding-passes', language: 'EN' },
     });
     const stamp = clock.now();
-    const seen = new Map<string, number>();
+    const uids = assignUids(itinerary.commitments);
 
-    for (const entry of itinerary.commitments) {
+    for (const [index, entry] of itinerary.commitments.entries()) {
       const { commitment } = entry;
       const start = parseInstant(commitment.startsAt);
       const end = parseInstant(commitment.endsAt);
@@ -121,12 +140,7 @@ export function createIcsExporter(deps: IcsExporterDeps): IcsExporter {
       }
       const walk = checkedWalk(entry);
 
-      // Two commitments that would share a UID get a numeric suffix, so every UID in the
-      // file is unique and a rebuild gives the same UIDs.
-      const key = uidKey(entry, start);
-      const count = seen.get(key) ?? 0;
-      seen.set(key, count + 1);
-      const uid = `${count === 0 ? key : `${key}-${String(count)}`}@${UID_DOMAIN}`;
+      const uid = uids[index] as string;
 
       if (commitment.kind === 'reservedSession') {
         const title = cleanText(commitment.title ?? '', 'Reserved session');
