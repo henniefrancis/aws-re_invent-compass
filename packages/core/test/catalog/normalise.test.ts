@@ -5,7 +5,11 @@ import fc from 'fast-check';
 import { NormalisedSessionSchema, type SessionWire, type Venue } from '@compass/contracts';
 import { normaliseSession } from '../../src/catalog/normalise.js';
 import { parseVenues, recoverVenue } from '../../src/catalog/venue-recovery.js';
-import { computeSessionInterval, isValidTimeZone } from '../../src/catalog/session-time.js';
+import {
+  MAX_CACHED_ZONES,
+  computeSessionInterval,
+  isValidTimeZone,
+} from '../../src/catalog/session-time.js';
 import { ZONES, wireArb, zoneArb } from './arbitraries.js';
 
 // Tests for normalisation, session times and venue recovery (events-client, S1, tasks
@@ -276,5 +280,28 @@ describe('events-client, task 13.12: the normaliser never writes data/venues.jso
     ]) {
       expect(read(name)).not.toMatch(/node:fs|writeFile|appendFile|rename|mkdir/);
     }
+  });
+});
+
+describe('events-client, N6: the zone formatter cache is bounded', () => {
+  test('more than 64 distinct zones still compute correctly, including after eviction', () => {
+    const zones = Intl.supportedValuesOf('timeZone').slice(0, 90);
+    const first = zones[0] ?? 'UTC';
+    const at = (timezone: string) =>
+      computeSessionInterval({ date: '2026-12-01', time: '10:00', length: '30', timezone }, 'UTC');
+    const before = at(first);
+    for (const timezone of zones) {
+      expect(at(timezone)).toBeDefined();
+    }
+    expect(MAX_CACHED_ZONES).toBe(64);
+    expect(at(first)).toEqual(before);
+  });
+
+  test('wrong-case and alias spellings are judged strictly', () => {
+    expect(isValidTimeZone('America/Los_Angeles')).toBe(true);
+    expect(isValidTimeZone('Asia/Kolkata')).toBe(true);
+    expect(isValidTimeZone('america/los_angeles')).toBe(false);
+    expect(isValidTimeZone('AMERICA/LOS_ANGELES')).toBe(false);
+    expect(isValidTimeZone('Europe/PARIS')).toBe(false);
   });
 });

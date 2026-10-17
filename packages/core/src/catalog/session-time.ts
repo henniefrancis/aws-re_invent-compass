@@ -27,6 +27,8 @@ const LENGTH_PATTERN = /^\d{1,5}$/;
 const MS_PER_MINUTE = 60_000;
 
 const formatterCache = new Map<string, Intl.DateTimeFormat | null>();
+/** At most this many zones are cached. */
+export const MAX_CACHED_ZONES = 64;
 
 /** The IANA identifiers the runtime reports, in their canonical case. */
 const SUPPORTED_ZONES: ReadonlySet<string> = new Set(Intl.supportedValuesOf('timeZone'));
@@ -69,6 +71,13 @@ function formatterFor(zone: string): Intl.DateTimeFormat | null {
     formatter = isStrictZone(zone, candidate.resolvedOptions().timeZone) ? candidate : null;
   } catch {
     formatter = null;
+  }
+  // Bounded cache: a hostile stream of distinct zone names cannot grow it (finding N6).
+  if (formatterCache.size >= MAX_CACHED_ZONES) {
+    for (const oldest of formatterCache.keys()) {
+      formatterCache.delete(oldest);
+      break;
+    }
   }
   formatterCache.set(zone, formatter);
   return formatter;

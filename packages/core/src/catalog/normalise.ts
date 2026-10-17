@@ -19,6 +19,7 @@ import {
   type Venue,
 } from '@compass/contracts';
 import { computeSessionInterval } from './session-time.js';
+import { sanitiseWire } from './sanitise-wire.js';
 import { recoverVenue } from './venue-recovery.js';
 
 /** The suffix that marks a repeated session, for example DAT302-R or DAT302-R2. */
@@ -26,10 +27,13 @@ const REPEAT_SUFFIX = /-R[0-9]?$/;
 
 /** Normalise one wire session. The result always validates against the schema. */
 export function normaliseSession(
-  wire: SessionWire,
+  input: SessionWire,
   venues: readonly Venue[] | undefined,
   eventTimezone: string,
 ): NormalisedSession {
+  // All free text is sanitised first (finding N1): control and bidirectional
+  // characters removed, text normalised and truncated, never rejected.
+  const wire = sanitiseWire(input);
   const missing: string[] = [];
   const note = (name: string, present: boolean): void => {
     if (!present) {

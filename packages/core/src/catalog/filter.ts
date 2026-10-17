@@ -6,7 +6,8 @@
 // normalised session does not carry (abstract, topics, services), so the filter works
 // on cache entries, which pair each normalised session with its wire session.
 //
-//   text     case-insensitive substring of the title or the abstract
+//   text     case-insensitive substring of the title, abstract, code, room, venue or a
+//            speaker name
 //   type, level, venue   case-insensitive equality with the normalised field
 //   topic, service       case-insensitive equality with any wire topic or service
 //   day      YYYY-MM-DD equal to the local date of startsAt (its first ten characters,
@@ -51,7 +52,17 @@ export function filterCatalog(entries: readonly CacheEntry[], filter: CatalogFil
 
   return entries.filter(({ session, wire }) => {
     if (text !== undefined) {
-      const haystack = `${session.title}\n${wire.abstract ?? ''}`.toLowerCase();
+      const haystack = [
+        session.title,
+        wire.abstract,
+        session.code,
+        session.room,
+        session.venue,
+        ...(wire.speakers ?? []).map((speaker) => speaker.name),
+      ]
+        .filter((part): part is string => part !== undefined)
+        .join('\n')
+        .toLowerCase();
       if (!haystack.includes(text)) {
         return false;
       }

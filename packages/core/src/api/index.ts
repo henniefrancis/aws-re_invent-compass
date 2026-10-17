@@ -125,3 +125,11 @@ export {
   ResponseTooLargeError,
   errorForStatus,
 } from './errors.js';
+
+// Text sanitising for strings that came from the Events API (finding N1).
+export {
+  sanitiseText,
+  MAX_TITLE_CODE_POINTS,
+  MAX_ABSTRACT_CODE_POINTS,
+  type SanitiseOptions,
+} from './sanitise-text.js';

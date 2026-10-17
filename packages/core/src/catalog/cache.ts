@@ -24,6 +24,7 @@ import {
 import { CacheWriteError } from './errors.js';
 import { fetchAllSessions } from './paginate.js';
 import { normaliseSession } from './normalise.js';
+import { sanitiseWire } from './sanitise-wire.js';
 import { parseVenues } from './venue-recovery.js';
 import type { ClientContext } from '../api/transport.js';
 
@@ -148,10 +149,10 @@ export async function refreshCatalog(deps: CatalogDeps): Promise<CacheEntry[]> {
     includeAbstracts: deps.includeAbstracts ?? true,
   });
   const venues = parseVenues(deps.venues);
-  const entries = wires.map((wire) => ({
-    session: normaliseSession(wire, venues, deps.eventTimezone),
-    wire,
-  }));
+  const entries = wires.map((raw) => {
+    const wire = sanitiseWire(raw);
+    return { session: normaliseSession(wire, venues, deps.eventTimezone), wire };
+  });
   writeCache(deps.dir, { fetchedAt: isoWithOffset(deps.now()), entries }, deps.fs);
   return entries;
 }

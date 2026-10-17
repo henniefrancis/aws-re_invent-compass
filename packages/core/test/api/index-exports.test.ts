@@ -25,6 +25,9 @@ const OPERATIONS: Record<string, string> = {
 
 /** Every other runtime export of the api entry point, listed on purpose. */
 const SUPPORT_EXPORTS = [
+  'sanitiseText',
+  'MAX_TITLE_CODE_POINTS',
+  'MAX_ABSTRACT_CODE_POINTS',
   'BadRequestError',
   'BodyTooLargeError',
   'BulkWriteResultSchema',

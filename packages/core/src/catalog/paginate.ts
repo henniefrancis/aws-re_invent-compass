@@ -11,6 +11,9 @@
 // any non-retryable error, stops the fetch and surfaces CatalogIncompleteError
 // (13.5, 13.6). The catalog is never treated as fully fetched after a failure.
 //
+// The fetch is bounded: more than 200 pages or 20,000 sessions is an incomplete fetch
+// (a server that never ends cannot make the client buffer without limit).
+//
 // An empty nextToken is treated as absent. A nextToken that repeats an earlier one
 // would loop forever, so it also stops the fetch as incomplete.
 
@@ -19,6 +22,10 @@ import { EventsApiError } from '../api/errors.js';
 import { CatalogIncompleteError } from './errors.js';
 import type { ClientContext } from '../api/transport.js';
 import type { SessionWire } from '@compass/contracts';
+
+/** The most pages and sessions one catalog fetch will accept (finding N6). */
+export const MAX_CATALOG_PAGES = 200;
+export const MAX_CATALOG_SESSIONS = 20_000;
 
 /** Options for a catalog fetch. */
 export interface FetchAllOptions {
@@ -48,18 +55,28 @@ export async function fetchAllSessions(
     } catch (error) {
       throw new CatalogIncompleteError(
         pages,
+        'request-failed',
         error instanceof EventsApiError ? error.status : undefined,
+        error instanceof EventsApiError ? error.name : undefined,
       );
     }
     pages += 1;
-    sessions.push(...page.items);
+    for (const item of page.items) {
+      sessions.push(item);
+    }
+    if (sessions.length > MAX_CATALOG_SESSIONS) {
+      throw new CatalogIncompleteError(pages, 'session-limit');
+    }
 
     const token = page.nextToken;
     if (token === undefined || token.length === 0) {
       return sessions;
     }
     if (seenTokens.has(token)) {
-      throw new CatalogIncompleteError(pages);
+      throw new CatalogIncompleteError(pages, 'repeated-token');
+    }
+    if (pages >= MAX_CATALOG_PAGES) {
+      throw new CatalogIncompleteError(pages, 'page-limit');
     }
     seenTokens.add(token);
     nextToken = token;

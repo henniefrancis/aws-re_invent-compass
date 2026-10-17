@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
-import { fetchAllSessions } from '../../src/catalog/paginate.js';
+import {
+  MAX_CATALOG_PAGES,
+  MAX_CATALOG_SESSIONS,
+  fetchAllSessions,
+} from '../../src/catalog/paginate.js';
 import { CatalogIncompleteError } from '../../src/catalog/errors.js';
 import { createHarness, response } from '../api/operation-harness.js';
 import type { SessionWire } from '@compass/contracts';
@@ -159,5 +163,73 @@ describe('Feature: events-client, Property 24: Page 429 waits once then fails; n
     );
     expect(failure).toBeInstanceOf(CatalogIncompleteError);
     expect((failure as CatalogIncompleteError).status).toBeUndefined();
+  });
+});
+
+describe('events-client, N6 and L5: pagination is bounded and failures keep a safe reason code', () => {
+  const unlimited = (h: ReturnType<typeof createHarness>): void => {
+    h.ctx.quota = { check: () => 'allow', record: () => undefined, note429: () => undefined };
+  };
+
+  test('more than 200 pages is an incomplete fetch with the page-limit reason', async () => {
+    const pages = Array.from({ length: 205 }, (_, i) =>
+      response(200, { items: [], totalCount: 0, nextToken: `t${String(i)}` }),
+    );
+    const h = createHarness({ responses: pages });
+    unlimited(h);
+    const failure = await fetchAllSessions(h.ctx, { includeAbstracts: true }).catch(
+      (e: unknown) => e,
+    );
+    expect(failure).toBeInstanceOf(CatalogIncompleteError);
+    expect((failure as CatalogIncompleteError).reason).toBe('page-limit');
+    expect(h.sent).toHaveLength(MAX_CATALOG_PAGES);
+  });
+
+  test('exactly 200 pages ending in a last page still completes', async () => {
+    const pages = Array.from({ length: 200 }, (_, i) =>
+      response(200, {
+        items: [],
+        totalCount: 0,
+        ...(i < 199 ? { nextToken: `t${String(i)}` } : {}),
+      }),
+    );
+    const h = createHarness({ responses: pages });
+    unlimited(h);
+    await expect(fetchAllSessions(h.ctx, { includeAbstracts: true })).resolves.toEqual([]);
+  });
+
+  test('more than 20,000 sessions is an incomplete fetch with the session-limit reason', async () => {
+    const big = (n: number, token?: string): ReturnType<typeof response> =>
+      response(200, {
+        items: Array.from({ length: 10_000 }, (_, i) => session(`s${String(n)}-${String(i)}`)),
+        totalCount: 30_000,
+        ...(token === undefined ? {} : { nextToken: token }),
+      });
+    const h = createHarness({ responses: [big(1, 'a'), big(2, 'b'), big(3)] });
+    unlimited(h);
+    const failure = await fetchAllSessions(h.ctx, { includeAbstracts: false }).catch(
+      (e: unknown) => e,
+    );
+    expect((failure as CatalogIncompleteError).reason).toBe('session-limit');
+    expect(MAX_CATALOG_SESSIONS).toBe(20_000);
+  });
+
+  test('a repeated token, a failing request and a typed failure carry their reason and class name only', async () => {
+    const page = response(200, { items: [], totalCount: 0, nextToken: 'same' });
+    const repeated = await fetchAllSessions(createHarness({ responses: [page, page] }).ctx, {
+      includeAbstracts: true,
+    }).catch((e: unknown) => e);
+    expect((repeated as CatalogIncompleteError).reason).toBe('repeated-token');
+    const failed = await fetchAllSessions(
+      createHarness({ responses: [response(403, undefined)] }).ctx,
+      { includeAbstracts: true },
+    ).catch((e: unknown) => e);
+    expect((failed as CatalogIncompleteError).reason).toBe('request-failed');
+    expect((failed as CatalogIncompleteError).failure).toBe('ForbiddenError');
+    expect((failed as CatalogIncompleteError).status).toBe(403);
+    const untyped = await fetchAllSessions(createHarness({ responses: [] }).ctx, {
+      includeAbstracts: true,
+    }).catch((e: unknown) => e);
+    expect((untyped as CatalogIncompleteError).failure).toBeUndefined();
   });
 });

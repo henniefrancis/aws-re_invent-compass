@@ -7,12 +7,25 @@
 
 import { EventsApiError } from '../api/errors.js';
 
+/** Why a catalog fetch stopped early. A fixed set, never free text. */
+export type CatalogIncompleteReason =
+  'request-failed' | 'repeated-token' | 'page-limit' | 'session-limit';
+
 /** A catalog fetch stopped before the last page, so the catalog is not complete. */
 export class CatalogIncompleteError extends EventsApiError {
   /** How many pages were fetched successfully before the failure. */
   readonly pagesFetched: number;
+  /** The safe reason code. */
+  readonly reason: CatalogIncompleteReason;
+  /** The class name of the typed error that stopped the fetch, when there was one. */
+  readonly failure?: string;
 
-  constructor(pagesFetched: number, status?: number) {
+  constructor(
+    pagesFetched: number,
+    reason: CatalogIncompleteReason,
+    status?: number,
+    failure?: string,
+  ) {
     super(
       'CatalogIncompleteError',
       'ListSessions',
@@ -20,6 +33,10 @@ export class CatalogIncompleteError extends EventsApiError {
       status,
     );
     this.pagesFetched = pagesFetched;
+    this.reason = reason;
+    if (failure !== undefined) {
+      this.failure = failure;
+    }
   }
 }
 

@@ -4,12 +4,23 @@
 // local filtering and the event window read from the API. The venue list is only
 // ever received by injection and read; nothing here writes it.
 
-export { CatalogIncompleteError, CacheWriteError } from './errors.js';
+export { CatalogIncompleteError, CacheWriteError, type CatalogIncompleteReason } from './errors.js';
 export { resolveAppDataDir, APP_DATA_DIR_NAME, type AppDataEnv } from './app-data-dir.js';
-export { fetchAllSessions, type FetchAllOptions } from './paginate.js';
+export {
+  fetchAllSessions,
+  MAX_CATALOG_PAGES,
+  MAX_CATALOG_SESSIONS,
+  type FetchAllOptions,
+} from './paginate.js';
+export { sanitiseWire } from './sanitise-wire.js';
 export { normaliseSession } from './normalise.js';
 export { recoverVenue, parseVenues } from './venue-recovery.js';
-export { computeSessionInterval, isValidTimeZone, type SessionInterval } from './session-time.js';
+export {
+  computeSessionInterval,
+  isValidTimeZone,
+  MAX_CACHED_ZONES,
+  type SessionInterval,
+} from './session-time.js';
 export {
   readCatalog,
   refreshCatalog,

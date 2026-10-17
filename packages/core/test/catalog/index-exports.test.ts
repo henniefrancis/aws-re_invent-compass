@@ -5,6 +5,10 @@ import * as catalog from '../../src/catalog/index.js';
 // The list is explicit so the public surface changes only on purpose.
 
 const EXPECTED = [
+  'sanitiseWire',
+  'MAX_CATALOG_PAGES',
+  'MAX_CATALOG_SESSIONS',
+  'MAX_CACHED_ZONES',
   'APP_DATA_DIR_NAME',
   'CACHE_DIR_MODE',
   'CACHE_FILE_MODE',
