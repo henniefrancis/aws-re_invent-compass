@@ -91,34 +91,34 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 3.5 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 4. Shell, home, install and privacy pages
-  - [ ] 4.1 Implement the Shell
+- [x] 4. Shell, home, install and privacy pages
+  - [x] 4.1 Implement the Shell
     - Create the app component, `site-header`, `site-footer`, `SiteTitleStrategy` (`<page> | re:Invent Compass`) and `focus-on-navigate` (focus the page `<h1>` after each navigation except the first, through `afterNextRender`), with the pure helper `site/src/lib/shell/focus.ts` and its test
     - Skip link first; header with four links in a wrapping list; one `<main id="main" tabindex="-1">`; footer with the Notice and the links from `footerItems`; nothing fixed or sticky
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 19.6, 19.7, 19.8, 19.9_
 
-  - [ ] 4.2 Implement the Home_Page
+  - [x] 4.2 Implement the Home_Page
     - Hero with the name and tagline; the "Starts 10:30" versus "Seat released at 10:20" illustration as text plus original inline SVG; the metaphor as a table with column headers; Plan, Board and Fly cards; principles; Demo and Install as the two primary actions; the unofficial pass statement
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 19.8, 19.12_
 
-  - [ ] 4.3 Implement the Install_Page
+  - [x] 4.3 Implement the Install_Page
     - Sections from `content/install.ts`; "Add to Kiro" only when `kiroPowerListing` is set, else the GitHub import steps; the npx commands with copy buttons using `navigator.clipboard.writeText` and a polite live region; the hooks note
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6_
 
-  - [ ] 4.4 Implement the Privacy_Page
+  - [x] 4.4 Implement the Privacy_Page
     - Three sections from `content/privacy.ts`, the responsible party, `forget_me`, and the no remote deletion statement
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6_
 
-  - [ ] 4.5 Add the original artwork and its manifest
+  - [x] 4.5 Add the original artwork and its manifest
     - Create original SVG artwork (favicon and the home illustration) in `site/public/artwork/` and `site/ARTWORK.md` listing each file, its author and that it is original; no AWS logo, mark, colour or trademark artwork; fixed dimensions on every image
     - Extend the static checks: every file in `site/public/` is listed in `ARTWORK.md`, and only `.svg`, `.txt` and `.ico` files exist there
     - _Requirements: 6.4, 6.5, 21.5_
 
-  - [ ] 4.6 Verify the build and prerender
+  - [x] 4.6 Verify the build and prerender
     - Run `npx tsc -b` and `npx ng build` from `site/`; open the prerendered files and confirm the content is in the HTML, with no `<style>` element and no inline script
     - _Requirements: 1.3, 3.1, 3.5_
 
-  - [ ] 4.7 Commit
+  - [x] 4.7 Commit
     - After the commands in execution rule 5 pass with zero errors, commit with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [ ] 5. Build output check and budget check

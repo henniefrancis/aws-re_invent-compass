@@ -164,3 +164,27 @@ function stripCommentsKeepStrings(text: string): string {
     .map((line) => line.replace(/(^|\s)\/\/.*$/, ''))
     .join('\n');
 }
+
+describe('artwork', () => {
+  const publicFiles = listFiles('public', ['']);
+  const manifest = listFiles('.', ['ARTWORK.md']).find((f) => f.path === 'ARTWORK.md')?.text ?? '';
+
+  test('every file in public is listed in ARTWORK.md', () => {
+    expect(publicFiles.length).toBeGreaterThan(0);
+    for (const file of publicFiles) {
+      expect(manifest, file.path).toContain(`\`${file.path}\``);
+    }
+  });
+
+  test('public holds only svg, txt and ico files', () => {
+    for (const file of publicFiles) {
+      expect(file.path, file.path).toMatch(/\.(svg|txt|ico)$/);
+    }
+  });
+
+  test('no artwork names an AWS mark', () => {
+    for (const file of publicFiles) {
+      expect(file.text.toLowerCase(), file.path).not.toMatch(/aws|amazon|apple|google/);
+    }
+  });
+});

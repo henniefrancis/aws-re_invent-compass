@@ -132,3 +132,22 @@
 .badge--block {
   color: var(--color-block);
 }
+
+.hero__tagline {
+  font-size: clamp(1.25rem, 4.5vw, 1.75rem);
+  font-weight: 700;
+}
+
+.big-time {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.illustration {
+  display: block;
+  max-inline-size: 100%;
+  block-size: auto;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}

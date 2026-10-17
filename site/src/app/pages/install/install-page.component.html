@@ -1,1 +1,62 @@
 <h1 tabindex="-1">Install</h1>
+
+<section class="stack measure" aria-labelledby="install-devices">
+  <h2 id="install-devices">Plan on a computer, board on any device</h2>
+  <p>{{ planOnComputer }}</p>
+  <p>{{ boardOnAnyDevice }}</p>
+</section>
+
+<section class="stack measure" aria-labelledby="install-kiro">
+  <h2 id="install-kiro">Add the Kiro Power</h2>
+  @if (kiroListing !== null) {
+    <p>{{ kiroAddButton }}</p>
+    <p><a class="button" [href]="kiroListing" rel="noopener noreferrer">Add to Kiro</a></p>
+  } @else {
+    <p>{{ importIntro }}</p>
+    <ol>
+      @for (step of importSteps; track step.id) {
+        <li>{{ step.text }}</li>
+      }
+    </ol>
+    <ul>
+      @for (option of importOptions; track option.id) {
+        <li>
+          <strong>{{ option.label }}:</strong> <code>{{ option.value }}</code
+          >. {{ option.note }}
+        </li>
+      }
+    </ul>
+    <p class="source-note">{{ importSourceNote }}</p>
+  }
+  <p>{{ hooksNote }}</p>
+</section>
+
+<section class="stack measure" aria-labelledby="install-npx">
+  <h2 id="install-npx">Run it with npx</h2>
+  <p>{{ nodeRequirement }}</p>
+  @for (command of commands; track command.id) {
+    <div class="stack">
+      <p>{{ command.description }}</p>
+      <div class="command">
+        <code>{{ command.text }}</code>
+        <button
+          type="button"
+          (click)="copy(command.text)"
+          [attr.aria-label]="copyLabel + ': ' + command.text"
+        >
+          {{ copyLabel }}
+        </button>
+      </div>
+    </div>
+  }
+  <p class="live-region" role="status" aria-live="polite">{{ message() }}</p>
+</section>
+
+@if (otherClients.length > 0) {
+  <section class="stack measure" aria-labelledby="install-clients">
+    <h2 id="install-clients">Other MCP clients</h2>
+    @for (block of otherClients; track block.id) {
+      <p>{{ block.text }}</p>
+    }
+  </section>
+}
