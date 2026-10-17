@@ -49,15 +49,15 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
   - [x] 2.4 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
-- [ ] 3. Implement the plain-English reason builders
-  - [ ] 3.1 Implement `reasons.ts` as the single source of reason and warning strings
+- [x] 3. Implement the plain-English reason builders
+  - [x] 3.1 Implement `reasons.ts` as the single source of reason and warning strings
     - Centralise every reason and warning string so no em dash or en dash reaches output and each sentence stays within 20 words
     - Provide builders that name venues, commitments, walking minutes, overlapping ranges, and missing fields as required by the rule layers
     - _Requirements: 8.10, 11.6, 12.3_
-  - [ ] 3.2 Write property test for plain-English, no-dash strings
+  - [x] 3.2 Write property test for plain-English, no-dash strings
     - **Property 18: Every produced string is plain English with no em dash or en dash**
     - **Validates: Requirements 8.10, 11.6, 12.3**
-  - [ ] 3.3 Run the rules tests, confirm they pass, then commit
+  - [x] 3.3 Run the rules tests, confirm they pass, then commit
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 - [ ] 4. Implement venue data loading, validation, and matrix lookup
