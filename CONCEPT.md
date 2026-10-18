@@ -59,12 +59,12 @@ Everyone at re:Invent has flown to get there. The metaphor needs no explaining.
 
 ## 4. Why this can win
 
-| Judging criterion (25% each)   | How Compass scores                                                                                                                                                                                      |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Creativity and novelty         | As of 15 October, no other entry ships as a Kiro Power with hooks that enforce the rules, turns a codebase into an agenda, or puts boarding information in the phone's wallet.                          |
-| Utility for attendees          | It targets the 10-minute rule, the most costly and least visible first-timer mistake, with information exactly where and when it is needed.                                                             |
-| Technical depth and API use    | Uses **all 12 operations** across **both** the REST API and the remote MCP server, handles per-session results, throttling and pagination properly, and includes a serverless pass signer in Terraform. |
-| Builder Center article quality | A natural story: "I used Kiro specs to build a tool that turns your re:Invent week into a Kiro spec." Strong visuals: the spec, the hook stopping a bad booking, the pass on a lock screen.             |
+| Judging criterion (25% each)   | How Compass scores                                                                                                                                                                                                                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Creativity and novelty         | As of 15 October, no other entry ships as a Kiro Power with hooks that enforce the rules, turns a codebase into an agenda, or puts boarding information in the phone's wallet.                                                                                                          |
+| Utility for attendees          | It targets the 10-minute rule, the most costly and least visible first-timer mistake, with information exactly where and when it is needed.                                                                                                                                             |
+| Technical depth and API use    | Uses **all 12 operations** through the REST client (the official remote MCP server joins the Power once spike SP1 confirms its write tools can be disabled there), handles per-session results, throttling and pagination properly, and includes a serverless pass signer in Terraform. |
+| Builder Center article quality | A natural story: "I used Kiro specs to build a tool that turns your re:Invent week into a Kiro spec." Strong visuals: the spec, the hook stopping a bad booking, the pass on a lock screen.                                                                                             |
 
 ### How it differs from the 10 existing entries
 
@@ -89,7 +89,7 @@ Everyone at re:Invent has flown to get there. The metaphor needs no explaining.
 | AssociateFavorites, DisassociateFavorite                   | Standby list of backups                                                |
 | CreatePersonalTime, UpdatePersonalTime, DeletePersonalTime | Layovers (meals, rest) and transit blocks between venues               |
 
-Both surfaces are used: the Compass local MCP server talks REST, and the official remote MCP server is bundled in the Power so the agent can explore the catalog directly.
+The Compass local MCP server talks REST for all 12 operations. The official remote MCP server is planned for read exploration in the Power, and is added once spike SP1 confirms its write tools can be disabled there (ADR-024).
 
 ## 6. Architecture
 
@@ -158,7 +158,7 @@ The full register (16 risks with owner, likelihood and mitigation) is in build p
 1. A first-timer opens their own project in Kiro and says: "Plan my re:Invent."
 2. The Power activates. Compass scans the repo: "You run Lambda, DynamoDB and Step Functions at production depth. You have never touched Bedrock."
 3. Kiro writes `.kiro/specs/my-reinvent-week/`. We scroll the design: reasons, connection times, a lunch layover.
-4. They run the tasks. One reservation is blocked: "Tight connection: Mandalay Bay to Wynn is 35 minutes; you have 20. Try the repeat on Thursday." They accept the safe swap.
+4. They run the tasks. One reservation is blocked: "Likely impossible connection: the walk from The Venetian to Wynn is 40 minutes, an estimate, and you have 30. Try the repeat on Friday." They accept the safe swap.
 5. The final task issues boarding passes. They scan the QR code with an iPhone and add them to Wallet. Cut to the lock screen at the Venetian: "DAT302, Seat released at 10:20, 6 min walk."
 6. They cancel a session. Compass voids the pass: it leaves the main Wallet view and moves to expired passes. `GetSchedule` confirms the cancellation. (No wallet lets anyone delete a pass remotely; voiding is the closest, and every pass also expires at its session end.)
 7. On the showcase site, on a phone, anyone can try the clash demo with no install.

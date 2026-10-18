@@ -32,3 +32,5 @@ One record per architecture decision for re:Invent Compass, mirrored from the pr
 | [ADR-026](ADR-026-audit-allowlist.md)                           | Audit allowlist for accepted advisories                  | Accepted |
 | [ADR-027](ADR-027-accepted-residual-risks.md)                   | Accepted residual risks from the stream security reviews | Accepted |
 | [ADR-028](ADR-028-site-component-coverage.md)                   | Site component coverage exclusion                        | Accepted |
+| [ADR-029](ADR-029-builders-after-kiro-credits.md)               | Builders after the Kiro credits ran out                  | Accepted |
+| [ADR-030](ADR-030-api-key-at-api-gateway.md)                    | API key enforced at API Gateway                          | Accepted |

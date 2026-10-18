@@ -4,7 +4,7 @@ inclusion: always
 
 # Technology
 
-The approved build plan is the source of truth: #[[file:docs/architecture/build-plan.md]]. Decisions are in `docs/decisions/` (ADR-001 to ADR-022). If this file and the plan disagree, the plan wins; fix this file in the same change.
+The approved build plan is the source of truth: #[[file:docs/architecture/build-plan.md]]. Decisions are in `docs/decisions/` (ADR-001 to ADR-030). If this file and the plan disagree, the plan wins; fix this file in the same change.
 
 ## Stack (ADR-006)
 
@@ -55,7 +55,7 @@ New PKCE verifier and `state` per attempt; S256 challenge, base64url without pad
 
 ### Official MCP server in the Power (ADR-017)
 
-Bundled as `awsevents` for read exploration, with its write tools listed in `disabledTools`, so every write goes through Compass's guardrails. Kiro config from the docs:
+Planned as `awsevents` for read exploration, with its write tools listed in `disabledTools`, so every write goes through Compass's guardrails. It is NOT bundled in `power/mcp.json` until spike SP1 confirms that `disabledTools` works inside a Power (ADR-024; compass-power deviation H2). Until then an attendee who wants it adds it to the workspace `.kiro/settings/mcp.json` with the same `disabledTools`. Kiro config from the docs:
 
 ```json
 {
@@ -102,7 +102,7 @@ Bundled as `awsevents` for read exploration, with its write tools listed in `dis
 - HCP Terraform in the owner's **personal organisation**: workspaces `reinvent-compass-bootstrap` (local execution, run once by the owner), `reinvent-compass-dev` and `reinvent-compass-prod` (remote, CLI-driven), with **HCP dynamic provider credentials**. No AWS keys anywhere and no GitHub deploy role.
 - Region `us-east-1` for everything.
 - Passembly file conventions: `versions.tf`, `provider.tf` with `default_tags`, validated `variables.tf`, `locals.tf`, one file per concern, `tests/*.tftest.hcl` with mock providers. Checks: `terraform fmt`, `validate`, `tflint`, `terraform test`, Trivy config scan.
-- Retained resources with `prevent_destroy` and roll-forward notes: the CloudFront distribution, the DynamoDB table, the three secrets and the site bucket.
+- Retained resources with `prevent_destroy` and roll-forward notes: the CloudFront distribution, the DynamoDB table, the four secrets (apple-pass, google-wallet, app, origin-verify) and the site bucket.
 - **The owner runs every deploy** with `scripts/release.sh <env>` (shellchecked): build, saved plan, refuse destroy or replace of retained resources and unexpected resource types, typed `yes`, apply, site sync and invalidation, health check. Dev is deployed before prod.
 
 ## CI (ADR-018)
@@ -115,13 +115,13 @@ Bundled as `awsevents` for read exploration, with its write tools listed in `dis
 
 The repository is public. Only security-sensitive and account-specific material stays private.
 
-| Public (commit it)                                                                             | Private (never commit)                                                                                                        | Where it lives                                                          |
-| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| All code, tests, steering, specs, hooks, docs, ADRs                                            | Apple Pass Type ID certificate and key, WWDR certificate                                                                      | AWS Secrets Manager, loaded by the owner with `scripts/load-secrets.sh` |
-| Terraform modules, envs, tests                                                                 | Google Wallet service account key and issuer ID                                                                               | AWS Secrets Manager                                                     |
-| `*.example` files (`terraform.tfvars.example`, `cloud.auto.tfbackend.example`, `.env.example`) | Real `terraform.tfvars`, `cloud.auto.tfbackend`, `.env`, HCP organisation and workspace settings, AWS account ID, alert email | Local git-ignored files and HCP workspace variables                     |
-| Synthetic catalog in `fixtures/synthetic/`                                                     | Real API recordings                                                                                                           | `fixtures/.raw/`, git-ignored                                           |
-| The CloudFront domain (attendees need it)                                                      | HMAC pepper, origin-verify value                                                                                              | Generated into Secrets Manager by Terraform, never output               |
+| Public (commit it)                                                                             | Private (never commit)                                                                                                        | Where it lives                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| All code, tests, steering, specs, hooks, docs, ADRs                                            | Apple Pass Type ID certificate and key, WWDR certificate                                                                      | AWS Secrets Manager, loaded by the owner with `scripts/load-secrets.sh`                                                                                                                                         |
+| Terraform modules, envs, tests                                                                 | Google Wallet service account key and issuer ID                                                                               | AWS Secrets Manager                                                                                                                                                                                             |
+| `*.example` files (`terraform.tfvars.example`, `cloud.auto.tfbackend.example`, `.env.example`) | Real `terraform.tfvars`, `cloud.auto.tfbackend`, `.env`, HCP organisation and workspace settings, AWS account ID, alert email | Local git-ignored files and HCP workspace variables                                                                                                                                                             |
+| Synthetic catalog in `fixtures/synthetic/`                                                     | Real API recordings                                                                                                           | `fixtures/.raw/`, git-ignored                                                                                                                                                                                   |
+| The CloudFront domain (attendees need it)                                                      | HMAC pepper, origin-verify value                                                                                              | Generated locally by the owner script `scripts/load-secrets.sh`, never by Terraform (ADR-012). The origin-verify value and the API key also sit in the CloudFront origin headers and HCP state (ADR-027 item 2) |
 
 Never read, print or paste a secret value. Repository protections: secret scanning with push protection, CodeQL default setup, branch protection on `main`, private vulnerability reporting.
 

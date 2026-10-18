@@ -22,7 +22,6 @@ export default defineConfig({
     },
     coverage: {
       provider: 'v8',
-      all: true,
       include: [
         'packages/*/src/**/*.ts',
         'spikes/src/**/*.ts',

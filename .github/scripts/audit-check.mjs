@@ -5,8 +5,8 @@
 // three advisories reaching the project only through passkit-generator (S5's
 // Apple Wallet library), which the owner accepts for now:
 //   GHSA-86w9-cpqp-85rv  node-forge: signature verification not used by passkit-generator
-//   GHSA-6h2x-m376-mqjq  joi (via passkit-generator): input is pre-validated by PassFields
-//   GHSA-wr44-6hxh-3jwq  joi (via passkit-generator): input is pre-validated by PassFields
+//   GHSA-6h2x-m376-mqjq  joi (via passkit-generator): dates bounded by PassFields and passed as Date objects (ADR-026 correction)
+//   GHSA-wr44-6hxh-3jwq  joi (via passkit-generator): only fixed schemas and messages reach joi (ADR-026)
 //
 // The allowlisted IDs are printed as a warning on every run, so an accepted risk
 // stays visible. Any high or critical advisory NOT on the allowlist fails the

@@ -84,6 +84,6 @@ A reserved seat is only held until 10 minutes before the session starts, then it
 ## Success measures
 
 - Judging criteria (25% each): creativity and novelty, utility for attendees, technical depth and use of the API surface, quality of the Builder Center article.
-- All 12 Events API operations used; the official remote MCP server bundled for read exploration.
+- All 12 Events API operations used through the Compass tools; the official remote MCP server added for read exploration once SP1 confirms `disabledTools` works in a Power (ADR-024).
 - A first-timer goes from "Plan my re:Invent" to passes on their phone in under 15 minutes.
 - A judge can try the core idea on a phone in under 2 minutes on the showcase site.
