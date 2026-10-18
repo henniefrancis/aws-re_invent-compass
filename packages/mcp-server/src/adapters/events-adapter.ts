@@ -12,6 +12,7 @@ import {
   cancelReservation,
   confirmedWrite,
   createPersonalTime,
+  deletePersonalTime,
   disassociateFavorite,
   EventsApiError,
   getEvent,
@@ -19,6 +20,7 @@ import {
   getSession,
   listEvents,
   reserveSessions,
+  updatePersonalTime,
 } from '@compass/core/api';
 import type { AnnotatedBulkWriteResult, ClientContext } from '@compass/core/api';
 import {
@@ -347,5 +349,26 @@ export function createEventsAdapter(deps: EventsAdapterDeps): EventsPort {
           }),
         () => null,
       ),
+
+    updatePersonalTime: (id, input) => {
+      requireIds([id]);
+      return confirmed(
+        () =>
+          updatePersonalTime(ctx, id, {
+            ...input,
+            startDateTime: toWireInstant(input.startDateTime),
+            endDateTime: toWireInstant(input.endDateTime),
+          }),
+        () => null,
+      );
+    },
+
+    deletePersonalTime: (id) => {
+      requireIds([id]);
+      return confirmed(
+        () => deletePersonalTime(ctx, id),
+        () => null,
+      );
+    },
   };
 }

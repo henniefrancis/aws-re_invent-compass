@@ -147,7 +147,8 @@ describe('remove_standby', () => {
 
 const layover = (
   overrides: Partial<PersonalTimeInput> = {},
-): { personalTime: PersonalTimeInput } => ({
+): { action: 'create'; personalTime: PersonalTimeInput } => ({
+  action: 'create',
   personalTime: {
     startDateTime: '2026-12-01T12:00:00-08:00',
     endDateTime: '2026-12-01T12:30:00-08:00',
@@ -161,7 +162,11 @@ describe('add_layover', () => {
   test('creates the layover once and returns the id of the confirmed entry', async () => {
     const { fake, ctx } = setup();
     const outcome = await addLayover(layover(), ctx);
-    expect(outcome.ok && outcome.structured).toEqual({ added: true, personalTimeId: 'pt-1' });
+    expect(outcome.ok && outcome.structured).toEqual({
+      action: 'create',
+      done: true,
+      personalTimeId: 'pt-1',
+    });
     expect(fake.events.callsTo('createPersonalTime')).toHaveLength(1);
     expect(fake.snapshot.writes.at(-1)?.schedule.personalTime).toHaveLength(1);
   });
@@ -211,9 +216,9 @@ describe('add_layover', () => {
       ctx,
     );
     expect(outcome.ok && outcome.text).toContain(
-      'It overlaps something on your schedule. It was still created.',
+      'It overlaps something on your schedule. It was still written.',
     );
-    expect(outcome.ok && outcome.structured).toMatchObject({ added: true });
+    expect(outcome.ok && outcome.structured).toMatchObject({ done: true });
   });
 
   test('the title is shown only inside an attendee data block', async () => {
@@ -231,12 +236,13 @@ describe('add_layover', () => {
     const ignored = setup();
     ignored.fake.events.ignoreWrites = true;
     const first = await addLayover(layover(), ignored.ctx);
-    expect(first.ok && first.structured).toEqual({ added: false });
+    expect(first.ok && first.structured).toEqual({ action: 'create', done: false });
     expect(first.ok && first.text).toContain('does not list it');
     const unconfirmed = setup();
     unconfirmed.fake.events.confirm = 'unconfirmed';
     const second = await addLayover(layover(), unconfirmed.ctx);
     expect(second.ok && second.text).toContain('so it is unconfirmed');
+    expect(second.ok && second.structured).toEqual({ action: 'create', done: false });
     const declined = setup(declining);
     const third = await addLayover(layover(), declined.ctx);
     expect(third.ok && third.text).toContain('did not confirm');
@@ -254,5 +260,230 @@ describe('add_layover', () => {
     );
     await expect(addLayover(layover(), ctx)).rejects.toMatchObject({ code: 'RateLimited' });
     expect(fake.events.callsTo('createPersonalTime')).toHaveLength(1);
+  });
+});
+
+const WHEN = {
+  startDateTime: '2026-12-01T15:00:00-08:00',
+  endDateTime: '2026-12-01T15:30:00-08:00',
+};
+
+function withEntry(fake: ReturnType<typeof setup>['fake']): void {
+  fake.events.schedule.personalTime.push({
+    personalTimeId: 'pt-7',
+    startDateTime: '2026-12-01T12:00:00-08:00',
+    endDateTime: '2026-12-01T12:30:00-08:00',
+    title: 'Lunch',
+    description: 'Eat',
+  });
+}
+
+describe('add_layover update', () => {
+  const update = (overrides: Partial<PersonalTimeInput> = {}, id = 'pt-7') =>
+    ({
+      action: 'update' as const,
+      personalTimeId: id,
+      personalTime: { ...layover().personalTime, ...WHEN, title: 'Late lunch', ...overrides },
+    }) as const;
+
+  test('changes the entry once, asks first and confirms it from the schedule', async () => {
+    const asked: string[] = [];
+    const { fake, ctx } = setup((question) => {
+      asked.push(question.message);
+      return Promise.resolve('accept');
+    });
+    withEntry(fake);
+    const outcome = await addLayover(update(), ctx);
+    expect(outcome.ok && outcome.structured).toEqual({
+      action: 'update',
+      done: true,
+      personalTimeId: 'pt-7',
+    });
+    expect(asked[0]).toContain('id pt-7');
+    expect(asked[0]).toContain('Late lunch');
+    expect(fake.events.callsTo('updatePersonalTime')).toHaveLength(1);
+    expect(fake.events.callsTo('createPersonalTime')).toEqual([]);
+    expect(fake.snapshot.writes.at(-1)?.schedule.personalTime[0]?.title).toBe('Late lunch');
+  });
+
+  test('checks the id and the times before any call', async () => {
+    const { fake, ctx } = setup();
+    withEntry(fake);
+    await expect(addLayover(update({}, '..'), ctx)).rejects.toMatchObject({
+      code: 'IdentifierRejected',
+    });
+    await expect(addLayover(update({}, 'a/b'), ctx)).rejects.toMatchObject({
+      code: 'IdentifierRejected',
+    });
+    await expect(
+      addLayover(update({ startDateTime: '2026-12-01T15:01:00-08:00' }), ctx),
+    ).rejects.toMatchObject({ code: 'LayoverInvalid' });
+    expect(fake.events.writeCalls).toEqual([]);
+  });
+
+  test('an id that is not on the schedule changes nothing', async () => {
+    const { fake, ctx } = setup();
+    const outcome = await addLayover(update({}, 'pt-404'), ctx);
+    expect(outcome.ok && outcome.structured).toEqual({ action: 'update', done: false });
+    expect(outcome.ok && outcome.text).toContain('not on your schedule');
+    expect(fake.events.writeCalls).toEqual([]);
+  });
+
+  test('a decline writes nothing; an ignored or unconfirmed write is not reported as done', async () => {
+    const declined = setup(declining);
+    withEntry(declined.fake);
+    const first = await addLayover(update(), declined.ctx);
+    expect(first.ok && first.structured).toEqual({ action: 'update', done: false });
+    expect(declined.fake.events.writeCalls).toEqual([]);
+    const ignored = setup();
+    withEntry(ignored.fake);
+    ignored.fake.events.ignoreWrites = true;
+    const second = await addLayover(update(), ignored.ctx);
+    expect(second.ok && second.structured).toEqual({
+      action: 'update',
+      done: false,
+      personalTimeId: 'pt-7',
+    });
+    expect(second.ok && second.text).toContain('does not show it');
+    const unconfirmed = setup();
+    withEntry(unconfirmed.fake);
+    unconfirmed.fake.events.confirm = 'unconfirmed';
+    const third = await addLayover(update(), unconfirmed.ctx);
+    expect(third.ok && third.text).toContain('so it is unconfirmed');
+  });
+
+  test('an overlap with a reserved session is a warning, and the entry itself is not an overlap', async () => {
+    const { fake, ctx } = setup();
+    withEntry(fake);
+    fake.events.schedule.reserved.push(TRIPLE.a);
+    const outcome = await addLayover(
+      update({
+        startDateTime: '2026-12-01T13:15:00-08:00',
+        endDateTime: '2026-12-01T13:45:00-08:00',
+      }),
+      ctx,
+    );
+    expect(outcome.ok && outcome.text).toContain('It was still written.');
+    const same = setup();
+    withEntry(same.fake);
+    const clean = await addLayover(
+      update({
+        startDateTime: '2026-12-01T12:00:00-08:00',
+        endDateTime: '2026-12-01T12:30:00-08:00',
+      }),
+      same.ctx,
+    );
+    expect(clean.ok && clean.text).not.toContain('overlaps');
+  });
+});
+
+describe('add_layover delete', () => {
+  const remove = (id = 'pt-7') => ({ action: 'delete' as const, personalTimeId: id });
+
+  test('deletes the entry once, asks first and confirms it is gone', async () => {
+    const asked: string[] = [];
+    const { fake, ctx } = setup((question) => {
+      asked.push(question.message);
+      return Promise.resolve('accept');
+    });
+    withEntry(fake);
+    const outcome = await addLayover(remove(), ctx);
+    expect(outcome.ok && outcome.structured).toEqual({
+      action: 'delete',
+      done: true,
+      personalTimeId: 'pt-7',
+    });
+    expect(asked[0]).toContain('Delete the layover (id pt-7)');
+    expect(fake.events.callsTo('deletePersonalTime')).toHaveLength(1);
+    expect(fake.snapshot.writes.at(-1)?.schedule.personalTime).toEqual([]);
+  });
+
+  test('checks the id, and an unknown id changes nothing', async () => {
+    const { fake, ctx } = setup();
+    await expect(addLayover(remove('..'), ctx)).rejects.toMatchObject({
+      code: 'IdentifierRejected',
+    });
+    const outcome = await addLayover(remove('pt-404'), ctx);
+    expect(outcome.ok && outcome.text).toContain('not on your schedule');
+    expect(outcome.ok && outcome.structured).toEqual({ action: 'delete', done: false });
+    expect(fake.events.writeCalls).toEqual([]);
+  });
+
+  test('a decline, an ignored write and an unconfirmed write are not reported as deleted', async () => {
+    const declined = setup(declining);
+    withEntry(declined.fake);
+    const first = await addLayover(remove(), declined.ctx);
+    expect(first.ok && first.text).toContain('did not confirm');
+    expect(declined.fake.events.writeCalls).toEqual([]);
+    const ignored = setup();
+    withEntry(ignored.fake);
+    ignored.fake.events.ignoreWrites = true;
+    const second = await addLayover(remove(), ignored.ctx);
+    expect(second.ok && second.structured).toEqual({
+      action: 'delete',
+      done: false,
+      personalTimeId: 'pt-7',
+    });
+    expect(second.ok && second.text).toContain('still lists the layover');
+    const unconfirmed = setup();
+    withEntry(unconfirmed.fake);
+    unconfirmed.fake.events.confirm = 'unconfirmed';
+    const third = await addLayover(remove(), unconfirmed.ctx);
+    expect(third.ok && third.text).toContain('so it is unconfirmed');
+  });
+
+  test('a signed-out attendee and a rate limit', async () => {
+    const { fake, ctx } = setup();
+    withEntry(fake);
+    fake.events.signedIn = false;
+    await expect(addLayover(remove(), ctx)).rejects.toMatchObject({ code: 'NotSignedIn' });
+    fake.events.signedIn = true;
+    fake.events.failWith.set('deletePersonalTime', new CompassError('RateLimited'));
+    await expect(addLayover(remove(), ctx)).rejects.toMatchObject({ code: 'RateLimited' });
+  });
+});
+
+describe('add_layover through the MCP server', () => {
+  test('create, update and delete reach the Events service in order, each after a confirmation', async () => {
+    const fake = createFakeRuntime({ catalog: syntheticCatalogView() });
+    const connection = await connect(fake.runtime, { elicit: 'accept' });
+    const created = await connection.call('add_layover', {
+      action: 'create',
+      personalTime: layover().personalTime,
+    });
+    expect(created.structuredContent).toEqual({
+      action: 'create',
+      done: true,
+      personalTimeId: 'pt-1',
+    });
+    const updated = await connection.call('add_layover', {
+      action: 'update',
+      personalTimeId: 'pt-1',
+      personalTime: { ...layover().personalTime, ...WHEN },
+    });
+    expect(updated.structuredContent).toEqual({
+      action: 'update',
+      done: true,
+      personalTimeId: 'pt-1',
+    });
+    const deleted = await connection.call('add_layover', {
+      action: 'delete',
+      personalTimeId: 'pt-1',
+    });
+    expect(deleted.structuredContent).toEqual({
+      action: 'delete',
+      done: true,
+      personalTimeId: 'pt-1',
+    });
+    expect(fake.events.writeCalls.map((c) => c.method)).toEqual([
+      'createPersonalTime',
+      'updatePersonalTime',
+      'deletePersonalTime',
+    ]);
+    expect(connection.questions).toHaveLength(3);
+    const old = await connection.call('add_layover', { personalTime: layover().personalTime });
+    expect(old.isError).toBe(true);
+    expect(textOf(old)).not.toContain('Lunch');
+    await connection.close();
   });
 });

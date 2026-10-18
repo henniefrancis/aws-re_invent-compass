@@ -105,3 +105,47 @@ describe('Feature: foundation-contracts, MCP tool session id bounds', () => {
     expect(mcpTools.sync_passes.input.safeParse({ sessionIds: eightyOne }).success).toBe(false);
   });
 });
+
+describe('add_layover action union', () => {
+  const personalTime = {
+    startDateTime: '2026-12-01T12:00:00-08:00',
+    endDateTime: '2026-12-01T12:30:00-08:00',
+    title: 'Lunch',
+    description: 'Eat',
+  };
+  const input = mcpTools.add_layover.input;
+
+  test('accepts create, update and delete in their own shapes', () => {
+    expect(input.safeParse({ action: 'create', personalTime }).success).toBe(true);
+    expect(
+      input.safeParse({ action: 'update', personalTimeId: 'pt-1', personalTime }).success,
+    ).toBe(true);
+    expect(input.safeParse({ action: 'delete', personalTimeId: 'pt-1' }).success).toBe(true);
+  });
+
+  test('rejects a missing or unknown action and the old action-less shape', () => {
+    expect(input.safeParse({ personalTime }).success).toBe(false);
+    expect(input.safeParse({ action: 'move', personalTimeId: 'pt-1' }).success).toBe(false);
+  });
+
+  test('update and delete need a bounded, non-empty id; create needs the entry', () => {
+    expect(input.safeParse({ action: 'update', personalTime }).success).toBe(false);
+    expect(input.safeParse({ action: 'delete' }).success).toBe(false);
+    expect(input.safeParse({ action: 'delete', personalTimeId: '' }).success).toBe(false);
+    expect(input.safeParse({ action: 'delete', personalTimeId: 'x'.repeat(257) }).success).toBe(
+      false,
+    );
+    expect(input.safeParse({ action: 'delete', personalTimeId: 'x'.repeat(256) }).success).toBe(
+      true,
+    );
+    expect(input.safeParse({ action: 'create' }).success).toBe(false);
+  });
+
+  test('the output names the action and whether it is done', () => {
+    const output = mcpTools.add_layover.output;
+    expect(output.safeParse({ action: 'delete', done: true, personalTimeId: 'pt-1' }).success).toBe(
+      true,
+    );
+    expect(output.safeParse({ action: 'delete' }).success).toBe(false);
+  });
+});

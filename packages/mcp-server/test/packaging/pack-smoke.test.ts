@@ -1,4 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -18,6 +19,9 @@ interface Built {
 
 let built: Built;
 const packageDir = join(repoRoot(), 'packages', 'mcp-server');
+const version = (
+  JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8')) as { version: string }
+).version;
 
 async function listFiles(dir: string, base = dir): Promise<string[]> {
   const out: string[] = [];
@@ -52,9 +56,13 @@ describe('the packed package (QA H2, security M1)', () => {
     // dependency (the native keyring) resolves from the repository, as it would after an install.
     const holder = await mkdtemp(join(repoRoot(), 'node_modules', '.compass-pack-smoke-'));
     // The archive is named relative to its folder because GNU tar reads `C:` as a remote host.
-    await run('tar', ['-xzf', 'reinvent-compass-0.0.0.tgz', '-C', holder.replaceAll('\\', '/')], {
-      cwd: scratch,
-    });
+    await run(
+      'tar',
+      ['-xzf', `reinvent-compass-${version}.tgz`, '-C', holder.replaceAll('\\', '/')],
+      {
+        cwd: scratch,
+      },
+    );
     const extracted = join(holder, 'package');
     built = { extracted, holder, scratch, entries: await listFiles(extracted) };
   }, 180_000);
@@ -109,7 +117,7 @@ describe('the packed package (QA H2, security M1)', () => {
       join(built.extracted, 'dist', 'bin.js'),
       '--version',
     ]);
-    expect(stdout).toBe('0.0.0\n');
+    expect(stdout).toBe(`${version}\n`);
   });
 
   test('runs the whole demo from the extracted folder with its own bundle, worker and data', async () => {
@@ -169,4 +177,16 @@ describe('the packed package (QA H2, security M1)', () => {
     // and exit, which ran past a tighter bound under parallel CI load.
     expect(result.elapsed).toBeLessThan(7500);
   }, 30_000);
+
+  test('a dry run of npm pack, as the publish workflow does it, passes the file list check', async () => {
+    const { stdout } = await run(
+      'npm',
+      ['pack', '--dry-run', '--json', '--workspace', 'packages/mcp-server'],
+      { cwd: repoRoot(), shell: true },
+    );
+    const { checkPackFiles, pathsFromPackJson } = (await import(
+      pathToFileURL(join(packageDir, 'scripts', 'check-pack.mjs')).href
+    )) as { checkPackFiles: (p: string[]) => string[]; pathsFromPackJson: (t: string) => string[] };
+    expect(checkPackFiles(pathsFromPackJson(stdout))).toEqual([]);
+  }, 120_000);
 });

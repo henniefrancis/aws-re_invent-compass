@@ -277,6 +277,30 @@ describe('schedule reads and writes', () => {
     expect((await events.getSchedule()).personalTime[0]?.startDateTime).toBe(
       '2026-12-02T20:00:00Z',
     );
+    const id = (await events.getSchedule()).personalTime[0]?.personalTimeId ?? '';
+    const changed = await events.updatePersonalTime(id, {
+      title: 'Late lunch',
+      description: 'Away from the venue',
+      startDateTime: '2026-12-02T13:00:00-08:00',
+      endDateTime: '2026-12-02T14:00:00-08:00',
+    });
+    expect(changed.kind).toBe('confirmed');
+    expect((await events.getSchedule()).personalTime).toMatchObject([
+      { personalTimeId: id, title: 'Late lunch', startDateTime: '2026-12-02T21:00:00Z' },
+    ]);
+    expect(await events.deletePersonalTime(id)).toMatchObject({ kind: 'confirmed', schedule: {} });
+    expect((await events.getSchedule()).personalTime).toEqual([]);
+    expect(() =>
+      events.updatePersonalTime('..', {
+        title: 'x',
+        description: '',
+        startDateTime: '2026-12-02T13:00:00-08:00',
+        endDateTime: '2026-12-02T14:00:00-08:00',
+      }),
+    ).toThrow(expect.objectContaining({ code: 'IdentifierRejected' }) as Error);
+    expect(() => events.deletePersonalTime('a/b')).toThrow(
+      expect.objectContaining({ code: 'IdentifierRejected' }) as Error,
+    );
     expect(await events.cancel(TRIPLE.a)).toMatchObject({ kind: 'confirmed', result: null });
   });
 

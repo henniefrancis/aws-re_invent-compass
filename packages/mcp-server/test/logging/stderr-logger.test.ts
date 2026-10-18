@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { createStderrLogger } from '../../src/logging/stderr-logger.js';
-import { redactText } from '../../src/logging/redact.js';
+import { redact as redactText } from '@compass/core/redact';
 
 const JWT = 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.c2lnbmF0dXJlLXZhbHVlLWhlcmU';
 
@@ -16,13 +16,28 @@ describe('redactText', () => {
     ];
     for (const sample of samples) {
       const out = redactText(`before ${sample} after`);
-      expect(out).toContain('[redacted]');
+      expect(out).toContain('[REDACTED]');
       expect(out).not.toContain(sample);
     }
   });
 
   test('leaves plain text alone', () => {
     expect(redactText('Reserved 3 sessions')).toBe('Reserved 3 sessions');
+  });
+});
+
+describe('the logger on a hostile 100 KB line (CTO review M1)', () => {
+  test('a quadratic email shape is handled in linear time and leaves no address', () => {
+    const lines: string[] = [];
+    const logger = createStderrLogger({
+      write: (chunk) => {
+        lines.push(chunk);
+      },
+    });
+    const started = performance.now();
+    logger.warn('a'.repeat(100 * 1024) + '@', { detail: 'a@'.repeat(50 * 1024) });
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(lines).toHaveLength(1);
   });
 });
 

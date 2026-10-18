@@ -85,7 +85,7 @@ async function run(tool: Tool, ids: string[], ctx: ReturnType<typeof contextFor>
     case 'unfavorite':
       return removeStandby({ sessionId: first }, ctx);
     case 'layover':
-      return addLayover({ personalTime: layover }, ctx);
+      return addLayover({ action: 'create', personalTime: layover }, ctx);
   }
 }
 
@@ -168,8 +168,8 @@ describe('Property 32: success is reported only when the schedule confirms it', 
           case 'layover': {
             const out = mcpTools.add_layover.output.parse(outcome.structured);
             const entry = schedule.personalTime[0];
-            expect(out.added).toBe(!unconfirmed && entry !== undefined);
-            expect(out.personalTimeId).toBe(out.added ? entry?.personalTimeId : undefined);
+            expect(out.done).toBe(!unconfirmed && entry !== undefined);
+            expect(out.personalTimeId).toBe(out.done ? entry?.personalTimeId : undefined);
             break;
           }
         }
@@ -241,6 +241,7 @@ describe('Property 34: invalid layovers never reach S1', () => {
           start >= windowStart &&
           end <= windowEnd;
         const input = {
+          action: 'create' as const,
           personalTime: {
             startDateTime: startText,
             endDateTime: endText,

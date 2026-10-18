@@ -160,14 +160,24 @@ const RemoveStandbyOutput = z.object({
   removed: z.boolean(),
 });
 
-// add_layover: create a personal time block (a layover) for meals, water or rest.
-// The input reuses the wire PersonalTimeInput shape. The output reports whether it
-// was added and the assigned id.
-const AddLayoverInput = z.object({
-  personalTime: PersonalTimeInputSchema,
-});
+// add_layover: create, update or delete a personal time block (a layover) for meals, water
+// or rest, so all three personal time operations of the Events API are reachable. The input is
+// a union on `action`: create and update carry the wire PersonalTimeInput shape, update and
+// delete carry the id of the entry (bounded, so an id can never be a path hazard or a flood).
+// The output says which action was asked for and whether the confirmed schedule shows it done.
+const PersonalTimeId = z.string().min(1).max(256);
+const AddLayoverInput = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('create'), personalTime: PersonalTimeInputSchema }),
+  z.object({
+    action: z.literal('update'),
+    personalTimeId: PersonalTimeId,
+    personalTime: PersonalTimeInputSchema,
+  }),
+  z.object({ action: z.literal('delete'), personalTimeId: PersonalTimeId }),
+]);
 const AddLayoverOutput = z.object({
-  added: z.boolean(),
+  action: z.enum(['create', 'update', 'delete']),
+  done: z.boolean(),
   personalTimeId: z.string().optional(),
 });
 

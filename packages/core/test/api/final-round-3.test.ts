@@ -18,6 +18,10 @@ function capture(): { logger: ReturnType<typeof createRedactingLogger>; lines: s
   return { logger: createRedactingLogger({ info: push, warn: push, error: push }), lines };
 }
 
+// Plain text of an exact even length that is not token shaped (it ends with a space, so the cut
+// never has a partial word to drop).
+const filler = (length: number): string => 'x '.repeat(length / 2);
+
 describe('events-client, M-A: registered secrets are removed from the full input before the cut', () => {
   const NEEDLE = 'ZQJWKVXPLM9876543210';
 
@@ -51,28 +55,19 @@ describe('events-client, M-A: registered secrets are removed from the full input
     logger.addSecret(NEEDLE);
     logger.addSecret('ANOTHERSECRET12345');
     // Five characters of the needle sit across the cut (two before it), no full needle.
-    logger.info(
-      `${'x'.repeat(MAX_REDACT_INPUT_LENGTH - 2)}${NEEDLE.slice(0, 5)}${'y'.repeat(100)}`,
-    );
-    expect(lines[0]).toBe(`${'x'.repeat(MAX_REDACT_INPUT_LENGTH - 2)}[TRUNCATED]`);
+    logger.info(`${filler(MAX_REDACT_INPUT_LENGTH - 2)}${NEEDLE.slice(0, 5)}${'y'.repeat(100)}`);
+    expect(lines[0]).toBe(`${filler(MAX_REDACT_INPUT_LENGTH - 2)}[TRUNCATED]`);
     // The longest matching prefix among several secrets is the one dropped.
     lines.length = 0;
-    logger.info(
-      `${'x'.repeat(MAX_REDACT_INPUT_LENGTH - 4)}ANOTHERSECRET12345`.slice(
-        0,
-        MAX_REDACT_INPUT_LENGTH - 4,
-      ) +
-        'ANOT' +
-        'z'.repeat(50),
-    );
-    expect(lines[0]).toBe(`${'x'.repeat(MAX_REDACT_INPUT_LENGTH - 4)}[TRUNCATED]`);
+    logger.info(`${filler(MAX_REDACT_INPUT_LENGTH - 4)}ANOT${'z'.repeat(50)}`);
+    expect(lines[0]).toBe(`${filler(MAX_REDACT_INPUT_LENGTH - 4)}[TRUNCATED]`);
   });
 
   test('a cut with no partial secret keeps all of the text before it', () => {
     const { logger, lines } = capture();
     logger.addSecret(NEEDLE);
-    logger.info(`${'x'.repeat(MAX_REDACT_INPUT_LENGTH)}${'y'.repeat(10)}`);
-    expect(lines[0]).toBe(`${'x'.repeat(MAX_REDACT_INPUT_LENGTH)}[TRUNCATED]`);
+    logger.info(`${filler(MAX_REDACT_INPUT_LENGTH)}${'y'.repeat(10)}`);
+    expect(lines[0]).toBe(`${filler(MAX_REDACT_INPUT_LENGTH)}[TRUNCATED]`);
   });
 
   test('many registered secrets over a 100 KB line stay fast', () => {

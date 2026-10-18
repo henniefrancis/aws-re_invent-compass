@@ -14,10 +14,16 @@ import { z } from 'zod';
  * Wraps a contract output schema for registration. The SDK only accepts an object schema
  * here, so the wrapper is a loose object that accepts any object (the handler result is
  * already parsed with the contract schema by `toCallToolResult` before it is returned), and
- * its published JSON Schema is derived from the contract schema in "input" mode.
+ * its published JSON Schema is derived from the contract schema in "input" mode (with a top
+ * level `type: "object"` added when the schema is a union of objects).
  */
 export function registrationSchema(schema: z.ZodType) {
   const wrapper = z.looseObject({});
-  wrapper._zod.toJSONSchema = () => z.toJSONSchema(schema, { io: 'input', target: 'draft-7' });
+  wrapper._zod.toJSONSchema = () => {
+    const json = z.toJSONSchema(schema, { io: 'input', target: 'draft-7' });
+    // A union of objects (add_layover) has no top level type, and the MCP tool listing requires
+    // `type: "object"`, so it is added; the union itself is kept.
+    return json.type === undefined ? { type: 'object', ...json } : json;
+  };
   return wrapper;
 }

@@ -3,7 +3,7 @@
 // redaction. Handlers log fixed messages and codes, never upstream error text.
 
 import type { LogFields, Logger } from '../ports/logger.js';
-import { redactText } from './redact.js';
+import { redact as redactText } from '@compass/core/redact';
 
 function renderFields(fields: LogFields | undefined): string {
   if (fields === undefined) {

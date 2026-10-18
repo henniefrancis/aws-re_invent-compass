@@ -38,7 +38,7 @@ export const DESCRIPTIONS: Record<McpToolName, string> = {
   cancel_reservation: `Cancel one reservation, safely swapping to a repeat when one is planned. ${SCHEDULE_WRITE_SENTENCE}`,
   add_standby: `Add one to ten sessions to your standby list as backups. ${SCHEDULE_WRITE_SENTENCE}`,
   remove_standby: `Remove one session from your standby list. ${SCHEDULE_WRITE_SENTENCE}`,
-  add_layover: `Add a layover, a block of your own time for a meal or rest. ${SCHEDULE_WRITE_SENTENCE}`,
+  add_layover: `Create, change or delete a layover, a block of your own time for a meal or rest (action create, update or delete). ${SCHEDULE_WRITE_SENTENCE}`,
   issue_boarding_passes: `Issue unofficial boarding passes for your reserved sessions. ${ISSUE_SENTENCE}`,
   send_to_phone: `Open a short-lived link and QR code that puts your passes on your phone. ${HANDOFF_SENTENCE}`,
   sync_passes: `Bring your boarding passes in line with your confirmed schedule. ${SYNC_SENTENCE}`,

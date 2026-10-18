@@ -664,8 +664,8 @@ const toolSamples: Record<
   add_standby: { input: { sessionIds: ['AIM101'] }, output: { result: bulkResultSample } },
   remove_standby: { input: { sessionId: 's1' }, output: { removed: true } },
   add_layover: {
-    input: { personalTime: personalTimeInputSample },
-    output: { added: true, personalTimeId: 'pt1' },
+    input: { action: 'create', personalTime: personalTimeInputSample },
+    output: { action: 'create', done: true, personalTimeId: 'pt1' },
   },
   issue_boarding_passes: {
     input: { sessionIds: ['AIM101'] },

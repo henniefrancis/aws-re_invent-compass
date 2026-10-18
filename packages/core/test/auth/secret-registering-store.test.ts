@@ -12,7 +12,8 @@ function leaks(lines: string[], tokens: ReturnType<typeof heldTokens>): boolean 
 
 describe('events-client, M4: tokens are registered when the store loads or saves them', () => {
   test('tokens already in the store (for example from the keychain) are scrubbed after load()', () => {
-    const tokens = heldTokens();
+    // Under 22 characters, so the opaque token rule alone would not remove it.
+    const tokens = heldTokens({ refreshToken: 'held-refresh-short' });
     const { logger, lines } = capturingLogger();
     const store = registerStoreSecrets(fakeStore(tokens), logger);
     logger.info(`before load ${tokens.refreshToken}`);
@@ -51,7 +52,8 @@ describe('events-client, M4: tokens are registered when the store loads or saves
   });
 
   test('clear() removes the needles, and clearIfCurrent() does so only when it clears', () => {
-    const tokens = heldTokens();
+    // Under 22 characters, so the opaque token rule alone would not remove it.
+    const tokens = heldTokens({ refreshToken: 'held-refresh-short' });
     const first = capturingLogger();
     const store = registerStoreSecrets(fakeStore(tokens), first.logger);
     store.load();

@@ -27,6 +27,7 @@ const WORKSPACE = join('/', 'workspace');
 function layover(startHour: number, valid: boolean) {
   const start = `2026-12-01T${String(startHour).padStart(2, '0')}:00:00-08:00`;
   return {
+    action: 'create',
     personalTime: {
       startDateTime: valid ? start : '2026-12-01T12:00:00',
       endDateTime: `2026-12-01T${String(startHour).padStart(2, '0')}:30:00-08:00`,
@@ -88,6 +89,18 @@ const callArb: fc.Arbitrary<[McpToolName, Record<string, unknown>]> = fc.oneof(
   fc
     .record({ hour: fc.integer({ min: 8, max: 20 }), valid: fc.boolean() })
     .map((a): [McpToolName, Record<string, unknown>] => ['add_layover', layover(a.hour, a.valid)]),
+  fc
+    .constantFrom('pt-1', 'pt-9', '..')
+    .map((personalTimeId): [McpToolName, Record<string, unknown>] => [
+      'add_layover',
+      { action: 'delete', personalTimeId },
+    ]),
+  fc
+    .record({ hour: fc.integer({ min: 8, max: 20 }), valid: fc.boolean() })
+    .map((a): [McpToolName, Record<string, unknown>] => [
+      'add_layover',
+      { ...layover(a.hour, a.valid), action: 'update', personalTimeId: 'pt-1' },
+    ]),
   fc
     .subarray(IDS, { minLength: 1 })
     .map((sessionIds): [McpToolName, Record<string, unknown>] => [
@@ -312,6 +325,8 @@ describe('Property 37: no secret reaches logs or errors', () => {
             'favorite',
             'unfavorite',
             'createPersonalTime',
+            'updatePersonalTime',
+            'deletePersonalTime',
           ]) {
             if (method !== 'catalog' && method !== 'eventWindow')
               fake.events.failWith.set(method, error);

@@ -43,6 +43,11 @@
       "@compass/source": "./src/passes/index.ts",
       "types": "./dist/passes/index.d.ts",
       "default": "./dist/passes/index.js"
+    },
+    "./redact": {
+      "@compass/source": "./src/redact/index.ts",
+      "types": "./dist/redact/index.d.ts",
+      "default": "./dist/redact/index.js"
     }
   },
   "dependencies": {

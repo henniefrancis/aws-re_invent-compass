@@ -26,7 +26,7 @@ Do these steps in this order. Do not skip ahead.
 
 These tools never run without the attendee's clear approval for that one call:
 
-- `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby` and `add_layover` change the real re:Invent schedule.
+- `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby` and `add_layover` (create, update or delete) change the real re:Invent schedule.
 - `issue_boarding_passes`, `send_to_phone`, `sync_passes` and `forget_me` change the boarding passes or delete data.
 
 `sync_passes` is a write tool. It can void passes, so treat it like the others.
@@ -43,4 +43,4 @@ Never ask the attendee to approve several writes in one go. Ask for one, do it, 
 
 ## Trying it without a real account
 
-Running `npx reinvent-compass demo` shows the whole flow on made-up data, with no network and no sign-in.
+Running `npx --yes reinvent-compass@0.0.0 demo` shows the whole flow on made-up data, with no network and no sign-in.

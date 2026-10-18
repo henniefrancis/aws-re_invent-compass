@@ -23,6 +23,6 @@ Hooks are an extra check that only Kiro runs. The Compass server checks every bo
 
 ## Notes
 
-- The commands in the template run `npx --yes reinvent-compass@<version> hook <name>`. The version is written into the template, and it matches the server in this Power.
+- The commands in the template run `npx --yes reinvent-compass@0.0.0 hook <name>`. The version is written into the template, and it matches the server in this Power.
 - A hook has a 30 second limit. A blocked call prints its reason, and the agent should pass that reason on to the attendee in plain words.
 - If the attendee sees a hook note saying Compass could not check a call, nothing is wrong. The server still checks it.

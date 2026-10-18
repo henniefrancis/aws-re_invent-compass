@@ -6,7 +6,7 @@
 import { FolderNotFoundError, ScanTimeoutError } from '@compass/core/scanner';
 import { SpecWriteRefusedError } from '@compass/core/spec';
 import { ZodError } from 'zod';
-import { redactText } from '../logging/redact.js';
+import { redact as redactText } from '@compass/core/redact';
 import { CompassError } from '../ports/errors.js';
 import type { CompassErrorCode } from '../ports/errors.js';
 
