@@ -162,15 +162,26 @@ describe('session state', () => {
 
 describe('the snapshot uses the production file system adapter (security L3)', () => {
   test('a link at the snapshot file, its temporary file or any folder from the app folder down is refused', async () => {
-    for (const linked of ['reinvent-compass', 'schedule-snapshot.json.7.tmp', SNAPSHOT_FILE_NAME]) {
-      const fs = createNodeAppFileSystem((path) =>
-        Promise.resolve({
-          isSymbolicLink: () => path.endsWith(linked),
-          isDirectory: () => true,
-        }),
-      );
-      const store = createSnapshotStore(join('/data', 'reinvent-compass'), 'live', fs, 7);
-      await expect(store.write(SNAPSHOT), linked).rejects.toMatchObject({ code: 'UnsafePath' });
+    // A real, writable temporary root: a fixed path such as /data cannot be created
+    // on a CI runner, and on Windows it would leave a folder behind.
+    const root = await mkdtemp(join(tmpdir(), 'compass-snapshot-links-'));
+    try {
+      await assertLinksRefused(root);
+    } finally {
+      await rm(root, { recursive: true, force: true });
     }
   });
 });
+
+async function assertLinksRefused(root: string): Promise<void> {
+  for (const linked of ['reinvent-compass', 'schedule-snapshot.json.7.tmp', SNAPSHOT_FILE_NAME]) {
+    const fs = createNodeAppFileSystem((path) =>
+      Promise.resolve({
+        isSymbolicLink: () => path.endsWith(linked),
+        isDirectory: () => true,
+      }),
+    );
+    const store = createSnapshotStore(join(root, 'reinvent-compass'), 'live', fs, 7);
+    await expect(store.write(SNAPSHOT), linked).rejects.toMatchObject({ code: 'UnsafePath' });
+  }
+}
