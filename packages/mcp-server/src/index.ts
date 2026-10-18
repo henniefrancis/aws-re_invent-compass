@@ -1,5 +1,8 @@
-// reinvent-compass entry point (foundation-contracts, S0).
-// Owned by S3: local stdio MCP server and CLI, published to npm as reinvent-compass.
-// Day-1 stub only, kept empty so the solution compiles. S3 fills this with the real
-// server wiring (the bin.ts CLI entry is a named coverage exclusion, added by S3).
-export {};
+// The public surface of the reinvent-compass package. The command line starts from `bin.ts`.
+
+export { createCompassServer, runStdioServer } from './server/create-server.js';
+export { runCli } from './cli/run-cli.js';
+export type { CliDeps, CliIo } from './cli/run-cli.js';
+export { runDemo } from './demo/run-demo.js';
+export { createRuntime } from './runtime/create-runtime.js';
+export type { Runtime } from './ports/runtime.js';

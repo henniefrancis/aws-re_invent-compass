@@ -1,0 +1,27 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "reinvent-compass-pre-write-guardrail",
+      "description": "Checks a Compass booking before it runs and blocks writes through the remote awsevents server. The Compass server checks every booking again.",
+      "trigger": "PreToolUse",
+      "matcher": ".*(reserve_with_guardrails|cancel_reservation|add_standby|remove_standby|add_layover|issue_boarding_passes|send_to_phone|sync_passes|forget_me|ReserveSessions|CancelReservation|AssociateFavorites|DisassociateFavorite|CreatePersonalTime|UpdatePersonalTime|DeletePersonalTime)$",
+      "action": {
+        "type": "command",
+        "command": "npx --yes reinvent-compass@0.0.0 hook pre-write-guardrail"
+      },
+      "timeout": 30
+    },
+    {
+      "name": "reinvent-compass-post-write-sync",
+      "description": "Reminds the agent to run sync_passes after a schedule change.",
+      "trigger": "PostToolUse",
+      "matcher": ".*(reserve_with_guardrails|cancel_reservation|add_standby|remove_standby|add_layover|ReserveSessions|CancelReservation|AssociateFavorites|DisassociateFavorite|CreatePersonalTime|UpdatePersonalTime|DeletePersonalTime)$",
+      "action": {
+        "type": "command",
+        "command": "npx --yes reinvent-compass@0.0.0 hook post-write-sync"
+      },
+      "timeout": 30
+    }
+  ]
+}
