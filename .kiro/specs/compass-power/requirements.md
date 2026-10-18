@@ -433,3 +433,5 @@ R2.8. **Write root and scan scope.** THE plan SHALL be written only to the folde
 R2.9. **Plan files.** THE `.gitignore` SHALL be written after the plan files, a partial write SHALL report exactly what was written, and a re-run with no differences SHALL write nothing and say so, showing only changed lines with context otherwise.
 
 R2.10. **Hook time limit.** A hook command SHALL end the process within 6 seconds with exit code 0 or 2 even when its stdin is never closed, after flushing its output.
+
+R2.11. **Scanner coverage.** THE boto3 detector SHALL count chained session calls and calls imported by name from boto3, SHALL ignore comments, docstrings and calls inside strings, and THE Service_Table SHALL include EFS, Systems Manager, OpenSearch Service, Redshift, MSK and AppSync with every identifier taken from an official source.

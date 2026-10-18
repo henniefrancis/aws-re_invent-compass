@@ -7,6 +7,17 @@
 // to exist on the npm registry) and the boto3 service index (every service name below
 // has a page). Display names follow the official AWS product names.
 //
+// Added on 18 October 2026 (QA M7): EFS, Systems Manager, OpenSearch Service, Redshift, MSK and
+// AppSync. Sources opened that day: the npm registry pages of @aws-sdk/client-efs, -ssm,
+// -opensearch, -redshift, -kafka and -appsync; the aws-sdk-js-v3 README of each client for the
+// class names (EFSClient, SSMClient, OpenSearchClient, RedshiftClient, KafkaClient,
+// AppSyncClient); the boto3 services index (efs, ssm, opensearch, opensearchserverless, es,
+// redshift, redshift-data, redshift-serverless, kafka, kafkaconnect, appsync); the Terraform AWS
+// provider resource pages (aws_efs_file_system, aws_ssm_parameter, aws_opensearch_domain,
+// aws_opensearchserverless_collection, aws_redshift_cluster, aws_redshiftserverless_namespace,
+// aws_msk_cluster, aws_mskconnect_connector, aws_appsync_graphql_api); and the aws-cdk-lib module
+// READMEs (aws-efs, aws-ssm, aws-opensearchservice, aws-redshift, aws-msk, aws-appsync).
+//
 // Terraform matching rule: a prefix that ends in `_` matches any type that starts with
 // it; a prefix without a trailing `_` matches only that exact type. The longest matching
 // prefix wins, so `aws_cloudwatch_event_` (EventBridge) beats `aws_cloudwatch_`.
@@ -48,6 +59,16 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkClientNames: ['ApiGateway', 'ApiGatewayV2'],
     boto3Names: ['apigateway', 'apigatewayv2'],
     taxonomyCandidates: ['Amazon API Gateway', 'networking'],
+  },
+  {
+    key: 'appsync',
+    displayName: 'AWS AppSync',
+    terraformPrefixes: ['aws_appsync_'],
+    cdkModules: ['aws-appsync'],
+    sdkPackages: ['@aws-sdk/client-appsync'],
+    sdkClientNames: ['AppSync'],
+    boto3Names: ['appsync'],
+    taxonomyCandidates: ['AWS AppSync'],
   },
   {
     key: 'athena',
@@ -155,6 +176,16 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     taxonomyCandidates: ['Amazon ECS', 'containers'],
   },
   {
+    key: 'efs',
+    displayName: 'Amazon EFS',
+    terraformPrefixes: ['aws_efs_'],
+    cdkModules: ['aws-efs'],
+    sdkPackages: ['@aws-sdk/client-efs'],
+    sdkClientNames: ['EFS'],
+    boto3Names: ['efs'],
+    taxonomyCandidates: ['Amazon EFS', 'storage'],
+  },
+  {
     key: 'eks',
     displayName: 'Amazon EKS',
     terraformPrefixes: ['aws_eks_'],
@@ -235,6 +266,26 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     taxonomyCandidates: ['AWS Lambda', 'compute'],
   },
   {
+    key: 'msk',
+    displayName: 'Amazon MSK',
+    terraformPrefixes: ['aws_msk_', 'aws_mskconnect_'],
+    cdkModules: ['aws-msk'],
+    sdkPackages: ['@aws-sdk/client-kafka'],
+    sdkClientNames: ['Kafka'],
+    boto3Names: ['kafka', 'kafkaconnect'],
+    taxonomyCandidates: ['Amazon MSK', 'analytics'],
+  },
+  {
+    key: 'opensearch',
+    displayName: 'Amazon OpenSearch Service',
+    terraformPrefixes: ['aws_opensearch_', 'aws_opensearchserverless_'],
+    cdkModules: ['aws-opensearchservice'],
+    sdkPackages: ['@aws-sdk/client-opensearch'],
+    sdkClientNames: ['OpenSearch'],
+    boto3Names: ['opensearch', 'opensearchserverless', 'es'],
+    taxonomyCandidates: ['Amazon OpenSearch Service', 'analytics'],
+  },
+  {
     key: 'rds',
     displayName: 'Amazon RDS',
     terraformPrefixes: ['aws_db_', 'aws_rds_'],
@@ -243,6 +294,16 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkClientNames: ['RDS'],
     boto3Names: ['rds'],
     taxonomyCandidates: ['Amazon RDS', 'database'],
+  },
+  {
+    key: 'redshift',
+    displayName: 'Amazon Redshift',
+    terraformPrefixes: ['aws_redshift_', 'aws_redshiftserverless_'],
+    cdkModules: ['aws-redshift'],
+    sdkPackages: ['@aws-sdk/client-redshift'],
+    sdkClientNames: ['Redshift'],
+    boto3Names: ['redshift', 'redshift-data', 'redshift-serverless'],
+    taxonomyCandidates: ['Amazon Redshift', 'analytics', 'database'],
   },
   {
     key: 'route53',
@@ -303,6 +364,16 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkClientNames: ['SQS'],
     boto3Names: ['sqs'],
     taxonomyCandidates: ['Amazon SQS'],
+  },
+  {
+    key: 'ssm',
+    displayName: 'AWS Systems Manager',
+    terraformPrefixes: ['aws_ssm_'],
+    cdkModules: ['aws-ssm'],
+    sdkPackages: ['@aws-sdk/client-ssm'],
+    sdkClientNames: ['SSM'],
+    boto3Names: ['ssm'],
+    taxonomyCandidates: ['AWS Systems Manager'],
   },
   {
     key: 'stepfunctions',
