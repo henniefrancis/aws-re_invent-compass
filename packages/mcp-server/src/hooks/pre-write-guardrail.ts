@@ -4,6 +4,7 @@
 // (bad input, unknown tool, a missing or stale snapshot, no catalog, invalid ids) it exits 0 with
 // a note, because the Compass server checks the call again. It blocks only a call through the
 // remote awsevents write tools and a reserve_with_guardrails call that the guardrail blocks.
+// Kiro sends a Power's tools as `kiro_powers` calls (ADR-024); `unwrapPowerCall` finds the tool.
 
 import type { Clock } from '../ports/clock.js';
 import type { CatalogView } from '../ports/events-port.js';
@@ -14,7 +15,7 @@ import type { SnapshotStore } from '../state/schedule-snapshot.js';
 import { confirmedCommitments } from '../tools/common.js';
 import { exitCodeFor } from './exit-policy.js';
 import type { HookDecision } from './exit-policy.js';
-import { parseHookInput } from './hook-input.js';
+import { parseHookInput, unwrapPowerCall } from './hook-input.js';
 import { identifyTool } from './tool-names.js';
 
 /** A snapshot older than this is not trusted. */
@@ -90,7 +91,11 @@ export async function preWriteGuardrail(raw: string, deps: HookDeps): Promise<Ho
   if (input === undefined) {
     return note();
   }
-  const identity = identifyTool(input.tool_name);
+  const call = unwrapPowerCall(input);
+  if (call === 'ignore') {
+    return silent();
+  }
+  const identity = identifyTool(call.toolName);
   if (identity.server === 'awsevents') {
     return { exitCode: exitCodeFor('block'), stderr: AWSEVENTS_BLOCK_REASON };
   }
@@ -100,7 +105,7 @@ export async function preWriteGuardrail(raw: string, deps: HookDeps): Promise<Ho
   if (identity.tool !== 'reserve_with_guardrails') {
     return silent();
   }
-  const toolInput: unknown = input.tool_input;
+  const toolInput: unknown = call.toolInput;
   const sessionIds =
     typeof toolInput === 'object' && toolInput !== null
       ? (toolInput as { sessionIds?: unknown }).sessionIds

@@ -1,6 +1,7 @@
 // Tool identity for the hooks (Requirement 19.6, CTO review M5). The tool name comes from the
 // `tool_name` field and may be a bare name (`reserve_with_guardrails`) or carry a server prefix
 // (`mcp_power-reinvent-compass-compass_reserve_with_guardrails`, `mcp_awsevents_ReserveSessions`).
+// A Power tool call arrives as `kiro_powers` and is unwrapped first (hook-input.ts, ADR-024).
 // Matching is case-insensitive and needs a non-alphanumeric character (or the start) before the
 // tool name, so any server prefix resolves and a longer, different name does not. This is the one
 // place that knows the names; an SP1 result changes this file, the exit policy and the template.

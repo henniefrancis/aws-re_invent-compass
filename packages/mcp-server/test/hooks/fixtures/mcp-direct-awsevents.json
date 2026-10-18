@@ -1,0 +1,7 @@
+{
+  "hook_event_name": "PreToolUse",
+  "cwd": "<workspace>",
+  "session_id": "<redacted>",
+  "tool_name": "mcp_awsevents_awseventspublicapi_mcp_prod___getevent",
+  "tool_input": {}
+}

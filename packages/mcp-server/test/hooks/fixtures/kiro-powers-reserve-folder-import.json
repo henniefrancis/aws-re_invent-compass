@@ -1,0 +1,17 @@
+{
+  "hook_event_name": "PreToolUse",
+  "cwd": "<workspace>",
+  "session_id": "<redacted>",
+  "tool_name": "kiro_powers",
+  "tool_input": {
+    "action": "use",
+    "powerName": "power",
+    "serverName": "power-power-compass",
+    "toolName": "reserve_with_guardrails",
+    "arguments": {
+      "sessionIds": ["syn-024"]
+    },
+    "steeringFile": null,
+    "skillName": null
+  }
+}
