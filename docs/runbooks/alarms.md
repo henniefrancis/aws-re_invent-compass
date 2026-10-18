@@ -47,6 +47,14 @@ The WAF blocked 100 or more requests in five minutes. Normal traffic does not do
 2. WAF keeps no logs or samples by design, so there is nothing to inspect. Compare with the API Gateway and CloudFront request metrics.
 3. For abuse, the per-IP rate rules already block the source. If the traffic keeps rising, use the kill switch.
 
+## The custom domain
+
+Prod is served on `reinvent-compass.vegas` and `pass.reinvent-compass.vegas`, dev on `dev.reinvent-compass.vegas` (ADR-031). If a name stops resolving or the browser reports a certificate error:
+
+1. Check the Route 53 records of the zone: each name needs an A and an AAAA alias to the distribution, and the certificate needs its validation CNAME records. Terraform owns them; fix a missing one with `scripts/release.sh <env>`, never in the console.
+2. Check that the registrar still delegates the domain to the zone name servers.
+3. The CloudFront default address of the environment keeps answering while the custom name is broken, which separates a DNS or certificate fault from an API fault.
+
 ## The budget alert
 
 The account budget (`compass-account-monthly`, 40 USD by default) emails you at 50, 80 and 100 percent of actual spend.
