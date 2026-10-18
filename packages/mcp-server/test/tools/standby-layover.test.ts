@@ -171,6 +171,15 @@ describe('add_layover', () => {
     expect(fake.snapshot.writes.at(-1)?.schedule.personalTime).toHaveLength(1);
   });
 
+  test('with personal time already on the schedule, returns the id of the new entry only', async () => {
+    const { fake, ctx } = setup();
+    withEntry(fake);
+    const outcome = await addLayover(layover(), ctx);
+    expect(outcome.ok && outcome.structured).toMatchObject({ action: 'create', done: true });
+    expect(outcome.ok && outcome.structured).not.toMatchObject({ personalTimeId: 'pt-7' });
+    expect(fake.snapshot.writes.at(-1)?.schedule.personalTime).toHaveLength(2);
+  });
+
   test('refuses times without an offset, off the 5 minute steps, with the end not after the start, or outside the window, before any call', async () => {
     const { fake, ctx } = setup();
     await fake.runtime.snapshot.write({
