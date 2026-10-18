@@ -65,3 +65,49 @@ variable "kill_switch_enabled" {
   type        = bool
   default     = false
 }
+
+variable "domain_name" {
+  description = "Custom domain of the site, /board and the API, for example reinvent-compass.vegas. Null keeps the CloudFront default domain and creates no certificate and no DNS record."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.domain_name == null ? true : can(regex("^([a-z0-9]([a-z0-9-]*[a-z0-9])?[.])+[a-z]{2,}$", var.domain_name))
+    error_message = "The domain_name value must be null or a lowercase DNS name."
+  }
+}
+
+variable "extra_aliases" {
+  description = "Further alias names on the same distribution, for example pass.reinvent-compass.vegas. They need domain_name and sit in the same hosted zone."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for a in var.extra_aliases : can(regex("^([a-z0-9]([a-z0-9-]*[a-z0-9])?[.])+[a-z]{2,}$", a))])
+    error_message = "Each extra alias must be a lowercase DNS name."
+  }
+
+  validation {
+    condition     = length(var.extra_aliases) == 0 || var.domain_name != null
+    error_message = "extra_aliases needs domain_name."
+  }
+}
+
+variable "hosted_zone_name" {
+  description = "Name of the existing public Route 53 hosted zone that holds the aliases, for example reinvent-compass.vegas. Required with domain_name."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.domain_name == null || var.hosted_zone_name != null
+    error_message = "hosted_zone_name is required when domain_name is set."
+  }
+
+  validation {
+    condition = var.domain_name == null || var.hosted_zone_name == null ? true : alltrue([
+      for n in concat([var.domain_name], var.extra_aliases) :
+      n == var.hosted_zone_name || endswith(n, ".${var.hosted_zone_name}")
+    ])
+    error_message = "Every alias must be the hosted zone name or a name inside it."
+  }
+}

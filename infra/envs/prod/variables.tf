@@ -224,3 +224,36 @@ variable "secret_recovery_window_days" {
   type        = number
   default     = 30
 }
+
+variable "hosted_zone_name" {
+  description = "Name of the existing public Route 53 hosted zone that holds the custom domain."
+  type        = string
+  default     = "reinvent-compass.vegas"
+}
+
+variable "domain_name" {
+  description = "Custom domain of the site, /board and the API (prod reinvent-compass.vegas, dev dev.reinvent-compass.vegas). Null keeps the CloudFront default domain, a certificate is then not requested, and public_base_url must be set after the first apply."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.domain_name == null ? true : (var.domain_name == var.hosted_zone_name || endswith(var.domain_name, ".${var.hosted_zone_name}"))
+    error_message = "The domain_name value must be the hosted zone name or a name inside it."
+  }
+}
+
+variable "extra_aliases" {
+  description = "Further alias names on the same distribution (prod pass.reinvent-compass.vegas). Null or empty for none. Needs domain_name. Set as an HCL variable in HCP."
+  type        = list(string)
+  default     = null
+
+  validation {
+    condition     = var.extra_aliases == null ? true : alltrue([for a in var.extra_aliases : a == var.hosted_zone_name || endswith(a, ".${var.hosted_zone_name}")])
+    error_message = "Every extra alias must be the hosted zone name or a name inside it."
+  }
+
+  validation {
+    condition     = var.extra_aliases == null ? true : (length(var.extra_aliases) == 0 || var.domain_name != null)
+    error_message = "extra_aliases needs domain_name."
+  }
+}

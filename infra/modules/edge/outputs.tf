@@ -8,6 +8,11 @@ output "distribution_domain_name" {
   value       = aws_cloudfront_distribution.this.domain_name
 }
 
+output "public_domain_names" {
+  description = "The custom domain names that serve the distribution (empty when it uses the CloudFront default domain)."
+  value       = local.aliases
+}
+
 output "web_acl_name" {
   description = "Name of the WAF web ACL, the WebACL dimension of its CloudWatch metrics."
   value       = aws_wafv2_web_acl.this.name

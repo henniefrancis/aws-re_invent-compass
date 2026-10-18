@@ -40,7 +40,7 @@ module "api" {
   throttle_burst               = var.throttle_burst
   route_throttles              = var.route_throttles
 
-  public_base_url            = var.public_base_url
+  public_base_url            = local.public_base_url
   event_timezone             = var.event_timezone
   event_window_start         = var.event_window_start
   event_window_end           = var.event_window_end
@@ -75,6 +75,9 @@ module "edge" {
   origin_verify_secret_value       = var.origin_verify_value
   api_key_value                    = var.api_key_value
   kill_switch_enabled              = var.kill_switch_enabled
+  domain_name                      = var.domain_name
+  extra_aliases                    = local.extra_aliases
+  hosted_zone_name                 = var.domain_name == null ? null : var.hosted_zone_name
 }
 
 module "observability" {

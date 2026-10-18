@@ -57,4 +57,13 @@ locals {
   ])
 
   permissions_policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()"
+
+  # Custom domain: the aliases, and the A and AAAA alias records for each of them.
+  custom_domain = var.domain_name != null
+  aliases       = local.custom_domain ? concat([var.domain_name], var.extra_aliases) : []
+
+  alias_records = {
+    for pair in setproduct(local.aliases, ["A", "AAAA"]) :
+    "${pair[0]}/${pair[1]}" => { name = pair[0], type = pair[1] }
+  }
 }

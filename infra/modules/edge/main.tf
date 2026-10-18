@@ -14,6 +14,69 @@ data "aws_cloudfront_origin_request_policy" "all_viewer_except_host_header" {
   name = "Managed-AllViewerExceptHostHeader"
 }
 
+# ---------------------------------------------------------------------------
+# Custom domain (only when domain_name is set): an ACM certificate in us-east-1
+# validated by DNS records in the existing public hosted zone, and A and AAAA
+# alias records for every name.
+#
+# The hosted zone was created when the domain was registered, so it is read here
+# with a data source and not managed. Under the golden rule it can be brought under
+# Terraform later with terraform import; see design.md.
+# ---------------------------------------------------------------------------
+
+data "aws_route53_zone" "this" {
+  count = local.custom_domain ? 1 : 0
+
+  name         = var.hosted_zone_name
+  private_zone = false
+}
+
+resource "aws_acm_certificate" "this" {
+  count = local.custom_domain ? 1 : 0
+
+  domain_name               = var.domain_name
+  subject_alternative_names = var.extra_aliases
+  validation_method         = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# One validation record per name. The keys are the names themselves, which are
+# known at plan time; the record contents come from the certificate.
+resource "aws_route53_record" "validation" {
+  for_each = local.custom_domain ? toset(local.aliases) : toset([])
+
+  zone_id         = data.aws_route53_zone.this[0].zone_id
+  allow_overwrite = true
+  ttl             = 60
+  name            = one([for d in aws_acm_certificate.this[0].domain_validation_options : d.resource_record_name if d.domain_name == each.key])
+  type            = one([for d in aws_acm_certificate.this[0].domain_validation_options : d.resource_record_type if d.domain_name == each.key])
+  records         = [one([for d in aws_acm_certificate.this[0].domain_validation_options : d.resource_record_value if d.domain_name == each.key])]
+}
+
+resource "aws_acm_certificate_validation" "this" {
+  count = local.custom_domain ? 1 : 0
+
+  certificate_arn         = aws_acm_certificate.this[0].arn
+  validation_record_fqdns = [for r in aws_route53_record.validation : r.fqdn]
+}
+
+resource "aws_route53_record" "alias" {
+  for_each = local.alias_records
+
+  zone_id = data.aws_route53_zone.this[0].zone_id
+  name    = each.value.name
+  type    = each.value.type
+
+  alias {
+    name                   = aws_cloudfront_distribution.this.domain_name
+    zone_id                = aws_cloudfront_distribution.this.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
 resource "aws_cloudfront_function" "site_viewer_request" {
   name    = "${local.name_prefix}-site-viewer-request"
   comment = "Rewrite directory-style site paths to index.html."
@@ -90,6 +153,7 @@ resource "aws_cloudfront_distribution" "this" {
   default_root_object = "index.html"
   comment             = "Compass ${var.env}: site and API"
   web_acl_id          = aws_wafv2_web_acl.this.arn
+  aliases             = local.aliases
 
   origin {
     origin_id                = local.site_origin_id
@@ -161,8 +225,25 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
-  viewer_certificate {
-    cloudfront_default_certificate = true
+  # The CloudFront default certificate, as before, when there is no custom domain.
+  dynamic "viewer_certificate" {
+    for_each = local.custom_domain ? [] : [1]
+
+    content {
+      cloudfront_default_certificate = true
+    }
+  }
+
+  # The ACM certificate of the custom domain: SNI only, and TLS 1.2 or later for
+  # viewers (the default certificate allows TLS 1.0).
+  dynamic "viewer_certificate" {
+    for_each = local.custom_domain ? [1] : []
+
+    content {
+      acm_certificate_arn      = aws_acm_certificate_validation.this[0].certificate_arn
+      ssl_support_method       = "sni-only"
+      minimum_protocol_version = "TLSv1.2_2021"
+    }
   }
 
   # No standard (access) logging: there is no logging_config block (Requirement

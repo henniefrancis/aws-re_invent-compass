@@ -32,6 +32,8 @@ set -euo pipefail
 
 # Resource types the plan may touch. Anything else is refused.
 ALLOWED_TYPES=(
+  aws_acm_certificate
+  aws_acm_certificate_validation
   aws_api_gateway_api_key
   aws_api_gateway_deployment
   aws_api_gateway_method_settings
@@ -52,6 +54,7 @@ ALLOWED_TYPES=(
   aws_kms_key
   aws_lambda_function
   aws_lambda_permission
+  aws_route53_record
   aws_s3_bucket
   aws_s3_bucket_policy
   aws_s3_bucket_public_access_block

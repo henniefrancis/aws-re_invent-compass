@@ -30,7 +30,7 @@ apns_enabled          = true
 google_wallet_enabled = true
 # apns_push_type = "alert"
 
-# Set after the first apply, from the cloudfront_domain_name output
+# Only when domain_name is null: set after the first apply, from the cloudfront_domain_name output
 # (https:// plus the domain, no trailing slash), then apply again.
 # public_base_url = "REPLACE_WITH_HTTPS_URL_OF_THE_DISTRIBUTION"
 
@@ -44,3 +44,10 @@ api_key_value       = "REPLACE_WITH_GENERATED_API_KEY_VALUE"
 # (needed on a new account whose concurrency quota is too low to reserve any).
 api_reserved_concurrency     = 20
 passkit_reserved_concurrency = 10
+
+# Custom domain (ADR-031). The hosted zone already exists in this account; the
+# certificate validates itself through DNS records in it. extra_aliases is a list,
+# so in HCP it is an HCL variable.
+hosted_zone_name = "reinvent-compass.vegas"
+domain_name      = "reinvent-compass.vegas"
+extra_aliases    = ["pass.reinvent-compass.vegas"]
