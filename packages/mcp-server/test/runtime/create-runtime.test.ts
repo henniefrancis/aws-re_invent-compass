@@ -78,20 +78,26 @@ describe('simulated passes and sign-in', () => {
     const conn = await connect(runtime, { elicit: 'accept' });
     await conn.call('refresh_catalog');
     const catalog = await runtime.events.catalog();
-    const first = catalog.byId.get(TRIPLE.a)?.session;
-    const second = [...catalog.byId.values()]
+    // Two reservable sessions on the same day, in the same venue, at least 30 minutes
+    // apart: S4 treats them as neighbours (within 12 hours) and asks the runtime for
+    // the walk between them, and the guardrail lets both through.
+    const sessions = [...catalog.byId.values()]
       .map((entry) => entry.session)
+      .filter((s) => s.isReservable && s.seatAvailability !== 'unavailable' && s.venue);
+    const pair = sessions
+      .flatMap((a) => sessions.map((b) => [a, b] as const))
       .find(
-        (session) =>
-          session.isReservable &&
-          session.startsAt?.startsWith('2026-12-04') === true &&
-          Date.parse(session.startsAt) >= Date.parse(first?.endsAt ?? '') + 15 * 60_000,
+        ([a, b]) =>
+          a.venue === b.venue &&
+          a.startsAt?.slice(0, 10) === b.startsAt?.slice(0, 10) &&
+          Date.parse(b.startsAt ?? '') >= Date.parse(a.endsAt ?? '') + 30 * 60_000 &&
+          Date.parse(b.startsAt ?? '') <= Date.parse(a.endsAt ?? '') + 3 * 3_600_000,
       );
-    expect(second).toBeDefined();
-    await conn.call('reserve_with_guardrails', { sessionIds: [TRIPLE.a, second?.sessionId ?? ''] });
-    const issued = await conn.call('issue_boarding_passes', {
-      sessionIds: [TRIPLE.a, second?.sessionId ?? ''],
-    });
+    expect(pair).toBeDefined();
+    const ids = (pair ?? []).map((s) => s.sessionId);
+    const reserved = await conn.call('reserve_with_guardrails', { sessionIds: ids });
+    expect(JSON.stringify(reserved)).toContain('2 of 2');
+    const issued = await conn.call('issue_boarding_passes', { sessionIds: ids });
     expect(issued.isError).not.toBe(true);
     expect(await runtime.passes.forgetMe()).toBeDefined();
     await conn.close();
