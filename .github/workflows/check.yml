@@ -61,11 +61,13 @@ jobs:
       - name: Prettier
         run: npm run format:check
 
-      - name: ESLint
-        run: npm run lint
-
+      # tsc -b runs before ESLint: type-aware lint resolves the workspace packages
+      # through their dist type declarations, which only exist after the build.
       - name: TypeScript build
         run: npx tsc -b
+
+      - name: ESLint
+        run: npm run lint
 
       - name: Unit tests with coverage
         run: npm test
