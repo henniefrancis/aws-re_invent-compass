@@ -1,0 +1,74 @@
+# npm publish workflow (foundation-contracts, S0).
+#
+# Triggered only on a version tag (v*). It is never run on push to a branch, pull
+# request or a schedule. It publishes through npm trusted publishing with
+# provenance, which needs id-token: write; no npm token is stored. Every action is
+# pinned by commit SHA.
+#
+# This file contains no em dash or en dash.
+name: publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# The workflow grants no elevated permission by default. The OIDC token write
+# permission is scoped to the publish job only (least privilege).
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: build and publish with provenance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # id-token: write is granted here, on the job, not the whole workflow.
+    permissions:
+      contents: read
+      id-token: write
+    # The npm-publish environment gates publishing behind any required reviewers
+    # and protection rules configured on the repository.
+    environment: npm-publish
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # tsc -b runs before lint: type-aware lint needs the workspace dist types.
+      - name: Type check
+        run: npx tsc -b
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test with coverage
+        run: npm test
+
+      - name: Tag matches the package version
+        run: node -e "const v=require('./packages/mcp-server/package.json').version; if (process.env.GITHUB_REF_NAME !== 'v' + v) { console.error('tag ' + process.env.GITHUB_REF_NAME + ' does not match version ' + v); process.exit(1); }"
+
+      - name: Build the workspace
+        run: npm run build
+
+      - name: Build the package
+        run: npm run build --workspace packages/mcp-server
+
+      - name: Check the packed file list
+        run: |
+          npm pack --dry-run --json --workspace packages/mcp-server > pack.json
+          node packages/mcp-server/scripts/check-pack.mjs pack.json
+
+      - name: Publish with provenance
+        run: npm publish --provenance --access public --workspace packages/mcp-server

@@ -4,53 +4,58 @@ inclusion: always
 
 # Technology
 
-## Stack
+The approved build plan is the source of truth: #[[file:docs/architecture/build-plan.md]]. Decisions are in `docs/decisions/` (ADR-001 to ADR-030). If this file and the plan disagree, the plan wins; fix this file in the same change.
 
-| Area | Choice | Notes |
-|---|---|---|
-| Language | TypeScript (strict mode) everywhere | One language across the client, MCP server and Lambda |
-| Runtime | Node.js 24 LTS | Lambda runtime `nodejs24.x`. Confirm availability in the target region during design. |
-| Package manager | pnpm workspaces | Monorepo; see structure.md |
-| MCP server | `@modelcontextprotocol/sdk` (official TypeScript SDK), stdio transport | Local server bundled in the Kiro Power |
-| Validation | `zod` | Every API response and every tool input is parsed, never trusted |
-| Tests | `vitest` | Unit tests plus fixture-based integration tests |
-| Lint and format | Biome | One tool, no ESLint/Prettier split |
-| Token storage | OS keychain via `@napi-rs/keyring` | Never write tokens to plain files |
-| Apple Wallet | `passkit-generator` | Runs only in the signer Lambda |
-| Google Wallet | Signed JWT "Save to Google Wallet" link | Runs only in the signer Lambda |
-| Calendar fallback | `ical-generator` | Runs locally, no keys needed |
-| Infrastructure | **Terraform only** (AWS provider, current major) | No CDK, CloudFormation, SAM, console or CLI-created resources. No exceptions. |
+## Stack (ADR-006)
 
-Pin exact dependency versions. Before adding a dependency, confirm it is actively maintained and check its latest version on the official registry. Prefer official SDKs and documentation as sources.
+| Area                  | Choice                                                                                     | Notes                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| Language              | TypeScript 6, `strict` everywhere                                                          | One language across client, MCP server, Lambdas and site                     |
+| Runtime               | Node.js 24 LTS                                                                             | Lambda `nodejs24.x` on arm64 (supported until 30 April 2028)                 |
+| Package manager       | **npm workspaces**                                                                         | `npm ci` in CI and scripts. Only the integrator changes `package-lock.json`. |
+| Lint and format       | **ESLint** (flat config, typescript-eslint, angular-eslint for the site) plus **Prettier** | No Biome                                                                     |
+| Unit tests            | **vitest 4**, v8 coverage, **100%** lines, branches, functions and statements              | Named exclusions only (build plan section 11.2)                              |
+| Browser tests         | Playwright, site only, 7 device profiles, on demand                                        | No retries; tests wait on app state, never on URLs or sleeps                 |
+| Showcase site         | **Angular 22**, zoneless, prerendered static output                                        | Hosted on S3 behind CloudFront                                               |
+| MCP server            | `@modelcontextprotocol/sdk`, stdio                                                         | Published to npm as `reinvent-compass` (trusted publishing)                  |
+| Validation            | `zod`                                                                                      | Every API response, tool input and Compass API request is parsed             |
+| ID token verification | `aws-jwt-verify`                                                                           | Compass API only                                                             |
+| Token storage         | OS keychain via `@napi-rs/keyring`; memory-only fallback                                   | Never write tokens to files                                                  |
+| Apple passes          | `passkit-generator`                                                                        | Compass API Lambdas only                                                     |
+| Calendar              | `ical-generator`                                                                           | Local                                                                        |
+| Infrastructure        | **Terraform only**, HCP Terraform (personal org), `>= 1.15, < 2.0`, AWS provider `~> 6.0`  | No CDK, CloudFormation, SAM, console or CLI-made resources                   |
+
+Pin exact versions. S0 installs every planned dependency; a stream that needs a new one asks the integrator. Prefer official SDKs and docs, and cite them.
 
 ## AWS Events API facts (official docs, checked 15 October 2026)
 
 - Docs: https://docs.aws.amazon.com/events/latest/devguide/what-is-events-api.html
-- REST base URL: `https://api.awsevents.com/v1`. Event ID: `reinvent2026`.
-- Remote MCP server: `https://api.awsevents.com/mcp` (streamable HTTP). Requires sign-in on every call, including catalog reads.
+- REST base URL `https://api.awsevents.com/v1`; event ID `reinvent2026`. Generate types from the official OpenAPI document (S0).
+- Remote MCP server `https://api.awsevents.com/mcp` (streamable HTTP); sign-in on every call.
 - **12 operations:** ListEvents, GetEvent, ListSessions, GetSession, GetSchedule, ReserveSessions, CancelReservation, AssociateFavorites, DisassociateFavorite, CreatePersonalTime, UpdatePersonalTime, DeletePersonalTime.
 
 ### Sign-in (OAuth 2.0 authorization code with PKCE)
 
-| Item | Value |
-|---|---|
-| Authorize | `https://oauth.awsevents.com/oauth2/authorize` |
-| Token | `https://oauth.awsevents.com/oauth2/token` |
-| Revoke | `https://oauth.awsevents.com/oauth2/revoke` |
-| Logout | `https://oauth.awsevents.com/logout` |
-| Builder ID sign-out | `https://idp.awsevents.com/oidc/logout` |
-| Client ID (public, shared) | `7vmom55m1qstvq8i71ph127bfq` |
-| Scope | `openid email events/access` |
-| Identity provider | Always send `identity_provider=AWSBuilderID` |
-| Redirect URI | `http://localhost:{8484..8489}/callback`, matched exactly. Any other port fails. |
-| Access token | JWT, 60 minutes. The only token sent to the API. |
-| Refresh token | Opaque, 30 days, used only at the token endpoint |
+| Item                       | Value                                                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Authorize                  | `https://oauth.awsevents.com/oauth2/authorize`                                                                            |
+| Token                      | `https://oauth.awsevents.com/oauth2/token`                                                                                |
+| Revoke                     | `https://oauth.awsevents.com/oauth2/revoke`                                                                               |
+| Logout                     | `https://oauth.awsevents.com/logout`                                                                                      |
+| Builder ID sign-out        | `https://idp.awsevents.com/oidc/logout`                                                                                   |
+| Client ID (public, shared) | `7vmom55m1qstvq8i71ph127bfq`                                                                                              |
+| Scope                      | `openid email events/access`                                                                                              |
+| Identity provider          | Always send `identity_provider=AWSBuilderID`                                                                              |
+| Redirect URI               | `http://localhost:{8484..8489}/callback`, matched exactly                                                                 |
+| Access token               | JWT, 60 minutes, sent only to `api.awsevents.com`                                                                         |
+| ID token                   | JWT, kept in the keychain, sent only to the Compass API as proof of sign-in (ADR-009). The Events API does not accept it. |
+| Refresh token              | Opaque, 30 days, sent only to the token endpoint                                                                          |
 
-- New PKCE verifier (43 to 128 chars, cryptographically random) and new `state` for every attempt. Challenge is SHA-256, base64url, no padding. Send `code_challenge_method=S256` explicitly.
-- The ID token is not accepted by the API.
-- There is no hosted redirect URI. The app must run on the attendee's machine.
+New PKCE verifier and `state` per attempt; S256 challenge, base64url without padding; `code_challenge_method=S256` sent explicitly.
 
-### Kiro MCP config for the official server (from the docs)
+### Official MCP server in the Power (ADR-017)
+
+Used as `awsevents` for read exploration. It is NOT bundled in `power/mcp.json`: SP1 showed that Kiro does not honour `disabledTools` inside a Power (ADR-024), and that a bare tool name hides nothing even in the workspace file. An attendee who wants it adds it to the workspace `.kiro/settings/mcp.json` with the seven write tools in `disabledTools` by their full names, `AWSEventsPublicApi-Mcp-prod___<Operation>` (ReserveSessions, CancelReservation, AssociateFavorites, DisassociateFavorite, CreatePersonalTime, UpdatePersonalTime, DeletePersonalTime). Kiro starts no MCP server until Settings, "Kiro Agent: Configure MCP", is Enabled. A folder import of `power/` registers the server `compass` as `power-power-compass`. Kiro config:
 
 ```json
 {
@@ -61,77 +66,82 @@ Pin exact dependency versions. Before adding a dependency, confirm it is activel
         "clientId": "7vmom55m1qstvq8i71ph127bfq",
         "redirectUri": "http://127.0.0.1:8976",
         "oauthScopes": ["openid", "email", "events/access"]
-      }
+      },
+      "disabledTools": [
+        "AWSEventsPublicApi-Mcp-prod___ReserveSessions",
+        "AWSEventsPublicApi-Mcp-prod___CancelReservation",
+        "AWSEventsPublicApi-Mcp-prod___AssociateFavorites",
+        "AWSEventsPublicApi-Mcp-prod___DisassociateFavorite",
+        "AWSEventsPublicApi-Mcp-prod___CreatePersonalTime",
+        "AWSEventsPublicApi-Mcp-prod___UpdatePersonalTime",
+        "AWSEventsPublicApi-Mcp-prod___DeletePersonalTime"
+      ]
     }
   }
 }
 ```
 
-End `redirectUri` at the port. Kiro adds `/oauth/callback` itself.
-
 ### Behaviour rules
 
-- **Pagination:** stop only when `nextToken` is absent. Short pages do not mean the last page. Use `includeAbstracts=false` for fast scans.
-- **Optional fields:** any session field can be missing. Parse defensively. Never invent missing data.
-- **Search:** the API has no search or filter. Filter locally over the cached catalog.
-- **ReserveSessions:** 1 to 10 distinct IDs per request. Results are per session. A 200 can contain failures (full, clash, already reserved). Unknown failure codes are refusals. Re-sending is **not** a safe retry because "already reserved" counts as a failure. After any write, call `GetSchedule` to confirm.
-- **GetSchedule** is the source of truth and returns IDs the write operations do not.
-- **Quotas (per attendee, per minute):** GetSession 120, ListSessions 120, GetSchedule 60, ReserveSessions 30 sessions, AssociateFavorites 30 sessions, all other writes 30. On 429, wait `Retry-After` seconds. A refused request spends no quota.
-- **Reported by other participants (verify against the OpenAPI spec before relying on it):** ListSessions returns `items`; GetSession wraps its result in `session`; timing is `sessionTime: { date, time, length, timezone }`; venue is empty for many sessions and can often be recovered from the room text.
+- **Pagination:** stop only when `nextToken` is absent. `includeAbstracts=false` for fast scans.
+- **Optional fields:** every session field may be missing. Parse defensively; never invent data.
+- **No server-side search:** filter locally over the cached catalog.
+- **ReserveSessions:** 1 to 10 distinct IDs; per-session results; a 200 can hold failures; unknown codes are refusals; re-sending is not a safe retry. Confirm every write with `GetSchedule`.
+- **Quotas per attendee per minute:** GetSession 120, ListSessions 120, GetSchedule 60, ReserveSessions 30 sessions, AssociateFavorites 30 sessions, other writes 30. On 429 wait `Retry-After`.
+- **Event window and timezone** come from `GetEvent`; reservability from session data. Never hard-code them.
 
 ## re:Invent rules Compass enforces (official FAQ)
 
-- Reserved seat released to walk-ups if the attendee is not in the room **10 minutes before start**.
+- A reserved seat is released to walk-ups if the attendee is not in the room 10 minutes before start.
 - Reservable types: bootcamps, technical sessions, chalk talks, code talks, exam prep, gamified learning, select labs, workshops. Keynotes and lecture-style breakouts need no reservation.
-- No two reservations at the same time. Favoriting is not reserving. Reserved seats cannot be transferred.
-- Repeats carry `-R` in the session ID.
+- No two reservations at the same time. Favoriting is not reserving. Reserved seats cannot be transferred. Repeats carry `-R`.
 
-## Architecture rules
+## Compass API (ADR-008 to ADR-013)
 
-1. `packages/core` has no I/O side effects outside the API client and cache modules. The rules engine is pure functions and fully unit tested.
-2. All writes go through one module that: validates input, runs the guardrail rules, sends the request, parses per-session results, then confirms with `GetSchedule`.
-3. Every module that calls the API must work in **simulated mode** against recorded fixtures. Simulated mode is selected by config, never by code changes.
-4. The MCP server exposes small, well-described tools with zod input schemas. Write tools must state in their description that they change the attendee's real schedule.
-5. The pass signer is stateless. It receives only pass fields, builds the pass from a fixed server-side template, and returns it. It never receives tokens, code or schedule data beyond what is printed.
+- **Contract first:** `contracts/compass-api.openapi.yaml` (OpenAPI 3.0.1) is the single source. Byte-identical copies in `infra/modules/api/openapi.yaml` and `packages/contracts/openapi.yaml`, checked by SHA-256 in CI. TypeScript types are generated from it.
+- **Routes and shapes:** build plan section 5.2. **PassFields rules:** section 5.3, defined once in `packages/contracts/src/pass-fields.ts`.
+- **Edge:** one CloudFront distribution: site at `/`, API at `/api/*` (API Gateway REST, regional, imported from the OpenAPI file, request validation). WAF (CLOUDFRONT scope) on the distribution. An origin-verify header shields the `execute-api` URL.
+- **Auth:** attendee routes need a Builder ID ID token verified for signature, `iss`, `aud = 7vmom55m1qstvq8i71ph127bfq`, `token_use = id`, `exp`, RS256 only. Hand-off routes use a 128-bit capability in the URL fragment. PassKit routes use `ApplePass <authenticationToken>` per Apple's spec.
+- **Pass lifecycle:** Apple PassKit web service plus APNs pushes with the Pass Type ID certificate (empty payload); void sets `voided: true` and `expirationDate: now`. Google objects patched to `INACTIVE`. Every pass expires at session end.
+- **Data:** DynamoDB single table, on demand, TTL for clean-up only (code checks `expiresAt` on every read), deletion protection, and no point-in-time recovery (owner decision 2026-10-17, ADR-015, so forget_me is a real erasure). Identifiers are opaque: UUID v4 serials; `subHash` and `deviceHash` are HMAC-SHA256 with a pepper from Secrets Manager. Full field list: plan section 4.2.
+- **Logging:** request id, route template, status, latency and outcome only. Never paths with identifiers, headers, bodies, tokens or emails. 14-day retention.
 
-## Security rules
+## Terraform and deploy (ADR-001, ADR-014, ADR-015, ADR-020)
 
-- Never log tokens, authorization headers, or full API responses containing personal data.
-- Tokens live in the OS keychain only. Sign-out revokes the refresh token, clears the keychain and offers the Builder ID sign-out link.
-- Loopback callback server binds to `127.0.0.1`, accepts one request, validates `state`, then shuts down.
-- Signer: API Gateway **REST** API (regional; AWS WAF cannot attach to HTTP APIs) with throttling, AWS WAF rate-based rule and managed rule groups, strict zod validation with maximum field lengths, fixed disclaimer text, no client-supplied images or URLs, least-privilege IAM, signing material in AWS Secrets Manager resolved at runtime and never committed.
-- No secrets in the repo, in Terraform state outputs, or in environment variable defaults. Run gitleaks in a pre-commit hook and in CI.
+- HCP Terraform in the owner's **personal organisation**: workspaces `reinvent-compass-bootstrap` (local execution, run once by the owner), `reinvent-compass-dev` and `reinvent-compass-prod` (remote, CLI-driven), with **HCP dynamic provider credentials**. No AWS keys anywhere and no GitHub deploy role.
+- Region `us-east-1` for everything.
+- Passembly file conventions: `versions.tf`, `provider.tf` with `default_tags`, validated `variables.tf`, `locals.tf`, one file per concern, `tests/*.tftest.hcl` with mock providers. Checks: `terraform fmt`, `validate`, `tflint`, `terraform test`, Trivy config scan.
+- Retained resources with `prevent_destroy` and roll-forward notes: the CloudFront distribution, the DynamoDB table, the four secrets (apple-pass, google-wallet, app, origin-verify) and the site bucket.
+- **The owner runs every deploy** with `scripts/release.sh <env>` (shellchecked): build, saved plan, refuse destroy or replace of retained resources and unexpected resource types, typed `yes`, apply, site sync and invalidation, health check. Dev is deployed before prod.
 
-## Accounts and deployment
+## CI (ADR-018)
 
-- AWS: Hennie's personal account, region **`us-east-1`** for everything.
-- Deploys run from GitHub Actions using an IAM role assumed through **GitHub OIDC**, trusted only for this repository's `main` branch. No long-lived AWS access keys anywhere.
-- Terraform state: S3 backend with native locking, in the same account and region.
+- `check.yml`: one job on `pull_request` into `main` only, the required check, under 8 minutes (full list in plan section 11.1).
+- `e2e.yml`: `workflow_dispatch` only. `publish.yml`: tag `v*` only, npm trusted publishing with provenance.
+- No push triggers, no cron, no deploy workflow. Actions pinned by SHA. Dependabot monthly, paused until after 1 November.
 
 ## Public and private
 
-The repository is public (Apache-2.0). Only security-sensitive material stays private.
+The repository is public. Only security-sensitive and account-specific material stays private.
 
-| Public (commit it) | Private (never commit) | Where the private item lives |
-|---|---|---|
-| All source code, tests, Kiro steering, specs and hooks | Apple Pass Type ID certificate and key, Apple WWDR certificate | AWS Secrets Manager |
-| Terraform modules and environment code | Google Wallet service account key and issuer ID | AWS Secrets Manager |
-| `*.example` templates (`backend.hcl.example`, `terraform.tfvars.example`, `.env.example`) | Real `backend.hcl`, `terraform.tfvars`, `.env`, AWS account ID, state bucket name | Local git-ignored files; GitHub Actions variables and secrets |
-| Scrubbed fixtures in `fixtures/` | Raw recorded API responses (may contain personal data) | `fixtures/.raw/`, git-ignored; a scrub script produces the committed fixtures |
-| The signer's public endpoint URL (attendees need it) | Deploy role ARN | GitHub Actions variable |
-| Docs, article drafts, website source | Terraform state and plan files | S3 state bucket only |
+| Public (commit it)                                                                             | Private (never commit)                                                                                                        | Where it lives                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| All code, tests, steering, specs, hooks, docs, ADRs                                            | Apple Pass Type ID certificate and key, WWDR certificate                                                                      | AWS Secrets Manager, loaded by the owner with `scripts/load-secrets.sh`                                                                                                                                         |
+| Terraform modules, envs, tests                                                                 | Google Wallet service account key and issuer ID                                                                               | AWS Secrets Manager                                                                                                                                                                                             |
+| `*.example` files (`terraform.tfvars.example`, `cloud.auto.tfbackend.example`, `.env.example`) | Real `terraform.tfvars`, `cloud.auto.tfbackend`, `.env`, HCP organisation and workspace settings, AWS account ID, alert email | Local git-ignored files and HCP workspace variables                                                                                                                                                             |
+| Synthetic catalog in `fixtures/synthetic/`                                                     | Real API recordings                                                                                                           | `fixtures/.raw/`, git-ignored                                                                                                                                                                                   |
+| The CloudFront domain (attendees need it)                                                      | HMAC pepper, origin-verify value                                                                                              | Generated locally by the owner script `scripts/load-secrets.sh`, never by Terraform (ADR-012). The origin-verify value and the API key also sit in the CloudFront origin headers and HCP state (ADR-027 item 2) |
 
-Repository protections: GitHub secret scanning with push protection, Dependabot, CodeQL, branch protection on `main`, private vulnerability reporting enabled with a `SECURITY.md`.
+Never read, print or paste a secret value. Repository protections: secret scanning with push protection, CodeQL default setup, branch protection on `main`, private vulnerability reporting.
 
 ## Testing rules
 
-- Unit tests for every rule in the rules engine, including edge cases (midnight, all-day sessions, missing venue, missing end time).
-- Fixture-based tests for every API operation, including partial failures, 429 with `Retry-After`, multi-page catalogs and unknown failure codes.
-- Live smoke tests only behind `COMPASS_LIVE_TESTS=1`. CI never calls the live API.
+- 100% unit coverage; named exclusions only.
+- Fixture tests for all 12 operations, including partial failures, 429 with `Retry-After`, multi-page catalogs, unknown codes and expired tokens.
+- Contract tests: Compass API responses validated against the OpenAPI file.
+- Security tests: tokens and emails never reach logs or errors; JWT negative cases; PassKit authorisation; hand-off expiry; PassFields rejection cases. Ambiguous input is refused, never reinterpreted.
+- Live tests only with `COMPASS_LIVE_TESTS=1`, run by the owner locally. CI never calls the live API.
 
-## Things to verify during design (do not assume)
+## Day-1 spikes that may change this file (plan section 10)
 
-- Exact Apple Wallet pass fields for lock-screen relevance in current iOS (relevant dates, locations, boarding pass style with a generic transit type).
-- Whether personal time created through the API appears in the official AWS Events app.
-- Exact Kiro hook JSON schema and the tool-matcher syntax for MCP tools (`@mcp`, `@<server>`).
-- Lambda Node.js runtime availability.
+SP1 Kiro hook input and blocking, SP2 ID token verification, SP3 PassKit on a real iPhone, SP4 Google Wallet demo mode, SP5 real data shape against the synthetic catalog, SP6 account and cost checks. Record each result in an ADR or this file.

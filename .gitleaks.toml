@@ -1,0 +1,26 @@
+# Gitleaks configuration. The default rule set stays on. The only allowlist is a
+# path allowlist for the folders that hold unit tests, browser test fixtures and
+# Terraform native tests, which contain made-up tokens and placeholder input values
+# on purpose (redaction, no-secret and module tests). Every rule still runs on
+# every other path.
+#
+# The gitleaks release pinned in the action (8.24.3) did not apply the newer
+# rule-scoped [[allowlists]] block with targetRules to the extended default rules,
+# so this uses the long-standing [allowlist] table, which it does honour. The
+# trade-off: a real secret placed in a test folder would not be caught by gitleaks;
+# GitHub secret scanning with push protection still covers provider keys there.
+#
+# .gitleaksignore pins individual findings by fingerprint (commit:file:rule:line).
+# Each entry must be a made-up value in a test file.
+title = "re:Invent Compass gitleaks"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Made-up tokens in unit tests, browser test fixtures and Terraform tests"
+paths = [
+  '''^packages/[^/]+/test/.*$''',
+  '''^site/e2e/fixtures/.*$''',
+  '''^infra/(.+/)?tests/.*\.tftest\.hcl$''',
+]

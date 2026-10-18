@@ -1,0 +1,17 @@
+<h1 tabindex="-1">Privacy: what leaves your machine</h1>
+<p class="measure">{{ intro }}</p>
+
+@for (section of sections; track section.id) {
+  <section class="stack measure" [attr.aria-labelledby]="'privacy-' + section.id">
+    <h2 [id]="'privacy-' + section.id">{{ section.heading }}</h2>
+    <ul>
+      @for (item of section.items; track item.id) {
+        <li>{{ item.text }}</li>
+      }
+    </ul>
+  </section>
+}
+
+<p class="measure">
+  <a [href]="reporting" rel="noopener noreferrer">Open private vulnerability reporting</a>
+</p>

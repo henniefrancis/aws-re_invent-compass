@@ -1,0 +1,14 @@
+{
+  "status": 200,
+  "body": {
+    "result": {
+      "successful": ["syn-004"],
+      "failed": [
+        {
+          "sessionId": "syn-005",
+          "code": "anotherUnknownRefusal"
+        }
+      ]
+    }
+  }
+}

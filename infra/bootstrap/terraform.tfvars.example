@@ -1,0 +1,61 @@
+# Copy this file to terraform.tfvars (git-ignored) and replace every placeholder.
+# Never commit the real file: the organisation and workspace names are private.
+
+hcp_organization = "REPLACE_WITH_HCP_ORGANIZATION_NAME"
+hcp_project      = "reinvent-compass"
+
+hcp_workspaces = {
+  dev  = "REPLACE_WITH_DEV_WORKSPACE_NAME"
+  prod = "REPLACE_WITH_PROD_WORKSPACE_NAME"
+}
+
+# Non-sensitive variables to set on each environment workspace. Never put
+# alarm_email, origin_verify_value or api_key_value here: set those with
+# scripts/set-workspace-secrets.sh from local files.
+workspace_variables = {
+  dev = {
+    event_timezone     = "REPLACE_WITH_IANA_TIME_ZONE"
+    event_window_start = "REPLACE_WITH_ISO_8601_START_WITH_OFFSET"
+    event_window_end   = "REPLACE_WITH_ISO_8601_END_WITH_OFFSET"
+    id_token_issuer    = "REPLACE_WITH_ID_TOKEN_ISSUER_URL"
+    domain_name        = "dev.reinvent-compass.vegas"
+  }
+  prod = {
+    event_timezone     = "REPLACE_WITH_IANA_TIME_ZONE"
+    event_window_start = "REPLACE_WITH_ISO_8601_START_WITH_OFFSET"
+    event_window_end   = "REPLACE_WITH_ISO_8601_END_WITH_OFFSET"
+    id_token_issuer    = "REPLACE_WITH_ID_TOKEN_ISSUER_URL"
+    domain_name        = "reinvent-compass.vegas"
+  }
+}
+
+# Budget alerts for the whole account. Private: never commit the real address.
+alarm_email        = "REPLACE_WITH_ALARM_EMAIL_ADDRESS"
+monthly_budget_usd = 40
+
+# The existing Route 53 hosted zone of the custom domain (public, not secret).
+hosted_zone_name = "reinvent-compass.vegas"
+
+# AWS allows one app.terraform.io OIDC provider per account. Set false when
+# another configuration already manages it; the bootstrap then reads it.
+create_oidc_provider = true
+
+# Domain registration (ADR-031). Set register_domain = true to have the bootstrap
+# buy and renew the domain; the plan shows the create, and applying it is a
+# purchase. Leave it false if the domain is already registered and its hosted
+# zone exists. The contact is personal data: fill it in only in terraform.tfvars.
+register_domain = false
+
+# domain_contact = {
+#   contact_type   = "PERSON"
+#   first_name     = "REPLACE_WITH_FIRST_NAME"
+#   last_name      = "REPLACE_WITH_LAST_NAME"
+#   email          = "REPLACE_WITH_CONTACT_EMAIL"
+#   phone_number   = "+00.000000000"
+#   address_line_1 = "REPLACE_WITH_STREET_ADDRESS"
+#   city           = "REPLACE_WITH_CITY"
+#   # state: leave it out for a South African (ZA) contact; Route 53 refuses it.
+#   state          = "REPLACE_WITH_PROVINCE_OR_STATE"
+#   zip_code       = "REPLACE_WITH_POSTAL_CODE"
+#   country_code   = "ZA"
+# }

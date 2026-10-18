@@ -1,0 +1,27 @@
+# Status: Google Wallet setup (owner action O2, spike SP4)
+
+Owner-run. This note records what was set up in the Google Pay and Wallet console and Google Cloud, and what SP4 still needs. No identifier or key is recorded here.
+
+## Done (18 October 2026)
+
+| Step                                  | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Issuer and business profile           | Reused the owner's existing issuer account, business profile **AWS Community South Africa** (complete, payments profile linked). The same issuer already serves another project of the owner. Issuer id: `<ISSUER_ID>` (kept by the owner, never committed).                                                                                                                                                                                                   |
+| Google Wallet API and service account | Google Wallet API enabled in the owner's Google Cloud project. A Compass-only service account `compass-wallet@<project>.iam.gserviceaccount.com` was created, with no Cloud IAM role. Its JSON key is held in a private folder outside the repository, to be loaded by `scripts/load-secrets.sh <env> google` (see `secrets.md`) and then shredded.                                                                                                            |
+| Link to the issuer                    | `compass-wallet` added under **Users** in the Wallet console with **Developer** access (not Admin). It is separate from the other project's service account, so it can be revoked on its own.                                                                                                                                                                                                                                                                  |
+| Test user                             | None added: the owner's Android Wallet account is Admin on the issuer, which can already save Demo Mode passes.                                                                                                                                                                                                                                                                                                                                                |
+| Generic class                         | `<ISSUER_ID>.compass-dev` created by the owner with `scripts/google-wallet-class.mjs --env dev` (`issuer: exists, left unchanged`, `class: created`). This ran before the first deploy, ahead of release runbook step 5, because publishing access needs at least one class; step 5 will report `class: exists, left unchanged`. The pass type stays Generic (owner decision, 18 Oct): the passes are not tickets, and an Event ticket class is one per event. |
+| Publishing access                     | Requested on **18 October 2026** from **Google Wallet API**, **Get publishing access**. Status: in review. Google no longer asks for screenshots. Until approval the issuer is in Demo Mode: only Admin, Developer and test accounts can save passes, and passes show "[TEST ONLY]".                                                                                                                                                                           |
+
+## Notes for the shared issuer
+
+- Publishing access belongs to the issuer, so the approval covers both projects on it.
+- A Developer service account can manage every class and object on the issuer. Compass uses its own account so a leaked Compass key can be revoked without touching the other project; the other project's passes are still reachable by it until then.
+
+## What remains for SP4
+
+1. First deploy of dev (`scripts/release.sh dev`), then `scripts/load-secrets.sh dev google --service-account <key file> --issuer-id <ISSUER_ID>`, then `scripts/check-secrets.sh dev`. Shred the key file afterwards.
+2. On the Android phone: issue a pass, save it through the Save to Google Wallet link, then void it and check it moves to Expired passes (`state: INACTIVE`).
+3. Confirm the two open SP4 points in the pass-service design: an insert 409 is treated as "exists, patch instead", and a save JWT that lists `{id, classId}` stays under 1800 characters.
+4. Create the prod class (`--env prod`) after dev is verified (`google-class.md`).
+5. Watch for Google's approval email. If access is not granted by **28 October 2026**, ship Google as "beta, test users" (build plan SP4 fallback, risk R4): keep `google_wallet_enabled = true`, say in the README and site that Google passes work only for test accounts, and add testers as test accounts in the Wallet console.

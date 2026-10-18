@@ -1,0 +1,8 @@
+<a class="skip-link" href="#main" (click)="$event.preventDefault(); main.focus()"
+  >Skip to main content</a
+>
+<app-site-header />
+<main #main id="main" class="site-main container" tabindex="-1">
+  <router-outlet />
+</main>
+<app-site-footer />

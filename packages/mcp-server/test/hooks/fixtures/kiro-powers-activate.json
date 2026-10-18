@@ -1,0 +1,15 @@
+{
+  "hook_event_name": "PreToolUse",
+  "cwd": "<workspace>",
+  "session_id": "<redacted>",
+  "tool_name": "kiro_powers",
+  "tool_input": {
+    "action": "activate",
+    "powerName": "power",
+    "serverName": null,
+    "toolName": null,
+    "arguments": null,
+    "steeringFile": null,
+    "skillName": null
+  }
+}

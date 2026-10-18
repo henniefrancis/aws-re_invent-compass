@@ -1,0 +1,172 @@
+# Required check workflow (ADR-018).
+#
+# One job, triggered only on a pull request into main (build plan 11.1). There is
+# no push trigger and no schedule trigger anywhere. Every action is pinned by
+# commit SHA, and the Terraform, tflint and Trivy binaries are pinned by version.
+# The steps run in the build plan 11.1 order: the Node checks first, then the
+# secret and dependency scans, then the offline Terraform checks of the infra
+# stream (fmt, validate, tflint, the native tests with mock providers, the static
+# tests), then Trivy and shellcheck. The Terraform steps never call AWS or HCP
+# Terraform: init uses -backend=false and every native test mocks its providers.
+#
+# This file contains no em dash or en dash.
+name: check
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: build, test and scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history so gitleaks can scan every commit on the pull request, and
+          # never persist the token in the local git config.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Contract hash check
+        run: npm run check:hash
+
+      - name: Placeholder safety check
+        run: npm run check:placeholders
+
+      - name: Dash check
+        run: npm run check:dash
+
+      - name: Catalog check
+        run: npm run check:catalog
+
+      - name: Prettier
+        run: npm run format:check
+
+      # tsc -b runs before ESLint: type-aware lint resolves the workspace packages
+      # through their dist type declarations, which only exist after the build.
+      - name: TypeScript build
+        run: npx tsc -b
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Unit tests with coverage
+        run: npm test
+
+      - name: Site unit tests with coverage
+        run: npm run test:site
+
+      - name: Site build, output and budget checks
+        run: npm run build:site
+
+      - name: Build
+        run: npm run build --if-present
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm audit with a reviewed allowlist
+        run: node .github/scripts/audit-check.mjs
+
+      # Offline Terraform checks. The provider plugins are cached between runs so
+      # each directory does not download the AWS provider again.
+      - name: Cache Terraform plugins
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-plugins-${{ runner.os }}-${{ hashFiles('infra/**/*.tf') }}
+          restore-keys: |
+            terraform-plugins-${{ runner.os }}-
+
+      - name: Create the plugin cache folder
+        run: mkdir -p "$HOME/.terraform.d/plugin-cache"
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          # The 1.15 series the configuration requires (>= 1.15, < 2.0).
+          terraform_version: 1.15.9
+          terraform_wrapper: false
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive infra
+
+      - name: Terraform validate
+        run: |
+          export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
+          for dir in infra/modules/* infra/bootstrap infra/envs/dev infra/envs/prod; do
+            echo "== validate $dir"
+            terraform -chdir="$dir" init -backend=false -input=false
+            terraform -chdir="$dir" validate
+          done
+
+      - name: Set up tflint
+        uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+        with:
+          tflint_version: v0.64.0
+
+      - name: tflint
+        run: tflint --recursive --config="$GITHUB_WORKSPACE/infra/.tflint.hcl" --chdir=infra
+
+      # Each native test runs from the parent of its tests folder, so the relative
+      # fixture and source paths in the tests resolve. The cross-cutting tests in
+      # infra/tests run from infra/.
+      - name: Terraform native tests
+        run: |
+          export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
+          for dir in $(git ls-files 'infra/*.tftest.hcl' | xargs -n1 dirname | xargs -n1 dirname | sort -u); do
+            echo "== test $dir"
+            terraform -chdir="$dir" init -backend=false -input=false
+            terraform -chdir="$dir" test
+          done
+
+      - name: Infra static tests and script checks
+        run: node --test "infra/tests/static/*.test.mjs"
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          version: v0.76.0
+          exit-code: 1
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Trivy config scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          # Our infrastructure lives in infra/. The scanner fixture fixtures/sample-repo
+          # (and its copy in the mcp-server dist) is deliberately minimal test data.
+          scan-ref: infra
+          version: v0.76.0
+          exit-code: 1
+          severity: HIGH,CRITICAL
+
+      - name: Shellcheck
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
+        with:
+          # Only the project's own scripts; third-party scripts in node_modules are not ours.
+          scandir: ./scripts

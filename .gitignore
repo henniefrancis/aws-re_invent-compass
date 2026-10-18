@@ -11,8 +11,8 @@
 *.tfvars
 *.tfvars.json
 !*.tfvars.example
-backend.hcl
-!backend.hcl.example
+cloud.auto.tfbackend
+!cloud.auto.tfbackend.example
 *.tfstate
 *.tfstate.*
 *.tfplan
@@ -20,6 +20,13 @@ tfplan
 .terraform/
 crash.log
 crash.*.log
+# Infra build output (Lambda zips from scripts/release.sh). The lock files of the
+# three roots (infra/bootstrap, infra/envs/dev, infra/envs/prod) ARE committed,
+# generated for every platform with terraform providers lock. Lock files of the
+# modules and of infra itself are test scaffolding and are not committed.
+infra/build/
+infra/.terraform.lock.hcl
+infra/modules/**/.terraform.lock.hcl
 override.tf
 override.tf.json
 *_override.tf
@@ -30,6 +37,8 @@ override.tf.json
 *.pfx
 *.pem
 *.key
+*.secret
+*.secret.txt
 *.p8
 *.cer
 *.crt
@@ -37,6 +46,8 @@ override.tf.json
 *service-account*.json
 *credentials*.json
 secrets/
+# The infra secrets module holds Terraform only (no secret material), so it is tracked.
+!infra/modules/secrets/
 
 # Raw API recordings (may contain personal data); only scrubbed fixtures are committed
 fixtures/.raw/
@@ -65,3 +76,10 @@ desktop.ini
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Angular CLI cache
+.angular/
+
+# Playwright output
+site/playwright-report/
+site/test-results/

@@ -1,0 +1,100 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderWeekSpec > snapshot of a representative week 1`] = `
+{
+  "designMd": "# Design: my re:Invent week
+
+All times are in America/Los_Angeles.
+
+Generated on Sun 29 Nov 18:00.
+
+## Scan summary
+
+- "Amazon S3": building
+
+2 sessions were left out because their times are missing.
+
+## Tue 1 Dec
+
+### Pick 1: "ANT163"
+
+- Title: "Identity and access"
+- Type: "Workshop"
+- Level: "300"
+- Gate: "Encore", "Room 5"
+- Times: Tue 1 Dec 10:00 to Tue 1 Dec 11:00
+- Boarding closes: Tue 1 Dec 09:50
+- Why: "Covers Amazon S3, which you use at the building depth."
+- Connection: no walk to check
+- Reservation: reserve this session
+- Standby: "ANT163-R" on Wed 2 Dec 10:00, "Another showing."
+
+### Pick 2: "KEY001"
+
+- Title: "Keynote"
+- Type: unknown
+- Level: unknown
+- Gate: "The Venetian"
+- Times: Tue 1 Dec 11:05 to Tue 1 Dec 12:00
+- Boarding closes: Tue 1 Dec 10:55
+- Why: "Covers Amazon S3, which you use at the building depth."
+- Connection: tight, 4 minutes of walking, "Only 6 minutes to walk 4."
+- Reservation: walk up, no reservation needed
+
+- Layover: Tue 1 Dec 12:00 to Tue 1 Dec 12:30, "Lunch break"
+- Energy: overloaded, "Five sessions and no break."
+
+## Wed 2 Dec
+
+### Pick 1: "BWP304"
+
+- Title: "No venue session"
+- Type: unknown
+- Level: unknown
+- Gate: Venue not published
+- Times: Wed 2 Dec 12:00 to Wed 2 Dec 13:00
+- Boarding closes: Wed 2 Dec 11:50
+- Why: "Covers Amazon S3, which you use at the building depth."
+- Connection: no walk to check
+- Reservation: reserve this session
+
+### Pick 2: "DAT100"
+
+- Title: "Venue only"
+- Type: unknown
+- Level: unknown
+- Gate: "Wynn"
+- Times: Wed 2 Dec 14:00 to Wed 2 Dec 15:00
+- Boarding closes: Wed 2 Dec 13:50
+- Why: "Covers Amazon S3, which you use at the building depth."
+- Connection: no walk to check
+- Reservation: reserve this session
+
+- Energy: 2 sessions planned
+",
+  "requirementsMd": "# Requirements: my re:Invent week
+
+## Introduction
+
+This is a suggested week of AWS re:Invent sessions, made by Compass from your code and your goals. It is a plan, not a booking: nothing is reserved until you approve each step in \`tasks.md\`.
+
+## Requirements
+
+1. WHEN a reserved session is on my itinerary, I SHALL be at its gate before boarding closes, which is 10 minutes before the session starts.
+2. WHILE a day has sessions over lunch, my itinerary SHALL keep a 30 minute layover between 11:30 and 14:00.
+3. WHEN a session covers "Amazon S3", THE itinerary SHALL prefer it, because my code uses it at the building depth.
+4. WHEN I look for sessions, THE itinerary SHALL favour my goal "learn serverless".
+",
+  "tasksMd": "# Tasks: my re:Invent week
+
+Each task changes your real re:Invent schedule or passes, so you approve it first. Run \`check_itinerary\` before you approve a booking.
+
+- [ ] 1. Reserve "ANT163" (session id "syn-1") with \`reserve_with_guardrails\`
+- [ ] 2. Reserve "BWP304" (session id "syn-3") with \`reserve_with_guardrails\`
+- [ ] 3. Reserve "DAT100" (session id "syn-4") with \`reserve_with_guardrails\`
+- [ ] 4. Add "ANT163-R" (session id "syn-1r") to standby with \`add_standby\`
+- [ ] 5. Add the layover on Tue 1 Dec 12:00 to Tue 1 Dec 12:30 with \`add_layover\`
+- [ ] 6. Issue boarding passes with \`issue_boarding_passes\`
+",
+}
+`;

@@ -1,0 +1,56 @@
+{
+  "name": "reinvent-compass-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "re:Invent Compass monorepo root (foundation-contracts, S0)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "packages/contracts",
+    "packages/core",
+    "packages/mcp-server",
+    "packages/pass-service",
+    "site"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run --coverage",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "gen:copy": "node .github/scripts/gen-copy.mjs",
+    "gen:types": "node .github/scripts/gen-types.mjs",
+    "check:hash": "node .github/scripts/hash-check.mjs",
+    "check:placeholders": "node .github/scripts/placeholder-safety.mjs",
+    "check:dash": "node .github/scripts/dash-check.mjs",
+    "check:catalog": "node .github/scripts/catalog-check.mjs",
+    "test:site": "npm run test --workspace site",
+    "build:site": "npm run build --workspace site",
+    "e2e": "npm run e2e --workspace site"
+  },
+  "devDependencies": {
+    "@angular-eslint/eslint-plugin": "22.6.0",
+    "@angular-eslint/template-parser": "22.6.0",
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "4.1.12",
+    "aws-jwt-verify": "5.2.1",
+    "esbuild": "0.28.2",
+    "eslint": "10.12.0",
+    "fast-check": "4.10.2",
+    "ical.js": "2.2.1",
+    "openapi-typescript": "7.13.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2",
+    "vitest": "4.1.12"
+  },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
+  }
+}

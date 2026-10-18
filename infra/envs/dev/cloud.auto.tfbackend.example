@@ -1,0 +1,8 @@
+# Copy this file to cloud.auto.tfbackend (git-ignored) and replace every placeholder.
+# scripts/release.sh reads these KEY=VALUE lines and exports them as the
+# TF_CLOUD_* environment variables that the cloud block in versions.tf reads.
+# The organisation and workspace names are private: never commit the real file.
+
+TF_CLOUD_ORGANIZATION=REPLACE_WITH_HCP_ORGANIZATION_NAME
+TF_CLOUD_PROJECT=reinvent-compass
+TF_WORKSPACE=REPLACE_WITH_DEV_WORKSPACE_NAME

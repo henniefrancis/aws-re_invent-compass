@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "body": {
+    "result": {
+      "successful": ["syn-001"],
+      "failed": [
+        {
+          "sessionId": "syn-002",
+          "code": "sessionFull"
+        },
+        {
+          "sessionId": "syn-003",
+          "code": "brandNewRefusalCode"
+        }
+      ]
+    }
+  }
+}

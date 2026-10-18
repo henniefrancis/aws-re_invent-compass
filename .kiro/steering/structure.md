@@ -4,77 +4,72 @@ inclusion: always
 
 # Project structure
 
+Layout and ownership follow the approved build plan (section 9.1, ADR-007). Each folder below has **one owning stream**; a stream never edits another stream's files (see workflow.md).
+
 ```
 aws-re_invent-compass/
 ├── .kiro/
-│   ├── steering/              # product.md, tech.md, structure.md (this file)
-│   ├── specs/                 # One folder per build spec (created by Kiro)
-│   │   ├── events-client/
-│   │   ├── itinerary-rules/
-│   │   ├── compass-power/
-│   │   ├── boarding-passes/
-│   │   └── pass-signer-infra/
-│   └── hooks/                 # Hooks used while BUILDING this project (lint, test on save)
+│   ├── steering/                 # S0: product, tech, structure, workflow
+│   ├── specs/                    # One folder per Kiro spec, committed (proof of spec-driven work)
+│   └── hooks/                    # S0: hooks used while building this repo (lint, test on save)
+├── contracts/
+│   └── compass-api.openapi.yaml  # S0: the single source for the Compass API (OpenAPI 3.0.1)
 ├── packages/
-│   ├── core/                  # @compass/core: API client, auth, cache, rules engine, repo scanner
-│   │   ├── src/
-│   │   │   ├── auth/          # PKCE sign-in, refresh, revoke, keychain
-│   │   │   ├── api/           # Typed client, one file per operation, zod schemas
-│   │   │   ├── catalog/       # Pagination, cache, normalization, venue recovery
-│   │   │   ├── rules/         # Pure functions: boarding, connections, clashes, layovers, rebooking
-│   │   │   ├── scanner/       # Repo to services: terraform, cdk, sdk-js, boto3
-│   │   │   ├── spec/          # Week spec generator (requirements, design, tasks markdown)
-│   │   │   ├── passes/        # Pass model, signer client, .ics generator, sync diff
-│   │   │   └── simulated/     # Fixture-backed transport for simulated mode
-│   │   └── test/
-│   ├── mcp-server/            # @compass/mcp-server: local stdio MCP server exposing Compass tools
-│   │   ├── src/
-│   │   └── test/
-│   └── pass-signer/           # @compass/pass-signer: Lambda handler, fixed pass template
-│       ├── src/
-│       ├── template/          # Pass layout, icons (original artwork only, no AWS branding)
-│       └── test/
-├── power/                     # The distributable Kiro Power (Agent Plugins format)
+│   ├── contracts/                # S0: @compass/contracts
+│   │   ├── openapi.yaml          #   byte-identical copy (hash-checked)
+│   │   └── src/                  #   Session, Schedule, Commitment, Venue, Verdict, PassFields,
+│   │                             #   error types, MCP tool schemas, generated Events and Compass API types
+│   ├── core/                     # @compass/core, subpath exports (no shared barrel file)
+│   │   └── src/
+│   │       ├── auth/             # S1: PKCE sign-in, refresh, revoke, keychain with memory fallback
+│   │       ├── api/              # S1: one file per Events API operation
+│   │       ├── catalog/          # S1: pagination, cache, normalisation, venue recovery
+│   │       ├── simulated/        # S1: fixture-backed transport (COMPASS_MODE=simulated)
+│   │       ├── rules/            # S2: pure, browser-safe rules engine (also used by the site)
+│   │       ├── scanner/          # S3: repo to services (terraform, cdk-ts, sdk-js-v3, boto3)
+│   │       ├── spec/             # S3: week spec generator
+│   │       └── passes/           # S4: PassFields builder, Compass API client, sync, .ics, itinerary HTML, QR
+│   ├── mcp-server/               # S3: local stdio MCP server and CLI, published as `reinvent-compass`
+│   └── pass-service/             # S5: Compass API Lambdas (api, passkit), original pass artwork
+├── power/                        # S3: the Kiro Power (Agent Plugins format)
 │   ├── plugin.json
-│   ├── mcp.json               # compass (local stdio) + awsevents (official remote)
-│   └── skills/
-│       ├── plan-my-week/      # SKILL.md: repo scan to week spec workflow
-│       ├── first-timer-guide/ # SKILL.md + references/ (sourced from official pages)
-│       └── install-hooks/     # SKILL.md + templates for the attendee's .kiro/hooks
-├── infra/                     # Terraform only (us-east-1)
-│   ├── modules/
-│   │   ├── pass-signer/
-│   │   └── showcase-site/     # Later: hosting for the showcase website
-│   └── envs/prod/             # backend.hcl and terraform.tfvars are git-ignored; .example files are committed
-├── site/                      # Later: showcase website source
+│   ├── mcp.json                  #   compass (local stdio); awsevents is added only after SP1 (ADR-024)
+│   ├── skills/                   #   plan-my-week, first-timer-guide, install-hooks
+│   └── hook-templates/           #   PreToolUse guardrail, PostToolUse sync (copied into the attendee's .kiro/hooks)
+├── site/                         # S7: Angular 22 showcase site (story, demo, install, privacy, /board)
+├── infra/                        # S6: Terraform only (us-east-1, HCP Terraform)
+│   ├── bootstrap/                #   HCP OIDC provider and plan/apply roles (owner runs once)
+│   ├── modules/                  #   site, edge, api (openapi.yaml copy owned by S0), data, secrets, observability
+│   └── envs/{dev,prod}/          #   cloud.auto.tfbackend and terraform.tfvars are git-ignored; .example committed
+├── spikes/                       # S0: day-1 spike scripts (owner-run, print no secret values)
+├── scripts/                      # S6: release.sh, bootstrap.sh, load-secrets.sh, google-wallet-class.mjs (owner-run)
 ├── data/
-│   └── venues.json            # Curated venues, coordinates, walking-time matrix, with sources
-├── fixtures/                  # Scrubbed API responses for tests and simulated mode (no personal data)
-│   └── .raw/                  # Git-ignored raw recordings, input to the scrub script
+│   └── venues.json               # S2: venues, coordinates, walking-time matrix, a source note per value
+├── fixtures/
+│   ├── synthetic/                # S0: made-up catalog in the real data shape (public)
+│   ├── api/                      # S1: scrubbed per-operation fixtures built on the synthetic catalog
+│   ├── sample-repo/              # S3: sample project for the scanner and the demo
+│   └── .raw/                     # git-ignored: the owner's real recordings (SP5)
 ├── docs/
-│   ├── article/               # Builder Center post draft and images
-│   ├── demo/                  # Demo script and recordings
-│   └── decisions/             # Short architecture decision records (ADR-001-*.md)
-├── .github/workflows/         # CI (lint, test, gitleaks, terraform checks) and OIDC deploy
-├── CONCEPT.md
-├── README.md                  # Later: setup, dependencies, how to run (hackathon requirement)
-├── CONTRIBUTING.md            # Later: how to contribute, DCO sign-off
-├── SECURITY.md                # Later: private vulnerability reporting
-├── LICENSE                    # Apache-2.0
-└── NOTICE                     # Copyright and attribution for Hennie Francis
+│   ├── architecture/             # build-plan.md (mirror of the approved plan)
+│   ├── decisions/                # ADR-001 onwards
+│   ├── runbooks/                 # S6: release, rollback, secrets, Google class, kill switch
+│   ├── article/                  # Claude: Builder Center post drafts and screenshots
+│   └── demo/                     # Claude and owner: video script
+├── .github/                      # S0: check.yml, e2e.yml, publish.yml, dependabot.yml
+├── CONCEPT.md, README.md, CONTRIBUTING.md, SECURITY.md, LICENSE, NOTICE
+└── package.json, package-lock.json   # S0; after day 1 only the integrator changes them
 ```
-
-Private values never go in the tree above. See "Public and private" in tech.md.
 
 ## Conventions
 
-- **Files:** kebab-case (`reserve-sessions.ts`). One API operation per file in `api/`.
-- **Types:** PascalCase. Zod schemas end in `Schema` (`SessionSchema`); inferred types share the base name (`Session`).
+- **Files:** kebab-case (`reserve-sessions.ts`). One Events API operation per file in `core/src/api/`.
+- **Types:** PascalCase. Zod schemas end in `Schema` (`SessionSchema`); inferred types share the base name (`Session`). Shared types live only in `@compass/contracts`.
 - **Functions:** camelCase verbs (`checkConnection`, `issuePasses`).
-- **Domain names follow the airline metaphor** in product.md: `BoardingPass`, `Connection`, `Layover`, `Standby`, `rebook`.
-- **MCP tool names:** snake_case, verb first (`scan_repo`, `plan_week`, `check_itinerary`, `reserve_with_guardrails`, `issue_boarding_passes`, `sync_passes`).
-- **Tests** sit in each package's `test/` folder and mirror `src/` paths. Name: `<module>.test.ts`.
-- **Fixtures:** `fixtures/<operation>/<scenario>.json`, for example `fixtures/reserve-sessions/partial-failure.json`. Strip all personal data before committing.
-- **Decisions:** any choice that changes tech.md gets an ADR in `docs/decisions/` and an update to tech.md in the same change.
-- **Commits:** Conventional Commits (`feat(core): add pagination`). No em dashes or en dashes anywhere.
-- **Dependencies between packages:** `mcp-server` depends on `core`. `pass-signer` does not depend on `core` except for the shared pass schema, which lives in `core/src/passes/schema.ts` and is the single source of truth for pass fields.
+- **Domain names follow the airline metaphor** (product.md): `BoardingPass`, `Connection`, `Layover`, `Standby`, `rebook`, `voidPass`.
+- **MCP tools:** snake_case, verb first (full list in plan section 8.1).
+- **Imports:** packages import each other only through declared subpath exports (`@compass/core/rules`), never deep relative paths across packages.
+- **Tests:** in each package's `test/` folder, mirroring `src/`, named `<module>.test.ts`.
+- **Fixtures:** `fixtures/api/<operation>/<scenario>.json`, for example `fixtures/api/reserve-sessions/partial-failure.json`. Never commit real recordings.
+- **Decisions:** a choice that changes steering gets an ADR in `docs/decisions/` and a steering update in the same change.
+- **Commits:** Conventional Commits with the spec as scope (`feat(events-client): add pagination`). No em dashes or en dashes anywhere.

@@ -1,0 +1,54 @@
+# Copy this file to terraform.tfvars (git-ignored) and replace every placeholder.
+# HCP Terraform does not receive terraform.tfvars (infra/.terraformignore), so set
+# alarm_email as a sensitive variable in the HCP workspace as well.
+
+env = "prod"
+
+# Sensitive. Never commit the real address.
+alarm_email = "REPLACE_WITH_ALARM_EMAIL_ADDRESS"
+
+# Optional. Null (omit the line) selects compass-<env>.
+# table_name = "compass-prod"
+
+throttle_rate  = 50
+throttle_burst = 100
+
+kill_switch_enabled = false
+
+# From the Events API GetEvent for the event. Never hard-code these in Terraform.
+event_timezone     = "REPLACE_WITH_IANA_TIME_ZONE"
+event_window_start = "REPLACE_WITH_ISO_8601_START_WITH_OFFSET"
+event_window_end   = "REPLACE_WITH_ISO_8601_END_WITH_OFFSET"
+
+# Spike SP2 result: the exact iss claim of the ID token, and the mode.
+id_token_issuer   = "REPLACE_WITH_ID_TOKEN_ISSUER_URL"
+id_token_verifier = "cognito"
+# id_token_jwks_uri = "REPLACE_WITH_JWKS_URI_FOR_OIDC_MODE"
+
+# Spike switches. Defaults are shown.
+apns_enabled          = true
+google_wallet_enabled = true
+# apns_push_type = "alert"
+
+# Only when domain_name is null: set after the first apply, from the cloudfront_domain_name output
+# (https:// plus the domain, no trailing slash), then apply again.
+# public_base_url = "REPLACE_WITH_HTTPS_URL_OF_THE_DISTRIBUTION"
+
+# Sensitive values. Set them as sensitive HCP workspace variables (this file is
+# not uploaded) and never commit the real values. Generation steps are in
+# docs/runbooks/secrets.md.
+origin_verify_value = "REPLACE_WITH_GENERATED_ORIGIN_VERIFY_VALUE"
+api_key_value       = "REPLACE_WITH_GENERATED_API_KEY_VALUE"
+
+# Reserved concurrency per Lambda, a cost and abuse ceiling. Use -1 for none
+# (needed on a new account whose concurrency quota is too low to reserve any).
+api_reserved_concurrency     = 20
+passkit_reserved_concurrency = 10
+
+# Custom domain (ADR-031). The hosted zone already exists in this account; the
+# certificate validates itself through DNS records in it. Prod serves the apex
+# only (passes use the apex too, ADR-031). extra_aliases stays available for later;
+# it is a list, so in HCP it is an HCL variable.
+hosted_zone_name = "reinvent-compass.vegas"
+domain_name      = "reinvent-compass.vegas"
+# extra_aliases  = null (none)

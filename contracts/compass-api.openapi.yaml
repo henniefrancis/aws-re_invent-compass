@@ -1,0 +1,956 @@
+# Compass API, the single source (foundation-contracts, S0).
+#
+# This OpenAPI document is the single source for the Compass API (build plan
+# sections 5.1 and 5.2). It is OpenAPI 3.0.1 on purpose: API Gateway REST import
+# supports Swagger 2.0 and OpenAPI 3.0 only, not 3.1. Two byte-identical copies
+# are produced by the gen:copy step and checked by SHA-256 in CI:
+#   - packages/contracts/openapi.yaml (TypeScript types are generated from it)
+#   - infra/modules/api/openapi.yaml  (fed to aws_api_gateway_rest_api.body)
+#
+# This file is read by Terraform templatefile(), which evaluates dollar-brace
+# and percent-brace template markers anywhere in the file, comments included.
+# So this file must contain NO dollar-brace or percent-brace marker except the
+# two real Lambda invoke placeholders on the integration uri lines. These
+# comments deliberately spell out the marker names in words rather than writing
+# the marker characters.
+#
+# API Gateway binding rules (kept in this single source so the copies stay
+# byte-identical):
+#   - Every operation carries an x-amazon-apigateway-integration of type
+#     aws_proxy with httpMethod POST (the Lambda invoke is always POST, even for
+#     a GET route) and an uri that is one of exactly two Terraform placeholders,
+#     named api lambda invoke arn (for the attendee and hand-off routes) and
+#     passkit lambda invoke arn (for the /api/passkit/* routes), each written as
+#     that name wrapped in a dollar-brace marker on the uri line only. Those two
+#     are the only template placeholders in the file.
+#   - Auth is verified inside the Lambdas, so there is NO
+#     x-amazon-apigateway-authorizer anywhere. The bearerIdToken and applePass
+#     securitySchemes below are documentation only, for human readers of the
+#     contract. The api_key scheme is the exception: API Gateway enforces it
+#     on every method (apiKeyRequired), with the key injected by CloudFront.
+#   - Request validation is enabled through x-amazon-apigateway-request-validators
+#     and each operation sets x-amazon-apigateway-request-validator.
+#   - Binary responses (.pkpass, .pkpasses, .ics) are declared in
+#     x-amazon-apigateway-binary-media-types.
+#
+# Errors use application/problem+json with the single Problem component. No error
+# example echoes request input. No account id, ARN, hostname or real domain
+# appears anywhere; only <distribution>.cloudfront.net is used, and only in
+# descriptions.
+openapi: 3.0.1
+info:
+  title: Compass API
+  version: 1.0.0
+  description: >-
+    Unofficial boarding-pass service for re:Invent Compass. Signs Apple and
+    Google Wallet passes for signed-in attendees, runs the Apple PassKit web
+    service, and serves a short-lived hand-off to the phone. Attendee routes are
+    authorised by a Builder ID ID token verified inside the Lambda; PassKit
+    routes use Apple's ApplePass token; hand-off routes use a capability carried
+    in the URL fragment. The public base is
+    https://<distribution>.cloudfront.net, with /api/* routed to the API Gateway
+    stage.
+  license:
+    name: Apache-2.0
+
+# Binary media types so API Gateway returns the Apple pass bundles and the
+# calendar file as binary rather than attempting UTF-8 handling.
+# API Gateway requires the x-api-key header on every method (see api_key below).
+x-amazon-apigateway-api-key-source: HEADER
+x-amazon-apigateway-binary-media-types:
+  - application/vnd.apple.pkpass
+  - application/vnd.apple.pkpasses
+  - text/calendar
+
+# Two request validators. Operations with a body validate the body and the
+# request parameters; parameter-only operations validate parameters only.
+x-amazon-apigateway-request-validators:
+  all:
+    validateRequestBody: true
+    validateRequestParameters: true
+  params-only:
+    validateRequestBody: false
+    validateRequestParameters: true
+
+paths:
+  # ---- Attendee and hand-off routes (all integrate the api Lambda) ----
+
+  /api/v1/health:
+    get:
+      operationId: getHealth
+      summary: Liveness and version.
+      description: Public health check. No authentication.
+      x-amazon-apigateway-request-validator: params-only
+      responses:
+        '200':
+          description: The service is up.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+      security:
+        - api_key: []
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${api_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/v1/passes:
+    post:
+      operationId: issuePasses
+      summary: Issue passes for reserved sessions.
+      description: >-
+        Issue Apple and/or Google passes for 1 to 25 reserved sessions. Requires
+        a Builder ID ID token, verified inside the Lambda.
+      security:
+        - bearerIdToken: []
+          api_key: []
+      x-amazon-apigateway-request-validator: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssuePassesRequest'
+      responses:
+        '201':
+          description: Passes were issued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssuePassesResponse'
+        '400':
+          $ref: '#/components/responses/ProblemBadRequest'
+        '401':
+          $ref: '#/components/responses/ProblemUnauthorized'
+        '429':
+          $ref: '#/components/responses/ProblemTooManyRequests'
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${api_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/v1/passes/{serialNumber}/apple:
+    parameters:
+      - $ref: '#/components/parameters/SerialNumber'
+    get:
+      operationId: getApplePass
+      summary: Download the Apple pass.
+      description: >-
+        Returns the latest signed Apple pass for the owner. Requires a Builder ID
+        ID token and an owner match, verified inside the Lambda.
+      security:
+        - bearerIdToken: []
+          api_key: []
+      x-amazon-apigateway-request-validator: params-only
+      responses:
+        '200':
+          description: The signed Apple pass.
+          content:
+            application/vnd.apple.pkpass:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/ProblemUnauthorized'
+        '404':
+          $ref: '#/components/responses/ProblemNotFound'
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${api_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/v1/passes/{serialNumber}:
+    parameters:
+      - $ref: '#/components/parameters/SerialNumber'
+    put:
+      operationId: updatePass
+      summary: Update a pass.
+      description: >-
+        Replace the pass content, then push to Apple devices and patch the Google
+        object. Requires a Builder ID ID token and an owner match.
+      security:
+        - bearerIdToken: []
+          api_key: []
+      x-amazon-apigateway-request-validator: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PassFields'
+      responses:
+        '200':
+          description: The pass was updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatePassResponse'
+        '400':
+          $ref: '#/components/responses/ProblemBadRequest'
+        '401':
+          $ref: '#/components/responses/ProblemUnauthorized'
+        '404':
+          $ref: '#/components/responses/ProblemNotFound'
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${api_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/v1/passes/{serialNumber}/void:
+    parameters:
+      - $ref: '#/components/parameters/SerialNumber'
+    post:
+      operationId: voidPass
+      summary: Void a pass.
+      description: >-
+        Mark the pass voided and expired, push to Apple devices and set the
+        Google object INACTIVE. Idempotent. Requires a Builder ID ID token and an
+        owner match.
+      security:
+        - bearerIdToken: []
+          api_key: []
+      x-amazon-apigateway-request-validator: params-only
+      responses:
+        '200':
+          description: The pass is voided.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoidPassResponse'
+        '401':
+          $ref: '#/components/responses/ProblemUnauthorized'
+        '404':
+          $ref: '#/components/responses/ProblemNotFound'
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${api_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/v1/handoffs:
+    post:
+      operationId: createHandoff
+      summary: Create a 15-minute hand-off.
+      description: >-
+        Create a short-lived hand-off to the phone for 1 to 80 pass serials.
+        Requires a Builder ID ID token.
+      security:
+        - bearerIdToken: []
+          api_key: []
+      x-amazon-apigateway-request-validator: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHandoffRequest'
+      responses:
+        '201':
+          description: The hand-off was created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateHandoffResponse'
+        '400':
+          $ref: '#/components/responses/ProblemBadRequest'
+        '401':
+          $ref: '#/components/responses/ProblemUnauthorized'
+        '429':
+          $ref: '#/components/responses/ProblemTooManyRequests'
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${api_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/v1/handoffs/{handoffId}:
+    parameters:
+      - $ref: '#/components/parameters/HandoffId'
+    get:
+      operationId: getHandoff
+      summary: Read a hand-off.
+      description: >-
+        Read the hand-off contents using the capability in the URL fragment.
+        Unknown and expired hand-offs both answer 404.
+      x-amazon-apigateway-request-validator: params-only
+      responses:
+        '200':
+          description: The hand-off contents.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandoffView'
+        '404':
+          $ref: '#/components/responses/ProblemNotFound'
+      security:
+        - api_key: []
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${api_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/v1/handoffs/{handoffId}/apple/{bundleIndex}:
+    parameters:
+      - $ref: '#/components/parameters/HandoffId'
+      - $ref: '#/components/parameters/BundleIndex'
+    get:
+      operationId: getHandoffAppleBundle
+      summary: Download an Apple pass bundle.
+      description: >-
+        Returns a .pkpasses bundle of up to 10 passes (Apple's limit) for the
+        hand-off. Authorised by the hand-off capability.
+      x-amazon-apigateway-request-validator: params-only
+      responses:
+        '200':
+          description: The Apple pass bundle.
+          content:
+            application/vnd.apple.pkpasses:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/ProblemNotFound'
+      security:
+        - api_key: []
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${api_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/v1/handoffs/{handoffId}/calendar.ics:
+    parameters:
+      - $ref: '#/components/parameters/HandoffId'
+    get:
+      operationId: getHandoffCalendar
+      summary: Download the calendar file.
+      description: >-
+        Returns a text/calendar file for the reserved sessions in the hand-off,
+        built from the pass fields. Authorised by the hand-off capability.
+      x-amazon-apigateway-request-validator: params-only
+      responses:
+        '200':
+          description: The calendar file.
+          content:
+            text/calendar:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/ProblemNotFound'
+      security:
+        - api_key: []
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${api_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/v1/me:
+    delete:
+      operationId: forgetMe
+      summary: Delete everything for the caller.
+      description: >-
+        Void every pass for the caller and delete their server records. Requires
+        a Builder ID ID token.
+      security:
+        - bearerIdToken: []
+          api_key: []
+      x-amazon-apigateway-request-validator: params-only
+      responses:
+        '202':
+          description: Deletion accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgetMeResponse'
+        '401':
+          $ref: '#/components/responses/ProblemUnauthorized'
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${api_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  # ---- Apple PassKit web service routes (all integrate the passkit Lambda) ----
+  # Paths match Apple's specification exactly as listed in build plan 5.2.
+
+  /api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}:
+    parameters:
+      - $ref: '#/components/parameters/DeviceLibraryIdentifier'
+      - $ref: '#/components/parameters/PassTypeIdentifier'
+      - $ref: '#/components/parameters/SerialNumber'
+    post:
+      operationId: registerDevice
+      summary: Register a device for pass updates.
+      description: >-
+        Register a device to receive update notifications for a pass. Authorised
+        by the ApplePass token. 201 when newly registered, 200 when already
+        registered, 401 when the token does not match.
+      security:
+        - applePass: []
+          api_key: []
+      x-amazon-apigateway-request-validator: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRegistration'
+      responses:
+        '200':
+          description: The device was already registered.
+        '201':
+          description: The device was registered.
+        '401':
+          $ref: '#/components/responses/ProblemUnauthorized'
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${passkit_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+    delete:
+      operationId: unregisterDevice
+      summary: Unregister a device for pass updates.
+      description: >-
+        Stop sending update notifications for a pass to a device. Authorised by
+        the ApplePass token.
+      security:
+        - applePass: []
+          api_key: []
+      x-amazon-apigateway-request-validator: params-only
+      responses:
+        '200':
+          description: The device was unregistered.
+        '401':
+          $ref: '#/components/responses/ProblemUnauthorized'
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${passkit_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}:
+    parameters:
+      - $ref: '#/components/parameters/DeviceLibraryIdentifier'
+      - $ref: '#/components/parameters/PassTypeIdentifier'
+    get:
+      operationId: getSerialNumbers
+      summary: List updatable passes for a device.
+      description: >-
+        Return the serial numbers of passes registered to the device that have
+        changed since passesUpdatedSince. Apple sends no credential on this
+        route. 200 with the list, or 204 when nothing changed.
+      parameters:
+        - name: passesUpdatedSince
+          in: query
+          required: false
+          description: An opaque tag from a previous response.
+          schema:
+            type: string
+      x-amazon-apigateway-request-validator: params-only
+      responses:
+        '200':
+          description: The serial numbers that changed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SerialNumbers'
+        '204':
+          description: Nothing changed since passesUpdatedSince.
+      security:
+        - api_key: []
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${passkit_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/passkit/v1/passes/{passTypeIdentifier}/{serialNumber}:
+    parameters:
+      - $ref: '#/components/parameters/PassTypeIdentifier'
+      - $ref: '#/components/parameters/SerialNumber'
+    get:
+      operationId: getLatestPass
+      summary: Get the latest version of a pass.
+      description: >-
+        Return the latest signed Apple pass. Honours If-Modified-Since and
+        returns Last-Modified. Authorised by the ApplePass token. 200 with the
+        pass, 304 when not modified, 401 when the token does not match.
+      security:
+        - applePass: []
+          api_key: []
+      parameters:
+        - name: If-Modified-Since
+          in: header
+          required: false
+          description: The Last-Modified value from a previous response.
+          schema:
+            type: string
+      x-amazon-apigateway-request-validator: params-only
+      responses:
+        '200':
+          description: The latest signed Apple pass.
+          content:
+            application/vnd.apple.pkpass:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: The pass has not been modified.
+        '401':
+          $ref: '#/components/responses/ProblemUnauthorized'
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${passkit_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/passkit/v1/log:
+    post:
+      operationId: logMessages
+      summary: Receive log messages from devices.
+      description: >-
+        Apple devices post diagnostic log messages here. The messages are
+        counted as a metric and not stored. No authentication.
+      x-amazon-apigateway-request-validator: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogEntries'
+      responses:
+        '200':
+          description: The log messages were received.
+      security:
+        - api_key: []
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${passkit_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+components:
+  # Documentation-only security schemes. They are referenced by operations so a
+  # reader can see which credential each route expects, but no API Gateway
+  # authorizer is attached: every route is authorised inside its Lambda.
+  securitySchemes:
+    api_key:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: >-
+        The API Gateway API key, enforced by API Gateway on every method.
+        CloudFront adds it as a custom origin header, so a direct call to the
+        execute-api endpoint is rejected before any Lambda runs. Viewers never
+        send or see it. This is the one scheme API Gateway itself enforces.
+    bearerIdToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >-
+        A Builder ID ID token (JWT) sent as "Authorization: Bearer <idToken>".
+        The Lambda verifies the signature against the issuer JWKS and checks
+        iss, aud, token_use=id and exp (RS256 only). Documentation only; there
+        is no API Gateway authorizer.
+    applePass:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: >-
+        Apple PassKit authorization header of the form
+        "ApplePass <authenticationToken>". The Lambda compares it in constant
+        time against the stored SHA-256 of the pass authentication token.
+        Documentation only; there is no API Gateway authorizer.
+
+  # Shared path parameters. A parameter name is identical at the same path level
+  # everywhere it appears: serialNumber, handoffId, bundleIndex,
+  # deviceLibraryIdentifier, passTypeIdentifier.
+  parameters:
+    SerialNumber:
+      name: serialNumber
+      in: path
+      required: true
+      description: The pass serial number (UUID v4).
+      schema:
+        type: string
+        format: uuid
+    HandoffId:
+      name: handoffId
+      in: path
+      required: true
+      description: The hand-off identifier.
+      schema:
+        type: string
+    BundleIndex:
+      name: bundleIndex
+      in: path
+      required: true
+      description: The zero-based index of the Apple pass bundle.
+      schema:
+        type: integer
+        minimum: 0
+    DeviceLibraryIdentifier:
+      name: deviceLibraryIdentifier
+      in: path
+      required: true
+      description: Apple's device library identifier.
+      schema:
+        type: string
+    PassTypeIdentifier:
+      name: passTypeIdentifier
+      in: path
+      required: true
+      description: The Apple pass type identifier.
+      schema:
+        type: string
+
+  # Shared error responses, all application/problem+json using the single Problem
+  # component. No example echoes request input.
+  responses:
+    ProblemBadRequest:
+      description: The request was invalid.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ProblemUnauthorized:
+      description: Authentication failed or was missing.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ProblemNotFound:
+      description: The resource does not exist (or the capability is unknown or expired).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ProblemTooManyRequests:
+      description: A rate limit was exceeded.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    # The single application/problem+json error body (build plan 5.2). Exactly
+    # four fields, all required. No field carries request input, so a malformed
+    # request can never be reflected back to the caller.
+    Problem:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          description: A URI reference that identifies the problem kind.
+        title:
+          type: string
+          description: A short, human-readable summary of the problem kind.
+        status:
+          type: integer
+          format: int32
+          description: The HTTP status code.
+        code:
+          type: string
+          description: A stable, machine-readable Compass error code.
+
+    # PassFields: the client-supplied pass content. Mirrors
+    # packages/contracts/src/pass-fields.ts (build plan 5.3). Server-derived
+    # fields (boardingClosesAt, disclaimer, expirationDate, relevantDates,
+    # transitType, sharingProhibited, barcodes) are set server-side and are not
+    # part of this input shape. Unknown fields are not accepted.
+    PassFields:
+      type: object
+      additionalProperties: false
+      required: [sessionCode, title, venue, room, startsAt, endsAt]
+      properties:
+        sessionCode:
+          type: string
+          pattern: '^[A-Z0-9]{2,12}(-R[0-9]?)?$'
+          description: The catalog session code, for example DAT302-R.
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+        venue:
+          type: string
+          minLength: 0
+          maxLength: 40
+          description: Empty means "Venue not published" on the pass.
+        room:
+          type: string
+          minLength: 0
+          maxLength: 40
+        startsAt:
+          type: string
+          format: date-time
+          description: ISO 8601 with offset, inside the event window.
+        endsAt:
+          type: string
+          format: date-time
+          description: >-
+            ISO 8601 with offset, after startsAt and at most 10 hours later,
+            inside the event window.
+        walkFromPrevious:
+          type: object
+          additionalProperties: false
+          required: [minutes, fromVenue]
+          properties:
+            minutes:
+              type: integer
+              minimum: 0
+              maximum: 90
+            fromVenue:
+              type: string
+              minLength: 0
+              maxLength: 40
+        nextConnection:
+          type: object
+          additionalProperties: false
+          required: [sessionCode, startsAt, venue, walkMinutes]
+          properties:
+            sessionCode:
+              type: string
+              pattern: '^[A-Z0-9]{2,12}(-R[0-9]?)?$'
+            startsAt:
+              type: string
+              format: date-time
+            venue:
+              type: string
+              minLength: 0
+              maxLength: 40
+            walkMinutes:
+              type: integer
+              minimum: 0
+              maximum: 90
+        attendeeName:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: Present only when the attendee opts in.
+
+    # ---- Request bodies (build plan 5.2) ----
+
+    # POST /api/v1/passes request: one or more platforms and 1 to 25 PassFields.
+    IssuePassesRequest:
+      type: object
+      additionalProperties: false
+      required: [platforms, passes]
+      properties:
+        platforms:
+          type: array
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            enum: [apple, google]
+        passes:
+          type: array
+          minItems: 1
+          maxItems: 25
+          items:
+            $ref: '#/components/schemas/PassFields'
+
+    # POST /api/v1/handoffs request: 1 to 80 pass serials and what to include.
+    CreateHandoffRequest:
+      type: object
+      additionalProperties: false
+      required: [serialNumbers, include]
+      properties:
+        serialNumbers:
+          type: array
+          minItems: 1
+          maxItems: 80
+          items:
+            type: string
+            format: uuid
+        include:
+          type: object
+          additionalProperties: false
+          required: [apple, google, calendar]
+          properties:
+            apple:
+              type: boolean
+            google:
+              type: boolean
+            calendar:
+              type: boolean
+
+    # POST /api/passkit/.../{serialNumber} registration request body.
+    DeviceRegistration:
+      type: object
+      additionalProperties: false
+      required: [pushToken]
+      properties:
+        pushToken:
+          type: string
+
+    # POST /api/passkit/v1/log request body.
+    LogEntries:
+      type: object
+      additionalProperties: false
+      required: [logs]
+      properties:
+        logs:
+          type: array
+          items:
+            type: string
+
+    # ---- Response bodies (build plan 5.2) ----
+
+    # GET /api/v1/health 200.
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status, version]
+      properties:
+        status:
+          type: string
+        version:
+          type: string
+
+    # POST /api/v1/passes 201.
+    IssuePassesResponse:
+      type: object
+      additionalProperties: false
+      required: [passes]
+      properties:
+        passes:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [serialNumber, sessionCode, platforms]
+            properties:
+              serialNumber:
+                type: string
+                format: uuid
+              sessionCode:
+                type: string
+              platforms:
+                type: array
+                items:
+                  type: string
+                  enum: [apple, google]
+
+    # PUT /api/v1/passes/{serialNumber} 200.
+    UpdatePassResponse:
+      type: object
+      additionalProperties: false
+      required: [serialNumber, version]
+      properties:
+        serialNumber:
+          type: string
+          format: uuid
+        version:
+          type: integer
+
+    # POST /api/v1/passes/{serialNumber}/void 200.
+    VoidPassResponse:
+      type: object
+      additionalProperties: false
+      required: [serialNumber, status]
+      properties:
+        serialNumber:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [voided]
+
+    # POST /api/v1/handoffs 201.
+    CreateHandoffResponse:
+      type: object
+      additionalProperties: false
+      required: [handoffId, boardUrl, expiresAt]
+      properties:
+        handoffId:
+          type: string
+        boardUrl:
+          type: string
+          description: >-
+            A board URL on https://<distribution>.cloudfront.net whose fragment
+            carries the hand-off capability.
+        expiresAt:
+          type: string
+          format: date-time
+
+    # GET /api/v1/handoffs/{handoffId} 200.
+    HandoffView:
+      type: object
+      additionalProperties: false
+      required: [expiresAt, sessions, apple, google, calendarPath]
+      properties:
+        expiresAt:
+          type: string
+          format: date-time
+        sessions:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [serialNumber, sessionCode, title, startsAt]
+            properties:
+              serialNumber:
+                type: string
+                format: uuid
+              sessionCode:
+                type: string
+              title:
+                type: string
+              startsAt:
+                type: string
+                format: date-time
+        apple:
+          type: object
+          additionalProperties: false
+          required: [bundlePaths]
+          properties:
+            bundlePaths:
+              type: array
+              items:
+                type: string
+        google:
+          nullable: true
+          type: object
+          additionalProperties: false
+          required: [saveUrl]
+          properties:
+            saveUrl:
+              type: string
+        calendarPath:
+          type: string
+          nullable: true
+
+    # DELETE /api/v1/me 202.
+    ForgetMeResponse:
+      type: object
+      additionalProperties: false
+      required: [voided, deleted]
+      properties:
+        voided:
+          type: integer
+        deleted:
+          type: integer
+
+    # GET /api/passkit/.../registrations/{passTypeIdentifier} 200.
+    SerialNumbers:
+      type: object
+      additionalProperties: false
+      required: [serialNumbers, lastUpdated]
+      properties:
+        serialNumbers:
+          type: array
+          items:
+            type: string
+        lastUpdated:
+          type: string
