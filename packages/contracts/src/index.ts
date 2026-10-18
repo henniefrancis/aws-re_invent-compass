@@ -53,6 +53,19 @@ export type { Verdict } from './domain/verdict.js';
 export { createPassFieldsSchema, normalisePassText } from './pass-fields.js';
 export type { PassFields, CreatePassFieldsSchemaOptions } from './pass-fields.js';
 
+// Compass API response schemas (runtime values), one source for every stream.
+export {
+  CompassApiResponseSchemas,
+  CreateHandoffResponseSchema,
+  ForgetMeResponseSchema,
+  HandoffViewSchema,
+  HealthSchema,
+  IssuePassesResponseSchema,
+  SerialNumbersSchema,
+  UpdatePassResponseSchema,
+  VoidPassResponseSchema,
+} from './compass-api-schemas.js';
+
 // Problem error schema (runtime value) and its inferred type.
 export { ProblemSchema } from './problem.js';
 export type { Problem } from './problem.js';
