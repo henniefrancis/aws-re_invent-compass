@@ -465,14 +465,14 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 28.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 29. Adjust the hooks to the SP1 result
-  - [ ] 29.1 Apply the recorded SP1 result
+- [x] 29. Adjust the hooks to the SP1 result
+  - [x] 29.1 Apply the recorded SP1 result
     - Only after the owner records SP1 in `docs/decisions/ADR-024` (otherwise stop and ask). Compare it with assumptions A-SP1-1 to A-SP1-6 in the design and apply the matching rows of the fallback table: update `hook-input.ts`, `tool-names.ts` and `exit-policy.ts`, the hook template matchers and commands, the Power `mcp.json` (remove `awsevents` if its entry was rejected or `disabledTools` was ignored), the `install-hooks` skill and the README; add a "Deviations recorded with task 29" paragraph to design.md
     - _Requirements: 24.2, 24.3, 24.4, 24.5, 24.6_
-  - [ ] 29.2 Replay the recorded payload
+  - [x] 29.2 Replay the recorded payload
     - Add the payload line from ADR-024 as a test fixture under `packages/mcp-server/test/hooks/fixtures/` and replay it through both hooks, asserting the expected decisions; update the Power structural tests for any changed file
     - _Requirements: 19.6, 24.3_
-  - [ ] 29.3 Commit
+  - [x] 29.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 - [x] 30. Final checkpoint: ensure all tests pass and coverage is complete
