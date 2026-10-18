@@ -221,9 +221,27 @@ run "apply_role_scoping" {
 
   assert {
     condition = alltrue([
-      for k, p in aws_iam_policy.apply : length(p.policy) < 6144
+      # The mock account id "aws" is 3 characters and a real one 12, so each
+      # account id in an ARN (":aws:" not preceded by "arn") adds 9.
+      for k, p in aws_iam_policy.apply : length(p.policy) + 9 * (length(regexall(":aws:", p.policy)) - length(regexall("arn:aws:", p.policy))) < 6144
     ])
-    error_message = "Every apply managed policy must stay under the 6144 character limit."
+    error_message = "Every apply managed policy must stay under the 6144 character limit with a real 12-digit account id."
+  }
+
+  assert {
+    condition = alltrue([
+      for s in jsondecode(aws_iam_policy.apply["dev-edge"].policy).Statement :
+      !strcontains(jsonencode(s.Resource), "managedruleset") || (s.Sid == "UseAwsManagedRuleGroups" && try(s.Condition, null) == null && toset(s.Action) == toset(["wafv2:CreateWebACL", "wafv2:UpdateWebACL"]))
+    ])
+    error_message = "The AWS managed rule groups must sit in their own untagged statement that allows only CreateWebACL and UpdateWebACL."
+  }
+
+  assert {
+    condition = alltrue([
+      for s in jsondecode(aws_iam_policy.apply["dev-edge"].policy).Statement :
+      !contains(["CreateWebAcl", "ManageWebAcl"], s.Sid) || (s.Resource == "arn:aws:wafv2:us-east-1:aws:global/webacl/compass-dev/*" && try(s.Condition.StringEquals["aws:RequestTag/environment"], s.Condition.StringEquals["aws:ResourceTag/environment"]) == "dev")
+    ])
+    error_message = "The web ACL statements must name only this environment's web ACL and keep the environment tag condition."
   }
 
   assert {

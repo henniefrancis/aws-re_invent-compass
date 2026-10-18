@@ -381,8 +381,19 @@ locals {
         Sid       = "CreateWebAcl"
         Effect    = "Allow"
         Action    = ["wafv2:CreateWebACL", "wafv2:TagResource"]
-        Resource  = [local.name_scope[e].web_acl_pattern, "arn:aws:wafv2:${local.region}:${local.account_id}:global/managedruleset/*/*"]
+        Resource  = local.name_scope[e].web_acl_pattern
         Condition = local.tag_on_create[e]
+      },
+      {
+        # WAF also authorizes CreateWebACL and UpdateWebACL against the AWS
+        # managed rule groups the web ACL uses. Those carry no request or
+        # resource tags, so a tag condition here always failed (first dev
+        # apply). The web ACL itself still needs the tag-scoped statements, so
+        # this cannot create or change any other web ACL.
+        Sid      = "UseAwsManagedRuleGroups"
+        Effect   = "Allow"
+        Action   = ["wafv2:CreateWebACL", "wafv2:UpdateWebACL"]
+        Resource = "arn:aws:wafv2:${local.region}:${local.account_id}:global/managedruleset/*/*"
       },
       {
         Sid    = "ManageWebAcl"
@@ -395,7 +406,7 @@ locals {
           "wafv2:UntagResource",
           "wafv2:UpdateWebACL",
         ]
-        Resource  = [local.name_scope[e].web_acl_pattern, "arn:aws:wafv2:${local.region}:${local.account_id}:global/managedruleset/*/*"]
+        Resource  = local.name_scope[e].web_acl_pattern
         Condition = local.tag_on_manage[e]
       },
       {
