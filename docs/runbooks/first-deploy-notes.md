@@ -59,9 +59,9 @@ No statement was widened to a wildcard action, and no IAM write statement names 
 
 ## Owner follow-ups
 
-- Confirm the Route 53 registrant verification email for `reinvent-compass.vegas` by 2 November 2026, or the registry suspends the domain.
-- Shred any leftover copies in `~/compass-secrets/dev` and `~/.compass-secrets` (the edge value files, the `.p12` copy, and the Google key once prod is loaded or replaced with a fresh key).
-- Decide what to do with the stale `TF_TOKEN_app_terraform_io` (it may belong to henniefrancis-tech).
+- Done: the Route 53 registrant verification email for `reinvent-compass.vegas` is confirmed.
+- Done: leftover copies in `~/compass-secrets/dev` and `~/.compass-secrets` are shredded, including the Google key, so prod needs a fresh `compass-wallet` key from the Google Cloud console.
+- Kept for now (owner decision): the `TF_TOKEN_app_terraform_io` in the owner's environment belongs to henniefrancis-tech. Load the Compass token with `read -rs` in each new shell.
 - The henniefrancis-tech Terraform owns the OIDC provider Compass trusts: do not remove it while Compass runs.
 
 ## Next
