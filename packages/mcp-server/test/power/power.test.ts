@@ -3,11 +3,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
-import {
-  AWSEVENTS_WRITE_TOOLS,
-  COMPASS_WRITE_TOOLS,
-  SCHEDULE_WRITE_TOOLS,
-} from '../../src/hooks/tool-names.js';
+import { AWSEVENTS_WRITE_TOOLS, COMPASS_WRITE_TOOLS } from '../../src/hooks/tool-names.js';
 import { isHookName } from '../../src/hooks/run-hook.js';
 import { repoRoot } from '../support/fake-catalog.js';
 
@@ -220,76 +216,52 @@ describe('hook template', () => {
     return inner.split('|');
   };
 
-  test('uses schema v1, two hooks, a 30 second limit and the pinned command without variables', async () => {
+  test('uses schema v1, two PreToolUse hooks, a 30 second limit and the pinned command without variables, and no PostToolUse hook (ADR-024)', async () => {
     const template = TemplateSchema.parse(
       await readJson(join(power, 'hook-templates', 'reinvent-compass.json')),
     );
     const version = await packageVersion();
     expect(template.hooks.map((h) => [h.trigger, h.timeout])).toEqual([
       ['PreToolUse', 30],
-      ['PostToolUse', 30],
+      ['PreToolUse', 30],
     ]);
-    const [pre, post] = template.hooks;
-    expect(pre?.action.command).toBe(
-      `npx --yes reinvent-compass@${version} hook pre-write-guardrail`,
-    );
-    expect(post?.action.command).toBe(`npx --yes reinvent-compass@${version} hook post-write-sync`);
     for (const hook of template.hooks) {
+      expect(hook.action.command).toBe(
+        `npx --yes reinvent-compass@${version} hook pre-write-guardrail`,
+      );
       expect(JSON.stringify(hook)).not.toContain('{{');
       expect(isHookName(hook.action.command.split(' ').at(-1) ?? '')).toBe(true);
       expect(() => new RegExp(hook.matcher)).not.toThrow();
     }
   });
 
-  test('the matchers list exactly the documented sets, and sync_passes is among the pre-write ones', async () => {
+  test('the Compass hook matches kiro_powers and the awsevents hook is the lower-case suffix regex of the seven write tools', async () => {
     const template = TemplateSchema.parse(
       await readJson(join(power, 'hook-templates', 'reinvent-compass.json')),
     );
-    const [pre, post] = template.hooks;
-    expect(alternatives(pre?.matcher ?? '').sort()).toEqual(
-      [...COMPASS_WRITE_TOOLS, ...AWSEVENTS_WRITE_TOOLS].sort(),
-    );
-    expect(alternatives(pre?.matcher ?? '')).toContain('sync_passes');
-    expect(alternatives(post?.matcher ?? '').sort()).toEqual(
-      [...SCHEDULE_WRITE_TOOLS, ...AWSEVENTS_WRITE_TOOLS].sort(),
+    const [compass, awsevents] = template.hooks;
+    expect(compass?.matcher).toBe('kiro_powers');
+    expect(alternatives(awsevents?.matcher ?? '').sort()).toEqual(
+      AWSEVENTS_WRITE_TOOLS.map((tool) => tool.toLowerCase()).sort(),
     );
   });
 
-  test('the matchers match ids with any server prefix and never the read tools', async () => {
+  test('Kiro matches against the lower-cased id: the regex fires for every awsevents write id and for no read id', async () => {
     const template = TemplateSchema.parse(
       await readJson(join(power, 'hook-templates', 'reinvent-compass.json')),
     );
-    const [pre, post] = template.hooks.map((h) => new RegExp(h.matcher));
-    const prefixes = ['', 'mcp_power-reinvent-compass-compass_', 'mcp_awsevents_', 'mcp_x_'];
+    const matcher = new RegExp(template.hooks[1]?.matcher ?? '');
+    const prefixes = ['', 'mcp_awsevents_awseventspublicapi_mcp_prod___', 'mcp_x_'];
     for (const prefix of prefixes) {
-      for (const tool of [...COMPASS_WRITE_TOOLS, ...AWSEVENTS_WRITE_TOOLS]) {
-        expect(pre?.test(`${prefix}${tool}`)).toBe(true);
+      for (const tool of AWSEVENTS_WRITE_TOOLS) {
+        expect(matcher.test(`${prefix}${tool}`.toLowerCase())).toBe(true);
       }
-      for (const tool of [...SCHEDULE_WRITE_TOOLS, ...AWSEVENTS_WRITE_TOOLS]) {
-        expect(post?.test(`${prefix}${tool}`)).toBe(true);
-      }
-      for (const tool of [
-        'sign_in',
-        'sign_out',
-        'refresh_catalog',
-        'find_sessions',
-        'scan_repo',
-        'plan_week',
-        'check_itinerary',
-        'export_calendar',
-        'ListEvents',
-        'GetEvent',
-        'ListSessions',
-        'GetSession',
-        'GetSchedule',
-      ]) {
-        expect(pre?.test(`${prefix}${tool}`)).toBe(false);
-        expect(post?.test(`${prefix}${tool}`)).toBe(false);
-      }
-      for (const tool of ['issue_boarding_passes', 'send_to_phone', 'sync_passes', 'forget_me']) {
-        expect(post?.test(`${prefix}${tool}`)).toBe(false);
+      for (const tool of ['ListEvents', 'GetEvent', 'ListSessions', 'GetSession', 'GetSchedule']) {
+        expect(matcher.test(`${prefix}${tool}`.toLowerCase())).toBe(false);
       }
     }
+    expect(new RegExp(template.hooks[0]?.matcher ?? '').test('kiro_powers')).toBe(true);
+    expect(new RegExp(template.hooks[0]?.matcher ?? '').test('mcp_awsevents_getevent')).toBe(false);
   });
 
   test('the Compass write tools are the nine of the design and the awsevents ones are seven', () => {

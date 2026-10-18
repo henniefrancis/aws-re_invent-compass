@@ -1,16 +1,17 @@
 ---
 name: install-hooks
-description: Install the optional Kiro hooks for Reinvent Compass, an extra check before bookings and a reminder to sync boarding passes. Use when the attendee asks for the hooks or wants the extra safety check.
+description: Install the optional Kiro hooks for Reinvent Compass, an extra check before bookings and a block on the remote awsevents write tools. Use when the attendee asks for the hooks or wants the extra safety check.
 ---
 
 # Install the Compass hooks
 
-Hooks are an extra check that only Kiro runs. The Compass server checks every booking itself, in every client, so nothing is unsafe without the hooks. The hooks add an early warning and a reminder.
+Hooks are an extra check that only Kiro runs. The Compass server checks every booking itself, in every client, so nothing is unsafe without the hooks. The hooks add an early check.
 
 ## What the hooks do
 
-- Before a Compass write tool runs, `pre-write-guardrail` checks a booking against the schedule Compass last read and the cached catalog. It blocks the call when the guardrail blocks it. It also blocks any write through the remote `awsevents` server, because bookings must go through Compass.
-- After a schedule change, `post-write-sync` reminds the agent to run `sync_passes`.
+- Kiro sends every Power tool call as one built-in tool, `kiro_powers`. The first hook matches it, and `pre-write-guardrail` picks out the Compass booking calls inside it. It checks a booking against the schedule Compass last read and the cached catalog, and blocks the call when the guardrail blocks it.
+- The second hook blocks the write tools of the remote `awsevents` server (a lower-case pattern, because Kiro matches it against the lower-cased tool name), because bookings must go through Compass.
+- A hook can only block (it exits with code 2). Whatever a hook prints when it lets a call through never reaches the agent, so the hooks carry no reminders or warnings. Compass tool results tell the agent when to run `sync_passes`.
 - Both hooks read their input from stdin only. They make no network call and start no other program. If a hook cannot judge a call, it says so and lets the call through, because the server checks it again.
 
 ## How to install
@@ -24,5 +25,5 @@ Hooks are an extra check that only Kiro runs. The Compass server checks every bo
 ## Notes
 
 - The commands in the template run `npx --yes reinvent-compass@0.0.0 hook <name>`. The version is written into the template, and it matches the server in this Power.
-- A hook has a 30 second limit. A blocked call prints its reason, and the agent should pass that reason on to the attendee in plain words.
-- If the attendee sees a hook note saying Compass could not check a call, nothing is wrong. The server still checks it.
+- A hook has a 30 second limit. A blocked call gives its reason to the agent, which should pass it on to the attendee in plain words.
+- If a hook cannot judge a call, it lets it through, and the server still checks it.

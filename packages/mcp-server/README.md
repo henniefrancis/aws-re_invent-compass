@@ -122,10 +122,11 @@ The Power does not ship an `autoApprove` list. If you add one in your own config
 
 Hooks are an extra check that only Kiro runs. The Power includes a hook template, and the `install-hooks` skill writes it to `.kiro/hooks/reinvent-compass.json` after you say yes.
 
-- Before a Compass write tool, `pre-write-guardrail` runs the same check as the server against your last read schedule and the cached catalog, and blocks the call when the guardrail blocks it. It also blocks any write through the remote `awsevents` server, so bookings go through Compass.
-- After a schedule change, `post-write-sync` reminds the agent to run `sync_passes`.
+- Kiro sends every Power tool call as one built-in tool, `kiro_powers`. The first hook matches it, and `pre-write-guardrail` picks out the Compass booking calls inside it, runs the same check as the server against your last read schedule and the cached catalog, and blocks the call when the guardrail blocks it.
+- The second hook blocks any write through the remote `awsevents` server, so bookings go through Compass. Its matcher is lower case, because Kiro matches regular expressions against the lower-cased tool name.
+- A hook can only block, with exit code 2. Anything a hook prints when it lets a call through never reaches the agent, so there is no sync reminder hook: the Compass tool results say when to run `sync_passes`.
 
-The server checks every booking again, so nothing is unsafe in a client without hooks. A hook reads its input from stdin only, makes no network call and starts no other program. If it cannot judge a call, it says so and lets the call through. `npx --yes reinvent-compass@0.0.0 hook <name>` accepts only the names `pre-write-guardrail` and `post-write-sync`, and exits with code 0 or 2.
+The server checks every booking again, so nothing is unsafe in a client without hooks. A hook reads its input from stdin only, makes no network call and starts no other program. If it cannot judge a call, it says so and lets the call through. `npx --yes reinvent-compass@0.0.0 hook <name>` accepts only the names `pre-write-guardrail` and `post-write-sync` (the template uses only the first), and exits with code 0 or 2.
 
 ## The official AWS Events server (read only)
 
