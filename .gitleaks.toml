@@ -2,6 +2,10 @@
 # is narrow: it silences the JWT rules for test-only JWT-shaped strings and only in
 # the folders that hold tests and test fixtures. A JWT-shaped string anywhere else,
 # and every other rule everywhere, still fails the scan.
+#
+# .gitleaksignore pins individual findings by fingerprint (commit:file:rule:line)
+# for fake test tokens in history that the pinned gitleaks release does not match
+# against this allowlist. Each entry must be a made-up value in a test file.
 title = "re:Invent Compass gitleaks"
 
 [extend]
