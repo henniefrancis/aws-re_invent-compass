@@ -253,9 +253,9 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 4. THE Privacy_Page SHALL explain what this Site does: no sign-in, no cookies, no analytics, no third-party requests, a demo that runs in the browser on made-up sessions, and a Board_Page that keeps the hand-off link in page memory only.
 5. THE Privacy_Page SHALL name the responsible party as given in build plan section 4.2.
 6. THE Privacy_Page SHALL state that no wallet lets a pass be deleted remotely: a cancelled session's pass is voided, and every pass expires at its session end.
-7. THE Privacy_Page SHALL state that the Compass server runs in the AWS us-east-1 Region and that Apple and Google also process data when the attendee adds a pass to a wallet (build plan 1, 7 and 4.2, P15 and P16).
+7. THE Privacy_Page SHALL state that the Compass server runs in the AWS us-east-1 Region (N. Virginia, United States), outside South Africa, and that Apple and Google also process data when the attendee adds a pass to a wallet (build plan 4.2, P15 and P16, and the paragraph after the table).
 8. THE Privacy_Page SHALL name a contact channel for requests about the attendee's data: private vulnerability reporting on the project repository, linked from the repository address in the links file, with no personal email address.
-9. THE Privacy_Page SHALL NOT state anything about the Information Regulator or the country of the server until a source document states it (see the integrator requests of the release-gate round).
+9. THE Privacy_Page SHALL state that the attendee may also complain to the Information Regulator (South Africa) (build plan 4.2).
 
 ### Requirement 16: Hand-off fragment handling on the board page
 

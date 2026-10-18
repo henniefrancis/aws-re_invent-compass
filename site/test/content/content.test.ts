@@ -212,6 +212,8 @@ describe('no impersonation and the product voice', () => {
     );
     expect(byId.get('privacy-rate-counters')?.text).toContain('window ends plus 2 minutes');
     expect(byId.get('privacy-processing-region')?.text).toContain('us-east-1');
+    expect(byId.get('privacy-processing-region')?.text).toContain('United States');
+    expect(byId.get('privacy-regulator')?.text).toContain('Information Regulator (South Africa)');
     expect(byId.get('privacy-processors')?.text).toContain('Apple');
     expect(byId.get('privacy-processors')?.text).toContain('Google');
     expect(byId.get('privacy-contact')?.text).toContain('private vulnerability reporting');

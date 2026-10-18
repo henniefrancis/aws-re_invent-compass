@@ -100,9 +100,9 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-processing-region',
-        'The Compass server runs in the AWS us-east-1 Region, in the AWS account of the owner.',
+        'The Compass server runs in the AWS us-east-1 Region (N. Virginia, United States), outside South Africa, in the AWS account of the owner.',
         PLAN,
-        '1 and 7',
+        '1, 4.2 and 7',
       ),
       summary(
         'privacy-processors',
@@ -205,7 +205,13 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         'privacy-contact',
         'To ask about your data, use private vulnerability reporting on the project repository on GitHub.',
         PLAN,
-        '14 (O4)',
+        '4.2',
+      ),
+      summary(
+        'privacy-regulator',
+        'You may also complain to the Information Regulator (South Africa).',
+        PLAN,
+        '4.2',
       ),
     ],
   },
