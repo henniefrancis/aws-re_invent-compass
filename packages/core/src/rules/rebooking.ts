@@ -50,6 +50,19 @@ export function baseCodeOf(code: unknown): string {
 const sameBase = (a: unknown, b: string): boolean =>
   baseCodeOf(a).toLowerCase() === b.toLowerCase();
 
+/**
+ * Do two session codes belong to the same repeat group? They do when they have the same base code
+ * (the code without a trailing -R, -R1, -R2 and so on), in any case. The group may have no
+ * unsuffixed original: ABC123-R1 and ABC123-R3 are repeats of each other when ABC123 does not
+ * exist. An -S code is a different session, not a repeat marker: ABC123-S has the base ABC123-S,
+ * so it is never in the group of ABC123, while ABC123-S-R1 is a repeat of ABC123-S. Codes that
+ * are empty or not text belong to no group.
+ */
+export function sameRepeatGroup(a: unknown, b: unknown): boolean {
+  const base = baseCodeOf(a);
+  return base !== '' && sameBase(b, base);
+}
+
 interface Found {
   option: RebookOption;
   startMs: number;

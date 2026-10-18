@@ -77,6 +77,7 @@ export const RULE_NAMES = {
   meal: 'meal break check',
   energy: 'energy check',
   timing: 'timing check',
+  seat: 'seat check',
 } as const;
 
 export type RuleName = (typeof RULE_NAMES)[keyof typeof RULE_NAMES];
@@ -380,6 +381,10 @@ export function swapUnreachable(): string {
   return 'The repeat cannot be reached in time from a neighbouring commitment. The swap cannot be judged safe. The original stays unchanged.';
 }
 
+export function swapNotRepeat(): string {
+  return 'The repeat is not another offering of the original session. The swap cannot be checked. The original stays unchanged.';
+}
+
 export function swapUnknown(): string {
   return 'The repeat has no usable start or end time. The swap cannot be checked. The original stays unchanged.';
 }
@@ -422,6 +427,10 @@ export function guardBoardingClosed(ref: string): string {
 
 export function guardSeatsFull(ref: string): string {
   return `${q(ref)} has no seats left. You would have to join the walk-up line.`;
+}
+
+export function guardSeatUnknown(ref: string): string {
+  return `The seat availability of ${q(ref)} is unknown. Do not count on a seat.`;
 }
 
 export function guardNowUnusable(): string {

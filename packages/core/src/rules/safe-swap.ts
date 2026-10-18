@@ -15,7 +15,8 @@
 //   safe     no clash, the repeat is held, the original is in the schedule that was read back, and
 //            no neighbouring connection is certainly impossible. "Safe" does not say the walks
 //            between venues are comfortable, or that seats are available.
-//   unknown  the timezone, the current time or the repeat's times are unusable, the repeat is already
+//   unknown  the timezone, the current time or the repeat's times are unusable, the repeat is not
+//            another offering of the original (a different base code, or the same session), the repeat is already
 //            over (relative to Context.now), the original is missing from the schedule that was
 //            read back, a neighbouring connection is certainly impossible, or another commitment has times
 //            that cannot be checked, so a clash cannot be ruled out
@@ -23,6 +24,7 @@ import type { Commitment, NormalisedSession } from '@compass/contracts';
 import { findClashes, intervalOf, type ClashReport } from './clashes.js';
 import type { Context } from './context.js';
 import { connectionsAround } from './neighbours.js';
+import { baseCodeOf, sameRepeatGroup } from './rebooking.js';
 import * as reason from './reasons.js';
 import {
   resolveCommitment,
@@ -112,6 +114,11 @@ export function planSafeSwap(
     return plan('unknown', repeat, [], reason.swapNowUnusable());
   }
 
+  // A swap to the very same session is not a swap.
+  if (original.kind === 'reservedSession' && original.sessionId === repeat.sessionId) {
+    return plan('unknown', repeat, [], reason.swapNotRepeat());
+  }
+
   const sessions = { ...confirmationSchedule.sessions, [repeat.sessionId]: repeat };
   const repeatCommitment = sessionToCommitment(repeat);
   const resolvedRepeat = resolveCommitment(repeatCommitment, sessions);
@@ -156,6 +163,24 @@ export function planSafeSwap(
   }
   if (!held) {
     return plan('failed', repeat, [], reason.swapFailed());
+  }
+  // Safe needs the repeat to be another offering of the original: the same repeat group. A swap
+  // between sessions with different base codes (for example ABC123-S and ABC123, which are
+  // different sessions) is refused. When the original's code is not known (a personal time, or a
+  // session not in the lookup) there is nothing to compare, so no refusal. Known clashes and a
+  // repeat that is not held are reported first.
+  const originalSession =
+    original.kind === 'reservedSession' &&
+    Object.hasOwn(confirmationSchedule.sessions, original.sessionId)
+      ? confirmationSchedule.sessions[original.sessionId]
+      : undefined;
+  if (
+    originalSession !== undefined &&
+    baseCodeOf(originalSession.code) !== '' &&
+    baseCodeOf(repeat.code) !== '' &&
+    !sameRepeatGroup(originalSession.code, repeat.code)
+  ) {
+    return plan('unknown', repeat, [], reason.swapNotRepeat());
   }
   // Safe needs the original to be in the schedule that was read back: otherwise the caller may
   // have read the wrong schedule, and cancelling it is not something to bless.

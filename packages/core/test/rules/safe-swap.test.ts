@@ -148,7 +148,7 @@ describe('safe swap examples', () => {
   test('judges clashes on instants across a daylight saving change', () => {
     const early = session({
       sessionId: 'a',
-      code: 'EARLY',
+      code: 'DAT302',
       startsAt: '2026-03-08T01:30:00-08:00',
       endsAt: '2026-03-08T03:30:00-07:00',
     });
@@ -312,7 +312,7 @@ describe('safe swap properties', () => {
         fc.boolean(),
         fc.boolean(),
         (originalSpan, otherSpans, held, originalListed) => {
-          const orig = slot('ORIG', 'orig', originalSpan[0], originalSpan[0] + originalSpan[1]);
+          const orig = slot('DAT302', 'orig', originalSpan[0], originalSpan[0] + originalSpan[1]);
           const others = otherSpans.map(([s, l], i) => slot(`OTH${i}`, `o${i}`, s, s + l));
           const sessions: NormalisedSession[] = [...others, orig];
           const commitments: Commitment[] = others.map((o) => reserved(o));

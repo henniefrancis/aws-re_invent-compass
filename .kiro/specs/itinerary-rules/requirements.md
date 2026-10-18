@@ -256,3 +256,15 @@ Note: The safe-swap function takes a confirmation schedule as an input parameter
 12. THE findRebookingOptions function SHALL treat -R, -R1, -R2 and so on, in any case, as repeat suffixes, SHALL NOT offer the original session (when its id is given) as its own alternative, and SHALL match nothing for an empty base code.
 13. THE planSafeSwap function SHALL return outcome "unknown" when Context.now is not usable or the Repeat has already ended. The outcome "safe" SHALL mean only that nothing overlaps.
 14. THE checkReservation function SHALL mark the verdict it returns after an unexpected error with internal true, SHALL return "warn" when the sessions lookup has more than 2000 keys, and SHALL report a stay-put commitment with no venue before it as an unknown connection with a reason. The other exported functions MAY throw on malformed input, and consumers SHALL call checkReservation or wrap them. A name with no letter or number SHALL be shown as "unnamed item".
+
+### Requirement 14: Repeat groups and seat availability as the real catalog has them
+
+**User Story:** As an attendee, I want every other offering of a session found, even when the catalog has no unsuffixed original, and I want a missing seat count to be called unknown.
+
+#### Acceptance Criteria
+
+1. THE Rules_Engine SHALL treat every session that has the same base code (the code without a trailing -R, -R1, -R2 and so on, in any case) as a repeat of the others in its group, whether or not an unsuffixed original exists. For example ABC123-R1 and ABC123-R3 are repeats of each other when ABC123 does not exist.
+2. THE Rules_Engine SHALL NOT treat a code ending in -S as a repeat marker. ABC123-S SHALL be a different session from ABC123 and from ABC123-R1, and ABC123-S-R and ABC123-S-R1 SHALL be repeats of ABC123-S only. This follows the SP5 spike of the real catalog (297 codes end in -S, none has an unsuffixed sibling, and -S is not a repeat marker).
+3. THE planSafeSwap function SHALL return outcome "unknown" when the repeat is the same session as the original, or, instead of "safe", when both codes are known and they are not in the same repeat group (a known clash is still "unsafe" and a repeat that is not held is still "failed"). A held ABC123-R2 SHALL be able to swap to ABC123-R4. When the original has no known code, there is nothing to compare and no refusal.
+4. WHERE the seat availability of a session that may need a reservation is missing, "unknown" or not a known band, THE checkReservation function SHALL treat it as unknown, SHALL NOT treat it as available, SHALL NOT fail, and SHALL return at least "warn" with a reason naming the seat check. A session known to need no reservation has no seat availability to know, and a missing value there SHALL NOT cause a warning.
+5. THE findRebookingOptions function SHALL NOT treat a missing seat availability as available or as full.

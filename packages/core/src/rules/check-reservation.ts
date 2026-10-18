@@ -24,6 +24,7 @@ import { connectionsAround } from './neighbours.js';
 import * as reason from './reasons.js';
 import {
   isSeatFull,
+  isSeatUnknown,
   resolveCommitment,
   sessionToCommitment,
   type ResolvedCommitment,
@@ -239,6 +240,9 @@ function judgeReservation(
   // Seats: a full session means the attendee would have to join the walk-up line.
   if (isSeatFull(candidate)) {
     warns.push(reason.guardSeatsFull(resolvedCandidate.ref));
+  } else if (isSeatUnknown(candidate)) {
+    // A missing or unknown availability is never read as available.
+    skip(reason.RULE_NAMES.seat, reason.guardSeatUnknown(resolvedCandidate.ref));
   }
 
   return verdict();

@@ -179,6 +179,26 @@ export function inheritStayPutVenues(
   });
 }
 
+const KNOWN_SEAT_BANDS: readonly unknown[] = [
+  'available',
+  'limited',
+  'veryLimited',
+  'unavailable',
+  'walkUp',
+];
+
+/**
+ * Is the seat availability of a session that may need a reservation unknown? A missing value, the
+ * "unknown" band and any value not in the known bands all count, and none is ever read as
+ * available. A session known to need no reservation has no seat availability to know, so it is
+ * never "unknown" in this sense (the real API leaves seatAvailability out for those).
+ */
+export function isSeatUnknown(session: NormalisedSession): boolean {
+  return (
+    sessionReservability(session) !== false && !KNOWN_SEAT_BANDS.includes(session.seatAvailability)
+  );
+}
+
 /** Is the session full: only walk-up seats or none left? A session that needs no reservation is not. */
 export function isSeatFull(session: NormalisedSession): boolean {
   return (
