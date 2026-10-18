@@ -25,11 +25,12 @@ You need Node.js 24 or newer. Compass starts with `npx --yes reinvent-compass@0.
 
 The Power is the `power/` folder of the repository: `plugin.json` and a matching `POWER.md` (Kiro needs one of the two at the root), `mcp.json`, three skills and a hook template.
 
+0. Kiro starts no MCP server until you allow it: in Settings, set "Kiro Agent: Configure MCP" to Enabled.
 1. In Kiro, open the Powers panel and choose Add Custom Power.
 2. Choose Import power from GitHub and give it the repository URL: `https://github.com/henniefrancis/aws-re_invent-compass`.
 3. If Kiro does not find the Power at the repository root, give it the subfolder URL instead: `https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power`.
 
-Both forms are listed because it is not yet recorded which one Kiro accepts. You can also import `power/` from a folder after cloning the repository.
+Both forms are listed because it is not yet recorded which one Kiro accepts. You can also import `power/` from a folder after cloning the repository. A folder import registers the Power under the folder name, so its server is called `power-power-compass`, whatever `plugin.json` says; the hooks accept both `compass` and that name.
 
 Without the Power, add the server to `.kiro/settings/mcp.json` (this workspace) or `~/.kiro/settings/mcp.json` (all workspaces). Kiro reloads the file when you save it:
 
@@ -130,7 +131,7 @@ The server checks every booking again, so nothing is unsafe in a client without 
 
 ## The official AWS Events server (read only)
 
-AWS publishes its own MCP server at `https://api.awsevents.com/mcp` (https://docs.aws.amazon.com/events/latest/devguide/mcp-server.html). It is fine for reading events and sessions. Do not use its write tools (ReserveSessions, CancelReservation, AssociateFavorites, DisassociateFavorite, CreatePersonalTime, UpdatePersonalTime, DeletePersonalTime): they skip the Compass guardrail. If you add it yourself, list those seven in `disabledTools` in your Kiro configuration. The Power does not bundle it yet, because it is not confirmed that a Power's `mcp.json` honours `disabledTools`.
+AWS publishes its own MCP server at `https://api.awsevents.com/mcp` (https://docs.aws.amazon.com/events/latest/devguide/mcp-server.html). It is fine for reading events and sessions. Do not use its write tools (ReserveSessions, CancelReservation, AssociateFavorites, DisassociateFavorite, CreatePersonalTime, UpdatePersonalTime, DeletePersonalTime): they skip the Compass guardrail. If you add it yourself, add it to the workspace `.kiro/settings/mcp.json` (not to a Power) and list those seven in `disabledTools` by their full names: `AWSEventsPublicApi-Mcp-prod___ReserveSessions`, `AWSEventsPublicApi-Mcp-prod___CancelReservation`, `AWSEventsPublicApi-Mcp-prod___AssociateFavorites`, `AWSEventsPublicApi-Mcp-prod___DisassociateFavorite`, `AWSEventsPublicApi-Mcp-prod___CreatePersonalTime`, `AWSEventsPublicApi-Mcp-prod___UpdatePersonalTime` and `AWSEventsPublicApi-Mcp-prod___DeletePersonalTime`. A bare name such as `ReserveSessions` hides nothing. The Power does not bundle the server, because Kiro does not honour `disabledTools` inside a Power (ADR-024), and the hook template blocks the seven write tools as a second layer.
 
 ## Simulated mode and the demo
 

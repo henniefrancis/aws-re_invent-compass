@@ -14,6 +14,10 @@ Hooks are an extra check that only Kiro runs. The Compass server checks every bo
 - A hook can only block (it exits with code 2). Whatever a hook prints when it lets a call through never reaches the agent, so the hooks carry no reminders or warnings. Compass tool results tell the agent when to run `sync_passes`.
 - Both hooks read their input from stdin only. They make no network call and start no other program. If a hook cannot judge a call, it says so and lets the call through, because the server checks it again.
 
+## The remote awsevents server
+
+If the attendee also uses the official `awsevents` server, tell them to add it to the workspace `.kiro/settings/mcp.json` (a Power cannot hide its tools) with the seven write tools in `disabledTools` by their full names, each starting `AWSEventsPublicApi-Mcp-prod___`: ReserveSessions, CancelReservation, AssociateFavorites, DisassociateFavorite, CreatePersonalTime, UpdatePersonalTime and DeletePersonalTime. A bare name hides nothing. The second hook is a backup. Kiro also needs "Kiro Agent: Configure MCP" set to Enabled in Settings before any MCP server starts.
+
 ## How to install
 
 1. Tell the attendee what the two hooks do, in the words above.

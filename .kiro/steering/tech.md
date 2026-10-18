@@ -55,7 +55,7 @@ New PKCE verifier and `state` per attempt; S256 challenge, base64url without pad
 
 ### Official MCP server in the Power (ADR-017)
 
-Planned as `awsevents` for read exploration, with its write tools listed in `disabledTools`, so every write goes through Compass's guardrails. It is NOT bundled in `power/mcp.json` until spike SP1 confirms that `disabledTools` works inside a Power (ADR-024; compass-power deviation H2). Until then an attendee who wants it adds it to the workspace `.kiro/settings/mcp.json` with the same `disabledTools`. Kiro config from the docs:
+Used as `awsevents` for read exploration. It is NOT bundled in `power/mcp.json`: SP1 showed that Kiro does not honour `disabledTools` inside a Power (ADR-024), and that a bare tool name hides nothing even in the workspace file. An attendee who wants it adds it to the workspace `.kiro/settings/mcp.json` with the seven write tools in `disabledTools` by their full names, `AWSEventsPublicApi-Mcp-prod___<Operation>` (ReserveSessions, CancelReservation, AssociateFavorites, DisassociateFavorite, CreatePersonalTime, UpdatePersonalTime, DeletePersonalTime). Kiro starts no MCP server until Settings, "Kiro Agent: Configure MCP", is Enabled. A folder import of `power/` registers the server `compass` as `power-power-compass`. Kiro config:
 
 ```json
 {
@@ -66,7 +66,16 @@ Planned as `awsevents` for read exploration, with its write tools listed in `dis
         "clientId": "7vmom55m1qstvq8i71ph127bfq",
         "redirectUri": "http://127.0.0.1:8976",
         "oauthScopes": ["openid", "email", "events/access"]
-      }
+      },
+      "disabledTools": [
+        "AWSEventsPublicApi-Mcp-prod___ReserveSessions",
+        "AWSEventsPublicApi-Mcp-prod___CancelReservation",
+        "AWSEventsPublicApi-Mcp-prod___AssociateFavorites",
+        "AWSEventsPublicApi-Mcp-prod___DisassociateFavorite",
+        "AWSEventsPublicApi-Mcp-prod___CreatePersonalTime",
+        "AWSEventsPublicApi-Mcp-prod___UpdatePersonalTime",
+        "AWSEventsPublicApi-Mcp-prod___DeletePersonalTime"
+      ]
     }
   }
 }

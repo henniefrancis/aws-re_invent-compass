@@ -30,7 +30,7 @@ This power is the same power that `plugin.json` describes. `plugin.json`, `mcp.j
 
 ## The MCP server
 
-The `compass` server starts with `npx --yes reinvent-compass@0.0.0`; the version is written into `mcp.json` and is the same as `plugin.json`. Do not add the write tools of the remote `awsevents` server to your agent: they skip the guardrail.
+The `compass` server starts with `npx --yes reinvent-compass@0.0.0`; the version is written into `mcp.json` and is the same as `plugin.json`. Kiro starts no MCP server until you allow it: in Settings, set "Kiro Agent: Configure MCP" to Enabled. A folder import of this Power names the server `power-power-compass`. Do not add the write tools of the remote `awsevents` server to your agent: they skip the guardrail. If you add that server to your workspace `.kiro/settings/mcp.json`, list the seven write tools in `disabledTools` by their full names: `AWSEventsPublicApi-Mcp-prod___ReserveSessions`, `AWSEventsPublicApi-Mcp-prod___CancelReservation`, `AWSEventsPublicApi-Mcp-prod___AssociateFavorites`, `AWSEventsPublicApi-Mcp-prod___DisassociateFavorite`, `AWSEventsPublicApi-Mcp-prod___CreatePersonalTime`, `AWSEventsPublicApi-Mcp-prod___UpdatePersonalTime` and `AWSEventsPublicApi-Mcp-prod___DeletePersonalTime`. A bare name hides nothing.
 
 ## Approvals
 
