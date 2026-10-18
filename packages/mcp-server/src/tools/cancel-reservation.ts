@@ -3,10 +3,11 @@
 // A cancel for a session that is part of a Pending_Swap goes through S2 planSafeSwap on a fresh
 // schedule, and cancels only when the outcome is safe, so the attendee is never left with
 // neither seat. The first refusal is remembered. A second call for the same session overrides
-// it only with an explicit, elicited "cancel anyway" when the client supports elicitation, or
-// otherwise within five minutes of the refusal; the refusal text says which rule applies. The
-// cancellation is sent once through the confirmed write and reported only when the confirmed
-// schedule no longer lists the session.
+// it only with an explicit, elicited "cancel anyway". A client that cannot ask never gets the
+// override (security M5): every call is refused until the repeat is confirmed on the schedule,
+// and the text says to reserve and confirm the repeat first. The cancellation is sent once
+// through the confirmed write and reported only when the confirmed schedule no longer lists the
+// session.
 
 import { CompassError } from '../ports/errors.js';
 import { checkIdentifier } from '../safety/identifiers.js';
@@ -21,9 +22,6 @@ import {
   humanConfirms,
   readFreshSchedule,
 } from './common.js';
-
-/** How long after a refusal a second call is honoured when the client cannot ask. */
-export const OVERRIDE_WINDOW_MS = 5 * 60 * 1000;
 
 function notCancelled(text: string): ToolOutcome<'cancel_reservation'> {
   return { ok: true, structured: { cancelled: false }, text };
@@ -64,7 +62,7 @@ export async function cancelReservation(
     if (plan.outcome !== 'safe') {
       const rule =
         ctx.elicit === undefined
-          ? 'If you still want to cancel, ask again within 5 minutes and Compass will go ahead.'
+          ? 'Compass will not cancel this until your repeat is confirmed on your schedule. Reserve the repeat first, check your schedule, then ask again.'
           : 'If you still want to cancel, ask again and Compass will ask you to confirm "cancel anyway".';
       const refusal = [
         'Nothing was cancelled. Cancelling now could leave you with neither seat.',
@@ -74,29 +72,24 @@ export async function cancelReservation(
         }),
         rule,
       ].join('\n');
+      if (ctx.elicit === undefined) {
+        // No override without a way to ask: the refusal repeats until the repeat is confirmed.
+        return notCancelled(refusal);
+      }
       if (swap.refusedAt === undefined) {
         ctx.state.swaps.markRefused(input.sessionId);
         return notCancelled(refusal);
       }
-      if (ctx.elicit !== undefined) {
-        const answer = await ctx.elicit({
-          message: confirmMessage(
-            'Cancel anyway? Your repeat seat is not confirmed, so you could end up with neither seat.',
-            targets.found,
-          ),
-        });
-        if (answer !== 'accept') {
-          return notCancelled(
-            'Nothing was cancelled, because you did not confirm "cancel anyway".',
-          );
-        }
-        confirmedByOverride = true;
-      } else if (clock.now().getTime() - Date.parse(swap.refusedAt) > OVERRIDE_WINDOW_MS) {
-        ctx.state.swaps.markRefused(input.sessionId);
-        return notCancelled(
-          `${refusal}\nThe 5 minute window after the last refusal had passed, so it starts again now.`,
-        );
+      const answer = await ctx.elicit({
+        message: confirmMessage(
+          'Cancel anyway? Your repeat seat is not confirmed, so you could end up with neither seat.',
+          targets.found,
+        ),
+      });
+      if (answer !== 'accept') {
+        return notCancelled('Nothing was cancelled, because you did not confirm "cancel anyway".');
       }
+      confirmedByOverride = true;
     }
   }
 

@@ -186,11 +186,15 @@ describe('sync_passes', () => {
     expect(outcome.ok && outcome.structured).toMatchObject({ voided: ['x'] });
   });
 
-  test('a reserved id the catalog does not know is left out of the sync', async () => {
+  test('a reserved id the catalog does not know makes the sync refuse and ask for refresh_catalog (security M4)', async () => {
     const { fake, ctx } = setup();
     fake.events.schedule.reserved.push(TRIPLE.a, 'ghost');
-    await syncPasses({}, ctx);
-    expect(fake.passes.calls.find((c) => c.method === 'sync')?.args[0]).toEqual([TRIPLE.a]);
+    await expect(syncPasses({}, ctx)).rejects.toMatchObject({ code: 'UnknownSession' });
+    expect(
+      fake.passes.calls.filter((c) => c.method === 'sync' || c.method === 'previewSync'),
+    ).toEqual([]);
+    // A narrowed sync only looks at the sessions it names, so an unknown id elsewhere does not matter.
+    await expect(syncPasses({ sessionIds: [TRIPLE.a] }, ctx)).resolves.toMatchObject({ ok: true });
   });
 
   test('a narrowed sync hands S4 only the narrowed sessions and never touches other passes', async () => {
@@ -219,7 +223,8 @@ describe('sync_passes', () => {
     fake.events.schedule.reserved.push(TRIPLE.a);
     const outcome = await syncPasses({}, ctx);
     expect(outcome.ok && outcome.structured).toMatchObject({ issued: [TRIPLE.a] });
-    expect(asked[0]).toContain('void 6 boarding passes');
+    expect(asked[0]).toContain('6 to void');
+    expect(asked[0]).toContain('- Void GONE0');
     expect(fake.passes.calls.find((c) => c.method === 'sync')?.args).toEqual([
       [TRIPLE.a],
       undefined,
@@ -268,12 +273,41 @@ describe('sync_passes', () => {
     }
   });
 
-  test('no voids means no question', async () => {
+  test('any issue, update or void is asked about first, each listed with its code and catalog title (security M3)', async () => {
     const asked: string[] = [];
     const { fake, ctx } = setup((q) => (asked.push(q.message), Promise.resolve('accept')));
-    fake.events.schedule.reserved.push(TRIPLE.a);
+    fake.events.schedule.reserved.push(TRIPLE.a, TRIPLE.aRepeat);
+    fake.passes.seed(TRIPLE.a, TRIPLE.codes.a);
+    fake.passes.seed(TRIPLE.b, TRIPLE.codes.b);
     await syncPasses({}, ctx);
+    expect(asked).toHaveLength(1);
+    expect(asked[0]).toContain(`- Issue ${TRIPLE.codes.aRepeat} "${TRIPLE.titles.aRepeat}"`);
+    expect(asked[0]).toContain(`- Update ${TRIPLE.codes.a} "${TRIPLE.titles.a}"`);
+    expect(asked[0]).toContain(`- Void ${TRIPLE.codes.b}`);
+    expect(asked[0]).toContain('1 to issue, 1 to update, 1 to void');
+  });
+
+  test('an issue alone is asked about, and a decline syncs nothing', async () => {
+    const asked: string[] = [];
+    const { fake, ctx } = setup((q) => (asked.push(q.message), Promise.resolve('decline')));
+    fake.events.schedule.reserved.push(TRIPLE.a);
+    const outcome = await syncPasses({}, ctx);
+    expect(asked).toHaveLength(1);
+    expect(outcome.ok && outcome.text).toContain(
+      'Nothing was synced, because you did not confirm.',
+    );
+    expect(fake.passes.calls.some((c) => c.method === 'sync')).toBe(false);
+  });
+
+  test('a plan with nothing to do asks nothing, and a client that cannot ask syncs a small plan', async () => {
+    const asked: string[] = [];
+    const quiet = setup((q) => (asked.push(q.message), Promise.resolve('accept')));
+    await syncPasses({}, quiet.ctx);
     expect(asked).toEqual([]);
+    const blind = setup();
+    blind.fake.events.schedule.reserved.push(TRIPLE.a);
+    const outcome = await syncPasses({}, blind.ctx);
+    expect(outcome.ok && outcome.structured).toMatchObject({ issued: [TRIPLE.a] });
   });
 
   test('bad ids and a signed-out attendee are refused', async () => {

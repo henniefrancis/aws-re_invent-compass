@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
 import { CompassError } from '../../src/ports/errors.js';
-import { cancelReservation, OVERRIDE_WINDOW_MS } from '../../src/tools/cancel-reservation.js';
+import { cancelReservation } from '../../src/tools/cancel-reservation.js';
 import type { ToolContext } from '../../src/server/types.js';
 import { connect, textOf } from '../support/connect.js';
 import { contextFor } from '../support/context.js';
@@ -139,31 +139,25 @@ describe('cancel_reservation with a pending swap (CTO review M1)', () => {
     expect(fake.rules.calls.filter((c) => c.method === 'planSafeSwap')).toHaveLength(1);
   });
 
-  test('an unsafe swap refuses first, naming the five minute rule when the client cannot ask', async () => {
+  test('an unsafe swap is refused for a client that cannot ask, every time, until the repeat is confirmed (security M5)', async () => {
     const { fake, ctx } = setup({ swap: true });
     fake.rules.swapOutcome = { outcome: 'unsafe', explanation: 'The repeat is not confirmed.' };
-    const outcome = await cancelReservation({ sessionId: TRIPLE.a }, ctx);
-    expect(outcome.ok && outcome.structured).toEqual({ cancelled: false });
-    expect(outcome.ok && outcome.text).toContain('neither seat');
-    expect(outcome.ok && outcome.text).toContain('within 5 minutes');
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const outcome = await cancelReservation({ sessionId: TRIPLE.a }, ctx);
+      expect(outcome.ok && outcome.structured).toEqual({ cancelled: false });
+      expect(outcome.ok && outcome.text).toContain('neither seat');
+      expect(outcome.ok && outcome.text).toContain(
+        'Reserve the repeat first, check your schedule, then ask again.',
+      );
+      expect(outcome.ok && outcome.text).not.toContain('within 5 minutes');
+      fake.clock.set(new Date(fake.clock.now().getTime() + 24 * 3600 * 1000).toISOString());
+    }
     expect(fake.events.writeCalls).toEqual([]);
-    expect(ctx.state.swaps.forOriginal(TRIPLE.a)?.refusedAt).toBeDefined();
-  });
-
-  test('a second call within five minutes cancels; after five minutes it refuses again and restarts the window', async () => {
-    const { fake, ctx } = setup({ swap: true });
-    fake.rules.swapOutcome = { outcome: 'failed', explanation: 'Could not hold the repeat.' };
-    await cancelReservation({ sessionId: TRIPLE.a }, ctx);
-    fake.clock.set(new Date(fake.clock.now().getTime() + OVERRIDE_WINDOW_MS + 1000).toISOString());
-    const late = await cancelReservation({ sessionId: TRIPLE.a }, ctx);
-    expect(late.ok && late.structured).toEqual({ cancelled: false });
-    expect(late.ok && late.text).toContain('window after the last refusal had passed');
-    expect(fake.events.writeCalls).toEqual([]);
-    fake.clock.set(new Date(fake.clock.now().getTime() + OVERRIDE_WINDOW_MS).toISOString());
-    const inWindow = await cancelReservation({ sessionId: TRIPLE.a }, ctx);
-    expect(inWindow.ok && inWindow.structured).toEqual({ cancelled: true });
+    expect(ctx.state.swaps.forOriginal(TRIPLE.a)).toBeDefined();
+    fake.rules.swapOutcome = { outcome: 'safe', explanation: 'The repeat is held.' };
+    const safe = await cancelReservation({ sessionId: TRIPLE.a }, ctx);
+    expect(safe.ok && safe.structured).toEqual({ cancelled: true });
     expect(fake.events.callsTo('cancel')).toHaveLength(1);
-    expect(ctx.state.swaps.forOriginal(TRIPLE.a)).toBeUndefined();
   });
 
   test('with elicitation the second call needs an explicit cancel anyway', async () => {
@@ -188,13 +182,13 @@ describe('cancel_reservation with a pending swap (CTO review M1)', () => {
 
 // Feature: compass-power, Property 33: The swap ledger never risks both seats
 describe('Property 33: the swap ledger never risks both seats', () => {
-  test('first cancel only when safe; a second call cancels exactly once under the M1 rule', async () => {
+  test('first cancel only when safe; a second call cancels exactly once, and only with an elicited accept', async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.constantFrom<'safe' | 'unsafe' | 'failed'>('safe', 'unsafe', 'failed'),
         fc.boolean(),
         fc.constantFrom<Answer>('accept', 'decline', 'cancel'),
-        fc.integer({ min: 0, max: 600 }),
+        fc.integer({ min: 0, max: 100_000 }),
         async (outcome, canElicit, answer, secondsLater) => {
           const asked: string[] = [];
           const elicit: ToolContext['elicit'] = canElicit
@@ -217,9 +211,8 @@ describe('Property 33: the swap ledger never risks both seats', () => {
           expect(first.ok && first.structured).toEqual({ cancelled: false });
           fake.clock.set(new Date(fake.clock.now().getTime() + secondsLater * 1000).toISOString());
           const second = await cancelReservation({ sessionId: TRIPLE.a }, ctx);
-          const honoured = canElicit
-            ? answer === 'accept'
-            : secondsLater * 1000 <= OVERRIDE_WINDOW_MS;
+          // Only an elicited, accepted "cancel anyway" overrides; time never does (security M5).
+          const honoured = canElicit && answer === 'accept';
           expect(fake.events.callsTo('cancel')).toHaveLength(honoured ? 1 : 0);
           expect(second.ok && second.structured).toEqual({ cancelled: honoured });
           expect(ctx.state.swaps.forOriginal(TRIPLE.a) === undefined).toBe(honoured);

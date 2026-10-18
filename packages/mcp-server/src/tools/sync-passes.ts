@@ -3,11 +3,16 @@
 // sync_passes is a Write_Tool because it can void passes. It reads a fresh, complete schedule,
 // resolves the reserved ids through the catalog, narrows both sides to `sessionIds` when given
 // (the adapter narrows the stored passes the same way, so a narrowed sync never touches other
-// passes), and previews what S4 would do. A void is shown to the human with the pass codes and
-// catalog titles. Voiding every pass, or more than five, needs an explicit elicited confirmation
-// and sets S4's `confirmEmpty` or `allowBulkVoid`; where the client cannot ask, it is refused.
+// passes), and previews what S4 would do. Whenever the plan has any issue, update or void, the human
+// is asked first (where the client can ask) with each change listed by code and catalog title
+// (security M3). Voiding every pass, or more than five, needs that elicited confirmation and sets
+// S4's `confirmEmpty` or `allowBulkVoid`; where the client cannot ask, it is refused. A reserved
+// session the catalog does not know makes the sync refuse and ask for refresh_catalog (security M4),
+// because a pass for it could not be built or compared safely.
 
+import type { NormalisedSession } from '@compass/contracts';
 import { CompassError } from '../ports/errors.js';
+import type { CatalogView } from '../ports/events-port.js';
 import { checkIdentifiers } from '../safety/identifiers.js';
 import { labelUntrusted } from '../safety/labelled-data.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
@@ -18,6 +23,15 @@ import { VOID_NOTE } from './pass-text.js';
 
 /** More than this many voids in one sync needs explicit confirmation. */
 export const BULK_VOID_THRESHOLD = 5;
+
+/** The session for an id, or the fixed "run refresh_catalog" error when the catalog does not know it. */
+function known(catalog: CatalogView, id: string): NormalisedSession {
+  const entry = catalog.byId.get(id);
+  if (entry === undefined) {
+    throw new CompassError('UnknownSession');
+  }
+  return entry.session;
+}
 
 /** sync_passes. */
 export async function syncPasses(
@@ -32,12 +46,9 @@ export async function syncPasses(
   await ensureSignedIn(ctx);
   const catalog = await events.catalog();
   const { schedule } = await readFreshSchedule(ctx);
-  const resolved = schedule.reserved
-    .filter((id) => narrow === undefined || narrow.has(id))
-    .flatMap((id) => {
-      const entry = catalog.byId.get(id);
-      return entry === undefined ? [] : [entry.session];
-    });
+  const considered = schedule.reserved.filter((id) => narrow === undefined || narrow.has(id));
+  // A reserved session the catalog does not know refuses the sync (security M4).
+  const resolved = considered.map((id) => known(catalog, id));
 
   const scope: SyncScope = {
     resolved,
@@ -55,16 +66,28 @@ export async function syncPasses(
   const emptyVoid = resolved.length === 0 && plan.toVoid.length > 0;
   const bulkVoid = plan.toVoid.length > BULK_VOID_THRESHOLD;
   const titles = new Map([...catalog.byId.values()].map((e) => [e.session.code, e.session.title]));
+  const describe = (id: string): { code: string; title: string | undefined } => {
+    const { code, title } = known(catalog, id);
+    return { code, title };
+  };
   const voiding = plan.toVoid.map((v) => ({
     code: v.sessionCode,
     title: titles.get(v.sessionCode),
   }));
 
-  if (plan.toVoid.length > 0 && ctx.elicit !== undefined) {
+  const changes = [
+    ...plan.toIssue.map((id) => ({ verb: 'Issue', ...describe(id) })),
+    ...plan.toUpdate.map((id) => ({ verb: 'Update', ...describe(id) })),
+    ...voiding.map((v) => ({ verb: 'Void', code: v.code, title: v.title })),
+  ];
+  if (changes.length > 0 && ctx.elicit !== undefined) {
     const answer = await ctx.elicit({
       message: [
-        `This sync will void ${plan.toVoid.length} boarding passes${emptyVoid ? ', which is every pass you hold' : ''}. ${VOID_NOTE}`,
-        ...voiding.map((v) => `- ${v.code}${v.title === undefined ? '' : ` "${v.title}"`}`),
+        `This sync will change your boarding passes: ${plan.toIssue.length} to issue, ${plan.toUpdate.length} to update, ${plan.toVoid.length} to void${emptyVoid ? ', which is every pass you hold' : ''}.`,
+        ...changes.map(
+          (c) => `- ${c.verb} ${c.code}${c.title === undefined ? '' : ` "${c.title}"`}`,
+        ),
+        ...(plan.toVoid.length > 0 ? [VOID_NOTE] : []),
         'Go ahead?',
       ].join('\n'),
     });
