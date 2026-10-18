@@ -23,6 +23,11 @@ export const SITE_LINKS: SiteLinks = {
   packageVersion: null,
 };
 
+/** The private vulnerability reporting form of the repository, the contact channel for data requests. */
+export function privateReportingUrl(links: SiteLinks): string {
+  return `${links.repository}/security/advisories/new`;
+}
+
 export const COMING_SOON = 'coming soon';
 
 export type FooterItem =

@@ -27,7 +27,8 @@
     "check:dash": "node .github/scripts/dash-check.mjs",
     "check:catalog": "node .github/scripts/catalog-check.mjs",
     "test:site": "npm run test --workspace site",
-    "build:site": "npm run build --workspace site"
+    "build:site": "npm run build --workspace site",
+    "e2e": "npm run e2e --workspace site"
   },
   "devDependencies": {
     "@angular-eslint/eslint-plugin": "22.6.0",
