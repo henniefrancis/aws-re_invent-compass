@@ -200,7 +200,10 @@ test('release.sh allows the API key types and no longer allows secret versions o
 
 test('release.sh skips the apply of an empty plan but still asks, syncs and checks health', () => {
   const source = readOwned('scripts/release.sh');
-  assert.match(source, /pending_changes="\$\(plan_jq '\[\(\.resource_changes\[\]\? \| select\(\.mode == "managed"\)/);
+  assert.match(
+    source,
+    /pending_changes="\$\(plan_jq '\[\(\.resource_changes\[\]\? \| select\(\.mode == "managed"\)/,
+  );
   assert.match(
     source,
     /if \[ "\$\{pending_changes\}" = "0" \]; then\s+echo "no infrastructure changes: skipping terraform apply"\s+else\s+terraform apply -input=false tfplan \|\| fail "terraform apply failed"\s+fi/,
