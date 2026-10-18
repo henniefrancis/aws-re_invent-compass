@@ -27,7 +27,7 @@ One record per architecture decision for re:Invent Compass, mirrored from the pr
 | [ADR-021](ADR-021-cloudfront-flat-rate-free-plan.md)            | CloudFront flat-rate Free plan                           | Proposed |
 | [ADR-022](ADR-022-pass-content-retention.md)                    | Pass content retention                                   | Accepted |
 | [ADR-023](ADR-023-events-api-openapi-source.md)                 | Events API OpenAPI source                                | Accepted |
-| ADR-024                                                         | Kiro hook input and blocking (SP1 result, to come)       | Reserved |
+| [ADR-024](ADR-024-kiro-hook-input-and-blocking.md)              | Kiro hook input and blocking (SP1 result)                | Accepted |
 | [ADR-025](ADR-025-early-contract-lock.md)                       | Early contract lock                                      | Accepted |
 | [ADR-026](ADR-026-audit-allowlist.md)                           | Audit allowlist for accepted advisories                  | Accepted |
 | [ADR-027](ADR-027-accepted-residual-risks.md)                   | Accepted residual risks from the stream security reviews | Accepted |
