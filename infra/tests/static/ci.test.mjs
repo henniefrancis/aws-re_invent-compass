@@ -103,7 +103,7 @@ test('the gitleaks allowlist keeps the default rules and covers test paths only'
   const paths = [...text.matchAll(/'''([^']+)'''/g)].map((m) => m[1]);
   assert.ok(paths.length >= 1);
   for (const path of paths) {
-    assert.match(path, /\/test\/|\/e2e\/fixtures\//, `${path} must be a test path`);
+    assert.match(path, /\/test\/|\/e2e\/fixtures\/|tests\/.*tftest/, `${path} must be a test path`);
   }
   // No blanket allowlist: no regexes, stopwords or commit allowlists.
   assert.doesNotMatch(text, /regexes\s*=/);
