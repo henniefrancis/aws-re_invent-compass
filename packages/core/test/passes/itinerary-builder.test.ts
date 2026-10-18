@@ -261,3 +261,88 @@ describe('Feature: boarding-passes, buildPassFor (QA M1)', () => {
     }
   });
 });
+
+describe('Feature: boarding-passes, neighbours only count within 12 hours (S2 rule)', () => {
+  const at = (code: string, venue: string, start: string, end: string) =>
+    makeSession({ sessionId: `s-${code}`, code, venue, startsAt: start, endsAt: end });
+  const TUESDAY = at('TUE101', 'Wynn', '2026-12-01T10:00:00-08:00', '2026-12-01T11:00:00-08:00');
+  const FRIDAY = at('FRI101', 'Venetian', '2026-12-04T10:00:00-08:00', '2026-12-04T11:00:00-08:00');
+  const FRIDAY_LATE = at(
+    'FRI102',
+    'MGM Grand',
+    '2026-12-04T12:00:00-08:00',
+    '2026-12-04T13:00:00-08:00',
+  );
+  const table = { 'Wynn|Venetian': 5, 'Venetian|MGM Grand': 9 };
+  const deps = (walks = fakeConnections(table)) => ({ connections: walks, eventWindow: WINDOW });
+
+  test('a session on another day is not the previous stop or the next connection', () => {
+    const schedule: ScheduleView = { sessions: [TUESDAY, FRIDAY], personalTime: [] };
+    const friday = buildPassFor(schedule, deps())('FRI101');
+    expect(friday.walkFromPrevious).toBeUndefined();
+    const tuesday = buildPassFor(schedule, deps())('TUE101');
+    expect(tuesday.nextConnection).toBeUndefined();
+    expect(
+      buildItinerary(schedule, fakeConnections(table)).commitments.map((e) => e.walkMinutes),
+    ).toEqual([undefined, undefined]);
+  });
+
+  test('the same day still connects, and the lookup is not even asked across days', () => {
+    const walks = fakeConnections(table);
+    const schedule: ScheduleView = { sessions: [TUESDAY, FRIDAY, FRIDAY_LATE], personalTime: [] };
+    const friday = buildPassFor(schedule, deps(walks))('FRI101');
+    expect(friday.walkFromPrevious).toBeUndefined();
+    expect(friday.nextConnection).toMatchObject({ sessionCode: 'FRI102', walkMinutes: 9 });
+    expect(walks.calls).not.toContain('Wynn|Venetian');
+  });
+
+  test('exactly 12 hours apart connects, one millisecond more does not, and midnight is crossed freely', () => {
+    const base = at('AAA101', 'Wynn', '2026-12-01T08:00:00-08:00', '2026-12-01T09:00:00-08:00');
+    const exactly = at(
+      'BBB101',
+      'Venetian',
+      '2026-12-01T21:00:00-08:00',
+      '2026-12-01T22:00:00-08:00',
+    );
+    const justOver = at(
+      'CCC101',
+      'Venetian',
+      '2026-12-01T21:00:00.001-08:00',
+      '2026-12-01T22:00:00-08:00',
+    );
+    const evening = at('EEE101', 'Wynn', '2026-12-01T20:00:00-08:00', '2026-12-01T21:00:00-08:00');
+    const acrossMidnight = at(
+      'DDD101',
+      'Venetian',
+      '2026-12-02T02:00:00-08:00',
+      '2026-12-02T03:00:00-08:00',
+    );
+    const pass = (other: typeof exactly, code: string) =>
+      buildPassFor({ sessions: [base, other], personalTime: [] }, deps())(code);
+    expect(pass(exactly, 'BBB101').walkFromPrevious).toEqual({ minutes: 5, fromVenue: 'Wynn' });
+    expect(pass(justOver, 'CCC101').walkFromPrevious).toBeUndefined();
+    expect(
+      buildPassFor({ sessions: [evening, acrossMidnight], personalTime: [] }, deps())('DDD101')
+        .walkFromPrevious,
+    ).toEqual({ minutes: 5, fromVenue: 'Wynn' });
+    expect(
+      buildPassFor({ sessions: [base, exactly], personalTime: [] }, deps())('AAA101')
+        .nextConnection,
+    ).toBeDefined();
+    expect(
+      buildPassFor({ sessions: [base, justOver], personalTime: [] }, deps())('AAA101')
+        .nextConnection,
+    ).toBeUndefined();
+  });
+
+  test('a far-away layover before a session is not its previous stop either', () => {
+    const lunch = {
+      ...LUNCH,
+      startDateTime: '2026-12-01T11:30:00-08:00',
+      endDateTime: '2026-12-01T12:30:00-08:00',
+    };
+    const schedule: ScheduleView = { sessions: [FRIDAY], personalTime: [lunch] };
+    expect(buildPassFor(schedule, deps())('FRI101').walkFromPrevious).toBeUndefined();
+    expect(buildItinerary(schedule, fakeConnections()).commitments[1]?.walkMinutes).toBeUndefined();
+  });
+});

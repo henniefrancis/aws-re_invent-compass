@@ -11,6 +11,8 @@
 //  - buildItinerary(schedule, walks) returns the Itinerary for the calendar and the page, in
 //    start order, with each reserved commitment's walk minutes from the commitment before it.
 //
+// A neighbour counts only within 12 hours before or after (across midnight is fine), as in S2;
+// otherwise the walk fields are omitted rather than describing a stop from another day.
 // Ordering is by start time, then end time, then input order. A reserved session with no
 // start or end time cannot be placed: it is left out of the itinerary and has no neighbours,
 // and buildPassFor for its code fails with builder.invalid_input, as buildPass does.
@@ -90,6 +92,13 @@ function layout(schedule: ScheduleView): Slot[] {
   return slots.sort((a, b) => a.start - b.start || a.end - b.end);
 }
 
+/**
+ * How far apart two commitments can be, in either direction and across midnight, and still count
+ * as neighbours. The same rule as the rules engine (S2, NEIGHBOUR_WINDOW_HOURS): a Friday session
+ * is not "5 minutes from your previous stop" when that stop was on Tuesday.
+ */
+export const NEIGHBOUR_WINDOW_MS = 12 * 3_600_000;
+
 /** Where a commitment is: a session venue or a layover location, empty when unknown. */
 function whereIs(commitment: Commitment): string {
   return (commitment.kind === 'reservedSession' ? commitment.venue : commitment.location) ?? '';
@@ -104,10 +113,15 @@ export function buildPassFor(schedule: ScheduleView, deps: PassBuildDeps): Build
       throw passError('builder.unknown_session', 'The session is not in the schedule.');
     }
     const index = slots.findIndex((slot) => slot.session === session);
-    const before = index > 0 ? slots[index - 1] : undefined;
+    const mine = slots[index];
+    const candidate = index > 0 ? slots[index - 1] : undefined;
+    const before =
+      mine && candidate && mine.start - candidate.end <= NEIGHBOUR_WINDOW_MS
+        ? candidate
+        : undefined;
     const following = slots.slice(index + 1).find((slot) => slot.session !== undefined);
     const next: AdjacentSession | undefined =
-      index >= 0 && following?.session
+      mine && following?.session && following.start - mine.end <= NEIGHBOUR_WINDOW_MS
         ? {
             sessionCode: following.session.code,
             startsAt: following.commitment.startsAt,
@@ -133,7 +147,11 @@ export function buildItinerary(schedule: ScheduleView, walks: ConnectionProvider
   return {
     commitments: slots.map((slot, index) => {
       const before = index > 0 ? slots[index - 1] : undefined;
-      if (slot.session === undefined || before === undefined) {
+      if (
+        slot.session === undefined ||
+        before === undefined ||
+        slot.start - before.end > NEIGHBOUR_WINDOW_MS
+      ) {
         return { commitment: slot.commitment };
       }
       const walkMinutes = clampedWalk(
