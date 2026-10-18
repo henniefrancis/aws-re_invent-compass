@@ -104,7 +104,7 @@ Replace `<version>` with the version you want, for example the one on the npm pa
 | `cancel_reservation`      | write        | Cancels a reservation, with the safe swap rule. Changes your real schedule.       |
 | `add_standby`             | write        | Favourites sessions as backups. Changes your real schedule.                       |
 | `remove_standby`          | write        | Removes a favourite. Changes your real schedule.                                  |
-| `add_layover`             | write        | Adds personal time. Changes your real schedule.                                   |
+| `add_layover`             | write        | Creates, changes or deletes personal time. Changes your real schedule.            |
 | `issue_boarding_passes`   | write        | Creates unofficial boarding passes for sessions you hold.                         |
 | `send_to_phone`           | write        | Makes a 15-minute link and QR code for your passes.                               |
 | `sync_passes`             | write        | Makes the passes match your schedule. It can void passes.                         |

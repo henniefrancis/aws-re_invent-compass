@@ -371,6 +371,10 @@ describe('a request that does not match the schema (QA low)', () => {
     const { tools } = await connection.client.listTools();
     const reserve = tools.find((t) => t.name === 'reserve_with_guardrails');
     expect(JSON.stringify(reserve?.inputSchema)).toContain('sessionIds');
+    const layover = tools.find((t) => t.name === 'add_layover');
+    expect(layover?.inputSchema.type).toBe('object');
+    expect(JSON.stringify(layover?.inputSchema)).toContain('personalTimeId');
+    expect(JSON.stringify(layover?.inputSchema)).toContain('"delete"');
     await connection.close();
   });
 

@@ -25,6 +25,8 @@ export const EVENTS_WRITE_METHODS: readonly string[] = [
   'favorite',
   'unfavorite',
   'createPersonalTime',
+  'updatePersonalTime',
+  'deletePersonalTime',
 ];
 
 /**
@@ -199,6 +201,30 @@ export class FakeEvents implements EventsPort {
           description: input.description,
           ...(input.location === undefined ? {} : { location: input.location }),
         });
+      }
+      return this.confirmed(null);
+    });
+  }
+
+  updatePersonalTime(id: string, input: PersonalTimeInput): Promise<ConfirmedWriteResult<null>> {
+    return this.run('updatePersonalTime', [id, input], () => {
+      const entry = this.schedule.personalTime.find((p) => p.personalTimeId === id);
+      if (!this.ignoreWrites && entry !== undefined) {
+        entry.startDateTime = input.startDateTime;
+        entry.endDateTime = input.endDateTime;
+        entry.title = input.title;
+        entry.description = input.description;
+      }
+      return this.confirmed(null);
+    });
+  }
+
+  deletePersonalTime(id: string): Promise<ConfirmedWriteResult<null>> {
+    return this.run('deletePersonalTime', [id], () => {
+      if (!this.ignoreWrites) {
+        this.schedule.personalTime = this.schedule.personalTime.filter(
+          (p) => p.personalTimeId !== id,
+        );
       }
       return this.confirmed(null);
     });

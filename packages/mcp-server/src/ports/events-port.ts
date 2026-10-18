@@ -64,4 +64,6 @@ export interface EventsPort {
   favorite(ids: string[]): Promise<ConfirmedWriteResult<BulkResult>>;
   unfavorite(id: string): Promise<ConfirmedWriteResult<null>>;
   createPersonalTime(input: PersonalTimeInput): Promise<ConfirmedWriteResult<null>>;
+  updatePersonalTime(id: string, input: PersonalTimeInput): Promise<ConfirmedWriteResult<null>>;
+  deletePersonalTime(id: string): Promise<ConfirmedWriteResult<null>>;
 }

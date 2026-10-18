@@ -34,7 +34,7 @@ The `compass` server starts with `npx --yes reinvent-compass@<version>`; the ver
 
 ## Approvals
 
-Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. `scan_repo` reads a folder of yours, so approve each scan. Never auto-approve a write tool: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`, `issue_boarding_passes`, `send_to_phone`, `sync_passes` or `forget_me`. `sync_passes` can void passes, so it is a write tool.
+Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. `scan_repo` reads a folder of yours, so approve each scan. Never auto-approve a write tool: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`, `issue_boarding_passes`, `send_to_phone`, `sync_passes` or `forget_me`. `sync_passes` can void passes, so it is a write tool. `add_layover` takes an `action` of `create`, `update` or `delete` (the last two need the `personalTimeId` from your schedule), and each one asks you to confirm.
 
 ## Try it without an account
 
