@@ -243,7 +243,7 @@ variable "domain_name" {
 }
 
 variable "extra_aliases" {
-  description = "Further alias names on the same distribution (prod pass.reinvent-compass.vegas). Null or empty for none. Needs domain_name. Set as an HCL variable in HCP."
+  description = "Further alias names on the same distribution. Null or empty for none (neither environment uses one today). Needs domain_name. Set as an HCL variable in HCP."
   type        = list(string)
   default     = null
 

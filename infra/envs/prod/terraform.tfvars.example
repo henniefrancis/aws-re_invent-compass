@@ -46,8 +46,9 @@ api_reserved_concurrency     = 20
 passkit_reserved_concurrency = 10
 
 # Custom domain (ADR-031). The hosted zone already exists in this account; the
-# certificate validates itself through DNS records in it. extra_aliases is a list,
-# so in HCP it is an HCL variable.
+# certificate validates itself through DNS records in it. Prod serves the apex
+# only (passes use the apex too, ADR-031). extra_aliases stays available for later;
+# it is a list, so in HCP it is an HCL variable.
 hosted_zone_name = "reinvent-compass.vegas"
 domain_name      = "reinvent-compass.vegas"
-extra_aliases    = ["pass.reinvent-compass.vegas"]
+# extra_aliases  = null (none)

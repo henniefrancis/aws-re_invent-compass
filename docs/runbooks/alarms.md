@@ -49,10 +49,10 @@ The WAF blocked 100 or more requests in five minutes. Normal traffic does not do
 
 ## The custom domain
 
-Prod is served on `reinvent-compass.vegas` and `pass.reinvent-compass.vegas`, dev on `dev.reinvent-compass.vegas` (ADR-031). If a name stops resolving or the browser reports a certificate error:
+Prod is served on `reinvent-compass.vegas`, dev on `dev.reinvent-compass.vegas` (ADR-031). If a name stops resolving or the browser reports a certificate error:
 
 1. Check the Route 53 records of the zone: each name needs an A and an AAAA alias to the distribution, and the certificate needs its validation CNAME records. Terraform owns them; fix a missing one with `scripts/release.sh <env>`, never in the console.
-2. Check that the registrar still delegates the domain to the zone name servers.
+2. Check that the domain still delegates to the zone name servers (it is registered with Route 53 Domains in this account, so normally nothing to do).
 3. The CloudFront default address of the environment keeps answering while the custom name is broken, which separates a DNS or certificate fault from an API fault.
 
 ## The budget alert

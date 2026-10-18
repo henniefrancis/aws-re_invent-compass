@@ -209,7 +209,7 @@ Base: `https://reinvent-compass.vegas` in prod and `https://dev.reinvent-compass
 | `DELETE /api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}`   | `ApplePass <authenticationToken>` | none                                                                                 | 200, 401                                                                                                                                                          |
 | `POST /api/passkit/v1/log`                                                                                     | none                              | `{logs: string[]}`                                                                   | 200 (counted, not stored)                                                                                                                                         |
 
-The pass `webServiceURL` is `PUBLIC_BASE_URL` plus `/api/passkit`, that is `https://reinvent-compass.vegas/api/passkit` in prod (`https://pass.reinvent-compass.vegas/api/passkit` once the pass-service has a separate pass base URL setting, ADR-031). SP3 confirms how the path is joined. The site's `/board` page is a static route, not an API.
+The pass `webServiceURL` is `PUBLIC_BASE_URL` plus `/api/passkit`, that is `https://reinvent-compass.vegas/api/passkit` in prod (the apex; one address for the site, the API and the passes, ADR-031). SP3 confirms how the path is joined. The site's `/board` page is a static route, not an API.
 
 ### 5.3 PassFields (`packages/contracts/src/pass-fields.ts`, zod, the single source)
 

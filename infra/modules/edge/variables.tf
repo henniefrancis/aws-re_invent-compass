@@ -78,7 +78,7 @@ variable "domain_name" {
 }
 
 variable "extra_aliases" {
-  description = "Further alias names on the same distribution, for example pass.reinvent-compass.vegas. They need domain_name and sit in the same hosted zone."
+  description = "Further alias names on the same distribution (none are used today). They need domain_name and sit in the same hosted zone."
   type        = list(string)
   default     = []
 

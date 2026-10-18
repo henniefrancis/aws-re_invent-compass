@@ -197,11 +197,11 @@ locals {
   # managed here: it was created with the domain registration. The apply roles may
   # change records in this one zone only, and only the names of their own
   # environment: dev owns dev.<zone> and its certificate validation records; prod
-  # owns the zone apex, pass.<zone> and their validation records.
+  # owns the zone apex and its validation records.
   zone_arn = "arn:aws:route53:::hostedzone/${data.aws_route53_zone.domain.zone_id}"
   dns_record_names = {
     dev  = ["dev.${var.hosted_zone_name}", "_*.dev.${var.hosted_zone_name}"]
-    prod = [var.hosted_zone_name, "pass.${var.hosted_zone_name}", "_*.${var.hosted_zone_name}", "_*.pass.${var.hosted_zone_name}"]
+    prod = [var.hosted_zone_name, "_*.${var.hosted_zone_name}"]
   }
 }
 

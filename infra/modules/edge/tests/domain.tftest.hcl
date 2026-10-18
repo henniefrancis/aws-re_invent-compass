@@ -24,8 +24,8 @@ mock_provider "aws" {
           resource_record_value = "_bbbb.acm-validations.aws."
         },
         {
-          domain_name           = "pass.reinvent-compass.vegas"
-          resource_record_name  = "_cccc.pass.reinvent-compass.vegas."
+          domain_name           = "www.reinvent-compass.vegas"
+          resource_record_name  = "_cccc.www.reinvent-compass.vegas."
           resource_record_type  = "CNAME"
           resource_record_value = "_dddd.acm-validations.aws."
         },
@@ -98,17 +98,44 @@ run "no_domain_changes_nothing" {
   }
 }
 
-run "prod_domain_with_the_pass_alias" {
+# prod today: the apex only, no second alias (ADR-031).
+run "prod_apex_only" {
   command = plan
 
   variables {
     domain_name      = "reinvent-compass.vegas"
-    extra_aliases    = ["pass.reinvent-compass.vegas"]
     hosted_zone_name = "reinvent-compass.vegas"
   }
 
   assert {
-    condition     = aws_cloudfront_distribution.this.aliases == toset(["reinvent-compass.vegas", "pass.reinvent-compass.vegas"])
+    condition     = aws_cloudfront_distribution.this.aliases == toset(["reinvent-compass.vegas"]) && output.public_domain_names == tolist(["reinvent-compass.vegas"])
+    error_message = "prod serves the apex only."
+  }
+
+  assert {
+    condition     = toset(keys(aws_route53_record.alias)) == toset(["reinvent-compass.vegas/A", "reinvent-compass.vegas/AAAA"]) && length(aws_route53_record.validation) == 1
+    error_message = "The apex needs an A and an AAAA record and one validation record."
+  }
+
+  assert {
+    condition     = length(aws_acm_certificate.this[0].subject_alternative_names) == 0
+    error_message = "The certificate covers the apex alone."
+  }
+}
+
+# The extra_aliases mechanism, kept for later: a second name on the same
+# distribution gets its own certificate name and records.
+run "apex_with_an_extra_alias" {
+  command = plan
+
+  variables {
+    domain_name      = "reinvent-compass.vegas"
+    extra_aliases    = ["www.reinvent-compass.vegas"]
+    hosted_zone_name = "reinvent-compass.vegas"
+  }
+
+  assert {
+    condition     = aws_cloudfront_distribution.this.aliases == toset(["reinvent-compass.vegas", "www.reinvent-compass.vegas"])
     error_message = "The distribution must carry both aliases."
   }
 
@@ -118,17 +145,17 @@ run "prod_domain_with_the_pass_alias" {
   }
 
   assert {
-    condition     = aws_acm_certificate.this[0].domain_name == "reinvent-compass.vegas" && aws_acm_certificate.this[0].subject_alternative_names == toset(["pass.reinvent-compass.vegas"]) && aws_acm_certificate.this[0].validation_method == "DNS"
+    condition     = aws_acm_certificate.this[0].domain_name == "reinvent-compass.vegas" && aws_acm_certificate.this[0].subject_alternative_names == toset(["www.reinvent-compass.vegas"]) && aws_acm_certificate.this[0].validation_method == "DNS"
     error_message = "The certificate must cover both names and validate by DNS."
   }
 
   assert {
-    condition     = toset(keys(aws_route53_record.validation)) == toset(["reinvent-compass.vegas", "pass.reinvent-compass.vegas"]) && alltrue([for r in values(aws_route53_record.validation) : r.zone_id == "Z0EXAMPLEZONE" && r.allow_overwrite])
+    condition     = toset(keys(aws_route53_record.validation)) == toset(["reinvent-compass.vegas", "www.reinvent-compass.vegas"]) && alltrue([for r in values(aws_route53_record.validation) : r.zone_id == "Z0EXAMPLEZONE" && r.allow_overwrite])
     error_message = "One validation record per name must be created in the zone."
   }
 
   assert {
-    condition     = toset(keys(aws_route53_record.alias)) == toset(["reinvent-compass.vegas/A", "reinvent-compass.vegas/AAAA", "pass.reinvent-compass.vegas/A", "pass.reinvent-compass.vegas/AAAA"])
+    condition     = toset(keys(aws_route53_record.alias)) == toset(["reinvent-compass.vegas/A", "reinvent-compass.vegas/AAAA", "www.reinvent-compass.vegas/A", "www.reinvent-compass.vegas/AAAA"])
     error_message = "An A and an AAAA alias record must exist for every name."
   }
 
@@ -143,7 +170,7 @@ run "prod_domain_with_the_pass_alias" {
   }
 
   assert {
-    condition     = output.public_domain_names == tolist(["reinvent-compass.vegas", "pass.reinvent-compass.vegas"])
+    condition     = output.public_domain_names == tolist(["reinvent-compass.vegas", "www.reinvent-compass.vegas"])
     error_message = "The public names must be reported."
   }
 }
@@ -177,7 +204,7 @@ run "extra_alias_needs_a_domain" {
   command = plan
 
   variables {
-    extra_aliases = ["pass.reinvent-compass.vegas"]
+    extra_aliases = ["www.reinvent-compass.vegas"]
   }
 
   expect_failures = [var.extra_aliases]

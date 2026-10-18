@@ -1,7 +1,7 @@
 # The custom domain in the environment roots (ADR-031).
 #
 # prod serves the site, /board and the API on reinvent-compass.vegas with
-# pass.reinvent-compass.vegas as a second alias; dev serves dev.reinvent-compass.vegas
+# no second alias (passes use the apex too); dev serves dev.reinvent-compass.vegas
 # only. With domain_name null the roots behave as before. Run from the infra
 # directory. Providers are mocked; nothing reaches AWS or HCP Terraform.
 
@@ -31,8 +31,8 @@ mock_provider "aws" {
           resource_record_value = "_bbbb.acm-validations.aws."
         },
         {
-          domain_name           = "pass.reinvent-compass.vegas"
-          resource_record_name  = "_cccc.pass.reinvent-compass.vegas."
+          domain_name           = "www.reinvent-compass.vegas"
+          resource_record_name  = "_cccc.www.reinvent-compass.vegas."
           resource_record_type  = "CNAME"
           resource_record_value = "_dddd.acm-validations.aws."
         },
@@ -85,7 +85,7 @@ variables {
   id_token_issuer     = "https://issuer.example.invalid"
 }
 
-run "prod_serves_the_apex_and_the_pass_host" {
+run "prod_serves_the_apex_only" {
   command = plan
 
   module {
@@ -93,13 +93,12 @@ run "prod_serves_the_apex_and_the_pass_host" {
   }
 
   variables {
-    domain_name   = "reinvent-compass.vegas"
-    extra_aliases = ["pass.reinvent-compass.vegas"]
+    domain_name = "reinvent-compass.vegas"
   }
 
   assert {
-    condition     = module.edge.public_domain_names == tolist(["reinvent-compass.vegas", "pass.reinvent-compass.vegas"])
-    error_message = "prod must serve the apex and the pass host."
+    condition     = module.edge.public_domain_names == tolist(["reinvent-compass.vegas"])
+    error_message = "prod must serve the apex only."
   }
 }
 
@@ -155,7 +154,7 @@ run "an_alias_without_a_domain_is_rejected" {
   }
 
   variables {
-    extra_aliases = ["pass.reinvent-compass.vegas"]
+    extra_aliases = ["www.reinvent-compass.vegas"]
   }
 
   expect_failures = [var.extra_aliases]

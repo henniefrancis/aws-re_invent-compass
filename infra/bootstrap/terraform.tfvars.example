@@ -26,7 +26,6 @@ workspace_variables = {
     event_window_end   = "REPLACE_WITH_ISO_8601_END_WITH_OFFSET"
     id_token_issuer    = "REPLACE_WITH_ID_TOKEN_ISSUER_URL"
     domain_name        = "reinvent-compass.vegas"
-    extra_aliases      = "[\"pass.reinvent-compass.vegas\"]"
   }
 }
 

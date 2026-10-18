@@ -386,9 +386,9 @@ run "custom_domain_permissions_are_scoped" {
     condition = anytrue([
       for s in jsondecode(aws_iam_policy.apply["prod-edge"].policy).Statement :
       s.Sid == "ChangeOwnDnsRecords" &&
-      toset(s.Condition["ForAllValues:StringLike"]["route53:ChangeResourceRecordSetsNormalizedRecordNames"]) == toset(["reinvent-compass.vegas", "pass.reinvent-compass.vegas", "_*.reinvent-compass.vegas", "_*.pass.reinvent-compass.vegas"])
+      toset(s.Condition["ForAllValues:StringLike"]["route53:ChangeResourceRecordSetsNormalizedRecordNames"]) == toset(["reinvent-compass.vegas", "_*.reinvent-compass.vegas"])
     ])
-    error_message = "The prod role may change only the apex and pass records."
+    error_message = "The prod role may change only the apex and its validation records."
   }
 
   # The zone reads for the data source, and the plan role reads.
@@ -502,7 +502,7 @@ run "list_workspace_variables_are_hcl" {
   variables {
     workspace_variables = {
       dev  = { domain_name = "dev.reinvent-compass.vegas" }
-      prod = { extra_aliases = "[\"pass.reinvent-compass.vegas\"]" }
+      prod = { extra_aliases = "[\"www.reinvent-compass.vegas\"]" }
     }
   }
 
