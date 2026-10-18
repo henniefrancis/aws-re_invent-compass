@@ -103,5 +103,6 @@ resource "tfe_variable" "terraform" {
   category     = "terraform"
   key          = each.value.key
   value        = each.value.value
+  hcl          = startswith(trimspace(each.value.value), "[") || startswith(trimspace(each.value.value), "{")
   description  = "Managed by the bootstrap configuration."
 }

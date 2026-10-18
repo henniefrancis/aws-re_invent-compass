@@ -283,6 +283,53 @@ locals {
         Resource = [local.name_scope[e].bucket_arn_pattern, "${local.name_scope[e].bucket_arn_pattern}/*"]
       },
       {
+        Sid       = "RequestCertificates"
+        Effect    = "Allow"
+        Action    = ["acm:RequestCertificate"]
+        Resource  = "*"
+        Condition = local.tag_on_create[e]
+      },
+      {
+        Sid    = "ManageCertificates"
+        Effect = "Allow"
+        Action = [
+          "acm:AddTagsToCertificate",
+          "acm:DeleteCertificate",
+          "acm:RemoveTagsFromCertificate",
+        ]
+        Resource  = "arn:aws:acm:${local.region}:${local.account_id}:certificate/*"
+        Condition = local.tag_on_manage[e]
+      },
+      {
+        # Only the records of this environment, only these types and actions, in
+        # the one hosted zone.
+        Sid      = "ChangeOwnDnsRecords"
+        Effect   = "Allow"
+        Action   = ["route53:ChangeResourceRecordSets"]
+        Resource = local.zone_arn
+        Condition = {
+          "ForAllValues:StringEquals" = {
+            "route53:ChangeResourceRecordSetsActions"     = ["CREATE", "UPSERT", "DELETE"]
+            "route53:ChangeResourceRecordSetsRecordTypes" = ["A", "AAAA", "CNAME"]
+          }
+          "ForAllValues:StringLike" = {
+            "route53:ChangeResourceRecordSetsNormalizedRecordNames" = local.dns_record_names[e]
+          }
+        }
+      },
+      {
+        Sid      = "ReadOwnZoneRecords"
+        Effect   = "Allow"
+        Action   = ["route53:ListResourceRecordSets", "route53:ListTagsForResource"]
+        Resource = local.zone_arn
+      },
+      {
+        Sid      = "ReadDnsChanges"
+        Effect   = "Allow"
+        Action   = ["route53:GetChange"]
+        Resource = "arn:aws:route53:::change/*"
+      },
+      {
         Sid       = "CreateDistribution"
         Effect    = "Allow"
         Action    = ["cloudfront:CreateDistributionWithTags", "cloudfront:TagResource"]
@@ -470,6 +517,7 @@ resource "aws_iam_policy" "hcp_boundary" {
         Sid    = "AllowProjectServices"
         Effect = "Allow"
         Action = [
+          "acm:*",
           "apigateway:*",
           "cloudfront:*",
           "cloudwatch:*",
@@ -478,6 +526,7 @@ resource "aws_iam_policy" "hcp_boundary" {
           "kms:*",
           "lambda:*",
           "logs:*",
+          "route53:*",
           "s3:*",
           "secretsmanager:*",
           "sns:*",

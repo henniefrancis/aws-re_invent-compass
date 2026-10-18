@@ -12,6 +12,12 @@ mock_provider "aws" {
     }
   }
 
+  mock_data "aws_route53_zone" {
+    defaults = {
+      zone_id = "Z0EXAMPLEZONE"
+    }
+  }
+
   mock_resource "aws_iam_openid_connect_provider" {
     defaults = {
       arn = "arn:aws:iam::aws:oidc-provider/app.terraform.io"
@@ -324,6 +330,91 @@ run "one_account_budget_lives_in_the_bootstrap" {
   }
 }
 
+# ADR-031: the apply roles get ACM and Route 53 write access scoped to their own
+# environment, in the one existing hosted zone.
+run "custom_domain_permissions_are_scoped" {
+  command = plan
+
+  assert {
+    condition = alltrue([
+      for e in ["dev", "prod"] : anytrue([
+        for s in jsondecode(aws_iam_policy.apply["${e}-edge"].policy).Statement :
+        s.Effect == "Allow" && s.Sid == "RequestCertificates" &&
+        s.Action == ["acm:RequestCertificate"] &&
+        s.Condition.StringEquals["aws:RequestTag/environment"] == e
+      ])
+    ])
+    error_message = "Requesting a certificate must need the environment request tag."
+  }
+
+  assert {
+    condition = alltrue([
+      for e in ["dev", "prod"] : anytrue([
+        for s in jsondecode(aws_iam_policy.apply["${e}-edge"].policy).Statement :
+        s.Effect == "Allow" && s.Sid == "ManageCertificates" &&
+        contains(s.Action, "acm:DeleteCertificate") && contains(s.Action, "acm:AddTagsToCertificate") &&
+        s.Condition.StringEquals["aws:ResourceTag/environment"] == e
+      ])
+    ])
+    error_message = "Changing or deleting a certificate must need the environment resource tag."
+  }
+
+  assert {
+    condition = alltrue([
+      for e in ["dev", "prod"] : anytrue([
+        for s in jsondecode(aws_iam_policy.apply["${e}-edge"].policy).Statement :
+        s.Effect == "Allow" && s.Sid == "ChangeOwnDnsRecords" &&
+        s.Action == ["route53:ChangeResourceRecordSets"] &&
+        s.Resource == "arn:aws:route53:::hostedzone/Z0EXAMPLEZONE" &&
+        toset(s.Condition["ForAllValues:StringEquals"]["route53:ChangeResourceRecordSetsRecordTypes"]) == toset(["A", "AAAA", "CNAME"]) &&
+        toset(s.Condition["ForAllValues:StringEquals"]["route53:ChangeResourceRecordSetsActions"]) == toset(["CREATE", "UPSERT", "DELETE"])
+      ])
+    ])
+    error_message = "Record changes must name the one zone and allow only A, AAAA and CNAME records."
+  }
+
+  assert {
+    condition = anytrue([
+      for s in jsondecode(aws_iam_policy.apply["dev-edge"].policy).Statement :
+      s.Sid == "ChangeOwnDnsRecords" &&
+      toset(s.Condition["ForAllValues:StringLike"]["route53:ChangeResourceRecordSetsNormalizedRecordNames"]) == toset(["dev.reinvent-compass.vegas", "_*.dev.reinvent-compass.vegas"])
+    ])
+    error_message = "The dev role may change only dev records."
+  }
+
+  assert {
+    condition = anytrue([
+      for s in jsondecode(aws_iam_policy.apply["prod-edge"].policy).Statement :
+      s.Sid == "ChangeOwnDnsRecords" &&
+      toset(s.Condition["ForAllValues:StringLike"]["route53:ChangeResourceRecordSetsNormalizedRecordNames"]) == toset(["reinvent-compass.vegas", "pass.reinvent-compass.vegas", "_*.reinvent-compass.vegas", "_*.pass.reinvent-compass.vegas"])
+    ])
+    error_message = "The prod role may change only the apex and pass records."
+  }
+
+  # The zone reads for the data source, and the plan role reads.
+  assert {
+    condition = alltrue([
+      for a in ["route53:GetHostedZone", "route53:ListHostedZones", "route53:ListHostedZonesByName", "acm:Describe*", "acm:List*"] :
+      contains(jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement[0].Action, a)
+    ])
+    error_message = "The plan role must read the zone and the certificates."
+  }
+
+  assert {
+    condition = anytrue([
+      for s in jsondecode(aws_iam_role_policy.plan["dev"].policy).Statement :
+      s.Effect == "Allow" && try(s.Sid, "") == "ReadDnsRecordsOfTheZone" &&
+      contains(s.Action, "route53:ListResourceRecordSets") && !contains(s.Action, "route53:ChangeResourceRecordSets")
+    ])
+    error_message = "The plan role may list the zone records but never change them."
+  }
+
+  assert {
+    condition     = alltrue([for k, p in aws_iam_policy.apply : !strcontains(p.policy, "route53:*") && !strcontains(p.policy, "acm:*")])
+    error_message = "No apply policy may allow all ACM or Route 53 actions."
+  }
+}
+
 run "tfe_workspaces_pin_terraform" {
   command = plan
 
@@ -402,6 +493,22 @@ run "workspace_variables_are_created_from_the_input" {
   assert {
     condition     = length(tfe_variable.terraform) == 1 && tfe_variable.terraform["dev/event_timezone"].category == "terraform"
     error_message = "A non-sensitive variable must be created for the workspace."
+  }
+}
+
+run "list_workspace_variables_are_hcl" {
+  command = plan
+
+  variables {
+    workspace_variables = {
+      dev  = { domain_name = "dev.reinvent-compass.vegas" }
+      prod = { extra_aliases = "[\"pass.reinvent-compass.vegas\"]" }
+    }
+  }
+
+  assert {
+    condition     = tfe_variable.terraform["prod/extra_aliases"].hcl == true && tfe_variable.terraform["dev/domain_name"].hcl == false
+    error_message = "A list value must be written as an HCL variable and a plain string must not."
   }
 }
 

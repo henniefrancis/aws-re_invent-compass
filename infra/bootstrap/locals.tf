@@ -62,6 +62,9 @@ locals {
   # instead of iam:Get* and iam:List* (M4). apigateway:GET is the API Gateway
   # read; it includes the API key read that the key resource refresh needs.
   read_actions = [
+    "acm:Describe*",
+    "acm:Get*",
+    "acm:List*",
     "apigateway:GET",
     "cloudfront:Describe*",
     "cloudfront:Get*",
@@ -90,6 +93,9 @@ locals {
     "s3:GetLifecycleConfiguration",
     "s3:GetReplicationConfiguration",
     "s3:ListAllMyBuckets",
+    "route53:GetHostedZone",
+    "route53:ListHostedZones",
+    "route53:ListHostedZonesByName",
     "s3:ListBucket",
     "secretsmanager:Describe*",
     "secretsmanager:GetResourcePolicy",
@@ -186,4 +192,20 @@ locals {
       Resource = "*"
     },
   ]
+
+  # The existing public hosted zone of the custom domain (ADR-031). It is read, not
+  # managed here: it was created with the domain registration. The apply roles may
+  # change records in this one zone only, and only the names of their own
+  # environment: dev owns dev.<zone> and its certificate validation records; prod
+  # owns the zone apex, pass.<zone> and their validation records.
+  zone_arn = "arn:aws:route53:::hostedzone/${data.aws_route53_zone.domain.zone_id}"
+  dns_record_names = {
+    dev  = ["dev.${var.hosted_zone_name}", "_*.dev.${var.hosted_zone_name}"]
+    prod = [var.hosted_zone_name, "pass.${var.hosted_zone_name}", "_*.${var.hosted_zone_name}", "_*.pass.${var.hosted_zone_name}"]
+  }
+}
+
+data "aws_route53_zone" "domain" {
+  name         = var.hosted_zone_name
+  private_zone = false
 }

@@ -78,3 +78,14 @@ variable "monthly_budget_usd" {
     error_message = "The monthly_budget_usd value must be above 0."
   }
 }
+
+variable "hosted_zone_name" {
+  description = "Name of the existing public Route 53 hosted zone of the custom domain (ADR-031). The apply roles may change records in this zone only."
+  type        = string
+  default     = "reinvent-compass.vegas"
+
+  validation {
+    condition     = can(regex("^([a-z0-9]([a-z0-9-]*[a-z0-9])?[.])+[a-z]{2,}$", var.hosted_zone_name))
+    error_message = "The hosted_zone_name value must be a lowercase DNS name."
+  }
+}

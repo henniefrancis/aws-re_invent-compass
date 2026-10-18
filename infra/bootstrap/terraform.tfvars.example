@@ -18,15 +18,21 @@ workspace_variables = {
     event_window_start = "REPLACE_WITH_ISO_8601_START_WITH_OFFSET"
     event_window_end   = "REPLACE_WITH_ISO_8601_END_WITH_OFFSET"
     id_token_issuer    = "REPLACE_WITH_ID_TOKEN_ISSUER_URL"
+    domain_name        = "dev.reinvent-compass.vegas"
   }
   prod = {
     event_timezone     = "REPLACE_WITH_IANA_TIME_ZONE"
     event_window_start = "REPLACE_WITH_ISO_8601_START_WITH_OFFSET"
     event_window_end   = "REPLACE_WITH_ISO_8601_END_WITH_OFFSET"
     id_token_issuer    = "REPLACE_WITH_ID_TOKEN_ISSUER_URL"
+    domain_name        = "reinvent-compass.vegas"
+    extra_aliases      = "[\"pass.reinvent-compass.vegas\"]"
   }
 }
 
 # Budget alerts for the whole account. Private: never commit the real address.
 alarm_email        = "REPLACE_WITH_ALARM_EMAIL_ADDRESS"
 monthly_budget_usd = 40
+
+# The existing Route 53 hosted zone of the custom domain (public, not secret).
+hosted_zone_name = "reinvent-compass.vegas"

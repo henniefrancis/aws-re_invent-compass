@@ -19,6 +19,12 @@ locals {
           Resource = "*"
         },
         local.secret_value_deny,
+        {
+          Sid      = "ReadDnsRecordsOfTheZone"
+          Effect   = "Allow"
+          Action   = ["route53:GetChange", "route53:ListResourceRecordSets", "route53:ListTagsForResource"]
+          Resource = [local.zone_arn, "arn:aws:route53:::change/*"]
+        },
       ]
     })
   }
