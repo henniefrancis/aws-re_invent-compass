@@ -5,6 +5,8 @@
 // line or an error message. This module centralises that rule so every component can
 // build a summary that is safe to log and safe to show.
 
+import { redact as redactText } from '../redact/redact.js';
+
 /**
  * The error every S4 component raises. It carries a stable, machine-readable code and
  * a human-readable summary that has already passed through redact, so it never carries
@@ -25,88 +27,18 @@ export class PassError extends Error {
   }
 }
 
+/** The longest input the shared redactor scans (see ../redact/redact.ts). */
+export { MAX_REDACT_INPUT_LENGTH as MAX_REDACT_INPUT } from '../redact/redact.js';
+
 /**
- * A redaction placeholder written in place of a matched secret. It carries no part of
+ * Returns a string that is safe to log or to place in an error message. The rules are the
+ * project's one redactor (release gate, CTO review M1): URLs (which carry the Board_URL and
+ * the hand-off id fragment), credentials, key=value secrets, JWT shaped tokens, email
+ * addresses and long opaque tokens are replaced with a placeholder that contains no part of
  * the original value.
  */
-const REDACTED = '[redacted]';
-
-/**
- * An Authorization style bearer credential: the word Bearer followed by the token.
- */
-const BEARER_PATTERN = /\bBearer\s+\S+/gi;
-
-/**
- * A JWT shaped value: three base64url segments separated by dots. Matched before email
- * so a token is never left behind.
- */
-const JWT_PATTERN = /\b[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g;
-
-/**
- * An email address. Deliberately conservative: a local part, an at sign and a dotted
- * domain. Replaced whole so neither the local part nor the domain survives.
- */
-const EMAIL_PATTERN = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
-
-/**
- * Any http or https URL, including its path, query and fragment. This catches the
- * Board_URL (whose hand-off id lives in its URL fragment) so neither the URL nor the
- * fragment is ever logged. The match stops at whitespace.
- */
-const URL_PATTERN = /\bhttps?:\/\/[^\s]+/g;
-
-/**
- * A key=value or key: value secret: a credential-like key name followed by its value, as in
- * access_token=abc or password: hunter2. The whole pair is replaced.
- */
-const KEY_VALUE_PATTERN =
-  /\b(?:access_token|id_token|refresh_token|token|secret|password|passwd|api[_-]?key|key|signature|sig|authorization|credential)s?\s*[=:]\s*\S+/gi;
-
-/**
- * A long opaque token: a run of 22 or more base64 or base64url characters (22 is the
- * shortest base64url rendering of 128 bits), with optional padding. This catches a bare
- * hand-off id or capability and a refresh token that appears outside a URL, in either
- * base64 alphabet.
- */
-const OPAQUE_PATTERN = /(?<![A-Za-z0-9+/_-])[A-Za-z0-9+/_-]{22,}={0,2}/g;
-
-/** The longest input redact will scan. Longer text is cut (see redact) so a hostile string cannot make the patterns slow. */
-export const MAX_REDACT_INPUT = 8 * 1024;
-/** Appended where the input was cut. */
-const TRUNCATED = ' [truncated]';
-
-/**
- * Cut text to the scan limit without leaving a half token at the cut: back up to the last
- * whitespace inside the limit (when there is one) so no partial secret prefix survives.
- */
-function bounded(value: string): string {
-  if (value.length <= MAX_REDACT_INPUT) {
-    return value;
-  }
-  let end = MAX_REDACT_INPUT;
-  while (end > 0 && !/\s/.test(value.charAt(end - 1))) {
-    end -= 1;
-  }
-  return `${value.slice(0, end > 0 ? end : MAX_REDACT_INPUT)}${TRUNCATED}`;
-}
-
-/**
- * Return a string that is safe to log or to place in an error message. Every http or
- * https URL (which carries the Board_URL and the hand-off id fragment), every bearer
- * credential, every key=value secret, every JWT shaped token, every email address and
- * every long opaque token is replaced with a placeholder that contains no part of the
- * original value. The order matters: URLs are redacted first so a token or email sitting
- * inside a URL is removed with the URL, then bearer credentials, key=value pairs, JWTs,
- * emails and bare opaque tokens.
- */
 export function redact(value: string): string {
-  return bounded(value)
-    .replace(URL_PATTERN, REDACTED)
-    .replace(BEARER_PATTERN, REDACTED)
-    .replace(KEY_VALUE_PATTERN, REDACTED)
-    .replace(JWT_PATTERN, REDACTED)
-    .replace(EMAIL_PATTERN, REDACTED)
-    .replace(OPAQUE_PATTERN, REDACTED);
+  return redactText(value);
 }
 
 /**

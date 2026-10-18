@@ -50,19 +50,21 @@ describe('events-client, N4: input is cut to 8 KB before matching', () => {
   test('a longer line is truncated and marked, and the part kept is still redacted', () => {
     const { logger, lines } = capture();
     logger.addSecret('needle-in-the-head');
-    logger.info(`needle-in-the-head ${'x'.repeat(20_000)} past-the-cut`);
+    logger.info(`needle-in-the-head ${'x '.repeat(10_000)}past-the-cut`);
     const line = lines[0] ?? '';
     expect(line.startsWith('[REDACTED] ')).toBe(true);
     expect(line.endsWith('[TRUNCATED]')).toBe(true);
-    // The secret is removed from the full input first, then the line is cut to the limit.
-    expect(line.length).toBe(MAX_REDACT_INPUT_LENGTH + '[TRUNCATED]'.length);
+    // The secret is removed from the full input first, then the line is cut to the limit (a
+    // partial word at the cut is dropped, so the kept text is at most one character short).
+    expect(line.length).toBeLessThanOrEqual(MAX_REDACT_INPUT_LENGTH + '[TRUNCATED]'.length);
+    expect(line.length).toBeGreaterThanOrEqual(MAX_REDACT_INPUT_LENGTH - 1 + '[TRUNCATED]'.length);
     expect(line).not.toContain('past-the-cut');
   });
 
   test('a line of exactly the limit is not marked', () => {
     const { logger, lines } = capture();
-    logger.info('y'.repeat(MAX_REDACT_INPUT_LENGTH));
-    expect(lines[0]).toBe('y'.repeat(MAX_REDACT_INPUT_LENGTH));
+    logger.info('y '.repeat(MAX_REDACT_INPUT_LENGTH / 2));
+    expect(lines[0]).toBe('y '.repeat(MAX_REDACT_INPUT_LENGTH / 2));
     expect(MAX_REDACT_INPUT_LENGTH).toBe(8192);
   });
 

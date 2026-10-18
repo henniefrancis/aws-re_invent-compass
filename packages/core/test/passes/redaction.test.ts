@@ -23,13 +23,13 @@ describe('Feature: boarding-passes, redact removes every secret kind', () => {
     expect(out).not.toContain(SENTINEL_BOARD_URL);
     expect(out).not.toContain(SENTINEL_HANDOFF_ID);
     expect(out).not.toContain('cloudfront.net');
-    expect(out).toContain('[redacted]');
+    expect(out).toContain('[REDACTED]');
   });
 
   test('a JWT or bearer token is removed', () => {
     const out = redact(`token ${SENTINEL_JWT} attached`);
     expect(out).not.toContain(SENTINEL_JWT);
-    expect(out).toContain('[redacted]');
+    expect(out).toContain('[REDACTED]');
     expect(out.startsWith('token ')).toBe(true);
   });
 
@@ -37,28 +37,28 @@ describe('Feature: boarding-passes, redact removes every secret kind', () => {
     const out = redact(`signed in as ${SENTINEL_EMAIL} now`);
     expect(out).not.toContain(SENTINEL_EMAIL);
     expect(out).not.toContain('example.com');
-    expect(out).toContain('[redacted]');
+    expect(out).toContain('[REDACTED]');
   });
 
   test('a token sitting inside a URL is removed with the URL', () => {
     const out = redact(`https://api.awsevents.com/v1?access_token=${SENTINEL_JWT}`);
     expect(out).not.toContain(SENTINEL_JWT);
     expect(out).not.toContain('api.awsevents.com');
-    expect(out).toBe('[redacted]');
+    expect(out).toBe('[REDACTED]');
   });
 
   test('a bearer credential is removed', () => {
     const out = redact(`sent Authorization: ${SENTINEL_BEARER_HEADER} to the api`);
     expect(out).not.toContain(SENTINEL_JWT);
-    expect(out).not.toContain('Bearer');
-    expect(out).toContain('[redacted]');
+    // The scheme word stays (it names the header); the credential goes.
+    expect(out).toBe('sent Authorization: Bearer [REDACTED] to the api');
   });
 
   test('a bare hand-off id outside a URL is removed', () => {
     const out = redact(`handoff ${SENTINEL_HANDOFF_ID} and ${SENTINEL_BARE_HANDOFF} expired`);
     expect(out).not.toContain(SENTINEL_HANDOFF_ID);
     expect(out).not.toContain(SENTINEL_BARE_HANDOFF);
-    expect(out).toBe('handoff [redacted] and [redacted] expired');
+    expect(out).toBe('handoff [REDACTED] and [REDACTED] expired');
   });
 
   test('standard base64 runs, with plus, slash and padding, are removed', () => {
@@ -68,21 +68,22 @@ describe('Feature: boarding-passes, redact removes every secret kind', () => {
     expect(out).not.toContain(standard);
     expect(out).not.toContain(padded);
     expect(out).not.toContain('==');
-    expect(out).toBe('blob [redacted] and [redacted] end');
+    expect(out).toBe('blob [REDACTED] and [REDACTED] end');
   });
 
-  test('key=value and key: value secrets are removed whole', () => {
-    for (const text of [
-      'access_token=abc123',
-      'password: hunter2',
-      'api_key = k-1',
-      'Authorization: Zm9v',
-      'refresh_token=short',
-      'secret:x',
-      'sig=ab',
-    ]) {
-      const out = redact(`failed with ${text} then stopped`);
-      expect(out).toBe('failed with [redacted] then stopped');
+  test('key=value and key: value secrets lose their value and keep their key', () => {
+    for (const [text, expected] of [
+      ['access_token=abc123', 'access_token=[REDACTED]'],
+      ['password: hunter2', 'password: [REDACTED]'],
+      ['api_key = k-1', 'api_key = [REDACTED]'],
+      ['Authorization: Zm9v', 'Authorization: [REDACTED]'],
+      ['refresh_token=short', 'refresh_token=[REDACTED]'],
+      ['secret:x', 'secret:[REDACTED]'],
+      ['sig=ab', 'sig=[REDACTED]'],
+    ] as const) {
+      expect(redact(`failed with ${text} then stopped`)).toBe(
+        `failed with ${expected} then stopped`,
+      );
     }
   });
 
@@ -111,7 +112,7 @@ describe('Feature: boarding-passes, passError redacts its summary', () => {
     expect(err.code).toBe('compass.transport_failed');
     expect(err.summary).not.toContain(SENTINEL_BOARD_URL);
     expect(err.summary).not.toContain(SENTINEL_HANDOFF_ID);
-    expect(err.summary).toContain('[redacted]');
+    expect(err.summary).toContain('[REDACTED]');
   });
 
   test('the error is throwable and carries the redacted summary as its message', () => {
@@ -136,7 +137,7 @@ describe('Feature: boarding-passes, redact caps its input at 8 KB (security N6)'
   test('text at the limit is scanned whole, and the limit is 8 KB', () => {
     expect(MAX_REDACT_INPUT).toBe(8192);
     const atLimit = `${'word '.repeat(1637)}tok=${SENTINEL_JWT}`.slice(0, MAX_REDACT_INPUT);
-    expect(redact(atLimit)).not.toContain('[truncated]');
+    expect(redact(atLimit)).not.toContain('[TRUNCATED]');
   });
 
   test('longer text is cut at the last whitespace inside the limit and marked, so no half token survives', () => {
@@ -145,15 +146,15 @@ describe('Feature: boarding-passes, redact caps its input at 8 KB (security N6)'
     const straddling = `${head}${SENTINEL_JWT}${' tail'.repeat(500)}`;
     expect(straddling.length).toBeGreaterThan(MAX_REDACT_INPUT);
     const out = redact(straddling);
-    expect(out.endsWith(' [truncated]')).toBe(true);
-    expect(out.length).toBeLessThanOrEqual(MAX_REDACT_INPUT + ' [truncated]'.length);
+    expect(out.endsWith('[TRUNCATED]')).toBe(true);
+    expect(out.length).toBeLessThanOrEqual(MAX_REDACT_INPUT + '[TRUNCATED]'.length);
     expect(out).not.toContain(SENTINEL_JWT.slice(0, 10));
     expect(out).not.toContain('eyJ');
   });
 
   test('a long run with no whitespace at all is cut at the limit and its tokens are still removed', () => {
     const out = redact(`${'A1b2'.repeat(5000)}`);
-    expect(out).toBe('[redacted] [truncated]');
+    expect(out).toBe('[REDACTED][TRUNCATED]');
   });
 
   test('a huge hostile input is handled quickly', () => {

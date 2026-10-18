@@ -540,7 +540,8 @@ describe('Feature: events-client, Property 7: No secret ever appears in logs or 
   });
 
   test('the needles are live: a logger that knows nothing leaves them in the line', () => {
-    const n = makeNeedles('b'.repeat(20), 'c'.repeat(20), 'd'.repeat(20), 'someone');
+    // Short values (under 22 characters), so the opaque token rule does not apply to them.
+    const n = makeNeedles('b'.repeat(6), 'c'.repeat(6), 'd'.repeat(6), 'someone');
     const raw: string[] = [];
     const bare = createRedactingLogger({
       info: (l) => raw.push(l),
@@ -548,7 +549,7 @@ describe('Feature: events-client, Property 7: No secret ever appears in logs or 
       error: (l) => raw.push(l),
     });
     // Without registering anything, only the structural patterns act: the opaque
-    // refresh token and the plain access token are not removed by them.
+    // refresh token and the plain access token are not removed by them (they are short).
     bare.info(`x ${n.refresh} ${n.access}`);
     expect(raw[0]).toContain(n.refresh);
     expect(raw[0]).toContain(n.access);

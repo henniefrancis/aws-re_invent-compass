@@ -30,7 +30,8 @@ import { capturingLogger, fakeOAuth, fakeStore, tokenBody, type Scripted } from 
 // server, the OAuth fetch, the browser opener, the store and the clock are all fakes,
 // so nothing reaches a real port, browser, keychain or OAuth endpoint.
 
-const GOOD_CODE = 'authorization-code-value-xyz';
+// Shorter than 22 characters, so only the registered needle (not the opaque token rule) removes it.
+const GOOD_CODE = 'good-code-value-xyz';
 
 interface Rig {
   deps: SignInDeps;
