@@ -165,6 +165,8 @@ describe('the packed package (QA H2, security M1)', () => {
       },
     );
     expect(result.code).toBe(0);
-    expect(result.elapsed).toBeLessThan(6000);
+    // The hook gives up on stdin after 5 s; allow 2.5 s on top for process start-up
+    // and exit, which ran past a tighter bound under parallel CI load.
+    expect(result.elapsed).toBeLessThan(7500);
   }, 30_000);
 });

@@ -129,10 +129,13 @@ describe('Feature: foundation-contracts, CI workflows', () => {
       'npm run lint',
       'npx tsc -b',
       'npm test',
+      'npm run test:site',
+      'npm run build:site',
       'gitleaks/gitleaks-action',
       'node .github/scripts/audit-check.mjs',
       'terraform fmt -check',
-      'tflint',
+      'tflint --recursive',
+      'node --test "infra/tests/static/',
       'scan-type: fs',
       'scan-type: config',
       'action-shellcheck',
@@ -145,9 +148,11 @@ describe('Feature: foundation-contracts, CI workflows', () => {
     }
   });
 
-  test('check.yml guards Terraform and shellcheck behind a presence check', () => {
-    expect(checkYml).toMatch(/steps\.tf\.outputs\.present == 'true'/);
-    expect(checkYml).toMatch(/steps\.sh\.outputs\.present == 'true'/);
+  test('check.yml runs Terraform, the infra static tests and shellcheck unconditionally', () => {
+    // infra/ and scripts/ always exist now (S6 merged), so the early presence guards are gone.
+    expect(checkYml).not.toMatch(/outputs\.present/);
+    expect(checkYml).toMatch(/terraform -chdir=/);
+    expect(checkYml).toContain('node --test "infra/tests/static/*.test.mjs"');
   });
 
   test('dependabot.yml is monthly with an open-pull-requests-limit of 0', () => {
