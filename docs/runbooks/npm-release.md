@@ -16,12 +16,13 @@ Owner-run. The agent never publishes, tags or pushes. The package is `reinvent-c
 Do these in one commit, in this order.
 
 1. Remove `"private": true` from `packages/mcp-server/package.json`. It is there so that nothing can publish by accident; the packaging test that expects it must be updated in the same commit.
-2. Set the version in all five places together. The version test fails if any one differs:
+2. Set the version in all of these places together. The version tests fail if any one differs:
    - `packages/mcp-server/package.json`
    - `power/plugin.json`
    - `power/POWER.md`
    - `power/mcp.json`
    - the hook template
+   - every `npx --yes reinvent-compass@X` example in `packages/mcp-server/README.md` and under `power/` (the power test checks that each one equals the package version)
 3. Set `COMPASS_API_BASE_URL` in `packages/mcp-server/src/config/compass-api.ts` to the production CloudFront domain, `https://` plus the `cloudfront_domain_name` output of the prod environment, with no trailing slash. This needs the prod first apply to be finished (see `release.md`, first-time setup). While the value is the `.invalid` placeholder, a live run fails loudly, so never tag before this step.
 4. Run `npx eslint .`, `npx prettier --check .`, `npx tsc -b` and `npx vitest run --coverage`. The pack smoke test builds, packs and runs the package from the unpacked archive.
 5. Check the file list by hand once: `npm pack --dry-run --workspace packages/mcp-server`. The listing must hold only `package.json`, `README.md`, `dist/bin.js`, `dist/scan-worker.js` and the `dist/data`, `dist/sample-repo` and `dist/fixtures` folders.

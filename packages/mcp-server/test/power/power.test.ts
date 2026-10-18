@@ -397,3 +397,23 @@ describe('the whole Power folder', () => {
     expect(existsSync(join(power, 'skills', 'plan-my-week', 'SKILL.md'))).toBe(true);
   });
 });
+
+describe('every npx example names the exact package version (CTO review L9)', () => {
+  test('each reinvent-compass@ in the README and the Power matches the package version, and none is unpinned', async () => {
+    const version = await packageVersion();
+    const files = [
+      join(root, 'packages', 'mcp-server', 'README.md'),
+      ...(await walk(power)).filter((file) => file.endsWith('.md') || file.endsWith('.json')),
+    ];
+    let pinned = 0;
+    for (const file of files) {
+      const text = await readFile(file, 'utf8');
+      for (const match of text.matchAll(/reinvent-compass@([^\s"'`<]*)/g)) {
+        expect(match[1], relative(root, file)).toBe(version);
+        pinned += 1;
+      }
+      expect(text, relative(root, file)).not.toMatch(/npx(?: --yes)? reinvent-compass(?!@)/);
+    }
+    expect(pinned).toBeGreaterThanOrEqual(8);
+  });
+});

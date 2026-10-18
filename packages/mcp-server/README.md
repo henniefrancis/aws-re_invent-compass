@@ -19,7 +19,7 @@ The guardrail that checks bookings runs inside the Compass server. It runs in ev
 
 ## Install
 
-You need Node.js 24 or newer. Compass starts with `npx --yes reinvent-compass@<version>`, which downloads the package on first use.
+You need Node.js 24 or newer. Compass starts with `npx --yes reinvent-compass@0.0.0`, which downloads the package on first use.
 
 ### Kiro (the Power)
 
@@ -38,7 +38,7 @@ Without the Power, add the server to `.kiro/settings/mcp.json` (this workspace) 
   "mcpServers": {
     "compass": {
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@<version>"],
+      "args": ["--yes", "reinvent-compass@0.0.0"],
       "autoApprove": ["refresh_catalog", "find_sessions", "check_itinerary"]
     }
   }
@@ -56,7 +56,7 @@ Open the Claude menu, then Settings, then Developer, then Edit Config. The file 
   "mcpServers": {
     "compass": {
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@<version>"]
+      "args": ["--yes", "reinvent-compass@0.0.0"]
     }
   }
 }
@@ -74,7 +74,7 @@ Create `.vscode/mcp.json` in the workspace, or run MCP: Open User Configuration 
     "compass": {
       "type": "stdio",
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@<version>"]
+      "args": ["--yes", "reinvent-compass@0.0.0"]
     }
   }
 }
@@ -86,7 +86,7 @@ VS Code asks you to trust a server the first time it starts, and can ask you to 
 
 The Kiro CLI uses the same `mcpServers` JSON as the IDE; use the snippet from the Kiro section. The CLI also has `kiro-cli mcp add`, `list`, `remove`, `import` and `status` commands with a `workspace` or `global` scope. Run `kiro-cli mcp --help` for the exact options of your version. Documentation: https://kiro.dev/docs/mcp/ and https://kiro.dev/docs/reference/cli-commands/ (checked 17 October 2026).
 
-Replace `<version>` with the version you want, for example the one on the npm page. Pinning it is deliberate: see the threat model below.
+Every command here names the exact version of this package. Pinning it is deliberate: see the threat model below. Change it only to a version you have looked up on the npm page.
 
 ## The tools
 
@@ -125,7 +125,7 @@ Hooks are an extra check that only Kiro runs. The Power includes a hook template
 - Before a Compass write tool, `pre-write-guardrail` runs the same check as the server against your last read schedule and the cached catalog, and blocks the call when the guardrail blocks it. It also blocks any write through the remote `awsevents` server, so bookings go through Compass.
 - After a schedule change, `post-write-sync` reminds the agent to run `sync_passes`.
 
-The server checks every booking again, so nothing is unsafe in a client without hooks. A hook reads its input from stdin only, makes no network call and starts no other program. If it cannot judge a call, it says so and lets the call through. `npx reinvent-compass hook <name>` accepts only the names `pre-write-guardrail` and `post-write-sync`, and exits with code 0 or 2.
+The server checks every booking again, so nothing is unsafe in a client without hooks. A hook reads its input from stdin only, makes no network call and starts no other program. If it cannot judge a call, it says so and lets the call through. `npx --yes reinvent-compass@0.0.0 hook <name>` accepts only the names `pre-write-guardrail` and `post-write-sync`, and exits with code 0 or 2.
 
 ## The official AWS Events server (read only)
 
@@ -138,7 +138,7 @@ Set `COMPASS_MODE=simulated` to run the whole server on made-up data: a syntheti
 Try the whole flow in one command:
 
 ```
-npx --yes reinvent-compass@<version> demo
+npx --yes reinvent-compass@0.0.0 demo
 ```
 
 It forces simulated mode and runs ten steps through the real tools on a copy of a sample repo: sign in and load the catalog, scan the repo, plan the week, a clash that is blocked, a safe swap, reserve the session that clashed, issue passes, hand them to a phone with a QR code, cancel a session, and void its pass. It prints which step failed and exits 1 if one does. `demo --repo <folder>` scans a folder of yours instead (a copy is used, so your folder is not changed).
@@ -172,7 +172,7 @@ The score is 2 for each resource, construct or client, plus 1 for each command, 
 | Another program on your machine steals tokens                                                   | Tokens live in the OS keychain. The sign-in server binds to 127.0.0.1, takes one request and closes.                                                                                                                                                                                   |
 | A token or email ends up in a log                                                               | A redacting logger on stderr, and tests that prove no token or email reaches a log or an error.                                                                                                                                                                                        |
 | Someone books through the remote `awsevents` server and skips the guardrail                     | Do not use its write tools. The hook template blocks them in Kiro.                                                                                                                                                                                                                     |
-| The wrong program runs when you start Compass with `npx` (the local copy risk)                  | `npx` can prefer a copy of a package from the folder you are in. Pin the version (`reinvent-compass@<version>`), do not start Compass from inside a repository you do not trust, and prefer a global install of a pinned version.                                                      |
+| The wrong program runs when you start Compass with `npx` (the local copy risk)                  | `npx` can prefer a copy of a package from the folder you are in. Pin the version (`reinvent-compass@0.0.0`), do not start Compass from inside a repository you do not trust, and prefer a global install of a pinned version.                                                          |
 | Someone else publishes a package under the same npm name before the owner does (name squatting) | The owner must claim the npm package name `reinvent-compass` (and any scope used) before the first publish, and publish from the owner's account with provenance. Until the name is claimed, install only from the repository. This is an owner action, not something the code can do. |
 | A workspace edits the hook to skip the check                                                    | The hook is a convenience. The server runs the same check.                                                                                                                                                                                                                             |
 | Supply chain                                                                                    | Exact version pins in the Power and in the hook template.                                                                                                                                                                                                                              |

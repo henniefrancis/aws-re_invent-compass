@@ -30,7 +30,7 @@ This power is the same power that `plugin.json` describes. `plugin.json`, `mcp.j
 
 ## The MCP server
 
-The `compass` server starts with `npx --yes reinvent-compass@<version>`; the version is written into `mcp.json` and is the same as `plugin.json`. Do not add the write tools of the remote `awsevents` server to your agent: they skip the guardrail.
+The `compass` server starts with `npx --yes reinvent-compass@0.0.0`; the version is written into `mcp.json` and is the same as `plugin.json`. Do not add the write tools of the remote `awsevents` server to your agent: they skip the guardrail.
 
 ## Approvals
 
@@ -38,4 +38,4 @@ Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` a
 
 ## Try it without an account
 
-Run `npx --yes reinvent-compass@<version> demo` to see the whole flow on made-up data, with no network and no sign-in.
+Run `npx --yes reinvent-compass@0.0.0 demo` to see the whole flow on made-up data, with no network and no sign-in.
