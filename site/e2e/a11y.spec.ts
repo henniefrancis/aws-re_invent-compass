@@ -79,6 +79,7 @@ test.describe('axe on the demo states', () => {
   });
 
   test('a warning', async ({ page }) => {
+    test.slow(); // three axe runs; a loaded machine can pass the default 30 s
     await page.goto('/demo');
     await addButton(page, 'AIM482').click();
     await expect(page.getByRole('status')).toContainText('AIM482');
