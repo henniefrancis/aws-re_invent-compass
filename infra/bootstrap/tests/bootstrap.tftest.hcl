@@ -245,6 +245,14 @@ run "apply_role_scoping" {
   }
 
   assert {
+    condition = anytrue([
+      for s in jsondecode(aws_iam_policy.apply["dev-edge"].policy).Statement :
+      s.Sid == "CreateDistribution" && toset(s.Action) == toset(["cloudfront:CreateDistribution", "cloudfront:TagResource"]) && s.Resource == "arn:aws:cloudfront::aws:distribution/*" && s.Condition.StringEquals["aws:RequestTag/environment"] == "dev"
+    ]) && !strcontains(aws_iam_policy.apply["dev-edge"].policy, "CreateDistributionWithTags")
+    error_message = "Creating a distribution needs the IAM action cloudfront:CreateDistribution, scoped to distributions and the environment request tag."
+  }
+
+  assert {
     condition = alltrue([
       for k, p in aws_iam_policy.apply : !anytrue([
         for s in jsondecode(p.policy).Statement :

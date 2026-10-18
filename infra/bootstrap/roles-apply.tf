@@ -330,10 +330,13 @@ locals {
         Resource = "arn:aws:route53:::change/*"
       },
       {
+        # The CreateDistributionWithTags API is authorized as the IAM actions
+        # cloudfront:CreateDistribution and cloudfront:TagResource; it is not an
+        # IAM action of its own (first dev apply).
         Sid       = "CreateDistribution"
         Effect    = "Allow"
-        Action    = ["cloudfront:CreateDistributionWithTags", "cloudfront:TagResource"]
-        Resource  = "*"
+        Action    = ["cloudfront:CreateDistribution", "cloudfront:TagResource"]
+        Resource  = local.name_scope[e].cf_distribution_arns
         Condition = local.tag_on_create[e]
       },
       {
