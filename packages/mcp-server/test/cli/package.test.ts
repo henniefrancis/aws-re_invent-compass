@@ -21,7 +21,10 @@ describe('the package manifest and the entry file', () => {
       'dist/fixtures',
       'README.md',
     ]);
-    expect(manifest.scripts).toEqual({ build: 'node scripts/build.mjs' });
+    expect(manifest.scripts).toEqual({
+      build: 'node scripts/build.mjs',
+      prepack: 'node scripts/build.mjs',
+    });
     expect(manifest.dependencies).toEqual({ '@napi-rs/keyring': '2.1.1' });
     expect(Object.keys(manifest.devDependencies as object).sort()).toEqual([
       '@compass/contracts',

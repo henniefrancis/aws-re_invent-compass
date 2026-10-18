@@ -18,7 +18,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "prepack": "node scripts/build.mjs"
   },
   "dependencies": {
     "@napi-rs/keyring": "2.1.1"

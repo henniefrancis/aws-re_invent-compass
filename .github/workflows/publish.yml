@@ -46,11 +46,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc -b
+
       - name: Test with coverage
         run: npm test
 
-      - name: Build
-        run: npm run build --if-present
+      - name: Tag matches the package version
+        run: node -e "const v=require('./packages/mcp-server/package.json').version; if (process.env.GITHUB_REF_NAME !== 'v' + v) { console.error('tag ' + process.env.GITHUB_REF_NAME + ' does not match version ' + v); process.exit(1); }"
+
+      - name: Build the workspace
+        run: npm run build
+
+      - name: Build the package
+        run: npm run build --workspace packages/mcp-server
+
+      - name: Check the packed file list
+        run: |
+          npm pack --dry-run --json --workspace packages/mcp-server > pack.json
+          node packages/mcp-server/scripts/check-pack.mjs pack.json
 
       - name: Publish with provenance
         run: npm publish --provenance --access public --workspace packages/mcp-server
