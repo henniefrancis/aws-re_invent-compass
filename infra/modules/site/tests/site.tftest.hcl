@@ -44,6 +44,19 @@ run "bucket_hardening" {
   }
 }
 
+run "force_destroy_is_a_teardown_switch" {
+  command = plan
+
+  variables {
+    force_destroy = true
+  }
+
+  assert {
+    condition     = aws_s3_bucket.this.force_destroy
+    error_message = "The teardown runbook must be able to let Terraform empty the bucket."
+  }
+}
+
 run "origin_access_control" {
   command = plan
 

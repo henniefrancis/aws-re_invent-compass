@@ -6,6 +6,8 @@ resource "aws_secretsmanager_secret" "apple_pass" {
   name        = "${local.secret_prefix}/apple-pass"
   description = "Apple Pass Type ID certificate and key, loaded by the owner out of band."
 
+  recovery_window_in_days = var.recovery_window_in_days
+
   lifecycle {
     prevent_destroy = true
   }
@@ -14,6 +16,8 @@ resource "aws_secretsmanager_secret" "apple_pass" {
 resource "aws_secretsmanager_secret" "google_wallet" {
   name        = "${local.secret_prefix}/google-wallet"
   description = "Google Wallet service account key, loaded by the owner out of band."
+
+  recovery_window_in_days = var.recovery_window_in_days
 
   lifecycle {
     prevent_destroy = true
@@ -26,6 +30,8 @@ resource "aws_secretsmanager_secret" "app" {
   name        = "${local.secret_prefix}/app"
   description = "Application pepper, generated and loaded by the owner script."
 
+  recovery_window_in_days = var.recovery_window_in_days
+
   lifecycle {
     prevent_destroy = true
   }
@@ -37,6 +43,8 @@ resource "aws_secretsmanager_secret" "app" {
 resource "aws_secretsmanager_secret" "origin_verify" {
   name        = "${local.secret_prefix}/origin-verify"
   description = "Origin-verify value that CloudFront sends to the API, loaded by the owner script."
+
+  recovery_window_in_days = var.recovery_window_in_days
 
   lifecycle {
     prevent_destroy = true

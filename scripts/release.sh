@@ -39,7 +39,6 @@ ALLOWED_TYPES=(
   aws_api_gateway_stage
   aws_api_gateway_usage_plan
   aws_api_gateway_usage_plan_key
-  aws_budgets_budget
   aws_cloudfront_distribution
   aws_cloudfront_function
   aws_cloudfront_origin_access_control
@@ -166,6 +165,10 @@ cd "${env_dir}"
 terraform init -input=false || fail "terraform init failed"
 
 echo "planning ${env_name}"
+# The saved plan file is written to infra/envs/<env>/tfplan. It is git-ignored,
+# excluded from the HCP upload, and removed again when the script ends, whatever
+# the outcome.
+trap 'rm -f "${env_dir}/tfplan"' EXIT
 terraform plan -input=false -out=tfplan -var "service_version=${service_version}" || fail "terraform plan failed"
 
 plan_json="$(terraform show -json tfplan)" || fail "could not read the saved plan"

@@ -3,7 +3,7 @@
 # the live site down.
 resource "aws_s3_bucket" "this" {
   bucket_prefix = var.bucket_name_prefix
-  force_destroy = false
+  force_destroy = var.force_destroy
 
   lifecycle {
     prevent_destroy = true

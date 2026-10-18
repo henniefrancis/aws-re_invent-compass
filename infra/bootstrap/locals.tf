@@ -69,8 +69,6 @@ locals {
     "cloudwatch:Describe*",
     "cloudwatch:Get*",
     "cloudwatch:List*",
-    "budgets:Describe*",
-    "budgets:View*",
     "dynamodb:Describe*",
     "dynamodb:List*",
     "iam:GetRole",

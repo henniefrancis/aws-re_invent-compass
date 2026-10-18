@@ -8,6 +8,12 @@ variable "env" {
   }
 }
 
+variable "deletion_protection" {
+  description = "DynamoDB deletion protection. Keep true; switch it off only in the teardown runbook before destroying an environment."
+  type        = bool
+  default     = true
+}
+
 variable "table_name" {
   description = "DynamoDB table name. Null selects the default compass-<env>."
   type        = string

@@ -200,3 +200,27 @@ variable "passkit_reserved_concurrency" {
   type        = number
   default     = 10
 }
+
+variable "handoff_calendar_enabled" {
+  description = "Switch for the hand-off calendar download. See docs/runbooks/alarms.md."
+  type        = bool
+  default     = true
+}
+
+variable "table_deletion_protection" {
+  description = "DynamoDB deletion protection. Keep true; only docs/runbooks/teardown.md sets it false."
+  type        = bool
+  default     = true
+}
+
+variable "site_force_destroy" {
+  description = "Let Terraform empty and delete the site bucket. Keep false; only docs/runbooks/teardown.md sets it true."
+  type        = bool
+  default     = false
+}
+
+variable "secret_recovery_window_days" {
+  description = "Recovery window of the secrets after deletion. Keep 30; only docs/runbooks/teardown.md sets 0."
+  type        = number
+  default     = 30
+}

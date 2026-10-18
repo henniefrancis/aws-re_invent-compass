@@ -2,7 +2,8 @@
 # prevent_destroy plus deletion protection. Point-in-time recovery is off by
 # owner decision (see below).
 #
-# The global secondary indexes use the stable hash_key and range_key arguments,
+# The one global secondary index (GSI2, subHash to passes) uses the stable
+# hash_key and range_key arguments,
 # not the key_schema block. In AWS provider 6.x key_schema currently forces GSI
 # replacement on every plan (provider issues 46335 and 46601), which is
 # unacceptable on a retained table. The deprecation warning is accepted.
@@ -12,7 +13,10 @@ resource "aws_dynamodb_table" "this" {
   hash_key     = "pk"
   range_key    = "sk"
 
-  deletion_protection_enabled = true
+  # On by default. Only the teardown runbook switches it off, in a workspace
+  # variable, before a Terraform destroy of a dev environment.
+  deletion_protection_enabled = var.deletion_protection
+
 
   attribute {
     name = "pk"
@@ -21,16 +25,6 @@ resource "aws_dynamodb_table" "this" {
 
   attribute {
     name = "sk"
-    type = "S"
-  }
-
-  attribute {
-    name = "gsi1pk"
-    type = "S"
-  }
-
-  attribute {
-    name = "gsi1sk"
     type = "S"
   }
 
@@ -61,13 +55,6 @@ resource "aws_dynamodb_table" "this" {
   # material, only hashes and opaque identifiers.
   server_side_encryption {
     enabled = true
-  }
-
-  global_secondary_index {
-    name            = "GSI1"
-    hash_key        = "gsi1pk"
-    range_key       = "gsi1sk"
-    projection_type = "ALL"
   }
 
   global_secondary_index {

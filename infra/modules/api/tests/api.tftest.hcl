@@ -243,7 +243,7 @@ run "lambda_environment_matches_the_pass_service" {
 
   assert {
     condition = alltrue([
-      for k in ["TABLE_NAME", "APP_SECRET_ID", "ORIGIN_VERIFY_SECRET_ID", "APPLE_SECRET_ID", "GOOGLE_SECRET_ID", "EVENT_TIMEZONE", "EVENT_WINDOW_START", "EVENT_WINDOW_END", "ID_TOKEN_VERIFIER", "ID_TOKEN_ISSUER", "APNS_ENABLED", "GOOGLE_WALLET_ENABLED", "GOOGLE_WALLET_CLASS_SUFFIX", "SERVICE_VERSION"] :
+      for k in ["TABLE_NAME", "APP_SECRET_ID", "ORIGIN_VERIFY_SECRET_ID", "APPLE_SECRET_ID", "GOOGLE_SECRET_ID", "EVENT_TIMEZONE", "EVENT_WINDOW_START", "EVENT_WINDOW_END", "ID_TOKEN_VERIFIER", "ID_TOKEN_ISSUER", "APNS_ENABLED", "GOOGLE_WALLET_ENABLED", "GOOGLE_WALLET_CLASS_SUFFIX", "HANDOFF_CALENDAR_ENABLED", "SERVICE_VERSION"] :
       contains(keys(one(aws_lambda_function.api.environment).variables), k)
     ])
     error_message = "The api Lambda must receive the variables the pass-service reads."

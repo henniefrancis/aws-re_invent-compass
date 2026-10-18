@@ -56,3 +56,25 @@ variable "workspace_variables" {
     error_message = "alarm_email, origin_verify_value and api_key_value are sensitive and must not be set through Terraform."
   }
 }
+
+variable "alarm_email" {
+  description = "Address that receives the account budget alerts. Private: set it in the git-ignored terraform.tfvars."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = can(regex("^[^@\\s]+@[^@\\s]+[.][^@\\s]+$", var.alarm_email))
+    error_message = "The alarm_email value must be an email address."
+  }
+}
+
+variable "monthly_budget_usd" {
+  description = "Monthly cost budget for the whole account, in USD. Dev and prod together cost about USD 33 a month, so the default leaves headroom; alerts fire at 50, 80 and 100 percent of actual spend."
+  type        = number
+  default     = 40
+
+  validation {
+    condition     = var.monthly_budget_usd > 0
+    error_message = "The monthly_budget_usd value must be above 0."
+  }
+}

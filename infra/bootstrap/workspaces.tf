@@ -25,6 +25,10 @@ resource "tfe_workspace" "env" {
 
   working_directory = "envs/${each.key}"
 
+  # Pinned to the 1.15 series the configuration requires; the HCP runners use no
+  # other version.
+  terraform_version = "~> 1.15.0"
+
   # CLI-driven only: no VCS connection, no auto-apply, no speculative plans (so a
   # fork cannot start a plan), no queued runs on creation, no health assessments.
   auto_apply          = false

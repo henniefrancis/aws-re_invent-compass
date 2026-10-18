@@ -4,14 +4,16 @@
 module "secrets" {
   source = "../../modules/secrets"
 
-  env = var.env
+  env                     = var.env
+  recovery_window_in_days = var.secret_recovery_window_days
 }
 
 module "data" {
   source = "../../modules/data"
 
-  env        = var.env
-  table_name = var.table_name
+  env                 = var.env
+  table_name          = var.table_name
+  deletion_protection = var.table_deletion_protection
 }
 
 module "api" {
@@ -49,6 +51,7 @@ module "api" {
   apns_enabled               = var.apns_enabled
   apns_push_type             = var.apns_push_type
   google_wallet_enabled      = var.google_wallet_enabled
+  handoff_calendar_enabled   = var.handoff_calendar_enabled
   google_wallet_class_suffix = local.google_wallet_class_suffix
 }
 
@@ -56,6 +59,7 @@ module "site" {
   source = "../../modules/site"
 
   bucket_name_prefix = local.site_bucket_name_prefix
+  force_destroy      = var.site_force_destroy
   distribution_arn   = module.edge.distribution_arn
 }
 

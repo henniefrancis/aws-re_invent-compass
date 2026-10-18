@@ -37,6 +37,38 @@ run "origin_verify_has_its_own_container" {
   }
 }
 
+run "recovery_window_defaults_to_30_and_can_be_zero" {
+  command = plan
+
+  assert {
+    condition     = aws_secretsmanager_secret.app.recovery_window_in_days == 30
+    error_message = "The recovery window must default to 30 days."
+  }
+}
+
+run "recovery_window_zero_for_teardown" {
+  command = plan
+
+  variables {
+    recovery_window_in_days = 0
+  }
+
+  assert {
+    condition     = aws_secretsmanager_secret.origin_verify.recovery_window_in_days == 0
+    error_message = "The teardown runbook must be able to delete secrets at once."
+  }
+}
+
+run "recovery_window_out_of_range_is_rejected" {
+  command = plan
+
+  variables {
+    recovery_window_in_days = 3
+  }
+
+  expect_failures = [var.recovery_window_in_days]
+}
+
 run "prod_names" {
   command = plan
 
