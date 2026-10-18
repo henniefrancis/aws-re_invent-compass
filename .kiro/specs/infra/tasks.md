@@ -288,8 +288,8 @@ The build order lays the shared foundation first (version pins, provider, tags, 
 - [x] 17. Final checkpoint - full quality gate
   - Ensure all native tests pass under `mock_provider`/`command = plan`, `terraform fmt -check`, `terraform validate` (`init -backend=false`), `tflint`, and a Trivy config scan report no HIGH or CRITICAL findings (with only the documented AVD-AWS-0132 site-bucket suppression), and `shellcheck` is clean. Ask the user if questions arise.
 
-- [ ] 18. Save terminal captures for the Builder Center post
-  - [ ] 18.1 Capture and save two or three passing-check terminal captures
+- [x] 18. Save terminal captures for the Builder Center post
+  - [x] 18.1 Capture and save two or three passing-check terminal captures
     - Save two or three terminal captures to `docs/article/screenshots/infra/`: a passing `terraform test` run (mock providers) and the static checks (`terraform fmt -check`, `terraform validate`, `tflint`, Trivy, `shellcheck`). Redact any account ID, org, workspace, email, or ARN from the captures before saving
     - Commit the captures with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 17.2, 17.6_

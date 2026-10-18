@@ -479,11 +479,11 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Ensure all tests pass with 100% lines, branches, functions and statements for S3-owned code with only `packages/mcp-server/src/bin.ts` excluded, lint, format, typecheck and `npm run check:dash` clean, ask the user if questions arise.
   - _Requirements: 25.5, 25.6, 25.9_
 
-- [ ] 31. Capture feature screenshots for the Builder Center post
-  - [ ] 31.1 Save two or three captures of the feature working in simulated mode
+- [x] 31. Capture feature screenshots for the Builder Center post
+  - [x] 31.1 Save two or three captures of the feature working in simulated mode
     - Run `npx reinvent-compass demo` (or the built CLI) with `COMPASS_MODE=simulated` and save two or three screenshots or short terminal captures to `docs/article/screenshots/compass-power/`, for example the scan and plan summary, the blocked clash with its safe swap, and the QR hand-off; make sure no real name, email or token appears
     - _Requirements: 25.8_
-  - [ ] 31.2 Commit
+  - [x] 31.2 Commit
     - After `npx eslint .` and `npx prettier --check .` both pass with zero errors, commit the captures with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 ## Notes

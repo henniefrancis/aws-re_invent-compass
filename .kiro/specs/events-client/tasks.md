@@ -394,12 +394,12 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - Ensure all tests pass with 100% lines, branches, functions and statements for S1-owned code and zero named exclusions, lint, format and typecheck clean, ask the user if questions arise.
   - _Requirements: 21.1_
 
-- [ ] 20. Capture feature screenshots for the Builder Center post
-  - [ ] 20.1 Save two or three captures of the feature working in simulated mode
+- [x] 20. Capture feature screenshots for the Builder Center post
+  - [x] 20.1 Save two or three captures of the feature working in simulated mode
     - Run the client in `COMPASS_MODE=simulated` and save two or three screenshots or short terminal captures showing the feature working (for example sign-in presentation, a catalog read and a confirmed write) to `docs/article/screenshots/events-client/`
     - _Requirements: 21.1_
 
-  - [ ] 20.2 Commit
+  - [x] 20.2 Commit
     - After `npx eslint .` and `npx prettier --check .` both pass with zero errors, commit the captures with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
 ## Notes

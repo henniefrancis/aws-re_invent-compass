@@ -186,10 +186,10 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Run `npm test` for `packages/core` with v8 coverage and confirm one hundred percent lines, branches, functions and statements for the owned code with named exclusions only (Requirement 9.6); only after it passes, make one local commit with multiple `-m` flags scoped `boarding-passes`. Never push, never open a PR, never tag.
     - Example: `git commit -m "feat(boarding-passes): add offline Itinerary_Page and close coverage" -m "Self-contained accessible HTML with inlined CSS, no script and no network; adds the sentinel-secret harness and reaches full owned-code coverage."`
 
-- [ ] 10. Capture feature screenshots or terminal captures for the Builder Center post
+- [x] 10. Capture feature screenshots or terminal captures for the Builder Center post
   - Produce two or three screenshots or short terminal captures of the feature working (for example the terminal QR render, the rendered itinerary page, and a sync run), and save them to `docs/article/screenshots/boarding-passes/`. This folder is outside the passes source fence and is a docs artifact task; it writes no source or test code.
   - _Requirements: 9.1_
-  - [ ] 10.1 Run the capture-producing tests, then commit the captures locally
+  - [x] 10.1 Run the capture-producing tests, then commit the captures locally
     - Re-run the relevant snapshot or render tests to generate the output shown in the captures; only after they pass, make one local commit with multiple `-m` flags scoped `boarding-passes` that stages the files under `docs/article/screenshots/boarding-passes/`. Never push, never open a PR, never tag.
     - Example: `git commit -m "docs(boarding-passes): add feature screenshots for the Builder Center post" -m "Capture the terminal QR hand-off, the offline itinerary page and a sync run for the article."`
 

@@ -359,12 +359,12 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - Ensure all tests pass with 100% lines, branches, functions and statements for Site_Logic and no named exclusion; lint, format, dash check and the Angular build clean; both build checks pass; ask the user if questions arise.
   - _Requirements: 22.1, 22.2_
 
-- [ ] 18. Capture feature screenshots for the Builder Center post
-  - [ ] 18.1 Save two or three screenshots of the site working
+- [x] 18. Capture feature screenshots for the Builder Center post
+  - [x] 18.1 Save two or three screenshots of the site working
     - From the Static_Server build, capture: the Home_Page on Desktop Chrome; the blocked clash with its reasons in the Demo_Page on the iPhone portrait profile; and the Board_Page Ready state with mocked fixture data on the iPhone portrait profile. Save them to `docs/article/screenshots/showcase-site/` as PNG files with descriptive kebab-case names. Show only made-up data and the fixture id; no real attendee data
     - _Requirements: 23.5_
 
-  - [ ] 18.2 Commit
+  - [x] 18.2 Commit
     - After `npx eslint .`, `npx prettier --check .` and `npm run check:dash` pass with zero errors, commit the screenshots with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
 ## Notes

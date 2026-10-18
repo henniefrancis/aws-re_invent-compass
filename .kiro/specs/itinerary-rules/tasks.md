@@ -237,11 +237,11 @@ Shared types `Verdict`, `Venue`, `NormalisedSession`, and `Commitment` are impor
 - [x] 17. Final checkpoint - full suite, coverage, and dash gate
   - Ensure all tests pass, confirm 100 percent coverage over owned files with only the permitted generated-type exclusions, and confirm the no-dash and self-made-data gates hold. Ask the user if questions arise.
 
-- [ ] 18. Capture proof-of-working screenshots or terminal captures
-  - [ ] 18.1 Save two or three screenshots or short terminal captures of the rules working to `docs/article/screenshots/itinerary-rules/`
+- [x] 18. Capture proof-of-working screenshots or terminal captures
+  - [x] 18.1 Save two or three screenshots or short terminal captures of the rules working to `docs/article/screenshots/itinerary-rules/`
     - Capture representative output, for example a blocked clash verdict with its reasons, a tight connection warning, and the passing test run with coverage; use only self-made sample data, never real attendee data
     - _Requirements: definition of done item 5 (workflow.md)_
-  - [ ] 18.2 Commit the screenshots
+  - [x] 18.2 Commit the screenshots
     - Commit locally with scope `itinerary-rules`, subject and body via separate `-m` flags, no commit message file, no push
 
 ## Notes

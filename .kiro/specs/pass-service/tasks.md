@@ -514,12 +514,12 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Ensure all tests pass with 100% lines, branches, functions and statements for `packages/pass-service/src/**` (only `src/lambda-entry/*.ts` excluded), lint, format and typecheck clean, the build produces both zips under 5 MB, ask the user if questions arise.
   - _Requirements: 1.5, 25.1, 25.2_
 
-- [ ] 30. Capture feature screenshots for the Builder Center post
-  - [ ] 30.1 Save two or three captures of the feature working
+- [x] 30. Capture feature screenshots for the Builder Center post
+  - [x] 30.1 Save two or three captures of the feature working
     - Save two or three screenshots or short terminal captures to `docs/article/screenshots/pass-service/`, for example the contract and security suites passing, the build printing both bundle sizes and hashes, and the local harness log for an issue, register, update and void round trip with made-up sessions; if the owner provides SP3 or SP4 phone screenshots, add them only after checking they show no serial, device identifier, token or name
     - _Requirements: 26.2_
 
-  - [ ] 30.2 Commit
+  - [x] 30.2 Commit
     - After `npx eslint .` and `npx prettier --check .` both pass with zero errors, commit the captures with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 ## Notes
