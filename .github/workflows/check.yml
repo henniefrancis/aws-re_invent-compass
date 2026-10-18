@@ -167,3 +167,6 @@ jobs:
 
       - name: Shellcheck
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
+        with:
+          # Only the project's own scripts; third-party scripts in node_modules are not ours.
+          scandir: ./scripts
