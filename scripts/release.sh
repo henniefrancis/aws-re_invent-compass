@@ -222,6 +222,11 @@ to_change="$(plan_jq '[.resource_changes[]? | select(.change.actions == ["update
 to_destroy="$(plan_jq '[.resource_changes[]? | select(.change.actions | index("delete"))] | length')"
 echo "plan for ${env_name}: ${to_add} to add or replace, ${to_change} to change, ${to_destroy} to destroy"
 
+# HCP Terraform refuses to apply a saved plan with no changes ("Saved plan has
+# no changes"), so an empty plan skips the apply and still syncs the site,
+# invalidates the cache and checks health. Pending output changes count too.
+pending_changes="$(plan_jq '[(.resource_changes[]? | select(.mode == "managed") | select(.change.actions != ["no-op"])), ((.output_changes // {}) | to_entries[] | select(.value.actions != ["no-op"]))] | length')"
+
 # ---- typed confirmation -----------------------------------------------------
 
 expected_answer="yes"
@@ -238,7 +243,11 @@ fi
 
 # ---- apply, sync, invalidate ------------------------------------------------
 
-terraform apply -input=false tfplan || fail "terraform apply failed"
+if [ "${pending_changes}" = "0" ]; then
+  echo "no infrastructure changes: skipping terraform apply"
+else
+  terraform apply -input=false tfplan || fail "terraform apply failed"
+fi
 
 cloudfront_domain="$(terraform output -raw cloudfront_domain_name)" || fail "could not read the CloudFront domain output"
 distribution_id="$(terraform output -raw distribution_id)" || fail "could not read the distribution output"

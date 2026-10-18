@@ -57,7 +57,7 @@ Run these once per environment, in order. They are the owner-only checks that no
 4. Runs `terraform init` and `terraform plan -out` in `infra/envs/<env>`.
 5. Refuses the plan, prints the affected addresses or types and exits non-zero if it would destroy or replace a retained resource, or touches a resource type outside the allow list.
 6. Prints the plan counts and waits for you to type `yes` (dev) or `prod` (prod). Anything else exits without applying. The saved plan file `tfplan` is written to `infra/envs/<env>` (it is git-ignored and excluded from the HCP upload) and the script removes it when it ends, whatever the outcome; the plan JSON that the refusal checks read is held in memory only and never written to disk.
-7. Applies the saved plan, syncs the site to the site bucket, and invalidates the CloudFront cache. A failure in any of these exits non-zero.
+7. Applies the saved plan, syncs the site to the site bucket, and invalidates the CloudFront cache. A failure in any of these exits non-zero. An empty plan skips the apply (HCP Terraform refuses to apply a saved plan with no changes) and still asks for the typed word, syncs, invalidates and checks health. The `service_version` variable comes from `git describe`, so after a new commit the api Lambda shows one in-place update; the zero-diff check is only meaningful with no commit in between.
 8. Calls `GET /api/v1/health` through CloudFront, retrying while the distribution settles. Only HTTP 200 is success.
 
 ## Expected success outcome
