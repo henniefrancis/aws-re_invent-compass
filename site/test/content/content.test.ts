@@ -24,6 +24,7 @@ import {
   NAV_ITEMS,
   SITE_LINKS,
   footerItems,
+  privateReportingUrl,
   type SiteLinks,
 } from '../../src/lib/content/links';
 import { METAPHOR_HEADERS, METAPHOR_ROWS } from '../../src/lib/content/metaphor';
@@ -201,6 +202,26 @@ describe('no impersonation and the product voice', () => {
     expect(text).toContain('session ends plus 24 hours');
     expect(text).toContain('No wallet allows a pass to be deleted remotely');
   });
+
+  test('the privacy page states the release-gate items (TAM B6) from the build plan', () => {
+    const byId = new Map(privacyBlocks().map((b) => [b.id, b]));
+    // forget_me no longer claims to delete the counters, and says why they stay.
+    expect(byId.get('privacy-forget-me')?.text).not.toContain('counters');
+    expect(byId.get('privacy-rate-counters')?.text).toContain(
+      'does not delete the server rate counters',
+    );
+    expect(byId.get('privacy-rate-counters')?.text).toContain('window ends plus 2 minutes');
+    expect(byId.get('privacy-processing-region')?.text).toContain('us-east-1');
+    expect(byId.get('privacy-processors')?.text).toContain('Apple');
+    expect(byId.get('privacy-processors')?.text).toContain('Google');
+    expect(byId.get('privacy-contact')?.text).toContain('private vulnerability reporting');
+    expect(byId.get('privacy-rights')?.text).toContain('POPIA');
+    expect(
+      privacyBlocks()
+        .map((b) => b.id)
+        .filter((id) => id.startsWith('privacy-')),
+    ).toEqual([...new Set(privacyBlocks().map((b) => b.id))]);
+  });
 });
 
 describe('links and footer', () => {
@@ -209,6 +230,12 @@ describe('links and footer', () => {
     builderCenterPost: 'https://example.invalid/post',
     video: 'https://example.invalid/video',
   };
+
+  test('the data request link is the private reporting form of the repository', () => {
+    expect(privateReportingUrl(SITE_LINKS)).toBe(
+      `${SITE_LINKS.repository}/security/advisories/new`,
+    );
+  });
 
   test('the footer keeps a fixed order', () => {
     expect(footerItems(SITE_LINKS).map((i) => i.label)).toEqual([

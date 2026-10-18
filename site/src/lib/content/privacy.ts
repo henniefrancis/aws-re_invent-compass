@@ -9,7 +9,7 @@ const PRODUCT = '.kiro/steering/product.md';
 const SITE = '.kiro/specs/showcase-site/requirements.md';
 
 export interface PrivacySection {
-  readonly id: 'stays' | 'leaves' | 'handoff' | 'site' | 'party';
+  readonly id: 'stays' | 'leaves' | 'handoff' | 'site' | 'rights' | 'party';
   readonly heading: string;
   readonly items: readonly ContentBlock[];
 }
@@ -98,6 +98,18 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         PLAN,
         '4.2 (P15)',
       ),
+      summary(
+        'privacy-processing-region',
+        'The Compass server runs in the AWS us-east-1 Region, in the AWS account of the owner.',
+        PLAN,
+        '1 and 7',
+      ),
+      summary(
+        'privacy-processors',
+        'When you add a pass to a wallet, Apple (the push token) and Google (the pass object) also process data. Google acts as a processor.',
+        PLAN,
+        '4.2 (P15, P16)',
+      ),
       quoted('privacy-no-human', 'No human reads server data in normal operation.', PLAN, '4.2'),
     ],
   },
@@ -119,9 +131,15 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-forget-me',
-        'forget_me voids every pass for you and deletes your pass records, device registrations, hand-offs and counters on the server. The local forget_me also deletes your schedule snapshot, your issued-pass record and the generated files on your computer.',
+        'forget_me voids every pass for you and deletes your pass records, device registrations and hand-offs on the server. The local forget_me also deletes your schedule snapshot, your issued-pass record and the generated files on your computer.',
         PLAN,
         '4.2 (DELETE /api/v1/me)',
+      ),
+      summary(
+        'privacy-rate-counters',
+        'forget_me does not delete the server rate counters, which are tied to a one-way hash of your sign-in identifier, so that it cannot reset the limits. They are deleted when their one-hour window ends plus 2 minutes.',
+        PLAN,
+        '4.2 (P13, DELETE /api/v1/me)',
       ),
       quoted(
         'privacy-no-remote-delete',
@@ -170,6 +188,24 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         'The responsible party is Hennie Francis, acting personally.',
         PLAN,
         '4.2',
+      ),
+    ],
+  },
+  {
+    id: 'rights',
+    heading: 'Your rights and how to ask',
+    items: [
+      summary(
+        'privacy-rights',
+        'forget_me is how you use your POPIA rights for the data Compass keeps on the server.',
+        PLAN,
+        '4.2 (DELETE /api/v1/me)',
+      ),
+      summary(
+        'privacy-contact',
+        'To ask about your data, use private vulnerability reporting on the project repository on GitHub.',
+        PLAN,
+        '14 (O4)',
       ),
     ],
   },

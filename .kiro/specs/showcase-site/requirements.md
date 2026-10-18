@@ -249,10 +249,13 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 
 1. THE Privacy_Page SHALL explain in plain words, from build plan section 4.2 and the product principles, what stays on the attendee's machine: the access and refresh tokens, the catalog cache, the schedule snapshot, the issued-pass record, the week spec, the code scan and the generated files.
 2. THE Privacy_Page SHALL explain what leaves the machine: the ID token, sent only to the Compass API as proof of sign-in and never stored there; the printable pass fields, kept until session end plus 24 hours; the attendee name, only when the attendee opts in; Apple device push tokens, kept until the device unregisters or the pass record expires; and pass objects held by Google for Google Wallet passes.
-3. THE Privacy_Page SHALL explain that hand-offs expire in 15 minutes, that the hand-off link lives in the URL fragment, and that `forget_me` deletes the attendee's server data and local files.
+3. THE Privacy_Page SHALL explain that hand-offs expire in 15 minutes, that the hand-off link lives in the URL fragment, and that `forget_me` deletes the attendee's pass records, device registrations and hand-offs on the server and the local files, but NOT the server rate counters, which expire when their one-hour window ends plus 2 minutes (build plan 4.2, P13).
 4. THE Privacy_Page SHALL explain what this Site does: no sign-in, no cookies, no analytics, no third-party requests, a demo that runs in the browser on made-up sessions, and a Board_Page that keeps the hand-off link in page memory only.
 5. THE Privacy_Page SHALL name the responsible party as given in build plan section 4.2.
 6. THE Privacy_Page SHALL state that no wallet lets a pass be deleted remotely: a cancelled session's pass is voided, and every pass expires at its session end.
+7. THE Privacy_Page SHALL state that the Compass server runs in the AWS us-east-1 Region and that Apple and Google also process data when the attendee adds a pass to a wallet (build plan 1, 7 and 4.2, P15 and P16).
+8. THE Privacy_Page SHALL name a contact channel for requests about the attendee's data: private vulnerability reporting on the project repository, linked from the repository address in the links file, with no personal email address.
+9. THE Privacy_Page SHALL NOT state anything about the Information Regulator or the country of the server until a source document states it (see the integrator requests of the release-gate round).
 
 ### Requirement 16: Hand-off fragment handling on the board page
 
