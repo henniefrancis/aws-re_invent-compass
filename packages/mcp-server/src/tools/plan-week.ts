@@ -38,6 +38,12 @@ import {
 export const DEFAULT_MAX_PER_DAY = 4;
 const MAX_PER_DAY_LIMIT = 8;
 
+/** The most goals accepted (security L6). */
+export const MAX_GOALS = 20;
+
+/** The session levels a plan can be tuned to (QA low: level is validated). */
+const LEVELS: ReadonlySet<string> = new Set(['100', '200', '300', '400']);
+
 /** The reason shown with the gitignore offer. */
 export const GITIGNORE_REASON =
   'If this repository is public, the plan would publish where you will be and when.';
@@ -184,6 +190,12 @@ export async function planWeekTool(
   const maxPerDay = input.maxPerDay ?? DEFAULT_MAX_PER_DAY;
   if (!Number.isInteger(maxPerDay) || maxPerDay < 1 || maxPerDay > MAX_PER_DAY_LIMIT) {
     throw new CompassError('MaxPerDayRange');
+  }
+  if ((input.goals ?? []).length > MAX_GOALS) {
+    throw new CompassError('InputTooLarge');
+  }
+  if (input.level !== undefined && !LEVELS.has(input.level.trim())) {
+    throw new CompassError('LevelInvalid');
   }
   await ensureSignedIn(ctx);
   const { runtime, state } = ctx;

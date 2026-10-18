@@ -27,6 +27,9 @@ export interface FindSessionsInput {
   limit?: number | undefined;
 }
 
+/** The longest search text accepted (security L6). */
+export const MAX_QUERY_LENGTH = 200;
+
 /** find_sessions. */
 export async function findSessions(
   input: FindSessionsInput,
@@ -35,6 +38,9 @@ export async function findSessions(
   const requested = input.limit ?? DEFAULT_LIMIT;
   if (!Number.isInteger(requested) || requested < 0) {
     throw new CompassError('LimitInvalid');
+  }
+  if ((input.query ?? '').length > MAX_QUERY_LENGTH) {
+    throw new CompassError('InputTooLarge');
   }
   const limit = Math.min(requested, MAX_LIMIT);
   const catalog = await ctx.runtime.events.catalog();

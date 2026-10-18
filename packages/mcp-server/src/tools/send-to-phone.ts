@@ -9,7 +9,7 @@ import { labelUntrusted } from '../safety/labelled-data.js';
 import { describeTargets } from '../safety/targets.js';
 import type { ImageContent, ToolContext, ToolOutcome } from '../server/types.js';
 import { ensureSignedIn, humanConfirms } from './common.js';
-import { PASS_DISCLAIMER } from './pass-text.js';
+import { HANDOFF_SHARING_NOTE, PASS_DISCLAIMER, withoutFragment } from './pass-text.js';
 
 /** send_to_phone. */
 export async function sendToPhone(
@@ -54,12 +54,15 @@ export async function sendToPhone(
   };
   return {
     ok: true,
-    structured: { handoffUrl: handoff.boardUrl, expiresAt: handoff.expiresAt },
+    // The capability lives in the link's fragment, so the structured result keeps only the part
+    // before it; the full link is in the text, which the attendee needs, and is never logged.
+    structured: { handoffUrl: withoutFragment(handoff.boardUrl), expiresAt: handoff.expiresAt },
     text: [
       `Open this link on your phone before ${handoff.expiresAt}: ${handoff.boardUrl}`,
       'Or scan this QR code with your phone camera:',
       handoff.terminalQr,
       handoff.chatText,
+      HANDOFF_SHARING_NOTE,
       PASS_DISCLAIMER,
       labelUntrusted('catalog', { passes: shown }),
     ].join('\n'),

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createFetchTransport, MAX_RESPONSE_BYTES } from '../../src/adapters/fetch-transport.js';
@@ -80,8 +80,7 @@ describe('fetch transport', () => {
         Promise.resolve({
           status: 200,
           headers: new Headers(),
-          arrayBuffer: () => Promise.reject(new Error('x')),
-          text: () => Promise.reject(new Error('x')),
+          body: { getReader: () => ({ read: () => Promise.reject(new Error('x')) }) },
         } as unknown as Response),
       timeoutMs: 1000,
     });
@@ -218,5 +217,142 @@ describe('node app file system', () => {
     await reportsFolderLink.remove(linkPath);
     expect(await fs.readFile(linkPath)).toBeUndefined();
     expect(await readFile(join(victim, 'keep.txt'), 'utf8')).toBe('keep');
+  });
+
+  test('the body is read as a stream and the request is aborted at the byte cap (security L5)', async () => {
+    let pulls = 0;
+    let signal: AbortSignal | undefined;
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulls += 1;
+        controller.enqueue(new Uint8Array(1024 * 1024));
+      },
+    });
+    const transport = createFetchTransport({
+      fetch: (_url, init) => {
+        signal = init?.signal ?? undefined;
+        return Promise.resolve(new Response(endless));
+      },
+      timeoutMs: 5000,
+    });
+    const error: unknown = await transport
+      .request({ method: 'GET', url: 'https://compass.invalid/x', headers: {} })
+      .catch((e: unknown) => e);
+    expect(codeOf(error)).toBe('UnexpectedResponse');
+    expect(signal?.aborted).toBe(true);
+    // 10 MiB is the cap and the stream is endless: it was cancelled right after, not read on.
+    expect(pulls).toBeLessThanOrEqual(13);
+  });
+
+  test('a declared length over the cap is refused before any byte is read', async () => {
+    const transport = createFetchTransport({
+      fetch: () =>
+        Promise.resolve({
+          status: 200,
+          headers: new Headers({ 'content-length': String(MAX_RESPONSE_BYTES + 1) }),
+          // Reading would be a Network error, so an UnexpectedResponse proves nothing was read.
+          body: {
+            getReader: () => {
+              throw new Error('the body must not be read');
+            },
+          },
+        } as unknown as Response),
+      timeoutMs: 5000,
+    });
+    await expect(
+      transport.request({ method: 'GET', url: 'https://compass.invalid/x', headers: {} }),
+    ).rejects.toMatchObject({ code: 'UnexpectedResponse' });
+  });
+
+  test('a body that cannot be cancelled after the cap is still an oversize response', async () => {
+    const transport = createFetchTransport({
+      fetch: () =>
+        Promise.resolve({
+          status: 200,
+          headers: new Headers(),
+          body: {
+            getReader: () => ({
+              read: () =>
+                Promise.resolve({ done: false, value: new Uint8Array(MAX_RESPONSE_BYTES + 1) }),
+              cancel: () => Promise.reject(new Error('already closed')),
+            }),
+          },
+        } as unknown as Response),
+      timeoutMs: 5000,
+    });
+    await expect(
+      transport.request({ method: 'GET', url: 'https://compass.invalid/x', headers: {} }),
+    ).rejects.toMatchObject({ code: 'UnexpectedResponse' });
+  });
+
+  test('a response with no body is an empty one, and text and bytes are read in chunks', async () => {
+    const empty = createFetchTransport({
+      fetch: () => Promise.resolve(new Response(null, { status: 204 })),
+      timeoutMs: 5000,
+    });
+    expect(
+      await empty.request({ method: 'DELETE', url: 'https://compass.invalid/x', headers: {} }),
+    ).toMatchObject({ status: 204, body: '' });
+    const chunked = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('hel'));
+        controller.enqueue(new TextEncoder().encode('lo'));
+        controller.close();
+      },
+    });
+    const transport = createFetchTransport({
+      fetch: () => Promise.resolve(new Response(chunked)),
+      timeoutMs: 5000,
+    });
+    expect(
+      await transport.request({ method: 'GET', url: 'https://compass.invalid/x', headers: {} }),
+    ).toMatchObject({ body: 'hello' });
+  });
+
+  test('ensureDir refuses a link anywhere from the app folder down, but not above it (security L4)', async () => {
+    const seen: string[] = [];
+    const linkAt = (needle: string) =>
+      createNodeAppFileSystem((path) => {
+        seen.push(path);
+        return Promise.resolve({
+          isSymbolicLink: () => path.endsWith(needle),
+          isDirectory: () => true,
+        });
+      });
+    const root = join(temp, 'ensure', 'reinvent-compass', 'simulated', 'x');
+    // A link at the app folder, in the middle, or at the end is refused, and nothing is created.
+    for (const needle of ['reinvent-compass', 'simulated', 'x']) {
+      seen.length = 0;
+      await expect(linkAt(needle).ensureDir(root, 0o700), needle).rejects.toMatchObject({
+        code: 'UnsafePath',
+      });
+      expect(await readdir(join(temp)).then((names) => names.includes('ensure'))).toBe(false);
+    }
+    // A link above the app folder (a user's own folder) is fine, and only the app folder and below are looked at.
+    seen.length = 0;
+    await linkAt('ensure').ensureDir(root, 0o700);
+    expect(seen.every((path) => path.includes('reinvent-compass'))).toBe(true);
+    expect(seen).toContain(root);
+    expect((await stat(root)).isDirectory()).toBe(true);
+  });
+
+  test('ensureDir checks only the last component when the path has no app folder, and works with either separator', async () => {
+    const seen: string[] = [];
+    const recording = createNodeAppFileSystem((path) => {
+      seen.push(path);
+      return Promise.resolve({ isSymbolicLink: () => false, isDirectory: () => true });
+    });
+    const plain = join(temp, 'plain', 'folder');
+    await recording.ensureDir(plain, 0o700);
+    expect(seen).toEqual([plain, plain]);
+    seen.length = 0;
+    const win = createNodeAppFileSystem((path) => {
+      seen.push(path);
+      return Promise.reject(Object.assign(new Error('stop'), { code: 'EPERM' }));
+    });
+    await expect(
+      win.ensureDir(String.raw`C:\Users\me\reinvent-compass\sub`, 0o700),
+    ).rejects.toThrow('stop');
+    expect(seen).toEqual([String.raw`C:\Users\me\reinvent-compass`]);
   });
 });

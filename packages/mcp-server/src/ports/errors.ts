@@ -32,6 +32,9 @@ export type CompassErrorCode =
   | 'Network'
   | 'ScanTimeout'
   | 'ScanOutsideWorkspace'
+  | 'InputTooLarge'
+  | 'LevelInvalid'
+  | 'InputInvalid'
   | 'UnsafePath'
   | 'Internal';
 

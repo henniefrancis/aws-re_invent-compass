@@ -3,11 +3,11 @@ import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createSwapLedger } from '../../src/guardrail/swap-ledger.js';
-import { createNodeFsLike } from '../../src/state/node-fs-like.js';
+import { createNodeAppFileSystem } from '../../src/adapters/node-fs-adapter.js';
 import { createSessionState } from '../../src/state/session-state.js';
 import { createSnapshotStore, SNAPSHOT_FILE_NAME } from '../../src/state/schedule-snapshot.js';
 import type { ScheduleSnapshot } from '../../src/state/schedule-snapshot.js';
-import type { FsLike } from '../../src/ports/fs-ports.js';
+import type { FileSystem } from '@compass/core/passes';
 import { fixedClock } from '../support/fake-clock.js';
 
 const SNAPSHOT: ScheduleSnapshot = {
@@ -53,13 +53,13 @@ describe('snapshot store with a recording fs', () => {
   function recordingFs() {
     const files = new Map<string, string>();
     const calls: string[] = [];
-    const fs: FsLike = {
-      mkdir: (path, options) => {
-        calls.push(`mkdir ${path} ${options.mode.toString(8)}`);
+    const fs: FileSystem = {
+      ensureDir: (path, mode) => {
+        calls.push(`mkdir ${path} ${mode.toString(8)}`);
         return Promise.resolve();
       },
-      writeFile: (path, data, options) => {
-        calls.push(`write ${path} ${options.mode.toString(8)}`);
+      writeFile: (path, data, mode) => {
+        calls.push(`write ${path} ${mode.toString(8)}`);
         files.set(path, data);
         return Promise.resolve();
       },
@@ -70,15 +70,14 @@ describe('snapshot store with a recording fs', () => {
         files.delete(from);
         return Promise.resolve();
       },
-      readFile: (path) => {
-        const data = files.get(path);
-        return data === undefined ? Promise.reject(new Error('ENOENT')) : Promise.resolve(data);
-      },
+      readFile: (path) => Promise.resolve(files.get(path)),
       remove: (path) => {
         calls.push(`remove ${path}`);
         files.delete(path);
         return Promise.resolve();
       },
+      createExclusive: () => Promise.resolve(true),
+      mtimeMs: () => Promise.resolve(undefined),
     };
     return { fs, files, calls };
   }
@@ -128,7 +127,7 @@ describe('snapshot store on the real file system', () => {
   });
 
   test('round trips, replaces atomically and removes', async () => {
-    const store = createSnapshotStore(join(temp, 'app'), 'live', createNodeFsLike(), 7);
+    const store = createSnapshotStore(join(temp, 'app'), 'live', createNodeAppFileSystem(), 7);
     await store.write(SNAPSHOT);
     await store.write({ ...SNAPSHOT, fetchedAt: '2026-11-30T17:00:00.000Z' });
     expect((await store.read())?.fetchedAt).toBe('2026-11-30T17:00:00.000Z');
@@ -143,7 +142,7 @@ describe('snapshot store on the real file system', () => {
   test.skipIf(process.platform === 'win32')(
     'the file is 0o600 and the directory 0o700 on POSIX',
     async () => {
-      const store = createSnapshotStore(join(temp, 'posix'), 'live', createNodeFsLike());
+      const store = createSnapshotStore(join(temp, 'posix'), 'live', createNodeAppFileSystem());
       await store.write(SNAPSHOT);
       expect((await stat(join(temp, 'posix', SNAPSHOT_FILE_NAME))).mode & 0o777).toBe(0o600);
       expect((await stat(join(temp, 'posix'))).mode & 0o777).toBe(0o700);
@@ -158,5 +157,20 @@ describe('session state', () => {
     const state = createSessionState(ledger);
     expect(state).toEqual({ swaps: ledger });
     expect(state.lastScan).toBeUndefined();
+  });
+});
+
+describe('the snapshot uses the production file system adapter (security L3)', () => {
+  test('a link at the snapshot file, its temporary file or any folder from the app folder down is refused', async () => {
+    for (const linked of ['reinvent-compass', 'schedule-snapshot.json.7.tmp', SNAPSHOT_FILE_NAME]) {
+      const fs = createNodeAppFileSystem((path) =>
+        Promise.resolve({
+          isSymbolicLink: () => path.endsWith(linked),
+          isDirectory: () => true,
+        }),
+      );
+      const store = createSnapshotStore(join('/data', 'reinvent-compass'), 'live', fs, 7);
+      await expect(store.write(SNAPSHOT), linked).rejects.toMatchObject({ code: 'UnsafePath' });
+    }
   });
 });

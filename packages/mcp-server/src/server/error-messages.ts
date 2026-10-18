@@ -5,6 +5,7 @@
 
 import { FolderNotFoundError, ScanTimeoutError } from '@compass/core/scanner';
 import { SpecWriteRefusedError } from '@compass/core/spec';
+import { ZodError } from 'zod';
 import { redactText } from '../logging/redact.js';
 import { CompassError } from '../ports/errors.js';
 import type { CompassErrorCode } from '../ports/errors.js';
@@ -39,6 +40,9 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
     'This sync would void every pass or more than five passes. Compass needs your explicit confirmation for that, and this client cannot ask. Name fewer sessions in sessionIds, or use a client that supports confirmation.',
   Network: 'Compass could not reach the service. Check your connection, then try again.',
   ScanTimeout: 'The scan took too long and was stopped. Try a smaller folder.',
+  InputTooLarge: 'The search text is limited to 200 characters, and plan goals to 20 items.',
+  LevelInvalid: 'level must be 100, 200, 300 or 400.',
+  InputInvalid: 'Compass could not read that request. Check the arguments and try again.',
   ScanOutsideWorkspace:
     'That folder is outside the workspace Compass was started in, and this client cannot ask you to confirm it. Start Compass in that folder, or use a client that can ask.',
   UnsafePath: 'Compass will not write through a symbolic link, so it wrote nothing.',
@@ -49,6 +53,9 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
 export function messageFor(error: unknown): string {
   if (error instanceof FolderNotFoundError) {
     return FIXED.FolderNotFound;
+  }
+  if (error instanceof ZodError) {
+    return FIXED.InputInvalid;
   }
   if (error instanceof ScanTimeoutError) {
     return FIXED.ScanTimeout;
@@ -79,5 +86,5 @@ export function codeFor(error: unknown): string {
   if (error instanceof CompassError) {
     return error.code;
   }
-  return 'unexpected';
+  return error instanceof ZodError ? 'InputInvalid' : 'unexpected';
 }

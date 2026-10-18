@@ -8,3 +8,13 @@ export const PASS_DISCLAIMER =
 /** What happens to a voided pass. */
 export const VOID_NOTE =
   "A voided pass moves to your wallet's expired passes. Compass cannot delete it from your phone.";
+
+/** Said with every hand-off link and QR code (security L1). */
+export const HANDOFF_SHARING_NOTE =
+  'Do not share this link or the QR code. Anyone who has it can see these passes until it expires.';
+
+/** The link without its fragment: the part that is safe to keep in structured results and logs. */
+export function withoutFragment(url: string): string {
+  const hash = url.indexOf('#');
+  return hash === -1 ? url : url.slice(0, hash);
+}

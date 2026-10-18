@@ -114,10 +114,21 @@ describe('send_to_phone', () => {
     fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
     fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
     const outcome = await sendToPhone({}, ctx);
+    // The capability is in the link's fragment: the structured result has the link without it, and
+    // the full link is only in the text (security L1).
+    const full = fake.passes.handoffResult.boardUrl;
     expect(outcome.ok && outcome.structured).toEqual({
-      handoffUrl: fake.passes.handoffResult.boardUrl,
+      handoffUrl: full.split('#')[0],
       expiresAt: fake.passes.handoffResult.expiresAt,
     });
+    expect(full).toContain('#');
+    expect(JSON.stringify(outcome.ok && outcome.structured)).not.toContain(
+      full.split('#')[1] ?? '#',
+    );
+    expect(outcome.ok && outcome.text).toContain(full);
+    expect(outcome.ok && outcome.text).toContain(
+      'Do not share this link or the QR code. Anyone who has it can see these passes until it expires.',
+    );
     expect(outcome.ok && outcome.text).toContain('##');
     expect(outcome.ok && outcome.text).toContain('QR-TEXT');
     expect(outcome.ok && outcome.extra).toEqual([

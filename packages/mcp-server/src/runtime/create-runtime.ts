@@ -50,7 +50,6 @@ import {
   SIMULATED_NOW,
 } from '../simulated/simulated-runtime.js';
 import { createSnapshotStore } from '../state/schedule-snapshot.js';
-import { createNodeFsLike } from '../state/node-fs-like.js';
 import { createBrowserOpener } from './browser-opener.js';
 import { realBind } from './real-bind.js';
 import { sleep } from './sleep.js';
@@ -231,7 +230,7 @@ export async function createRuntime(
         scanFs: createNodeScanFs(),
         specFs: createNodeSpecFs(),
         appDataDir: root,
-        fsLike: createNodeFsLike(),
+        fs: createNodeAppFileSystem(),
         ...scanRunner,
       })
     ).runtime;
@@ -245,7 +244,7 @@ export async function createRuntime(
       environment.compassTransport ?? createFetchTransport(),
       config.compassApiUrl,
     ),
-    snapshot: createSnapshotStore(root, 'live', createNodeFsLike()),
+    snapshot: createSnapshotStore(root, 'live', createNodeAppFileSystem()),
     scanFs: createNodeScanFs(),
     specFs: createNodeSpecFs(),
     clock,

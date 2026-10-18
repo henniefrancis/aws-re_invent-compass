@@ -163,3 +163,21 @@ describe('find_sessions', () => {
     await connection.close();
   });
 });
+
+describe('input size limits (security L6)', () => {
+  const run = async (name: 'find_sessions', args: Record<string, unknown>) => {
+    const fake = createFakeRuntime({ catalog: buildCatalogView([wireSession('a')]) });
+    const connection = await connect(fake.runtime);
+    const result = await connection.call(name, args);
+    await connection.close();
+    return result;
+  };
+  const refusal = 'The search text is limited to 200 characters, and plan goals to 20 items.';
+
+  test('a search text of 200 characters is fine and 201 is refused with the fixed message', async () => {
+    expect((await run('find_sessions', { query: 'a'.repeat(200) })).isError).not.toBe(true);
+    const refused = await run('find_sessions', { query: 'a'.repeat(201) });
+    expect(refused.isError).toBe(true);
+    expect(textOf(refused)).toBe(refusal);
+  });
+});

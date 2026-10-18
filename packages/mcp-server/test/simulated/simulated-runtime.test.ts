@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { join } from 'node:path';
-import type { FsLike } from '../../src/ports/fs-ports.js';
+import type { FileSystem } from '@compass/core/passes';
 import type { HttpTransport } from '../../src/ports/http-transport.js';
 import {
   createSimulatedRuntime,
@@ -16,8 +16,8 @@ import { FakeRules } from '../support/fake-rules.js';
 
 function recordingFs() {
   const files = new Map<string, string>();
-  const fs: FsLike = {
-    mkdir: () => Promise.resolve(),
+  const fs: FileSystem = {
+    ensureDir: () => Promise.resolve(),
     writeFile: (path, data) => {
       files.set(path, data);
       return Promise.resolve();
@@ -27,8 +27,10 @@ function recordingFs() {
       files.delete(from);
       return Promise.resolve();
     },
-    readFile: (path) => Promise.resolve(files.get(path) ?? ''),
+    readFile: (path) => Promise.resolve(files.get(path)),
     remove: () => Promise.resolve(),
+    createExclusive: () => Promise.resolve(true),
+    mtimeMs: () => Promise.resolve(undefined),
   };
   return { fs, files };
 }
@@ -54,7 +56,7 @@ describe('createSimulatedRuntime', () => {
         scanFs: createUnused(),
         specFs: createUnusedSpec(),
         appDataDir: '/app',
-        fsLike: fs,
+        fs,
         random: (n) => new Uint8Array(n).fill(7),
         uuid: () => '00000000-0000-4000-8000-000000000001',
       });
@@ -116,7 +118,7 @@ describe('createSimulatedRuntime', () => {
       scanFs: createUnused(),
       specFs: createUnusedSpec(),
       appDataDir: '/app',
-      fsLike: fs,
+      fs,
     });
     const issue = {
       method: 'POST',

@@ -520,3 +520,30 @@ describe('plan_week writing (security M2, QA M5 and M8)', () => {
     expect(outcome.ok && outcome.text).toContain('could not read or change .gitignore safely');
   });
 });
+
+describe('plan_week input limits (security L6, QA low)', () => {
+  const goals = (n: number): string[] => Array.from({ length: n }, (_, i) => `goal-${i}`);
+
+  test('20 goals are fine and 21 are refused with the fixed message, without echoing them', async () => {
+    const ok = setup();
+    await expect(planWeekTool({ goals: goals(20) }, ok.ctx)).resolves.toMatchObject({ ok: true });
+    const refused = setup();
+    await expect(planWeekTool({ goals: goals(21) }, refused.ctx)).rejects.toMatchObject({
+      code: 'InputTooLarge',
+    });
+    expect(refused.specFs.files.size).toBe(0);
+  });
+
+  test('a level other than 100, 200, 300 or 400 is refused before anything is read or written', async () => {
+    for (const level of ['500', 'senior', '', '300 or 400']) {
+      const { fake, specFs, ctx } = setup();
+      await expect(planWeekTool({ level }, ctx), level).rejects.toMatchObject({
+        code: 'LevelInvalid',
+      });
+      expect(fake.events.calls).toEqual([]);
+      expect(specFs.files.size).toBe(0);
+    }
+    const { ctx } = setup();
+    await expect(planWeekTool({ level: ' 300 ' }, ctx)).resolves.toMatchObject({ ok: true });
+  });
+});

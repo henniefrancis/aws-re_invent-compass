@@ -91,8 +91,12 @@ describe('the full flow over the real simulated stack (S1 simulated transport, S
 
     // 11: the phone link.
     const phone = await ok('send_to_phone');
-    const link = (phone.structuredContent as { handoffUrl: string }).handoffUrl;
+    const structuredLink = (phone.structuredContent as { handoffUrl: string }).handoffUrl;
+    expect(structuredLink).not.toContain('#');
+    const link = /https:\/\/compass\.invalid\/board#h=\S+/.exec(textOf(phone))?.[0] ?? '';
+    expect(link).not.toBe('');
     expect(new URL(link).host).toBe('compass.invalid');
+    expect(link.startsWith(structuredLink)).toBe(true);
     expect(textOf(phone)).toContain('unofficial');
 
     // 12 and 13: cancel B, then sync voids only B's pass.

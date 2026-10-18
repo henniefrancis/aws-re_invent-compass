@@ -14,7 +14,7 @@ import { CompassError } from '../ports/errors.js';
 import type { Clock } from '../ports/clock.js';
 import { pinnedClock } from '../simulated/simulated-runtime.js';
 import { createSnapshotStore } from '../state/schedule-snapshot.js';
-import { createNodeFsLike } from '../state/node-fs-like.js';
+import { createNodeAppFileSystem } from '../adapters/node-fs-adapter.js';
 import { readVenues } from './create-runtime.js';
 import type { EnvRecord, RuntimeEnvironment } from './create-runtime.js';
 
@@ -33,7 +33,7 @@ export async function createHookDeps(
   }).resolve();
   const catalogRoot = resolveAppDataDir(env, environment.homeDir, environment.platform);
   const catalogDir = simulated ? joinInFolder(catalogRoot, 'simulated') : catalogRoot;
-  const snapshot = createSnapshotStore(root, config.mode, createNodeFsLike());
+  const snapshot = createSnapshotStore(root, config.mode, createNodeAppFileSystem());
   const venues = await readVenues(environment.venuesPath);
   const rules = createRulesAdapter({
     clock,

@@ -9,6 +9,7 @@
 
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, readFile, rename, rm, stat, unlink } from 'node:fs/promises';
+import { APP_FOLDER_NAME } from '@compass/core/passes';
 import type { FileSystem } from '@compass/core/passes';
 import { CompassError } from '../ports/errors.js';
 
@@ -45,6 +46,21 @@ export function createNodeAppFileSystem(
   const refuseLink = async (path: string): Promise<void> => {
     if ((await look(path))?.isSymbolicLink() === true) {
       throw new CompassError('UnsafePath');
+    }
+  };
+
+  /**
+   * Refuses a path when any existing component from the app folder (`reinvent-compass`) down to the
+   * path itself is a symbolic link (security L4). Components above the app folder are left alone,
+   * because a user's own folders may legitimately be links (for example a temporary folder on macOS).
+   * A path without an app folder is checked at its last component only.
+   */
+  const refuseLinkedComponents = async (path: string): Promise<void> => {
+    const tokens = path.split(/([\\/])/);
+    const names = tokens.filter((_token, index) => index % 2 === 0);
+    const at = names.lastIndexOf(APP_FOLDER_NAME);
+    for (let k = at === -1 ? names.length - 1 : at; k < names.length; k += 1) {
+      await refuseLink(tokens.slice(0, 2 * k + 1).join(''));
     }
   };
 
@@ -101,7 +117,10 @@ export function createNodeAppFileSystem(
       }
     },
     ensureDir: async (path, mode) => {
+      await refuseLinkedComponents(path);
       await mkdir(path, { recursive: true, mode });
+      // Look again after creating, so a link planted while the folder was being made is caught.
+      await refuseLinkedComponents(path);
     },
     mtimeMs: async (path) => {
       try {

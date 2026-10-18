@@ -11,7 +11,6 @@ import { createPassesFactory } from '../../src/runtime/passes-factory.js';
 import type { Runtime } from '../../src/ports/runtime.js';
 import type { InProcessPassService } from '../../src/simulated/in-process-pass-service.js';
 import { createSimulatedRuntime, pinnedClock } from '../../src/simulated/simulated-runtime.js';
-import { createNodeFsLike } from '../../src/state/node-fs-like.js';
 import { FakeEvents } from './fake-events.js';
 import { repoRoot, syntheticCatalogView } from './fake-catalog.js';
 
@@ -74,7 +73,7 @@ export async function buildSimulatedStack(): Promise<SimulatedStack> {
     scanFs: createNodeScanFs(),
     specFs: createNodeSpecFs(),
     appDataDir,
-    fsLike: createNodeFsLike(),
+    fs: createNodeAppFileSystem(),
   });
   return {
     runtime,

@@ -8,7 +8,8 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { Clock } from '../ports/clock.js';
 import type { EventsPort } from '../ports/events-port.js';
-import type { FsLike, ScanFs, SpecFs } from '../ports/fs-ports.js';
+import type { ScanFs, SpecFs } from '../ports/fs-ports.js';
+import type { FileSystem } from '@compass/core/passes';
 import type { HttpTransport } from '../ports/http-transport.js';
 import type { Logger } from '../ports/logger.js';
 import type { PassesPort } from '../ports/passes-port.js';
@@ -36,7 +37,8 @@ export interface SimulatedRuntimeDeps {
   scanFs: ScanFs;
   specFs: SpecFs;
   appDataDir: string;
-  fsLike: FsLike;
+  /** The file system the schedule snapshot is written through. */
+  fs: FileSystem;
   scanRunner?: Runtime['scanRunner'];
   random?: (bytes: number) => Uint8Array;
   uuid?: () => string;
@@ -72,7 +74,7 @@ export async function createSimulatedRuntime(
       events: deps.events,
       rules: deps.rules,
       passes: deps.createPasses(passService.transport, SIMULATED_BASE_URL),
-      snapshot: createSnapshotStore(deps.appDataDir, 'simulated', deps.fsLike),
+      snapshot: createSnapshotStore(deps.appDataDir, 'simulated', deps.fs),
       scanFs: deps.scanFs,
       specFs: deps.specFs,
       clock,

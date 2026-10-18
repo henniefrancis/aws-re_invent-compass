@@ -37,7 +37,10 @@ function register<K extends McpToolName>(
     {
       title: spec.title,
       description: spec.description,
-      inputSchema: mcpTools[name].input,
+      // The SDK would answer a bad request with a message built from the schema error. The wrapper
+      // lets every request through to the handler, which parses it with the contract schema and
+      // answers with a fixed message; the published JSON Schema is still the contract's.
+      inputSchema: registrationSchema(mcpTools[name].input),
       outputSchema: registrationSchema(mcpTools[name].output),
       annotations: annotationsFor(spec.class, spec.title),
     },

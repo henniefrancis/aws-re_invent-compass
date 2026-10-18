@@ -1,15 +1,18 @@
 // The Schedule_Snapshot (personal data record P4): the last confirmed GetSchedule result and
 // the event window, in the OS app-data folder, file mode 0o600 and directory mode 0o700.
 // It never holds a token or an email. In simulated mode it lives in a `simulated`
-// subfolder. Writes are atomic: a temporary file is written, then renamed over the target.
-// POSIX modes are ignored on Windows, where the per-user app-data location is relied on.
+// subfolder. Writes are atomic: a temporary file is written, then renamed over the target. The
+// file system is the same production adapter the pass store uses (`createNodeAppFileSystem`): it
+// refuses a symbolic link at the target, the temporary file and every folder from the app folder
+// down, and opens without following links. POSIX modes are ignored on Windows, where the per-user
+// app-data location is relied on.
 
 import { join } from 'node:path';
 import { ScheduleWireSchema } from '@compass/contracts';
 import type { ScheduleWire } from '@compass/contracts';
 import { z } from 'zod';
 import type { EventWindow } from '../ports/events-port.js';
-import type { FsLike } from '../ports/fs-ports.js';
+import type { FileSystem } from '@compass/core/passes';
 
 /** What is written to disk. */
 export interface ScheduleSnapshot {
@@ -42,7 +45,7 @@ export const SNAPSHOT_FILE_NAME = 'schedule-snapshot.json';
 export function createSnapshotStore(
   appDataDir: string,
   mode: 'live' | 'simulated',
-  fs: FsLike,
+  fs: FileSystem,
   processId = 0,
 ): SnapshotStore {
   const directory = mode === 'simulated' ? join(appDataDir, 'simulated') : appDataDir;
@@ -50,20 +53,15 @@ export function createSnapshotStore(
   return {
     write: async (snapshot) => {
       const temporary = `${file}.${processId}.tmp`;
-      await fs.mkdir(directory, { recursive: true, mode: 0o700 });
-      await fs.writeFile(temporary, JSON.stringify(snapshot), { mode: 0o600 });
+      await fs.ensureDir(directory, 0o700);
+      await fs.writeFile(temporary, JSON.stringify(snapshot), 0o600);
       await fs.rename(temporary, file);
     },
     read: async () => {
-      let text: string;
-      try {
-        text = await fs.readFile(file);
-      } catch {
-        return undefined;
-      }
       let raw: unknown;
       try {
-        raw = JSON.parse(text);
+        // A missing file reads as undefined, and a file that cannot be read or parsed is missing too.
+        raw = JSON.parse((await fs.readFile(file)) ?? 'null');
       } catch {
         return undefined;
       }
