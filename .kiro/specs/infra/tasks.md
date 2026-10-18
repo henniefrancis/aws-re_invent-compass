@@ -44,7 +44,7 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 9.2_
 
   - [x] 2.2 Write plan assertions and the GSI-form static scan for the Data_Module
-    - Native test (`mock_provider`, `command = plan`) asserting on-demand mode, TTL attribute `ttl`, PITR enabled, deletion protection enabled, and each GSI's explicit `projection_type`
+    - Native test (`mock_provider`, `command = plan`) asserting on-demand mode, TTL attribute `ttl`, PITR disabled (amended 2026-10-17, ADR-015), deletion protection enabled, and each GSI's explicit `projection_type`
     - Static HCL scan asserting the `global_secondary_index` blocks use `hash_key`/`range_key` and not `key_schema` (locks in the choice avoiding GSI replacement on the Retained_Resource)
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.8_
 

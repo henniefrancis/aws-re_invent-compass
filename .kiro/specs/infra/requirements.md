@@ -136,7 +136,7 @@ The schedule milestone (ADR-020, build plan section 9.3) is that the dev environ
 1. THE Data_Module SHALL create exactly one DynamoDB table whose name comes from a `table_name` input variable that defaults to `compass-<env>`, where `<env>` is the environment name provided to the module.
 2. THE Data_Module SHALL configure the table with on-demand (pay-per-request) capacity mode and SHALL NOT configure provisioned read or write capacity.
 3. THE Data_Module SHALL enable Time To Live on the table using the `ttl` attribute as the TTL attribute.
-4. THE Data_Module SHALL enable point-in-time recovery on the table.
+4. THE Data_Module SHALL NOT enable point-in-time recovery on the table (amended 2026-10-17 by owner decision, ADR-015: forget_me must be a real erasure).
 5. THE Data_Module SHALL enable deletion protection on the table.
 6. THE Data_Module SHALL create exactly one global secondary index named GSI1 whose partition key identifies a pass and whose sort key identifies a device, so that all devices for a given pass are retrievable by a single query on GSI1.
 7. THE Data_Module SHALL create exactly one global secondary index named GSI2 whose partition key is the `subHash` value and whose sort key identifies a pass, so that all passes for a given `subHash` are retrievable by a single query on GSI2.

@@ -107,7 +107,7 @@ certificate and key authenticate the APNs connection, so there is no separate AP
 ## DynamoDB (S6 builds the table)
 
 Table `compass-<env>`: partition key `pk` (S), sort key `sk` (S), on demand, TTL attribute `ttl`
-(number, epoch seconds), point-in-time recovery and deletion protection. GSI2 (`gsi2pk`, `gsi2sk`), strings, projection ALL. GSI1 is no longer used (the pass-keyed registration
+(number, epoch seconds), deletion protection, and no point-in-time recovery (ADR-015). GSI2 (`gsi2pk`, `gsi2sk`), strings, projection ALL. GSI1 is no longer used (the pass-keyed registration
 copies below replaced it); S6 may drop it.
 
 | Item                | pk                 | sk                                  | gsi2pk          | gsi2sk                                   |

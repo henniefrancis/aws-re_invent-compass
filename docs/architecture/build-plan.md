@@ -147,7 +147,7 @@ The responsible party is the owner (Hennie Francis), acting personally. No human
 | P15 | Google Wallet objects (pass fields, plus the name if the attendee opted in)          | Google (a processor)                                                                                              | State set to `INACTIVE` on void; expires at session end                                                                              | Google, the attendee                                                                                                  |
 | P16 | APNs request (push token, empty payload)                                             | Apple                                                                                                             | Apple's policy                                                                                                                       | Apple                                                                                                                 |
 
-`DELETE /api/v1/me` (MCP tool `forget_me`) voids every pass for the caller's `subHash` and deletes P10 to P13 for that hash. The local `forget_me` also deletes P4, P5 and P9. This is how an attendee exercises POPIA rights.
+`DELETE /api/v1/me` (MCP tool `forget_me`) voids every pass for the caller's `subHash` and deletes P10 to P12 for that hash; the P13 rate counters are kept until their window ends plus 2 minutes, so forget_me cannot reset the limits (S5 security review, 2026-10-17). The local `forget_me` also deletes P4, P5 and P9. This is how an attendee exercises POPIA rights.
 
 ### 4.3 Threat model (STRIDE)
 

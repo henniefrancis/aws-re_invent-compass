@@ -94,7 +94,7 @@ Bundled as `awsevents` for read exploration, with its write tools listed in `dis
 - **Edge:** one CloudFront distribution: site at `/`, API at `/api/*` (API Gateway REST, regional, imported from the OpenAPI file, request validation). WAF (CLOUDFRONT scope) on the distribution. An origin-verify header shields the `execute-api` URL.
 - **Auth:** attendee routes need a Builder ID ID token verified for signature, `iss`, `aud = 7vmom55m1qstvq8i71ph127bfq`, `token_use = id`, `exp`, RS256 only. Hand-off routes use a 128-bit capability in the URL fragment. PassKit routes use `ApplePass <authenticationToken>` per Apple's spec.
 - **Pass lifecycle:** Apple PassKit web service plus APNs pushes with the Pass Type ID certificate (empty payload); void sets `voided: true` and `expirationDate: now`. Google objects patched to `INACTIVE`. Every pass expires at session end.
-- **Data:** DynamoDB single table, on demand, TTL for clean-up only (code checks `expiresAt` on every read), PITR and deletion protection. Identifiers are opaque: UUID v4 serials; `subHash` and `deviceHash` are HMAC-SHA256 with a pepper from Secrets Manager. Full field list: plan section 4.2.
+- **Data:** DynamoDB single table, on demand, TTL for clean-up only (code checks `expiresAt` on every read), deletion protection, and no point-in-time recovery (owner decision 2026-10-17, ADR-015, so forget_me is a real erasure). Identifiers are opaque: UUID v4 serials; `subHash` and `deviceHash` are HMAC-SHA256 with a pepper from Secrets Manager. Full field list: plan section 4.2.
 - **Logging:** request id, route template, status, latency and outcome only. Never paths with identifiers, headers, bodies, tokens or emails. 14-day retention.
 
 ## Terraform and deploy (ADR-001, ADR-014, ADR-015, ADR-020)
