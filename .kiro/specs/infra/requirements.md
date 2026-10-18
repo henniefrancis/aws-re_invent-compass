@@ -138,9 +138,9 @@ The schedule milestone (ADR-020, build plan section 9.3) is that the dev environ
 3. THE Data_Module SHALL enable Time To Live on the table using the `ttl` attribute as the TTL attribute.
 4. THE Data_Module SHALL NOT enable point-in-time recovery on the table (amended 2026-10-17 by owner decision, ADR-015: forget_me must be a real erasure).
 5. THE Data_Module SHALL enable deletion protection on the table.
-6. THE Data_Module SHALL create exactly one global secondary index named GSI1 whose partition key identifies a pass and whose sort key identifies a device, so that all devices for a given pass are retrievable by a single query on GSI1.
-7. THE Data_Module SHALL create exactly one global secondary index named GSI2 whose partition key is the `subHash` value and whose sort key identifies a pass, so that all passes for a given `subHash` are retrievable by a single query on GSI2.
-8. THE Data_Module SHALL project onto GSI1 and GSI2 the attributes required to satisfy their stated access patterns without a subsequent read of the base table.
+6. (Withdrawn before the first apply: the pass-service no longer uses the pass-to-device index GSI1, so the Data_Module creates no GSI1 and none of its key attributes.)
+7. THE Data_Module SHALL create exactly one global secondary index, named GSI2, whose partition key is the `subHash` value and whose sort key identifies a pass, so that all passes for a given `subHash` are retrievable by a single query on GSI2, and SHALL create no other global secondary index.
+8. THE Data_Module SHALL project onto GSI2 the attributes required to satisfy their stated access patterns without a subsequent read of the base table.
 
 ### Requirement 7: Secrets module
 
@@ -165,8 +165,8 @@ The schedule milestone (ADR-020, build plan section 9.3) is that the dev environ
 2. THE Observability_Module SHALL read the alarm email address from a workspace variable, and IF that variable is empty, THEN THE Observability_Module SHALL fail validation and stop.
 3. THE Observability_Module SHALL create one CloudWatch alarm for each of the following conditions, giving four alarms in total: API 5xx responses, API or Lambda throttles, APNs push failures, and Lambda function errors.
 4. THE Observability_Module SHALL configure each alarm created in criterion 3 to send its notification to the SNS topic created in criterion 1 when the alarm enters the ALARM state.
-5. THE Observability_Module SHALL create exactly one AWS Budgets cost budget with a monthly period and a limit of 20 USD.
-6. THE Observability_Module SHALL configure the budget to send alerts to the alarm email address when actual spend reaches 50 percent, 80 percent, and 100 percent of the 20 USD limit.
+5. THE Terraform_Config SHALL create exactly one AWS Budgets cost budget for the whole account, in the Bootstrap_Config and in no environment root, with a monthly period and a limit that covers both environments (40 USD by default; about 17 USD an environment).
+6. THE Bootstrap_Config SHALL configure the budget to send alerts to the alarm email address when actual spend reaches 50 percent, 80 percent, and 100 percent of the 20 USD limit.
 
 ### Requirement 9: Retained resources
 

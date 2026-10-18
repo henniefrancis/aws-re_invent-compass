@@ -37,10 +37,10 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - _Requirements: 1.2, 1.3, 1.7, 1.8, 10.3, 17.5_
 
 - [x] 2. Implement the Data_Module (`infra/modules/data`)
-  - [x] 2.1 Implement the DynamoDB single table with GSI1 and GSI2
+  - [x] 2.1 Implement the DynamoDB single table with GSI2 (GSI1 dropped, unused)
     - Write `versions.tf`, `variables.tf` (`env`, `table_name` default `compass-<env>`, with validation), `locals.tf`, `main.tf`, `outputs.tf` (`table_name`, `table_arn`)
     - Configure `billing_mode = "PAY_PER_REQUEST"`, `ttl` on attribute `ttl` enabled, `point_in_time_recovery` enabled, `deletion_protection_enabled = true`, and `lifecycle { prevent_destroy = true }`
-    - Declare GSI1 (pass -> device) and GSI2 (subHash -> pass) using the stable `hash_key`/`range_key` arguments (not `key_schema`), each with an explicit `projection_type = "INCLUDE"` and `non_key_attributes` covering its access pattern
+    - Declare GSI2 (subHash -> pass; GSI1 was dropped as unused) using the stable `hash_key`/`range_key` arguments (not `key_schema`), each with an explicit `projection_type = "INCLUDE"` and `non_key_attributes` covering its access pattern
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 9.2_
 
   - [x] 2.2 Write plan assertions and the GSI-form static scan for the Data_Module
