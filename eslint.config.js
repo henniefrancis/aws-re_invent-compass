@@ -8,6 +8,7 @@
 // cross-package deep-relative-import ban is enforced by no-restricted-imports
 // alone.
 
+import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 import angular from '@angular-eslint/eslint-plugin';
 import angularTemplateParser from '@angular-eslint/template-parser';
@@ -30,13 +31,14 @@ const crossPackageRelativeImportPatterns = [
   },
 ];
 
-export default tseslint.config(
+export default defineConfig(
   {
     // Nothing to lint inside build output, dependencies or generated code.
     ignores: [
       '**/dist/**',
       '**/node_modules/**',
       '**/coverage/**',
+      '**/.angular/**',
       '**/generated/**',
       '**/*.generated.ts',
       'fixtures/sample-repo/**',
@@ -101,6 +103,7 @@ export default tseslint.config(
   {
     // Angular component templates in the site workspace.
     files: ['site/**/*.html'],
+    extends: [tseslint.configs.disableTypeChecked],
     languageOptions: {
       parser: angularTemplateParser,
     },
