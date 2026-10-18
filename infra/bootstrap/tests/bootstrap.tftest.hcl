@@ -18,6 +18,12 @@ mock_provider "aws" {
     }
   }
 
+  mock_resource "aws_route53domains_domain" {
+    defaults = {
+      hosted_zone_id = "Z0REGISTERED"
+    }
+  }
+
   mock_resource "aws_iam_openid_connect_provider" {
     defaults = {
       arn = "arn:aws:iam::aws:oidc-provider/app.terraform.io"
@@ -548,6 +554,93 @@ run "identical_workspaces_are_rejected" {
   expect_failures = [var.hcp_workspaces]
 }
 
+run "domain_is_read_by_default" {
+  command = plan
+
+  assert {
+    condition     = length(aws_route53domains_domain.this) == 0 && length(data.aws_route53_zone.domain) == 1
+    error_message = "Without register_domain the existing zone is read and nothing is registered."
+  }
+
+  assert {
+    condition     = jsondecode(aws_iam_policy.apply["dev-edge"].policy).Statement[index(jsondecode(aws_iam_policy.apply["dev-edge"].policy).Statement[*].Sid, "ChangeOwnDnsRecords")].Resource == "arn:aws:route53:::hostedzone/Z0EXAMPLEZONE"
+    error_message = "The record permissions must name the zone that was read."
+  }
+}
+
+run "domain_registration_is_renewed_locked_and_private" {
+  command = plan
+
+  variables {
+    register_domain = true
+    domain_contact = {
+      first_name     = "Example"
+      last_name      = "Owner"
+      email          = join("@", ["domains", "example.invalid"])
+      phone_number   = "+27.000000000"
+      address_line_1 = "1 Example Street"
+      city           = "Example City"
+      zip_code       = "0000"
+      country_code   = "ZA"
+    }
+  }
+
+  assert {
+    condition     = length(aws_route53domains_domain.this) == 1 && length(data.aws_route53_zone.domain) == 0
+    error_message = "With register_domain the domain is registered and no zone is read."
+  }
+
+  assert {
+    condition     = aws_route53domains_domain.this[0].domain_name == "reinvent-compass.vegas" && aws_route53domains_domain.this[0].auto_renew && aws_route53domains_domain.this[0].transfer_lock && aws_route53domains_domain.this[0].duration_in_years == 1
+    error_message = "The domain must renew automatically, stay transfer-locked and be bought one year at a time."
+  }
+
+  assert {
+    condition     = aws_route53domains_domain.this[0].admin_privacy && aws_route53domains_domain.this[0].registrant_privacy && aws_route53domains_domain.this[0].tech_privacy
+    error_message = "Every contact must be hidden from WHOIS."
+  }
+
+  assert {
+    condition     = nonsensitive(aws_route53domains_domain.this[0].registrant_contact[0].contact_type) == "PERSON"
+    error_message = "The contact type must default to PERSON, which shows no organisation name."
+  }
+
+  assert {
+    condition     = jsondecode(aws_iam_policy.apply["prod-edge"].policy).Statement[index(jsondecode(aws_iam_policy.apply["prod-edge"].policy).Statement[*].Sid, "ChangeOwnDnsRecords")].Resource == "arn:aws:route53:::hostedzone/Z0REGISTERED"
+    error_message = "The record permissions must name the zone created with the registration."
+  }
+}
+
+run "domain_registration_needs_a_contact" {
+  command = plan
+
+  variables {
+    register_domain = true
+  }
+
+  expect_failures = [var.domain_contact]
+}
+
+run "domain_contact_phone_format_is_checked" {
+  command = plan
+
+  variables {
+    register_domain = true
+    domain_contact = {
+      first_name     = "Example"
+      last_name      = "Owner"
+      email          = join("@", ["domains", "example.invalid"])
+      phone_number   = "0820000000"
+      address_line_1 = "1 Example Street"
+      city           = "Example City"
+      zip_code       = "0000"
+      country_code   = "ZA"
+    }
+  }
+
+  expect_failures = [var.domain_contact]
+}
+
 # Static HCL scan for facts that plan output does not show.
 run "source_scan" {
   command = plan
@@ -580,5 +673,10 @@ run "source_scan" {
   assert {
     condition     = !can(regex("(?m)^[^#]*(sensitive_value|value[[:space:]]*=[[:space:]]*var[.]alarm_email|origin_verify_value|api_key_value)", file("${path.module}/workspaces.tf")))
     error_message = "The workspaces file must not set a sensitive variable."
+  }
+
+  assert {
+    condition     = can(regex("(?s)resource[[:space:]]+\"aws_route53domains_domain\".*prevent_destroy[[:space:]]*=[[:space:]]*true", file("${path.module}/domain.tf")))
+    error_message = "The domain registration must be protected with prevent_destroy."
   }
 }

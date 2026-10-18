@@ -89,3 +89,54 @@ variable "hosted_zone_name" {
     error_message = "The hosted_zone_name value must be a lowercase DNS name."
   }
 }
+
+variable "register_domain" {
+  description = "Register hosted_zone_name with Route 53 Domains and keep it renewed (domain.tf, ADR-031). A purchase: the owner reads the plan before applying. False reads an existing hosted zone instead. If the domain is already registered in this account, import it rather than registering again (docs/runbooks/release.md)."
+  type        = bool
+  default     = false
+}
+
+variable "domain_contact" {
+  description = "Registrant, admin and tech contact for the domain registration. Personal data: set it only in the git-ignored terraform.tfvars. Phone numbers use the +<country code>.<number> format; country_code is the two-letter ISO code. Required when register_domain is true."
+  type = object({
+    contact_type      = optional(string, "PERSON")
+    first_name        = string
+    last_name         = string
+    organization_name = optional(string)
+    email             = string
+    phone_number      = string
+    address_line_1    = string
+    address_line_2    = optional(string)
+    city              = string
+    state             = optional(string)
+    zip_code          = string
+    country_code      = string
+  })
+  default   = null
+  sensitive = true
+
+  validation {
+    condition     = !var.register_domain || var.domain_contact != null
+    error_message = "domain_contact is required when register_domain is true."
+  }
+
+  validation {
+    condition     = var.domain_contact == null ? true : contains(["PERSON", "COMPANY", "ASSOCIATION", "PUBLIC_BODY", "RESELLER"], var.domain_contact.contact_type)
+    error_message = "contact_type must be PERSON, COMPANY, ASSOCIATION, PUBLIC_BODY or RESELLER."
+  }
+
+  validation {
+    condition     = var.domain_contact == null ? true : can(regex("^[+][0-9]{1,3}[.][0-9]{4,15}$", var.domain_contact.phone_number))
+    error_message = "phone_number must look like +27.821234567."
+  }
+
+  validation {
+    condition     = var.domain_contact == null ? true : can(regex("^[A-Z]{2}$", var.domain_contact.country_code))
+    error_message = "country_code must be a two-letter upper-case ISO code."
+  }
+
+  validation {
+    condition     = var.domain_contact == null ? true : can(regex("^[^@\\s]+@[^@\\s]+[.][^@\\s]+$", var.domain_contact.email))
+    error_message = "The contact email must be an email address."
+  }
+}

@@ -193,19 +193,15 @@ locals {
     },
   ]
 
-  # The existing public hosted zone of the custom domain (ADR-031). It is read, not
-  # managed here: it was created with the domain registration. The apply roles may
+  # The public hosted zone of the custom domain (ADR-031). Route 53 creates it with
+  # the domain registration (domain.tf), so it is never a resource here. The apply roles may
   # change records in this one zone only, and only the names of their own
   # environment: dev owns dev.<zone> and its certificate validation records; prod
   # owns the zone apex and its validation records.
-  zone_arn = "arn:aws:route53:::hostedzone/${data.aws_route53_zone.domain.zone_id}"
+  zone_id  = var.register_domain ? trimprefix(aws_route53domains_domain.this[0].hosted_zone_id, "/hostedzone/") : data.aws_route53_zone.domain[0].zone_id
+  zone_arn = "arn:aws:route53:::hostedzone/${local.zone_id}"
   dns_record_names = {
     dev  = ["dev.${var.hosted_zone_name}", "_*.dev.${var.hosted_zone_name}"]
     prod = [var.hosted_zone_name, "_*.${var.hosted_zone_name}"]
   }
-}
-
-data "aws_route53_zone" "domain" {
-  name         = var.hosted_zone_name
-  private_zone = false
 }

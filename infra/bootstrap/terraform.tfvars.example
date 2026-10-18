@@ -35,3 +35,22 @@ monthly_budget_usd = 40
 
 # The existing Route 53 hosted zone of the custom domain (public, not secret).
 hosted_zone_name = "reinvent-compass.vegas"
+
+# Domain registration (ADR-031). Set register_domain = true to have the bootstrap
+# buy and renew the domain; the plan shows the create, and applying it is a
+# purchase. Leave it false if the domain is already registered and its hosted
+# zone exists. The contact is personal data: fill it in only in terraform.tfvars.
+register_domain = false
+
+# domain_contact = {
+#   contact_type   = "PERSON"
+#   first_name     = "REPLACE_WITH_FIRST_NAME"
+#   last_name      = "REPLACE_WITH_LAST_NAME"
+#   email          = "REPLACE_WITH_CONTACT_EMAIL"
+#   phone_number   = "+00.000000000"
+#   address_line_1 = "REPLACE_WITH_STREET_ADDRESS"
+#   city           = "REPLACE_WITH_CITY"
+#   state          = "REPLACE_WITH_PROVINCE_OR_STATE"
+#   zip_code       = "REPLACE_WITH_POSTAL_CODE"
+#   country_code   = "ZA"
+# }
