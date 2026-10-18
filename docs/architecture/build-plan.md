@@ -149,6 +149,8 @@ The responsible party is the owner (Hennie Francis), acting personally. No human
 
 `DELETE /api/v1/me` (MCP tool `forget_me`) voids every pass for the caller's `subHash` and deletes P10 to P12 for that hash; the P13 rate counters are kept until their window ends plus 2 minutes, so forget_me cannot reset the limits (S5 security review, 2026-10-17). The local `forget_me` also deletes P4, P5 and P9. This is how an attendee exercises POPIA rights.
 
+Server data is processed in the AWS us-east-1 Region (N. Virginia, United States), outside South Africa, and by Apple and Google when the attendee adds passes to their wallets. Data-subject requests and questions go through private vulnerability reporting on the project repository on GitHub; no personal email address is published. An attendee may also complain to the Information Regulator (South Africa).
+
 ### 4.3 Threat model (STRIDE)
 
 | Component                             | Threat                                                                                         | Mitigation                                                                                                                                                                                      |

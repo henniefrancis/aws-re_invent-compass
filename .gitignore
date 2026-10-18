@@ -79,3 +79,7 @@ desktop.ini
 
 # Angular CLI cache
 .angular/
+
+# Playwright output
+site/playwright-report/
+site/test-results/
