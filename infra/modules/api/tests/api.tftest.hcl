@@ -378,6 +378,34 @@ run "lambda_permissions" {
   }
 }
 
+# GetEvent returns milliseconds, for example 2026-11-30T05:30:00.000-08:00, and
+# the pass-service accepts a fraction, so the window passes as GetEvent gives it.
+run "event_window_from_get_event_with_milliseconds_is_accepted" {
+  command = plan
+
+  variables {
+    event_window_start = "2026-11-30T05:30:00.000-08:00"
+    event_window_end   = "2026-12-04T23:59:00.000-08:00"
+  }
+
+  assert {
+    condition     = aws_lambda_function.api.environment[0].variables["EVENT_WINDOW_START"] == "2026-11-30T05:30:00.000-08:00"
+    error_message = "The event window must reach the Lambda exactly as GetEvent gives it."
+  }
+}
+
+# The pass-service requires seconds, so a value without them must fail at plan
+# time rather than at Lambda start-up.
+run "event_window_without_seconds_is_rejected" {
+  command = plan
+
+  variables {
+    event_window_start = "2026-11-30T05:30-08:00"
+  }
+
+  expect_failures = [var.event_window_start]
+}
+
 run "invalid_env_is_rejected" {
   command = plan
 

@@ -173,7 +173,7 @@ variable "event_window_start" {
   type        = string
 
   validation {
-    condition     = can(regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?(Z|[+-][0-9]{2}:[0-9]{2})$", var.event_window_start))
+    condition     = can(regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$", var.event_window_start))
     error_message = "The event_window_start value must be ISO 8601 with an offset."
   }
 }
@@ -183,7 +183,7 @@ variable "event_window_end" {
   type        = string
 
   validation {
-    condition     = can(regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?(Z|[+-][0-9]{2}:[0-9]{2})$", var.event_window_end))
+    condition     = can(regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$", var.event_window_end))
     error_message = "The event_window_end value must be ISO 8601 with an offset."
   }
 }
