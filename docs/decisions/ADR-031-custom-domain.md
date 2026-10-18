@@ -4,7 +4,7 @@ Status: Accepted, 2026-10-18 (owner decision; the pass host was dropped the same
 
 ## Context
 
-The public edge was planned on the CloudFront default address, `https://<distribution>.cloudfront.net`. That address is baked into every issued pass (`webServiceURL`) and into the npm package, and its default certificate lets viewers use TLS 1.0 (ADR-027 item 6). The owner registered `reinvent-compass.vegas`; its DNS is a Route 53 hosted zone in the same AWS account, created with the registration.
+The public edge was planned on the CloudFront default address, `https://<distribution>.cloudfront.net`. That address is baked into every issued pass (`webServiceURL`) and into the npm package, and its default certificate lets viewers use TLS 1.0 (ADR-027 item 6). The owner chose `reinvent-compass.vegas`. It is registered with Route 53 Domains in the same AWS account by the bootstrap (Terraform, under the golden rule), and its DNS is the Route 53 hosted zone created with that registration.
 
 ## Decision
 
@@ -21,7 +21,7 @@ The public edge was planned on the CloudFront default address, `https://<distrib
 
 - ADR-027 item 6 is resolved: viewers get TLS 1.2 or later on the custom domain.
 - Cost: ACM public certificates are free; a Route 53 hosted zone costs about USD 0.50 a month plus query charges (a few cents at this scale). The domain registration is paid yearly and shows on the account bill in the month it is registered or renewed.
-- The domain is registered with Route 53 Domains in the same account, so its name servers are normally set to the hosted zone automatically. The runbook keeps a check step: if the delegation were ever different, the certificate would never validate and the first apply would wait on it.
+- Because the domain is registered with Route 53 Domains in the same account, its name servers are normally set to the hosted zone automatically. The runbook keeps a check step: if the delegation were ever different, the certificate would never validate and the first apply would wait on it.
 - **Passes use the apex.** The pass `webServiceURL` is `PUBLIC_BASE_URL` plus `PASSKIT_WEB_SERVICE_PATH`, that is `https://reinvent-compass.vegas/api/passkit`. A separate `pass.reinvent-compass.vegas` host was considered and dropped (owner decision): one address is simpler to run and to explain, and the pass-service builds `webServiceURL` from the one base URL and a path, so a second host would have needed a pass-service change for no functional gain. `extra_aliases` stays in the roots and the edge module for a future second name; adding one would also need the prod DNS scoping in the bootstrap widened to that name.
 - The CloudFront default domain keeps working, because CloudFront serves it with its own certificate; the release health check keeps using it.
 - A changed alias list replaces the certificate (create before destroy), so settle the alias set before passes are issued (prod has the apex only).
