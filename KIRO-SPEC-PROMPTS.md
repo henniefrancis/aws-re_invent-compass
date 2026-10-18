@@ -32,6 +32,8 @@ Milestones: contract lock and day-1 spikes **16 Oct**; first dev deploy **21 Oct
 
 **Builders from 17 Oct.** The owner's Kiro credits ran out on 17 Oct. Kiro wrote the S0, S1, S2, S4 and S6 specs and built S0 and S1 tasks 1 to 8. From then on, Claude's dev-team agents build from the same Kiro specs, one agent per worktree, under the same steering, ownership and review gates. S1 continues from task 9, S4 from task 1, and S2 and S6 from task 1. The S3, S5 and S7 specs are written by Claude in Kiro's format (requirements, design, tasks), with the spike fallbacks built in. Kiro can pick any stream back up when credits renew: the specs, `tasks.md` checkboxes and `design.md` stay the single record of what is done.
 
+**Kiro first (19 Oct, owner decision).** Kiro is the owner's own requirement, not a contest rule (`docs/hackathon-rules.md`, ADR-029 amendment). Every change starts as a Kiro spec or a task in an existing spec and Claude's agents build from it; work that ran ahead of its task is backfilled as a checked task the same day (infra tasks 19 and 20). The owner uses Kiro for the demo, the Power and the article.
+
 **Lessons for any builder, Kiro or agent:**
 
 - Give the full ownership folders from the build plan (section 9.1, File ownership). A narrower list stalls the work.

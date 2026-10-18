@@ -52,5 +52,6 @@ The rules do not require Kiro. The owner requires it anyway, to show the newest 
 
 - The product is a Kiro Power: the Power, the week as a Kiro spec and the Kiro hooks are the primary experience. Other MCP clients are supported, but Kiro is the one the README, the site and the article lead with.
 - The build follows Kiro spec-driven development. Every stream has a Kiro spec (requirements, design, tasks), and those specs are the single record of what was built, including the work Claude's agents did after the owner's Kiro credits ran out (ADR-029).
-- New work starts as a Kiro spec or a task in an existing one, and the owner returns to building in Kiro when credits allow.
+- Every change starts as a Kiro spec or a task in an existing spec, and Claude's agents build from it (ADR-029, confirmed by the owner on 19 October). Work done before its task was written is backfilled into the spec the same day.
+- The owner uses Kiro for the demo, the Power and the article.
 - The article and the demo video show Kiro: the Power in use, the spec of the week and a hook blocking a bad booking.

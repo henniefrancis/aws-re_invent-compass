@@ -294,6 +294,15 @@ The build order lays the shared foundation first (version pins, provider, tags, 
     - Commit the captures with scope `infra` using multiple `-m` flags; do not push
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 17.2, 17.6_
 
+- [x] 19. Register the custom domain in the bootstrap (design item 37)
+  - [x] 19.1 Add `aws_route53domains_domain.this` behind `register_domain` with a sensitive `domain_contact`, auto-renew, transfer lock, WHOIS privacy and `prevent_destroy`; take the zone id from the registration
+  - [x] 19.2 Native tests: default reads the zone, registration is renewed, locked and private and the DNS statements name its zone, a missing contact and a bad phone number are refused, `prevent_destroy` is present
+  - [x] 19.3 Update the release runbook, the tfvars example and ADR-031; the owner applies it (done 18 October)
+
+- [x] 20. Fix what the first dev deploy surfaced (design item 38)
+  - [x] 20.1 Scripts under Git Bash on Windows, the existing OIDC provider, the API Gateway logging role trust, the event window pattern, the WAF managed rule groups, the tagged CloudFront distribution and the empty saved plan, each with a static or native test
+  - [x] 20.2 Record the deploy in `docs/runbooks/first-deploy-notes.md`; a second bootstrap and release show no changes
+
 ## Notes
 
 - The implementation language is Terraform/HCL, Bash, and Node.js (`.mjs`), fixed by the design and tech steering (Terraform only, no CDK/CloudFormation/SAM).
