@@ -115,14 +115,18 @@ hcp_call() {
 workspace_json="${work_dir}/workspace.json"
 hcp_call GET "/organizations/${organization}/workspaces/${workspace}" "${workspace_json}"
 workspace_id="$(jq -r '.data.id' "${workspace_json}")"
-[ -n "${workspace_id}" ] && [ "${workspace_id}" != "null" ] || fail "could not find the workspace"
+if [ -z "${workspace_id}" ] || [ "${workspace_id}" = "null" ]; then
+  fail "could not find the workspace"
+fi
 
 vars_json="${work_dir}/vars.json"
 hcp_call GET "/workspaces/${workspace_id}/vars" "${vars_json}"
 
 set_variable() {
   local var_key="$1" file="$2"
-  [ -f "${file}" ] && [ -r "${file}" ] || fail "cannot read file: ${file}"
+  if [ ! -f "${file}" ] || [ ! -r "${file}" ]; then
+    fail "cannot read file: ${file}"
+  fi
   local clean="${work_dir}/${var_key}.value"
   tr -d '\r\n' <"${file}" >"${clean}"
   [ -s "${clean}" ] || fail "the file for ${var_key} is empty: ${file}"

@@ -87,7 +87,9 @@ hcp_get() {
 missing=0
 
 workspace_id="$(hcp_get "/organizations/${organization}/workspaces/${workspace}" | jq -r '.data.id')"
-[ -n "${workspace_id}" ] && [ "${workspace_id}" != "null" ] || fail "could not find the workspace"
+if [ -z "${workspace_id}" ] || [ "${workspace_id}" = "null" ]; then
+  fail "could not find the workspace"
+fi
 variable_keys="$(hcp_get "/workspaces/${workspace_id}/vars" | jq -r '.data[].attributes.key')"
 
 for var_name in alarm_email origin_verify_value api_key_value; do
