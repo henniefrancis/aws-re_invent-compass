@@ -90,6 +90,12 @@ variable "hosted_zone_name" {
   }
 }
 
+variable "create_oidc_provider" {
+  description = "Create the app.terraform.io OIDC provider. AWS allows one per URL in an account, so set false when another configuration already manages it: the bootstrap then reads it, and it must list the aws.workload.identity audience."
+  type        = bool
+  default     = true
+}
+
 variable "register_domain" {
   description = "Register hosted_zone_name with Route 53 Domains and keep it renewed (domain.tf, ADR-031). A purchase: the owner reads the plan before applying. False reads an existing hosted zone instead. If the domain is already registered in this account, import it rather than registering again (docs/runbooks/release.md)."
   type        = bool

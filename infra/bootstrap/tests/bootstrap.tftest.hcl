@@ -24,6 +24,13 @@ mock_provider "aws" {
     }
   }
 
+  mock_data "aws_iam_openid_connect_provider" {
+    defaults = {
+      arn            = "arn:aws:iam::aws:oidc-provider/app.terraform.io"
+      client_id_list = ["aws.workload.identity"]
+    }
+  }
+
   mock_resource "aws_iam_openid_connect_provider" {
     defaults = {
       arn = "arn:aws:iam::aws:oidc-provider/app.terraform.io"
@@ -67,13 +74,36 @@ run "one_oidc_provider_with_the_hcp_audience" {
   command = plan
 
   assert {
-    condition     = aws_iam_openid_connect_provider.hcp_terraform.url == "https://app.terraform.io"
+    condition     = aws_iam_openid_connect_provider.hcp_terraform[0].url == "https://app.terraform.io"
     error_message = "The OIDC provider must be app.terraform.io."
   }
 
   assert {
-    condition     = aws_iam_openid_connect_provider.hcp_terraform.client_id_list == toset(["aws.workload.identity"])
+    condition     = aws_iam_openid_connect_provider.hcp_terraform[0].client_id_list == toset(["aws.workload.identity"])
     error_message = "The audience must be aws.workload.identity."
+  }
+
+  assert {
+    condition     = length(data.aws_iam_openid_connect_provider.hcp_terraform) == 0
+    error_message = "A created provider must not also be read."
+  }
+}
+
+run "existing_oidc_provider_is_read_not_created" {
+  command = plan
+
+  variables {
+    create_oidc_provider = false
+  }
+
+  assert {
+    condition     = length(aws_iam_openid_connect_provider.hcp_terraform) == 0 && length(data.aws_iam_openid_connect_provider.hcp_terraform) == 1
+    error_message = "With create_oidc_provider false the existing provider is read and none is created."
+  }
+
+  assert {
+    condition     = jsondecode(aws_iam_role.apply["dev"].assume_role_policy).Statement[0].Principal.Federated == "arn:aws:iam::aws:oidc-provider/app.terraform.io"
+    error_message = "The roles must trust the provider that was read."
   }
 }
 

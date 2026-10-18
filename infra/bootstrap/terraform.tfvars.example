@@ -36,6 +36,10 @@ monthly_budget_usd = 40
 # The existing Route 53 hosted zone of the custom domain (public, not secret).
 hosted_zone_name = "reinvent-compass.vegas"
 
+# AWS allows one app.terraform.io OIDC provider per account. Set false when
+# another configuration already manages it; the bootstrap then reads it.
+create_oidc_provider = true
+
 # Domain registration (ADR-031). Set register_domain = true to have the bootstrap
 # buy and renew the domain; the plan shows the create, and applying it is a
 # purchase. Leave it false if the domain is already registered and its hosted
