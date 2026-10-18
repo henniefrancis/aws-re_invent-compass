@@ -60,7 +60,8 @@ export async function sendToPhone(
     text: [
       `Open this link on your phone before ${handoff.expiresAt}: ${handoff.boardUrl}`,
       'Or scan this QR code with your phone camera:',
-      handoff.terminalQr,
+      // The plain text QR only, once: it has no escape codes, so it is safe in any client, and the
+      // PNG image follows. (The terminal render with colour codes is not sent.)
       handoff.chatText,
       HANDOFF_SHARING_NOTE,
       PASS_DISCLAIMER,

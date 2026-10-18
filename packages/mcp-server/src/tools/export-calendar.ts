@@ -6,6 +6,7 @@ import type { Commitment } from '@compass/contracts';
 import type { ScheduleView } from '@compass/core/passes';
 import { CompassError } from '../ports/errors.js';
 import { checkIdentifiers } from '../safety/identifiers.js';
+import { labelUntrusted } from '../safety/labelled-data.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
 import {
   ensureSignedIn,
@@ -22,6 +23,7 @@ export async function exportCalendar(
   const { events, passes } = ctx.runtime;
   let view: ScheduleView;
   let entries: number;
+  let unknown: string[] = [];
   if (input.commitments === undefined) {
     await ensureSignedIn(ctx);
     const catalog = await events.catalog();
@@ -35,13 +37,23 @@ export async function exportCalendar(
     if (!checkIdentifiers(ids).ok) {
       throw new CompassError('IdentifierRejected');
     }
-    view = scheduleViewFromCommitments(input.commitments, await events.catalog());
+    const catalog = await events.catalog();
+    unknown = ids.filter((id) => !catalog.byId.has(id));
+    view = scheduleViewFromCommitments(input.commitments, catalog);
     entries = view.sessions.length + view.personalTime.length;
   }
   const calendar = await passes.exportCalendar(view);
   return {
     ok: true,
     structured: { ics: calendar.ics },
-    text: `Built a calendar with ${entries} entries. Import the .ics text into your calendar app. A copy was saved at ${calendar.path}.`,
+    text: [
+      `Built a calendar with ${entries} entries. Import the .ics text into your calendar app. A copy was saved at ${calendar.path}.`,
+      ...(unknown.length === 0
+        ? []
+        : [
+            `${unknown.length} sessions you named are not in the catalog Compass has cached, so they are not in the calendar. Run refresh_catalog if they should be.`,
+            labelUntrusted('attendee', { notInCatalog: unknown }),
+          ]),
+    ].join('\n'),
   };
 }

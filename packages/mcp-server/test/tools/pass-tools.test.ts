@@ -129,8 +129,11 @@ describe('send_to_phone', () => {
     expect(outcome.ok && outcome.text).toContain(
       'Do not share this link or the QR code. Anyone who has it can see these passes until it expires.',
     );
-    expect(outcome.ok && outcome.text).toContain('##');
-    expect(outcome.ok && outcome.text).toContain('QR-TEXT');
+    // The QR is printed once, as plain text without escape codes (QA low).
+    expect(outcome.ok && outcome.text).not.toContain('##');
+    const text = outcome.ok ? outcome.text : '';
+    expect(text.split('QR-TEXT')).toHaveLength(2);
+    expect(text).not.toContain(String.fromCharCode(0x1b));
     expect(outcome.ok && outcome.extra).toEqual([
       { type: 'image', data: 'iVBORw==', mimeType: 'image/png' },
     ]);
@@ -390,6 +393,14 @@ describe('export_calendar', () => {
     expect(outcome.ok && outcome.structured).toEqual({ ics: 'BEGIN:VCALENDAR\nEND:VCALENDAR' });
     expect(fake.events.calls.map((c) => c.method)).toEqual(['catalog']);
     expect(fake.passes.calls.find((c) => c.method === 'exportCalendar')?.args[0]).toBe(3);
+    // The unknown session is reported, by id and as the attendee's own data, not silently dropped.
+    expect(outcome.ok && outcome.text).toContain(
+      '1 sessions you named are not in the catalog Compass has cached',
+    );
+    expect(outcome.ok && outcome.text).toContain('"notInCatalog"');
+    expect(outcome.ok && outcome.text).toContain('ghost');
+    const clean = await exportCalendar({ commitments: commitments.slice(0, 2) }, ctx);
+    expect(clean.ok && clean.text).not.toContain('not in the catalog');
   });
 
   test('builds from the confirmed schedule when none are given', async () => {

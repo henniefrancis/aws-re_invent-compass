@@ -42,7 +42,9 @@ export async function addWeekSpecToGitignore(
   if (text.split(/\r?\n/).some((line) => ENTRY_FORMS.includes(line.trim()))) {
     return 'alreadyPresent';
   }
-  const separator = text === '' || text.endsWith('\n') ? '' : '\n';
-  await fs.appendText(path, `${separator}${WEEK_SPEC_ENTRY}\n`);
+  // The line ending of the file is kept: a file that uses CRLF gets a CRLF entry (QA low).
+  const eol = text.includes('\r\n') ? '\r\n' : '\n';
+  const separator = text === '' || text.endsWith('\n') ? '' : eol;
+  await fs.appendText(path, `${separator}${WEEK_SPEC_ENTRY}${eol}`);
   return 'added';
 }

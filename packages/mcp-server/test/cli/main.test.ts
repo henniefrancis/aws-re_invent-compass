@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PassThrough } from 'node:stream';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { defaultExecFile, main, readVersion } from '../../src/cli/main.js';
+import { defaultExecFile, ignoreBrokenPipe, main, readVersion } from '../../src/cli/main.js';
 import type { Host, MainIo } from '../../src/cli/main.js';
 import { startStdioServer } from '../../src/cli/stdio.js';
 import * as pkg from '../../src/index.js';
@@ -281,5 +281,39 @@ describe('a hook ends the process even when stdin stays open (QA M6)', () => {
     } finally {
       spy.mockRestore();
     }
+  });
+});
+
+describe('a reader that goes away mid-demo (QA low)', () => {
+  test('the broken pipe is ignored and the temporary workspace is still removed', async () => {
+    const t = io(['demo']);
+    let wrote = 0;
+    t.stdout.on('data', () => {
+      wrote += 1;
+      if (wrote === 2) {
+        t.stdout.destroy(Object.assign(new Error('write EPIPE'), { code: 'EPIPE' }));
+      }
+    });
+    const tempRoot = join(temp, 'demo-temp');
+    const { mkdir, readdir } = await import('node:fs/promises');
+    await mkdir(tempRoot, { recursive: true });
+    const code = await main(t, { ...host(), tempRoot });
+    expect(code).toBe(0);
+    expect(wrote).toBeGreaterThanOrEqual(2);
+    expect(await readdir(tempRoot)).toEqual([]);
+  });
+
+  test('ignoreBrokenPipe ignores a broken pipe and a destroyed stream, and raises any other error', () => {
+    const stream = new PassThrough();
+    ignoreBrokenPipe(stream);
+    expect(() =>
+      stream.emit('error', Object.assign(new Error('x'), { code: 'EPIPE' })),
+    ).not.toThrow();
+    expect(() =>
+      stream.emit('error', Object.assign(new Error('x'), { code: 'ERR_STREAM_DESTROYED' })),
+    ).not.toThrow();
+    expect(() => stream.emit('error', Object.assign(new Error('boom'), { code: 'EIO' }))).toThrow(
+      'boom',
+    );
   });
 });

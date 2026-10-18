@@ -74,6 +74,19 @@ export async function readVersion(packageRoot: URL): Promise<string> {
   }
 }
 
+/**
+ * Ignores a broken pipe on an output stream, for example `reinvent-compass demo | head`. The reader
+ * is gone, so the writes are lost, but the command carries on and finishes its own clean-up (the
+ * demo's temporary workspace) instead of dying with an unhandled stream error (QA low).
+ */
+export function ignoreBrokenPipe(stream: Writable): void {
+  stream.on('error', (error: NodeJS.ErrnoException) => {
+    if (error.code !== 'EPIPE' && error.code !== 'ERR_STREAM_DESTROYED') {
+      throw error;
+    }
+  });
+}
+
 /** Resolves once everything written so far has been handed to the stream's destination. */
 function flush(stream: Writable): Promise<void> {
   return new Promise((resolve) => {
@@ -85,6 +98,8 @@ function flush(stream: Writable): Promise<void> {
 
 /** Runs the command line with the real machine behind it and returns the exit code. */
 export async function main(io: MainIo, host: Host = {}): Promise<number> {
+  ignoreBrokenPipe(io.stdout);
+  ignoreBrokenPipe(io.stderr);
   const root = await findPackageRoot(host.moduleUrl ?? import.meta.url, exists);
   const version = await readVersion(root);
   const environment = async (): Promise<RuntimeEnvironment> => {

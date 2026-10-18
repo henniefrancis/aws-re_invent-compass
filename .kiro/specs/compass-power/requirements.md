@@ -322,7 +322,7 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 3. THE Power SHALL provide the skills `plan-my-week`, `first-timer-guide` and `install-hooks`, each a `SKILL.md` with `name` and `description` front matter.
 4. THE `first-timer-guide` skill SHALL cite only official AWS pages, each with its URL, on the hosts `reinvent.awsevents.com`, `aws.amazon.com` or `docs.aws.amazon.com`.
 5. THE `plan-my-week` skill SHALL tell the agent to run `check_itinerary` and show the human the session codes and catalog titles before asking for approval of any Write_Tool call.
-6. THE Hook_Template SHALL use the Kiro hook schema version `v1` with a PreToolUse guardrail hook whose matcher covers the eight Compass Write_Tools and the seven Awsevents_Write_Tools, and a PostToolUse sync hook, each running `npx --yes reinvent-compass@<version> hook <name>` with no template variables and a 30 second timeout.
+6. THE Hook_Template SHALL use the Kiro hook schema version `v1` with a PreToolUse guardrail hook whose matcher covers the nine Compass Write_Tools and the seven Awsevents_Write_Tools, and a PostToolUse sync hook, each running `npx --yes reinvent-compass@<version> hook <name>` with no template variables and a 30 second timeout.
 7. THE Power SHALL NOT list any Write_Tool or Awsevents_Write_Tool in any `autoApprove` entry.
 8. THE Power SHALL use no AWS logo or wording that suggests an official AWS product, and SHALL contain no em dash or en dash.
 
@@ -439,3 +439,5 @@ R2.11. **Scanner coverage.** THE boto3 detector SHALL count chained session call
 R2.12. **Sync and cancel safety.** `sync_passes` SHALL ask the human about any issue, update or void, listing each with its code and catalog title, SHALL refuse when a reserved session in scope is not in the catalog, and `cancel_reservation` SHALL never override an unsafe swap for a client that cannot ask (this replaces the five minute rule of M1).
 
 R2.13. **Low findings.** THE `send_to_phone` structured result SHALL NOT carry the hand-off fragment; every success SHALL carry the untrusted-text note in its metadata; the schedule snapshot SHALL be written through the production file system adapter; `ensureDir` SHALL refuse a link from the app folder down; a response body SHALL be aborted at the byte cap; a search text over 200 characters, more than 20 goals and an invalid level SHALL be refused with fixed messages; and a request that does not match a tool schema SHALL be answered with a fixed message.
+
+R2.14. **Output hygiene.** THE tool text SHALL carry the QR code once and without escape codes; the demo SHALL add colour codes only on a terminal; `export_calendar` SHALL report unknown session ids; a suggested layover SHALL take its words from the rules context; and the `.gitignore` entry SHALL keep the file line ending.

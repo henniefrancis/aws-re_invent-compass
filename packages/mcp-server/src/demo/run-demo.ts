@@ -17,6 +17,8 @@ import { DEMO_TRIPLE } from './triple.js';
 /** Where the demo writes. */
 export interface DemoOutput {
   write(chunk: string): unknown;
+  /** True for a terminal: only then does the demo add colour codes (to the QR code). */
+  isTTY?: boolean;
 }
 
 /** What the demo needs besides the runtime. */
@@ -40,6 +42,15 @@ interface DemoApi {
 interface Step {
   title: string;
   run(api: DemoApi): Promise<string[]>;
+}
+
+const ESC = String.fromCharCode(0x1b);
+/** A line of the text QR code: only spaces and block characters, with at least one block. */
+const QR_LINE = new RegExp('^[ \u2580\u2584\u2588]*[\u2580\u2584\u2588][ \u2580\u2584\u2588]*$');
+
+/** Black on white for a QR line, so it scans on a dark terminal too. Only used on a terminal. */
+export function styleQrLine(line: string): string {
+  return QR_LINE.test(line) ? `${ESC}[30;47m${line}${ESC}[0m` : line;
 }
 
 const CONTROL = new RegExp('[\\u0000-\\u001f\\u007f-\\u009f]', 'g');
@@ -149,7 +160,7 @@ const STEPS: Step[] = [
       const { output } = await api.call('issue_boarding_passes', { sessionIds: [aRepeat, b] });
       expect(output.issued.length === 2, 'The boarding passes were not issued.');
       return [
-        'Compass issued two boarding passes through the in-process pass service. They are unofficial; your badge is your ticket.',
+        `Compass issued ${output.issued.length} boarding passes through the in-process pass service. They are unofficial; your badge is your ticket.`,
       ];
     },
   },
@@ -184,7 +195,7 @@ const STEPS: Step[] = [
         'The pass for the cancelled session was not voided.',
       );
       return [
-        'Compass synced your passes with your schedule and voided the pass for the cancelled session. The other pass is untouched.',
+        `Compass synced your passes with your schedule: ${output.voided.length} voided, ${output.issued.length} issued. The pass for the cancelled session is voided and the others are left alone.`,
       ];
     },
   },
@@ -222,7 +233,7 @@ export async function runDemo(
       io.stdout.write(`\n${heading}\n`);
       try {
         for (const line of await step.run(api)) {
-          io.stdout.write(`${line}\n`);
+          io.stdout.write(`${io.stdout.isTTY === true ? styleQrLine(line) : line}\n`);
         }
       } catch (error) {
         const reason = error instanceof StepFailure ? error.message : messageFor(error);

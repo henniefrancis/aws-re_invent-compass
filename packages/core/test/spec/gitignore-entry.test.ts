@@ -41,6 +41,18 @@ describe('gitignore entry', () => {
     expect(empty.files.get(GITIGNORE)).toBe(`${WEEK_SPEC_ENTRY}\n`);
   });
 
+  test('keeps the line ending of the file: CRLF stays CRLF and LF stays LF (QA low)', async () => {
+    const crlf = fsWith('node_modules/\r\n*.log');
+    await addWeekSpecToGitignore(ROOT, crlf);
+    expect(crlf.files.get(GITIGNORE)).toBe(`node_modules/\r\n*.log\r\n${WEEK_SPEC_ENTRY}\r\n`);
+    const crlfNewline = fsWith('a\r\n');
+    await addWeekSpecToGitignore(ROOT, crlfNewline);
+    expect(crlfNewline.files.get(GITIGNORE)).toBe(`a\r\n${WEEK_SPEC_ENTRY}\r\n`);
+    const lf = fsWith('a\nb');
+    await addWeekSpecToGitignore(ROOT, lf);
+    expect(lf.files.get(GITIGNORE)).toBe(`a\nb\n${WEEK_SPEC_ENTRY}\n`);
+  });
+
   test('recognises the entry in its equivalent forms and does not add it twice', async () => {
     for (const line of [
       WEEK_SPEC_ENTRY,

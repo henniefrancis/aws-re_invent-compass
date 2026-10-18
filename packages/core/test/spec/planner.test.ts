@@ -625,4 +625,22 @@ describe('verdict preference and last resorts (QA M3)', () => {
     const commitment = result.commitments[0];
     expect(commitment?.kind === 'reservedSession' && 'venue' in commitment).toBe(false);
   });
+
+  test('a layover commitment takes its title from the rules context reason, cleaned and capped (QA low)', async () => {
+    const rules = new FakePlannerRules();
+    const dash = String.fromCharCode(0x2013);
+    rules.layovers = () => [
+      {
+        start: '2026-12-01T20:00:00.000Z',
+        end: '2026-12-01T20:30:00.000Z',
+        reason: `Take a meal break ${dash} here. ${'x'.repeat(200)}`,
+      },
+    ];
+    const result = await planWeek(input([entry('a', ['storage'], at(18))]), rules);
+    const layover = result.commitments.find((c) => c.kind === 'personalTime');
+    expect(layover?.title.startsWith('Take a meal break - here. ')).toBe(true);
+    expect(layover?.title).toHaveLength(128);
+    expect(layover?.title).not.toContain(dash);
+    expect(layover?.title).not.toBe('Layover');
+  });
 });

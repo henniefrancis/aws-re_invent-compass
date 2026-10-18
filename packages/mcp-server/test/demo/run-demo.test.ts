@@ -1,7 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { CompassError } from '../../src/ports/errors.js';
-import { DEMO_STEP_TITLES, proseOf, runDemo } from '../../src/demo/run-demo.js';
+import { DEMO_STEP_TITLES, proseOf, runDemo, styleQrLine } from '../../src/demo/run-demo.js';
 import { DATA_PREAMBLE } from '../../src/safety/labelled-data.js';
 import { SIMULATED_LABEL } from '../../src/server/results.js';
 import { installNetworkGuard } from '../support/network-guard.js';
@@ -126,5 +126,53 @@ describe('proseOf', () => {
     ].join('\n');
     expect(proseOf(text)).toEqual(['First line.', 'Second line.']);
     expect(proseOf('No data block here.')).toEqual(['No data block here.']);
+  });
+});
+
+describe('the demo on a terminal and off one (QA low)', () => {
+  const QR = /^[ ▀▄█]*[▀▄█][ ▀▄█]*$/;
+
+  test('off a terminal there are no escape codes, and the QR code is printed once', async () => {
+    const out: string[] = [];
+    const io = {
+      stdout: { write: (c: string) => out.push(c) },
+      stderr: { write: () => undefined },
+    };
+    expect(await runDemo(io, stack.runtime, { repoPath: stack.workspace })).toBe(0);
+    const text = out.join('');
+    expect(text).not.toContain(String.fromCharCode(0x1b));
+    const all = text.split('\n');
+    const isQr = (line: string | undefined): boolean => line !== undefined && QR.test(line);
+    expect(all.filter((line) => isQr(line)).length).toBeGreaterThan(5);
+    // One block of consecutive QR lines, not two.
+    const blocks = all.filter((line, index) => isQr(line) && !isQr(all[index - 1])).length;
+    expect(blocks).toBe(1);
+    const scans = text.match(/Or scan this QR code/g) ?? [];
+    expect(scans).toHaveLength(1);
+  });
+
+  test('on a terminal only the QR lines get colour codes, black on white', async () => {
+    const out: string[] = [];
+    const io = {
+      stdout: { write: (c: string) => out.push(c), isTTY: true },
+      stderr: { write: () => undefined },
+    };
+    expect(await runDemo(io, stack.runtime, { repoPath: stack.workspace })).toBe(0);
+    const esc = String.fromCharCode(0x1b);
+    const lines = out.join('').split('\n');
+    const colored = lines.filter((line) => line.includes(esc));
+    expect(colored.length).toBeGreaterThan(5);
+    for (const line of colored) {
+      expect(line.startsWith(`${esc}[30;47m`)).toBe(true);
+      expect(line.endsWith(`${esc}[0m`)).toBe(true);
+      expect(QR.test(line.slice(`${esc}[30;47m`.length, -`${esc}[0m`.length))).toBe(true);
+    }
+  });
+
+  test('styleQrLine leaves every other line alone', () => {
+    expect(styleQrLine('Step 1 of 10: x')).toBe('Step 1 of 10: x');
+    expect(styleQrLine('')).toBe('');
+    expect(styleQrLine('    ')).toBe('    ');
+    expect(styleQrLine('██  ██')).toContain(String.fromCharCode(0x1b));
   });
 });
