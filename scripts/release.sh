@@ -176,9 +176,10 @@ terraform plan -input=false -out=tfplan -var "service_version=${service_version}
 
 plan_json="$(terraform show -json tfplan)" || fail "could not read the saved plan"
 
-# jq reads the plan through a pipe from the shell, never from a file on disk.
+# jq reads the plan through a pipe from the shell, never from a file on disk. A
+# native jq.exe on Windows ends lines with a carriage return; strip it.
 plan_jq() {
-  printf '%s' "${plan_json}" | jq "$@"
+  printf '%s' "${plan_json}" | jq "$@" | tr -d '\r'
 }
 
 # ---- refusal checks (print addresses and types only) -----------------------

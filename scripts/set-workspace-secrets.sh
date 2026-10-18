@@ -114,7 +114,8 @@ hcp_call() {
 
 workspace_json="${work_dir}/workspace.json"
 hcp_call GET "/organizations/${organization}/workspaces/${workspace}" "${workspace_json}"
-workspace_id="$(jq -r '.data.id' "${workspace_json}")"
+# A native jq.exe on Windows ends lines with a carriage return; strip it.
+workspace_id="$(jq -r '.data.id' "${workspace_json}" | tr -d '\r')"
 if [ -z "${workspace_id}" ] || [ "${workspace_id}" = "null" ]; then
   fail "could not find the workspace"
 fi
@@ -137,7 +138,7 @@ set_variable() {
     fail "could not build the request for ${var_key}"
 
   local existing_id
-  existing_id="$(jq -r --arg key "${var_key}" '.data[] | select(.attributes.key == $key and .attributes.category == "terraform") | .id' "${vars_json}" | head -n 1)"
+  existing_id="$(jq -r --arg key "${var_key}" '.data[] | select(.attributes.key == $key and .attributes.category == "terraform") | .id' "${vars_json}" | head -n 1 | tr -d '\r')"
   local response="${work_dir}/${var_key}.response"
   if [ -n "${existing_id}" ]; then
     jq --arg id "${existing_id}" '.data.id = $id' "${body}" >"${body}.patch" && mv "${body}.patch" "${body}"

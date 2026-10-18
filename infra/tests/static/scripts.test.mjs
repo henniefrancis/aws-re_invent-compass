@@ -287,6 +287,25 @@ test('load-secrets.sh detects an existing value with list-secret-version-ids and
   assert.match(source, /if \[ "\$\{kind\}" != "edge-values" \]; then\s+required_tools\+=\(aws\)/);
 });
 
+test('the scripts run under Git Bash on Windows: carriage returns stripped, file:// path converted', () => {
+  const load = readOwned('scripts/load-secrets.sh');
+  assert.match(load, /count="\$\{count%\$'\\r'\}"/);
+  assert.match(load, /secret_path="\$\(cygpath -m "\$\{json_file\}"\)"/);
+  assert.match(load, /--secret-string "file:\/\/\$\{secret_path\}"/);
+
+  const check = readOwned('scripts/check-secrets.sh');
+  assert.match(check, /count="\$\{count%\$'\\r'\}"/);
+  assert.match(check, /jq -r '\.data\.id' \| tr -d '\\r'/);
+  assert.match(check, /jq -r '\.data\[\]\.attributes\.key' \| tr -d '\\r'/);
+
+  const set = readOwned('scripts/set-workspace-secrets.sh');
+  assert.match(set, /jq -r '\.data\.id' "\$\{workspace_json\}" \| tr -d '\\r'/);
+  assert.match(set, /head -n 1 \| tr -d '\\r'\)"/);
+
+  const release = readOwned('scripts/release.sh');
+  assert.match(release, /jq "\$@" \| tr -d '\\r'/);
+});
+
 test('load-secrets.sh needs a separate flag, a warning and a typed name to replace the pepper', () => {
   const source = readOwned('scripts/load-secrets.sh');
   assert.match(source, /--rotate-pepper\) rotate_pepper="yes"/);

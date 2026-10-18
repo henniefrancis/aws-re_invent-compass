@@ -86,11 +86,13 @@ hcp_get() {
 
 missing=0
 
-workspace_id="$(hcp_get "/organizations/${organization}/workspaces/${workspace}" | jq -r '.data.id')"
+# A native jq.exe and the Windows AWS CLI end lines with a carriage return, so
+# every captured answer is stripped of it.
+workspace_id="$(hcp_get "/organizations/${organization}/workspaces/${workspace}" | jq -r '.data.id' | tr -d '\r')"
 if [ -z "${workspace_id}" ] || [ "${workspace_id}" = "null" ]; then
   fail "could not find the workspace"
 fi
-variable_keys="$(hcp_get "/workspaces/${workspace_id}/vars" | jq -r '.data[].attributes.key')"
+variable_keys="$(hcp_get "/workspaces/${workspace_id}/vars" | jq -r '.data[].attributes.key' | tr -d '\r')"
 
 for var_name in alarm_email origin_verify_value api_key_value; do
   if printf '%s\n' "${variable_keys}" | grep -qx "${var_name}"; then
@@ -110,6 +112,7 @@ for name in app origin-verify apple-pass google-wallet; do
     --output text 2>/dev/null)"; then
     fail "could not check ${secret_name}"
   fi
+  count="${count%$'\r'}"
   case "${count}" in
     0)
       echo "MISSING: secret ${secret_name} has no value"

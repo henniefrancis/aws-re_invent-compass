@@ -130,6 +130,8 @@ secret_has_value() {
     --output text 2>/dev/null)"; then
     fail "could not check ${secret_name}; nothing was written"
   fi
+  # The Windows AWS CLI ends its output with a carriage return.
+  count="${count%$'\r'}"
   case "${count}" in
     0) return 1 ;;
     [1-9] | [1-9][0-9]*) return 0 ;;
@@ -140,10 +142,16 @@ secret_has_value() {
 write_secret() {
   local secret_name="$1"
   local json_file="$2"
+  # Git Bash on Windows does not convert a path inside a file:// argument, so
+  # the Windows AWS CLI needs the Windows form of the temporary file path.
+  local secret_path="${json_file}"
+  if command -v cygpath >/dev/null 2>&1; then
+    secret_path="$(cygpath -m "${json_file}")"
+  fi
   if ! aws secretsmanager put-secret-value \
     --region "${AWS_REGION}" \
     --secret-id "${secret_name}" \
-    --secret-string "file://${json_file}" >/dev/null 2>&1; then
+    --secret-string "file://${secret_path}" >/dev/null 2>&1; then
     echo "error: could not write the secret ${secret_name}" >&2
     exit 1
   fi
