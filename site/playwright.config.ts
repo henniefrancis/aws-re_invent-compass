@@ -15,7 +15,10 @@ export default defineConfig({
   retries: 0,
   fullyParallel: true,
   forbidOnly: true,
-  reporter: 'list',
+  // CI also writes the HTML report that the e2e workflow uploads as an artifact.
+  reporter: process.env['CI']
+    ? [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
+    : 'list',
   use: {
     baseURL: `http://127.0.0.1:${String(PORT)}`,
     serviceWorkers: 'block',

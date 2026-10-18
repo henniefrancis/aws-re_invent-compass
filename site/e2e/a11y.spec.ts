@@ -25,6 +25,7 @@ test.describe('axe on every board state', () => {
   ];
   for (const [fixtureName, label, heading] of states) {
     test(`board ${label} (${fixtureName})`, async ({ page }) => {
+      test.slow(); // axe on a loaded machine can pass the default 30 s (seen once on Firefox)
       await mockHandoff(page, fixtureName);
       await page.goto(boardPath);
       await expect(page.locator('h1')).toHaveText(heading);
