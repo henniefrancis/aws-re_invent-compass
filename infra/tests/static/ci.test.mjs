@@ -97,14 +97,16 @@ test('.trivyignore lists exactly the three ADR-026 advisories, each with a comme
 test('the gitleaks allowlist keeps the default rules and covers test paths only', () => {
   const text = readFileSync(resolve(repoRoot, '.gitleaks.toml'), 'utf8').replaceAll('\r\n', '\n');
   assert.match(text, /useDefault\s*=\s*true/);
-  assert.match(text, /targetRules\s*=\s*\["jwt", "jwt-base64"\]/);
+  // The pinned gitleaks (8.24.3) honours only the [allowlist] table, so the allowlist
+  // is a path allowlist limited to test folders (see the comment in .gitleaks.toml).
+  assert.match(text, /^\[allowlist\]/m);
   const paths = [...text.matchAll(/'''([^']+)'''/g)].map((m) => m[1]);
   assert.ok(paths.length >= 1);
   for (const path of paths) {
     assert.match(path, /\/test\/|\/e2e\/fixtures\//, `${path} must be a test path`);
   }
-  // No blanket allowlist: no global paths, regexes or stopwords outside the scoped block.
-  assert.doesNotMatch(text, /^\[allowlist\]/m);
+  // No blanket allowlist: no regexes, stopwords or commit allowlists.
   assert.doesNotMatch(text, /regexes\s*=/);
   assert.doesNotMatch(text, /stopwords\s*=/);
+  assert.doesNotMatch(text, /commits\s*=/);
 });

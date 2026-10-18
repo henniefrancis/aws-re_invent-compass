@@ -1,19 +1,23 @@
-# Gitleaks configuration. The default rule set stays on; the only allowlist below
-# is narrow: it silences the JWT rules for test-only JWT-shaped strings and only in
-# the folders that hold tests and test fixtures. A JWT-shaped string anywhere else,
-# and every other rule everywhere, still fails the scan.
+# Gitleaks configuration. The default rule set stays on. The only allowlist is a
+# path allowlist for the folders that hold unit tests and browser test fixtures,
+# which contain made-up, JWT-shaped tokens on purpose (redaction and no-secret
+# tests). Every rule still runs on every other path.
 #
-# .gitleaksignore pins individual findings by fingerprint (commit:file:rule:line)
-# for fake test tokens in history that the pinned gitleaks release does not match
-# against this allowlist. Each entry must be a made-up value in a test file.
+# The gitleaks release pinned in the action (8.24.3) did not apply the newer
+# rule-scoped [[allowlists]] block with targetRules to the extended default rules,
+# so this uses the long-standing [allowlist] table, which it does honour. The
+# trade-off: a real secret placed in a test folder would not be caught by gitleaks;
+# GitHub secret scanning with push protection still covers provider keys there.
+#
+# .gitleaksignore pins individual findings by fingerprint (commit:file:rule:line).
+# Each entry must be a made-up value in a test file.
 title = "re:Invent Compass gitleaks"
 
 [extend]
 useDefault = true
 
-[[allowlists]]
-description = "Test-only JWT-shaped strings in unit tests and browser test fixtures"
-targetRules = ["jwt", "jwt-base64"]
+[allowlist]
+description = "Made-up tokens in unit tests and browser test fixtures"
 paths = [
   '''^packages/[^/]+/test/.*$''',
   '''^site/e2e/fixtures/.*$''',
