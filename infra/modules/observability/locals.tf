@@ -12,10 +12,6 @@ locals {
   apns_metric_name      = "ApnsFailure"
   apns_metric_function  = "api"
 
-  # Budget (Requirement 8.5 and 8.6).
-  budget_limit_usd         = "20"
-  budget_alert_percentages = [50, 80, 100]
-
   lambda_function_names = {
     api     = var.api_lambda_name
     passkit = var.passkit_lambda_name

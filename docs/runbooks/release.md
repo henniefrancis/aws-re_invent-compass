@@ -35,7 +35,8 @@ Run these once per environment, in order. They are the owner-only checks that no
 4. Load the secrets (see `secrets.md`): `origin-verify`, `app`, `apple`, `google`. Then run `scripts/check-secrets.sh <env>`.
 5. Create the Google class (see `google-class.md`).
 6. Set the variable `public_base_url` to `https://` plus the value of the `cloudfront_domain_name` output (no trailing slash) and run `scripts/release.sh <env>` again. The distribution depends on the Lambdas, so the Lambdas cannot know their own public address until the first apply is done; this second apply only updates the two Lambda configurations.
-7. Confirm that an immediately following plan shows no changes (the dev zero-diff check), and that the release ended with an HTTP 200 health check.
+7. Expect the health check of the first release (step 3) to fail, and the script to exit non-zero: by design the API cannot answer until the origin-verify secret is loaded (step 4) and `PUBLIC_BASE_URL` is set (step 6). That is not a failed deploy; carry on with steps 4 to 6. The health check of the release in step 6 is the first one that must pass.
+8. Confirm that an immediately following plan shows no changes (the dev zero-diff check), and that the release ended with an HTTP 200 health check.
 
 ## What the script does
 
@@ -44,7 +45,7 @@ Run these once per environment, in order. They are the owner-only checks that no
 3. Builds the Lambda zips into `infra/build/` and the site.
 4. Runs `terraform init` and `terraform plan -out` in `infra/envs/<env>`.
 5. Refuses the plan, prints the affected addresses or types and exits non-zero if it would destroy or replace a retained resource, or touches a resource type outside the allow list.
-6. Prints the plan counts and waits for you to type `yes` (dev) or `prod` (prod). Anything else exits without applying. The saved plan is held in memory and never written to disk.
+6. Prints the plan counts and waits for you to type `yes` (dev) or `prod` (prod). Anything else exits without applying. The saved plan file `tfplan` is written to `infra/envs/<env>` (it is git-ignored and excluded from the HCP upload) and the script removes it when it ends, whatever the outcome; the plan JSON that the refusal checks read is held in memory only and never written to disk.
 7. Applies the saved plan, syncs the site to the site bucket, and invalidates the CloudFront cache. A failure in any of these exits non-zero.
 8. Calls `GET /api/v1/health` through CloudFront, retrying while the distribution settles. Only HTTP 200 is success.
 
@@ -58,4 +59,4 @@ The script ends with `health check passed (HTTP 200)` and exit status 0. A secon
 - An `AccessDenied` from the apply phase means a statement in the apply role policy in `infra/bootstrap` is too narrow. Extend only that one statement, apply the bootstrap again, and re-review the diff before you run the release again. Never widen a statement to a wildcard to get past it, and never let an IAM write statement name anything but the two Lambda roles. Expect this on the first dev apply: the policy has not been exercised against AWS.
 - The alarm topic subscription must be confirmed once with the link AWS emails to the alarm address.
 - A customer managed KMS key for the alarm topic costs about USD 1 a month, which counts against the USD 20 budget.
-- To roll back, see `rollback.md`.
+- To roll back, see `rollback.md`. For alarms and the switches, see `alarms.md`. To remove dev after 1 November, see `teardown.md`.

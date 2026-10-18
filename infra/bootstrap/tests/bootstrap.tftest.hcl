@@ -42,6 +42,7 @@ mock_provider "tfe" {
 }
 
 variables {
+  alarm_email      = join("@", ["alarms", "example.invalid"])
   hcp_organization = "example-org"
   hcp_project      = "reinvent-compass"
   hcp_workspaces = {
@@ -301,6 +302,34 @@ run "api_gateway_tagging_is_scoped_to_the_environment" {
       ])
     ])
     error_message = "Untagging must require the environment resource tag."
+  }
+}
+
+run "one_account_budget_lives_in_the_bootstrap" {
+  command = plan
+
+  assert {
+    condition     = aws_budgets_budget.monthly.time_unit == "MONTHLY" && aws_budgets_budget.monthly.limit_unit == "USD" && aws_budgets_budget.monthly.budget_type == "COST" && aws_budgets_budget.monthly.limit_amount == "40"
+    error_message = "The account budget must be a monthly cost budget of 40 USD by default."
+  }
+
+  assert {
+    condition     = toset([for n in aws_budgets_budget.monthly.notification : n.threshold]) == toset([50, 80, 100]) && alltrue([for n in aws_budgets_budget.monthly.notification : n.notification_type == "ACTUAL" && n.threshold_type == "PERCENTAGE"])
+    error_message = "The budget must alert at 50, 80 and 100 percent of actual spend."
+  }
+
+  assert {
+    condition     = !anytrue([for k, p in aws_iam_policy.apply : strcontains(p.policy, "budgets:")])
+    error_message = "The apply roles manage no budget any more."
+  }
+}
+
+run "tfe_workspaces_pin_terraform" {
+  command = plan
+
+  assert {
+    condition     = alltrue([for w in values(tfe_workspace.env) : w.terraform_version == "~> 1.15.0"])
+    error_message = "The workspaces must pin Terraform to the 1.15 series."
   }
 }
 

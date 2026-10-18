@@ -76,7 +76,7 @@ infra/
     edge/                         # CloudFront, response headers policy, WAF web ACL
     api/                          # REST API from openapi.yaml (S0 copy), 2 Lambdas, stage live
       openapi.yaml                # S0-owned, consumed via templatefile(), never edited here
-    data/                         # DynamoDB single table, GSI1, GSI2
+    data/                         # DynamoDB single table, GSI2
     secrets/                      # 3 secret containers, random_password pepper + origin-verify
     observability/                # SNS topic, 4 alarms, monthly budget
   envs/
@@ -177,7 +177,7 @@ The site bucket carries `prevent_destroy = true` (Requirement 9.4). The OAC and 
   - `point_in_time_recovery` enabled (Requirement 6.4);
   - `deletion_protection_enabled = true` (Requirement 6.5);
   - `prevent_destroy = true` (Requirement 9.2);
-  - GSI1 (pass -> device) and GSI2 (subHash -> pass), each declared with an explicit `projection_type` (see below) projecting the attributes needed to satisfy its access pattern without a base-table read (Requirement 6.6, 6.7, 6.8).
+  - GSI2 (subHash -> pass; the unused GSI1 was dropped before the first apply), declared with an explicit `projection_type` (see below) projecting the attributes needed to satisfy its access pattern without a base-table read (Requirement 6.6, 6.7, 6.8).
 
 **GSI argument form and a deprecation tension (AWS provider 6.x).** In AWS provider 6.x the per-`global_secondary_index` `hash_key` and `range_key` arguments are marked deprecated in favour of a nested `key_schema` block. However, there are open provider bugs where the newer `key_schema` syntax produces permanent state drift and forces GSI replacement on every plan ([hashicorp/terraform-provider-aws#46335](https://github.com/hashicorp/terraform-provider-aws/issues/46335) and [#46601](https://github.com/hashicorp/terraform-provider-aws/issues/46601)). Because the DynamoDB table is a Retained_Resource that must never be destroyed or replaced (Requirement 9.2, and `release.sh` refuses any plan that would replace it), a form that risks GSI replacement is unacceptable here.
 
@@ -185,7 +185,7 @@ The site bucket carries `prevent_destroy = true` (Requirement 9.4). The OAC and 
 
 `projection_type` is stated explicitly per GSI:
 
-- **GSI1** (pass -> device): `projection_type = "INCLUDE"` with `non_key_attributes` covering the device fields the "all devices for a pass" access pattern needs (for example the device push token reference and status), so the query is answered without reading the base table (Requirement 6.8).
+- **GSI1** (dropped, unused by the pass-service): formerly `projection_type = "INCLUDE"` with `non_key_attributes` covering the device fields the "all devices for a pass" access pattern needs (for example the device push token reference and status), so the query is answered without reading the base table (Requirement 6.8).
 - **GSI2** (subHash -> pass): `projection_type = "INCLUDE"` with `non_key_attributes` covering the pass fields the "all passes for a subHash" access pattern needs (for example serial, session reference and `expiresAt`), again without a base-table read (Requirement 6.8).
 
 **Interface (inputs):** `env`, `table_name` (default `compass-<env>`). **Outputs:** `table_name`, `table_arn` (ARN used by Lambda role policies, not a secret).
@@ -237,12 +237,11 @@ A single-table design (ADR-012, plan section 4.2). The base table and two GSIs s
 | Attribute                             | Role                                                       |
 | ------------------------------------- | ---------------------------------------------------------- |
 | `PK`, `SK`                            | Base table partition and sort keys (opaque composite keys) |
-| `GSI1PK` (pass), `GSI1SK` (device)    | GSI1: all devices for a pass                               |
 | `GSI2PK` (`subHash`), `GSI2SK` (pass) | GSI2: all passes for a `subHash`                           |
 | `ttl`                                 | Numeric epoch-seconds TTL attribute for automatic clean-up |
 | `expiresAt`                           | Logical expiry checked in code on every read               |
 
-GSI1 and GSI2 project the attributes needed to answer their queries without reading the base table (Requirement 6.8). Each index states its `projection_type` explicitly: GSI1 uses `INCLUDE` with the device fields the "all devices for a pass" query needs, and GSI2 uses `INCLUDE` with the pass fields the "all passes for a subHash" query needs (serial, session reference and `expiresAt`). The indexes are declared with the stable `hash_key`/`range_key` arguments rather than the provider 6.x `key_schema` block, because `key_schema` currently forces GSI replacement on a Retained_Resource (see the Data_Module section and provider issues #46335 and #46601).
+GSI2 projects the attributes needed to answer their queries without reading the base table (Requirement 6.8). Each index states its `projection_type` explicitly: GSI1 uses `INCLUDE` with the device fields the "all devices for a pass" query needs, and GSI2 uses `INCLUDE` with the pass fields the "all passes for a subHash" query needs (serial, session reference and `expiresAt`). The indexes are declared with the stable `hash_key`/`range_key` arguments rather than the provider 6.x `key_schema` block, because `key_schema` currently forces GSI replacement on a Retained_Resource (see the Data_Module section and provider issues #46335 and #46601).
 
 ### Secrets Manager layout
 
@@ -452,3 +451,13 @@ Integrator fixes after the S5 security code review of the merged develop branch.
 - **N1 (launch blocker): app secret shape.** `scripts/load-secrets.sh app` wrote only `{pepper}`, which the pass-service rejects (`packages/pass-service/src/secrets/secret-shapes.ts`: `pepper` of at least 16 characters and `pepperId` matching `^[A-Za-z0-9._-]{1,64}$`), so every request would have failed. The script now writes `{pepper, pepperId}`: the pepper is 32 random bytes encoded as base64url, and `pepperId` is `p1` on the first load. `--rotate-pepper` now also requires `--pepper-id pN` (the next id, `p2`, `p3`, and so on). The id is a flag and not read from the secret, because the script never reads a secret value and secret version metadata does not carry the id. The JSON is built by `build_app_json`, which validates the pepper (length and base64url characters) and the id against the service rules first. A static test (`infra/tests/static/secret-shapes.test.mjs`) extracts that function from the script, runs it offline in bash against sample files, and validates the output with the same rules copied from `secret-shapes.ts`.
 - **N3: origin-verify rotation with an overlap.** `origin-verify --rotate --keep-previous --previous-file FILE` writes `{originVerify: new, originVerifyPrevious: old}`. The old value comes from the previous local file the owner supplies, never from the secret. The rotation order (write with Previous, update the HCP variable and release the edge, wait 10 minutes, rewrite without Previous) is in `docs/runbooks/secrets.md`.
 - **N9: per-route throttles.** Both roots now default `route_throttles` for the attendee routes `GET /api/v1/passes/{serialNumber}/apple`, `PUT /api/v1/passes/{serialNumber}` and `POST /api/v1/passes/{serialNumber}/void` (5 rps, burst 10) and the PassKit register, unregister and latest-pass routes (10 rps, burst 20), beside the existing `passes`, `handoffs` and `me` entries. Keys are the OpenAPI path without a leading slash, then the method. The api module test accepts these keys, and the composition test asserts the values in the dev root and the keys in both roots. Not verified offline: that API Gateway accepts a braced path in a method setting key; the owner confirms it on the first dev plan.
+33. **Release-gate round (CTO and TAM reviews).**
+    - The unused GSI1 and its two key attributes are gone from the data module before the first apply (the pass-service no longer queries it); requirement 6.6 is withdrawn and 6.7 and 6.8 name GSI2 only.
+    - There is one account budget, in the bootstrap (`compass-account-monthly`, 40 USD by default, alerts at 50, 80 and 100 percent), instead of one per environment, which doubled every alert. The observability module has no budget and the apply roles no budget permissions. Requirements 8.5 and 8.6 now describe this. At the new estimate (8 WAF rules, 4 secrets, 1 KMS key: about USD 17 per environment, about USD 33 for dev and prod together) the old 20 USD figure would alert permanently; the owner should confirm the limit.
+    - Both workspaces pin Terraform to `~> 1.15.0` (tfe `terraform_version`).
+    - Teardown switches, all defaulting to the protected value: `table_deletion_protection`, `site_force_destroy` and `secret_recovery_window_days` (module inputs `deletion_protection`, `force_destroy` and `recovery_window_in_days`), plus a bucket-emptying statement for the apply role. `prevent_destroy` itself cannot be a variable, so the teardown runbook lifts it with a code change on a throwaway branch that is never merged.
+    - `HANDOFF_CALENDAR_ENABLED` is now a Terraform variable (`handoff_calendar_enabled`, default true), so the alarms runbook can switch the calendar download off.
+    - The saved plan `tfplan` is written to `infra/envs/<env>/tfplan`; it is git-ignored, excluded from the HCP upload and removed by a trap when `release.sh` ends. The plan JSON is still held in memory only.
+    - The first release ends with a failed health check by design: the API needs `PUBLIC_BASE_URL` and the origin-verify secret before it answers. The release runbook says so.
+    - ADR-021 is closed as Not adopted: eight WAF rules exceed the five that the CloudFront flat-rate plan allows.
+34. **CI for the infra stream (release gate).** `check.yml` runs the offline Terraform checks in one job with a 25 minute timeout: fmt, `init -backend=false` and validate for every module, the bootstrap and both roots, `tflint --recursive` with `infra/.tflint.hcl` (tflint v0.64.0), each native test from the parent of its `tests` folder and `infra/tests` from `infra/` (Terraform 1.15.9, plugins cached with `actions/cache`), and `node --test "infra/tests/static/*.test.mjs"`. Trivy is pinned to v0.76.0. `.trivyignore` lists the three ADR-026 advisories by the CVE ids Trivy matches on (CVE-2026-85393, CVE-2026-92599 and CVE-2026-90771, whose GHSA ids are named in the comments), because Trivy reports the CVE id and ignores nothing listed only by GHSA id. `.gitleaks.toml` keeps the default rules and silences only the JWT rules in `packages/*/test` and `site/e2e/fixtures`. A static test checks the shape of all three files.

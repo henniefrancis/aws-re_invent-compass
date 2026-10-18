@@ -263,3 +263,9 @@ variable "google_wallet_class_suffix" {
     error_message = "The google_wallet_class_suffix value must be 1 to 64 letters, digits or . _ -."
   }
 }
+
+variable "handoff_calendar_enabled" {
+  description = "Switch for the hand-off calendar download (cut-list item 5). Turn it off with the alarms runbook."
+  type        = bool
+  default     = true
+}

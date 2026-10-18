@@ -118,25 +118,6 @@ run "waf_blocked_requests_alarm" {
   }
 }
 
-run "monthly_budget" {
-  command = plan
-
-  assert {
-    condition     = aws_budgets_budget.monthly.time_unit == "MONTHLY" && aws_budgets_budget.monthly.limit_amount == "20" && aws_budgets_budget.monthly.limit_unit == "USD" && aws_budgets_budget.monthly.budget_type == "COST"
-    error_message = "The budget must be a monthly 20 USD cost budget."
-  }
-
-  assert {
-    condition     = toset([for n in aws_budgets_budget.monthly.notification : n.threshold]) == toset([50, 80, 100]) && length(aws_budgets_budget.monthly.notification) == 3
-    error_message = "The budget must alert at 50, 80 and 100 percent."
-  }
-
-  assert {
-    condition     = alltrue([for n in aws_budgets_budget.monthly.notification : n.notification_type == "ACTUAL" && n.threshold_type == "PERCENTAGE" && n.comparison_operator == "GREATER_THAN"])
-    error_message = "Every budget alert must be on actual spend as a percentage."
-  }
-}
-
 # Edge case: an empty alarm email fails at plan time (Requirement 8.2).
 run "empty_alarm_email_is_rejected" {
   command = plan
@@ -158,7 +139,8 @@ run "malformed_alarm_email_is_rejected" {
   expect_failures = [var.alarm_email]
 }
 
-# Static scan: exactly one topic, one subscription, four alarms and one budget.
+# Static scan: exactly one topic, one subscription and five alarms, and no budget
+# (the one account budget lives in the bootstrap).
 run "source_scan" {
   command = plan
 
@@ -168,8 +150,8 @@ run "source_scan" {
   }
 
   assert {
-    condition     = length(regexall("(?m)^resource[[:space:]]+\"aws_cloudwatch_metric_alarm\"", file("${path.module}/main.tf"))) == 5 && length(regexall("(?m)^resource[[:space:]]+\"aws_budgets_budget\"", file("${path.module}/main.tf"))) == 1
-    error_message = "Exactly five alarms and one budget are required."
+    condition     = length(regexall("(?m)^resource[[:space:]]+\"aws_cloudwatch_metric_alarm\"", file("${path.module}/main.tf"))) == 5 && !can(regex("aws_budgets_budget", file("${path.module}/main.tf")))
+    error_message = "Exactly five alarms and no budget are required."
   }
 
   assert {

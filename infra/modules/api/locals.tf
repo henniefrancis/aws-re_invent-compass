@@ -47,6 +47,7 @@ locals {
       ID_TOKEN_ISSUER            = var.id_token_issuer
       APNS_ENABLED               = tostring(var.apns_enabled)
       GOOGLE_WALLET_ENABLED      = tostring(var.google_wallet_enabled)
+      HANDOFF_CALENDAR_ENABLED   = tostring(var.handoff_calendar_enabled)
       GOOGLE_SECRET_ID           = var.secret_arns.google
       GOOGLE_WALLET_CLASS_SUFFIX = var.google_wallet_class_suffix
       SERVICE_VERSION            = var.service_version

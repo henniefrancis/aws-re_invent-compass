@@ -25,7 +25,6 @@ locals {
       secret_pattern       = "arn:aws:secretsmanager:${local.region}:${local.account_id}:secret:compass/${e}/*"
       topic_arn            = "arn:aws:sns:${local.region}:${local.account_id}:compass-${e}-alarms"
       alarm_pattern        = "arn:aws:cloudwatch:${local.region}:${local.account_id}:alarm:compass-${e}-*"
-      budget_pattern       = "arn:aws:budgets::${local.account_id}:budget/compass-${e}-*"
       kms_alias_pattern    = "arn:aws:kms:${local.region}:${local.account_id}:alias/compass-${e}-*"
       bucket_arn_pattern   = "arn:aws:s3:::compass-${e}-site-*"
       web_acl_pattern      = "arn:aws:wafv2:${local.region}:${local.account_id}:global/webacl/compass-${e}/*"
@@ -140,7 +139,7 @@ locals {
     ])
   }
 
-  # ---- area: data (DynamoDB, secrets, SNS, KMS, alarms, budget) ------------
+  # ---- area: data (DynamoDB, secrets, SNS, KMS, alarms) ------------
   # secretsmanager:PutSecretValue is deliberately absent: Terraform never writes
   # a secret value (L6).
   apply_data = {
@@ -251,12 +250,6 @@ locals {
         Resource  = local.name_scope[e].alarm_pattern
         Condition = local.tag_on_manage[e]
       },
-      {
-        Sid      = "ManageBudget"
-        Effect   = "Allow"
-        Action   = ["budgets:ModifyBudget", "budgets:ViewBudget"]
-        Resource = local.name_scope[e].budget_pattern
-      },
     ]
   }
 
@@ -276,6 +269,18 @@ locals {
           "s3:PutLifecycleConfiguration",
         ]
         Resource = local.name_scope[e].bucket_arn_pattern
+      },
+      {
+        # Only used by a teardown, when force_destroy lets Terraform empty a
+        # versioned site bucket before deleting it.
+        Sid    = "EmptyTheSiteBucketOnTeardown"
+        Effect = "Allow"
+        Action = [
+          "s3:DeleteObject",
+          "s3:DeleteObjectVersion",
+          "s3:ListBucketVersions",
+        ]
+        Resource = [local.name_scope[e].bucket_arn_pattern, "${local.name_scope[e].bucket_arn_pattern}/*"]
       },
       {
         Sid       = "CreateDistribution"
@@ -466,7 +471,6 @@ resource "aws_iam_policy" "hcp_boundary" {
         Effect = "Allow"
         Action = [
           "apigateway:*",
-          "budgets:*",
           "cloudfront:*",
           "cloudwatch:*",
           "dynamodb:*",

@@ -26,3 +26,7 @@ workspace_variables = {
     id_token_issuer    = "REPLACE_WITH_ID_TOKEN_ISSUER_URL"
   }
 }
+
+# Budget alerts for the whole account. Private: never commit the real address.
+alarm_email        = "REPLACE_WITH_ALARM_EMAIL_ADDRESS"
+monthly_budget_usd = 40

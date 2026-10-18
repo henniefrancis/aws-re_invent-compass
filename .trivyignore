@@ -1,0 +1,19 @@
+# Advisories accepted by ADR-026 (docs/decisions/ADR-026-audit-allowlist.md).
+# Exactly the three advisories of the reviewed npm audit allowlist, no more: any
+# other advisory still fails the Trivy filesystem scan. Review at every release
+# gate. Trivy reports each one under its CVE id and lists the GHSA id of ADR-026 as
+# a vendor id, and it matches ignores on the CVE id, so the CVE id is listed here
+# with the GHSA id in the comment.
+
+# ADR-026, GHSA-86w9-cpqp-85rv: node-forge <= 1.4.0, RSA PKCS#1 v1.5 signature
+# verification. No patched version. passkit-generator only creates signatures;
+# tests use node-forge only for throwaway certificates.
+CVE-2026-85393
+
+# ADR-026, GHSA-6h2x-m376-mqjq: joi < 17.13.7, quadratic regular-expression
+# backtracking in Joi.string().isoDate(). passkit-generator pins joi 17.13.4.
+CVE-2026-92599
+
+# ADR-026, GHSA-wr44-6hxh-3jwq: joi < 17.13.8, prototype replacement through
+# __proto__ error codes in message compilation. passkit-generator pins joi 17.13.4.
+CVE-2026-90771

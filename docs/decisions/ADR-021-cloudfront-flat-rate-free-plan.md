@@ -1,12 +1,14 @@
 # ADR-021 CloudFront flat-rate Free plan
 
-Status: Proposed, 2026-10-15 (adopt only if the day-1 spike SP6 shows Terraform can manage the subscription).
+Status: Not adopted, 2026-10-18 (was Proposed, 2026-10-15). The WAF web ACL grew to 8 rules, above the 5 that the flat-rate Free plan includes, so the plan cannot cover this stack.
 
 ## Context
 
 WAF is most of the monthly cost (about USD 10.10 of about 12 to 13). CloudFront's flat-rate Free plan costs USD 0 and includes 1M requests and WAF with up to 5 rules. The golden rule forbids subscribing in the console: all infrastructure goes through Terraform.
 
 ## Decision
+
+Not adopted. The final design needs 8 WAF rules (three rate rules, three AWS managed rule groups, the kill switch and the body size rule), and the flat-rate Free plan includes WAF with up to 5 rules only. Pay-as-you-go WAF stays (plan section 7.4, about USD 16 to 17 an environment a month). The original conditions are kept below for the record.
 
 - Adopt the CloudFront flat-rate Free plan **only if** the subscription can be managed in Terraform, likely through the `awscc` provider for `AWS::PricingPlanManager::Subscription`.
 - Spike SP6 checks this, plus whether the account is on the AWS Free Tier account plan (accounts on the Free Tier are not eligible).

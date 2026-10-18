@@ -43,6 +43,19 @@ run "table_settings" {
   }
 }
 
+run "deletion_protection_can_be_lifted_for_teardown" {
+  command = plan
+
+  variables {
+    deletion_protection = false
+  }
+
+  assert {
+    condition     = aws_dynamodb_table.this.deletion_protection_enabled == false
+    error_message = "The teardown runbook must be able to lift deletion protection."
+  }
+}
+
 # The global_secondary_index set holds provider-computed members, so its values
 # are unknown at plan time under a mock provider. The index shape is therefore
 # asserted on the source, which is where projection_type is written explicitly.
@@ -50,23 +63,23 @@ run "gsi_projections" {
   command = plan
 
   assert {
-    condition     = length(regexall("(?m)^[[:space:]]*global_secondary_index[[:space:]]*[{]", file("${path.module}/main.tf"))) == 2
-    error_message = "Exactly two global secondary indexes are required."
+    condition     = length(regexall("(?m)^[[:space:]]*global_secondary_index[[:space:]]*[{]", file("${path.module}/main.tf"))) == 1
+    error_message = "Exactly one global secondary index (GSI2) is required."
   }
 
   assert {
-    condition     = length(regexall("projection_type[[:space:]]*=[[:space:]]*\"ALL\"", file("${path.module}/main.tf"))) == 2
-    error_message = "Each GSI must set an explicit ALL projection."
+    condition     = length(regexall("projection_type[[:space:]]*=[[:space:]]*\"ALL\"", file("${path.module}/main.tf"))) == 1
+    error_message = "The GSI must set an explicit ALL projection."
   }
 
   assert {
-    condition     = can(regex("name[[:space:]]*=[[:space:]]*\"GSI1\"", file("${path.module}/main.tf"))) && can(regex("name[[:space:]]*=[[:space:]]*\"GSI2\"", file("${path.module}/main.tf")))
-    error_message = "The indexes must be named GSI1 and GSI2."
+    condition     = can(regex("name[[:space:]]*=[[:space:]]*\"GSI2\"", file("${path.module}/main.tf"))) && !can(regex("GSI1|gsi1", file("${path.module}/main.tf")))
+    error_message = "The only index is GSI2 and the unused GSI1 and its attributes must be gone."
   }
 
   assert {
-    condition     = can(regex("hash_key[[:space:]]*=[[:space:]]*\"gsi1pk\"", file("${path.module}/main.tf"))) && can(regex("hash_key[[:space:]]*=[[:space:]]*\"gsi2pk\"", file("${path.module}/main.tf")))
-    error_message = "Each GSI must use its own partition key attribute."
+    condition     = can(regex("hash_key[[:space:]]*=[[:space:]]*\"gsi2pk\"", file("${path.module}/main.tf")))
+    error_message = "GSI2 must use its own partition key attribute."
   }
 }
 
@@ -106,7 +119,7 @@ run "gsi_argument_form_scan" {
   }
 
   assert {
-    condition     = length(regexall("(?m)^[[:space:]]*hash_key[[:space:]]*=", file("${path.module}/main.tf"))) == 3 && length(regexall("(?m)^[[:space:]]*range_key[[:space:]]*=", file("${path.module}/main.tf"))) == 3
-    error_message = "The table and both GSIs must declare hash_key and range_key."
+    condition     = length(regexall("(?m)^[[:space:]]*hash_key[[:space:]]*=", file("${path.module}/main.tf"))) == 2 && length(regexall("(?m)^[[:space:]]*range_key[[:space:]]*=", file("${path.module}/main.tf"))) == 2
+    error_message = "The table and the GSI must declare hash_key and range_key."
   }
 }

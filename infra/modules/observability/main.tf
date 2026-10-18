@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 # ---------------------------------------------------------------------------
 # Alarm topic, encrypted with a customer managed key. The key costs about
-# USD 1 a month, which counts against the monthly budget below.
+# USD 1 a month, which counts against the account monthly budget (see the bootstrap).
 # ---------------------------------------------------------------------------
 
 resource "aws_kms_key" "alarms" {
@@ -31,7 +31,7 @@ resource "aws_sns_topic_subscription" "email" {
 }
 
 # ---------------------------------------------------------------------------
-# Four alarms. Each notifies the topic when it enters the ALARM state.
+# Five alarms. Each notifies the topic when it enters the ALARM state.
 # Missing data does not breach: a quiet period is not an incident.
 # ---------------------------------------------------------------------------
 
@@ -166,31 +166,6 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
           FunctionName = metric_query.value
         }
       }
-    }
-  }
-}
-
-# ---------------------------------------------------------------------------
-# Monthly cost budget: 20 USD, alerting at 50, 80 and 100 percent of actual
-# spend. The budget emails the owner directly.
-# ---------------------------------------------------------------------------
-
-resource "aws_budgets_budget" "monthly" {
-  name         = "${local.name_prefix}-monthly"
-  budget_type  = "COST"
-  limit_amount = local.budget_limit_usd
-  limit_unit   = "USD"
-  time_unit    = "MONTHLY"
-
-  dynamic "notification" {
-    for_each = local.budget_alert_percentages
-
-    content {
-      comparison_operator        = "GREATER_THAN"
-      threshold                  = notification.value
-      threshold_type             = "PERCENTAGE"
-      notification_type          = "ACTUAL"
-      subscriber_email_addresses = [var.alarm_email]
     }
   }
 }

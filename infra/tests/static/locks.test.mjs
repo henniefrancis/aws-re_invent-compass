@@ -13,7 +13,8 @@
 // command that reaches the network registry for other platforms.
 
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
 import { repoRoot } from './lib.mjs';
@@ -30,9 +31,17 @@ const INSTRUCTION =
   'infra/envs/dev and infra/envs/prod, then commits the three .terraform.lock.hcl files';
 
 test('every root has a committed provider lock file for every platform', (t) => {
-  const missing = Object.keys(ROOTS).filter(
-    (dir) => !existsSync(resolve(repoRoot, dir, '.terraform.lock.hcl')),
+  // Only committed lock files count: terraform init in CI or on a laptop writes an
+  // untracked single-platform lock into each root, which must not satisfy this test.
+  const tracked = new Set(
+    execFileSync('git', ['ls-files', '-z', '--', 'infra/**/.terraform.lock.hcl'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    })
+      .split('\0')
+      .filter((p) => p.length > 0),
   );
+  const missing = Object.keys(ROOTS).filter((dir) => !tracked.has(`${dir}/.terraform.lock.hcl`));
   if (missing.length > 0) {
     t.skip(`${INSTRUCTION} (missing: ${missing.join(', ')})`);
     return;

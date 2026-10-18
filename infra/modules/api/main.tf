@@ -204,9 +204,9 @@ resource "aws_api_gateway_method_settings" "route" {
 
 # ---------------------------------------------------------------------------
 # API key: CloudFront sends it in x-api-key so that API Gateway can refuse a
-# direct execute-api call before any Lambda runs. A method enforces the key only
-# when the contract marks it apiKeyRequired; see design.md (the contract change
-# is an S0 request).
+# direct execute-api call before any Lambda runs. The contract marks every method
+# apiKeyRequired (security scheme api_key), so the key is enforced on all of them;
+# a native test asserts this on the rendered contract.
 # ---------------------------------------------------------------------------
 
 resource "aws_api_gateway_api_key" "this" {

@@ -17,3 +17,9 @@ variable "distribution_arn" {
     error_message = "The distribution_arn value must be a CloudFront distribution ARN."
   }
 }
+
+variable "force_destroy" {
+  description = "Let Terraform empty and delete a non-empty site bucket. False by default; only the teardown runbook sets it true."
+  type        = bool
+  default     = false
+}
