@@ -1,10 +1,13 @@
-# Required check workflow (foundation-contracts, S0).
+# Required check workflow (ADR-018).
 #
-# One job, triggered only on a pull request into main (build plan 11.1 and the
-# design). There is no push trigger and no schedule trigger anywhere. Every action
-# is pinned by commit SHA. The steps run in the build plan 11.1 order. The
-# Terraform and shellcheck steps are guarded by a presence check so they pass as
-# no-ops while the repository has no Terraform or shell files yet.
+# One job, triggered only on a pull request into main (build plan 11.1). There is
+# no push trigger and no schedule trigger anywhere. Every action is pinned by
+# commit SHA, and the Terraform, tflint and Trivy binaries are pinned by version.
+# The steps run in the build plan 11.1 order: the Node checks first, then the
+# secret and dependency scans, then the offline Terraform checks of the infra
+# stream (fmt, validate, tflint, the native tests with mock providers, the static
+# tests), then Trivy and shellcheck. The Terraform steps never call AWS or HCP
+# Terraform: init uses -backend=false and every native test mocks its providers.
 #
 # This file contains no em dash or en dash.
 name: check
@@ -24,7 +27,7 @@ jobs:
   check:
     name: build, test and scan
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -84,54 +87,67 @@ jobs:
       - name: npm audit with a reviewed allowlist
         run: node .github/scripts/audit-check.mjs
 
-      # Terraform steps run only when Terraform files exist. While there are none
-      # (S6 adds them later) these steps pass as no-ops.
-      - name: Detect Terraform files
-        id: tf
-        shell: bash
-        run: |
-          if [ -n "$(git ls-files '*.tf')" ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-          fi
+      # Offline Terraform checks. The provider plugins are cached between runs so
+      # each directory does not download the AWS provider again.
+      - name: Cache Terraform plugins
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-plugins-${{ runner.os }}-${{ hashFiles('infra/**/*.tf') }}
+          restore-keys: |
+            terraform-plugins-${{ runner.os }}-
+
+      - name: Create the plugin cache folder
+        run: mkdir -p "$HOME/.terraform.d/plugin-cache"
 
       - name: Set up Terraform
-        if: steps.tf.outputs.present == 'true'
         uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          # The 1.15 series the configuration requires (>= 1.15, < 2.0).
+          terraform_version: 1.15.9
+          terraform_wrapper: false
 
       - name: Terraform fmt
-        if: steps.tf.outputs.present == 'true'
-        run: terraform fmt -check -recursive
+        run: terraform fmt -check -recursive infra
 
       - name: Terraform validate
-        if: steps.tf.outputs.present == 'true'
         run: |
-          for dir in $(git ls-files '*.tf' | xargs -n1 dirname | sort -u); do
-            terraform -chdir="$dir" init -backend=false
+          export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
+          for dir in infra/modules/* infra/bootstrap infra/envs/dev infra/envs/prod; do
+            echo "== validate $dir"
+            terraform -chdir="$dir" init -backend=false -input=false
             terraform -chdir="$dir" validate
           done
 
       - name: Set up tflint
-        if: steps.tf.outputs.present == 'true'
         uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+        with:
+          tflint_version: v0.64.0
 
       - name: tflint
-        if: steps.tf.outputs.present == 'true'
-        run: tflint --recursive
+        run: tflint --recursive --config="$GITHUB_WORKSPACE/infra/.tflint.hcl" --chdir=infra
 
-      - name: Terraform test
-        if: steps.tf.outputs.present == 'true'
+      # Each native test runs from the parent of its tests folder, so the relative
+      # fixture and source paths in the tests resolve. The cross-cutting tests in
+      # infra/tests run from infra/.
+      - name: Terraform native tests
         run: |
-          for dir in $(git ls-files '*.tftest.hcl' | xargs -n1 dirname | sort -u); do
+          export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
+          for dir in $(git ls-files 'infra/*.tftest.hcl' | xargs -n1 dirname | xargs -n1 dirname | sort -u); do
+            echo "== test $dir"
+            terraform -chdir="$dir" init -backend=false -input=false
             terraform -chdir="$dir" test
           done
+
+      - name: Infra static tests and script checks
+        run: node --test "infra/tests/static/*.test.mjs"
 
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
+          version: v0.76.0
           exit-code: 1
           severity: HIGH,CRITICAL
           ignore-unfixed: true
@@ -141,21 +157,9 @@ jobs:
         with:
           scan-type: config
           scan-ref: .
+          version: v0.76.0
           exit-code: 1
           severity: HIGH,CRITICAL
 
-      # Shellcheck runs only when shell files exist. While there are none these
-      # steps pass as no-ops.
-      - name: Detect shell files
-        id: sh
-        shell: bash
-        run: |
-          if [ -n "$(git ls-files '*.sh')" ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Shellcheck
-        if: steps.sh.outputs.present == 'true'
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0

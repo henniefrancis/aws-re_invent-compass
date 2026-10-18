@@ -1,0 +1,16 @@
+# Gitleaks configuration. The default rule set stays on; the only allowlist below
+# is narrow: it silences the JWT rules for test-only JWT-shaped strings and only in
+# the folders that hold tests and test fixtures. A JWT-shaped string anywhere else,
+# and every other rule everywhere, still fails the scan.
+title = "re:Invent Compass gitleaks"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Test-only JWT-shaped strings in unit tests and browser test fixtures"
+targetRules = ["jwt", "jwt-base64"]
+paths = [
+  '''^packages/[^/]+/test/.*$''',
+  '''^site/e2e/fixtures/.*$''',
+]
