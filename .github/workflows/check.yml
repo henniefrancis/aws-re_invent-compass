@@ -158,7 +158,9 @@ jobs:
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: config
-          scan-ref: .
+          # Our infrastructure lives in infra/. The scanner fixture fixtures/sample-repo
+          # (and its copy in the mcp-server dist) is deliberately minimal test data.
+          scan-ref: infra
           version: v0.76.0
           exit-code: 1
           severity: HIGH,CRITICAL
