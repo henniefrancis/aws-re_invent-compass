@@ -16,6 +16,7 @@
 // This file contains no em dash or en dash.
 
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { maybeRunCli } from './cli.mjs';
 
@@ -92,19 +93,28 @@ const AUDIT_ARGS = ['audit', '--omit=dev', '--json'];
  * is no command-injection surface and no DEP0190 warning. npm is a JavaScript CLI,
  * so it is run through the Node binary:
  *   - if npm_execpath is set (npm sets it for scripts), run node with that path;
- *   - otherwise run node with the npm-cli.js that ships next to the node binary.
- * Pure and parameterised so both branches are covered by tests.
+ *   - otherwise run node with the npm-cli.js that ships with the node binary: next
+ *     to it on Windows (<dir>/node_modules/npm), or in the sibling lib folder on
+ *     Linux and macOS (<dir>/../lib/node_modules/npm). The first that exists wins;
+ *     when neither exists the Windows path is returned and the spawn fails closed.
+ * Pure and parameterised (exists is injectable) so every branch is tested.
  *
  * @param {NodeJS.ProcessEnv} env
  * @param {string} execPath the path to the node binary (process.execPath)
+ * @param {(path: string) => boolean} [exists] file existence check
  * @returns {{ command: string, args: string[] }}
  */
-export function resolveNpmCommand(env, execPath) {
+export function resolveNpmCommand(env, execPath, exists = existsSync) {
   const npmExecPath = env.npm_execpath;
-  const cliPath =
-    npmExecPath !== undefined && npmExecPath.length > 0
-      ? npmExecPath
-      : join(dirname(execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
+  if (npmExecPath !== undefined && npmExecPath.length > 0) {
+    return { command: execPath, args: [npmExecPath, ...AUDIT_ARGS] };
+  }
+  const nodeDir = dirname(execPath);
+  const candidates = [
+    join(nodeDir, 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+    join(nodeDir, '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+  ];
+  const cliPath = candidates.find((candidate) => exists(candidate)) ?? candidates[0];
   return { command: execPath, args: [cliPath, ...AUDIT_ARGS] };
 }
 

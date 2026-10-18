@@ -17,6 +17,7 @@ export interface AuditRunnerResult {
 export declare function resolveNpmCommand(
   env: Record<string, string | undefined>,
   execPath: string,
+  exists?: (path: string) => boolean,
 ): { command: string; args: string[] };
 
 export declare function runAudit(runner?: () => AuditRunnerResult): unknown;

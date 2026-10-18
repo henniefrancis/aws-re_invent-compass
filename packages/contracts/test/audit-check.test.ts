@@ -61,17 +61,44 @@ describe('Feature: foundation-contracts, audit-check', () => {
     expect(args).toEqual(['/path/to/npm-cli.js', 'audit', '--omit=dev', '--json']);
   });
 
-  test('resolveNpmCommand falls back to the npm-cli.js next to node when unset or empty', () => {
+  test('resolveNpmCommand falls back to the npm-cli.js next to node on Windows when unset or empty', () => {
     const execPath = '/usr/bin/node';
     const expectedCli = join(dirname(execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
+    const windowsLayout = (path: string) => path === expectedCli;
 
-    const unset = resolveNpmCommand({}, execPath);
+    const unset = resolveNpmCommand({}, execPath, windowsLayout);
     expect(unset.command).toBe(execPath);
     expect(unset.args).toEqual([expectedCli, 'audit', '--omit=dev', '--json']);
 
     // An empty string is treated the same as unset.
-    const empty = resolveNpmCommand({ npm_execpath: '' }, execPath);
+    const empty = resolveNpmCommand({ npm_execpath: '' }, execPath, windowsLayout);
     expect(empty.args).toEqual([expectedCli, 'audit', '--omit=dev', '--json']);
+  });
+
+  test('resolveNpmCommand finds npm in the sibling lib folder on Linux and macOS', () => {
+    const execPath = '/opt/node/bin/node';
+    const posixCli = join(
+      dirname(execPath),
+      '..',
+      'lib',
+      'node_modules',
+      'npm',
+      'bin',
+      'npm-cli.js',
+    );
+    const { args } = resolveNpmCommand({}, execPath, (path) => path === posixCli);
+    expect(args[0]).toBe(posixCli);
+  });
+
+  test('resolveNpmCommand returns the Windows path when no npm-cli.js exists, so the spawn fails closed', () => {
+    const execPath = '/nowhere/node';
+    const { args } = resolveNpmCommand({}, execPath, () => false);
+    expect(args[0]).toBe(join(dirname(execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js'));
+  });
+
+  test('resolveNpmCommand uses the real file system by default', () => {
+    const { args } = resolveNpmCommand({}, process.execPath);
+    expect(args[0]).toMatch(/npm-cli\.js$/);
   });
 
   test('resolveNpmCommand never requests a shell (no shell metacharacters in command)', () => {
