@@ -54,6 +54,7 @@ register_domain = false
 #   phone_number   = "+00.000000000"
 #   address_line_1 = "REPLACE_WITH_STREET_ADDRESS"
 #   city           = "REPLACE_WITH_CITY"
+#   # state: leave it out for a South African (ZA) contact; Route 53 refuses it.
 #   state          = "REPLACE_WITH_PROVINCE_OR_STATE"
 #   zip_code       = "REPLACE_WITH_POSTAL_CODE"
 #   country_code   = "ZA"

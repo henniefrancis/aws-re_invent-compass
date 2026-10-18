@@ -60,7 +60,14 @@ mock_provider "tfe" {
   }
 }
 
+# terraform test also reads a local terraform.tfvars, so the switches are pinned
+# here and an owner's real file cannot change what these runs assert.
 variables {
+  create_oidc_provider = true
+  register_domain      = false
+  domain_contact       = null
+  workspace_variables  = { dev = {}, prod = {} }
+
   alarm_email      = join("@", ["alarms", "example.invalid"])
   hcp_organization = "example-org"
   hcp_project      = "reinvent-compass"
@@ -488,8 +495,8 @@ run "account_api_gateway_role_and_workspaces" {
   }
 
   assert {
-    condition     = jsondecode(aws_iam_role.apigateway_cloudwatch.assume_role_policy).Statement[0].Condition.StringEquals["aws:SourceAccount"] == "aws" && startswith(jsondecode(aws_iam_role.apigateway_cloudwatch.assume_role_policy).Statement[0].Condition.ArnLike["aws:SourceArn"], "arn:aws:apigateway:us-east-1::/restapis/")
-    error_message = "The API Gateway role trust must carry aws:SourceAccount and aws:SourceArn."
+    condition     = jsondecode(aws_iam_role.apigateway_cloudwatch.assume_role_policy).Statement[0].Condition == { StringEquals = { "aws:SourceAccount" = "aws" } }
+    error_message = "The API Gateway role trust must carry aws:SourceAccount only: UpdateAccount checks the role with no REST API source ARN."
   }
 
   assert {

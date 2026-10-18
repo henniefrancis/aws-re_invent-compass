@@ -11,9 +11,11 @@ resource "aws_iam_role" "apigateway_cloudwatch" {
       Effect    = "Allow"
       Action    = "sts:AssumeRole"
       Principal = { Service = "apigateway.amazonaws.com" }
+      # Confused deputy guard: only API Gateway acting for this account. No
+      # aws:SourceArn: UpdateAccount checks the role before any REST API is
+      # involved, and a /restapis/* source ARN made that check fail.
       Condition = {
         StringEquals = { "aws:SourceAccount" = local.account_id }
-        ArnLike      = { "aws:SourceArn" = "arn:aws:apigateway:${local.region}::/restapis/*" }
       }
     }]
   })
