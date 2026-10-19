@@ -1,9 +1,9 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PassThrough } from 'node:stream';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { defaultExecFile, ignoreBrokenPipe, main, readVersion } from '../../src/cli/main.js';
 import type { Host, MainIo } from '../../src/cli/main.js';
 import { startStdioServer } from '../../src/cli/stdio.js';
@@ -18,6 +18,29 @@ import { testEnvironment } from '../support/runtime-env.js';
 
 let temp: string;
 let guard: NetworkGuard;
+
+// A private checkout copy (Kiro task 35). The pack smoke test rebuilds the real
+// packages/mcp-server/dist while this file runs, so main must not read resources from it:
+// this copy has no dist/, so every resource comes from the repository fallback.
+let checkout: string;
+beforeAll(async () => {
+  checkout = await mkdtemp(join(tmpdir(), 'compass-checkout-'));
+  const root = repoRoot();
+  const files = [
+    'packages/mcp-server/package.json',
+    'data/venues.json',
+    'fixtures/api',
+    'fixtures/synthetic',
+    'fixtures/sample-repo',
+  ];
+  for (const file of files) {
+    await cp(join(root, file), join(checkout, file), { recursive: true });
+  }
+});
+afterAll(async () => {
+  await rm(checkout, { recursive: true, force: true });
+});
+
 beforeEach(async () => {
   temp = await mkdtemp(join(tmpdir(), 'compass-main-'));
   guard = installNetworkGuard();
@@ -51,6 +74,7 @@ const host = (): Host => ({
   platform: 'linux',
   cwd: temp,
   tempRoot: temp,
+  moduleUrl: pathToFileURL(join(checkout, 'packages', 'mcp-server', 'src', 'cli', 'main.js')).href,
 });
 
 describe('readVersion', () => {
