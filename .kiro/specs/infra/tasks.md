@@ -306,7 +306,7 @@ The build order lays the shared foundation first (version pins, provider, tags, 
 - [x] 21. Set the binary media types from the contract (design item 39, SP3)
   - [x] 21.1 In `infra/modules/api`, read `x-amazon-apigateway-binary-media-types` from `openapi.yaml` with `yamldecode`, set `binary_media_types` on the REST API to that list, and add the list to the deployment trigger; update the comments that said the module never sets it
   - [x] 21.2 Native tests: the list equals the contract's list and includes `*/*`; the trigger is the hash of the body plus the list; replace the two assertions that forbade `binary_media_types`. Run fmt, validate, the module tests, `infra/tests` and the static tests
-  - [ ] 21.3 Commit with scope `infra`; the owner redeploys dev with `scripts/release.sh dev` and checks that `get-rest-api` lists `*/*`
+  - [x] 21.3 Commit with scope `infra`; the owner redeploys dev with `scripts/release.sh dev` and checks that `get-rest-api` lists `*/*`
 
 ## Notes
 

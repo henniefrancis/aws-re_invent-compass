@@ -494,12 +494,12 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [ ] 26.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 27. Apply the SP3 result (waits on the owner)
-  - [ ] 27.1 Adjust the PassKit and APNs configuration to the recorded SP3 result
+- [x] 27. Apply the SP3 result (recorded 19 October)
+  - [x] 27.1 Adjust the PassKit and APNs configuration to the recorded SP3 result
     - Set the documented values for `PASSKIT_WEB_SERVICE_PATH` (path join), `APNS_PUSH_TYPE` (if a push type was needed) and the `apns-topic` behaviour; if `If-Modified-Since` was never sent, note it; if pushes never arrived, document `APNS_ENABLED=false` as the shipped setting for S6 and the SP3 fallback (passes expire at `expirationDate`; sync copy tells the attendee which pass to delete); if binary downloads failed through the dev edge, raise the binary media type question with the integrator; update tests only where a default changed
     - _Requirements: 13.2, 13.6, 24.3, 24.6_
 
-  - [ ] 27.2 Commit
+  - [x] 27.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [ ] 28. Apply the SP4 result (waits on the owner)

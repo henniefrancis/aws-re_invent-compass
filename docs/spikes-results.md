@@ -92,4 +92,38 @@ Recorded in [ADR-024](decisions/ADR-024-kiro-hook-input-and-blocking.md). In sho
 
 ## SP3: PassKit on a real iPhone
 
-Not run yet. The owner runs it once against dev after the first deploy (checklist step 8 needs dev anyway), with the Pass Type ID certificate from owner task O1.
+Run on 19 October 2026 by the owner on his iPhone against dev (`https://dev.reinvent-compass.vegas`), through the real product path: Kiro with the local MCP server built from develop and pointed at dev (`COMPASS_API_URL` with `COMPASS_ALLOW_API_OVERRIDE=1`), a live Builder ID sign-in, then `issue_boarding_passes`, `send_to_phone`, the `/board` page in Safari, and `sync_passes` for changes. Two of the owner's real reservations (BIZ332, Monday 30 November, and MAM411, Thursday 3 December) carried the passes; a throwaway reservation (INV531) was made and cancelled for the void test. Device registration and fetches were read from the passkit Lambda's request log lines (route template and status only), so no device id, push token or serial was seen.
+
+| #   | Point                                                                                                                  | Result                         |
+| --- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 1   | Issue and add: right fields, boarding closes at start minus 10 minutes, the disclaimer, no barcode, sharing prohibited | Pass, after two fixes (below)  |
+| 2   | The device registers with the PassKit web service                                                                      | Pass                           |
+| 3   | Update and push: production APNs with the Pass Type ID certificate, the pass updates by itself                         | Pass, within about two minutes |
+| 4   | Void: the pass moves out of the main stack to the expired state                                                        | Pass                           |
+| 5   | A `.pkpasses` bundle with more than one pass in Safari                                                                 | Pass (one sheet, two passes)   |
+| 6   | `webServiceURL` path join: no double slash, the device calls `/api/passkit/v1/devices/...`                             | Pass                           |
+
+What was observed:
+
+1. Issue. The pass service verified the live Builder ID token and issued both passes (the first real use of the dev API with a live token). After the fixes, one Safari sheet offered both passes and Add All added them; adding the same bundle again did nothing, as expected for the same serials. On each pass: BOARDING CLOSES 9:50 AM for a 10:00 start and 12:50 PM for a 13:00 start; SESSION, GATE (venue), TITLE, STARTS, ENDS and NOTICE "Unofficial. Your badge is your ticket."; no barcode; no Share action; Automatic Updates on. An offline check of the downloaded bundle (a throwaway script that printed only booleans, file names, image sizes and field labels) confirmed: manifest hashes match; the detached signature verifies; the signer certificate's UID and OU equal `passTypeIdentifier` and `teamIdentifier`; it is issued by Apple WWDR G4, which is included and valid; icon 29, 58 and 87 px and logo 160 by 50, 320 by 100 and 480 by 150 px; Wallet accepted that artwork.
+2. Register. Two `POST /api/passkit/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}` with 201, one per pass, followed by `GET .../registrations/{passTypeIdentifier}` 200 and `GET /api/passkit/v1/passes/{passTypeIdentifier}/{serialNumber}` 200.
+3. Update and push. A test layover at MGM Grand before BIZ332, then `sync_passes` (1 updated): the phone fetched the changed serials and the new pass by itself and showed "WALK FROM PREVIOUS: 55 min from MGM Grand" on the back within the owner's two-minute wait. Deleting the layover and syncing again removed the line the same way. No `apns-push-type` header was needed (`APNS_PUSH_TYPE` stays unset) and `apns-topic` equal to the Pass Type ID works. Wallet sends `If-Modified-Since`: one latest-pass fetch answered 304. The update is silent (no lock-screen notice), because no field sets a change message.
+4. Void. Reserve INV531, issue and add its pass, cancel the reservation, `sync_passes` (1 voided): the phone fetched the voided pass and Wallet moved it out of the main stack as expired. Wallet also sent one `POST /api/passkit/v1/log` (200); its text is counted, never stored, so its content is unknown.
+5. Bundle. The hand-off's `.pkpasses` with two passes added from one Safari sheet.
+6. Path join. Every device request matched the `/api/passkit/v1/...` templates, so Wallet joins `webServiceURL` (`https://dev.reinvent-compass.vegas/api/passkit`, no trailing slash) and `/v1/...` with one slash. `PASSKIT_WEB_SERVICE_PATH` keeps its default `/api/passkit`.
+
+Fixes made during the run, and why:
+
+- `325d34e` `fix(foundation-contracts)`: Wallet first refused the bundle ("cannot be installed"). Safari's Add to Apple Wallet link sends `Accept: text/html,...` first and API Gateway honours only the first Accept media type, so the bundle arrived as base64 text (the same URL with `Accept: application/vnd.apple.pkpasses` returned a zip). This was pass-service design Open Question 6. The contract now lists `*/*` as a binary media type, as AWS documents for browser clients; the Lambdas already decode base64 request bodies. Kiro task foundation-contracts 16.
+- `0a8c282` `fix(infra)`: after that deploy, `get-rest-api` still listed only the three original types; updating the body of an existing REST API did not change them. The api module now sets `binary_media_types` from its contract copy with `yamldecode`, and the deployment trigger includes the list. After this deploy the API listed `*/*` and the bundle arrived as binary. Kiro task infra 21, design item 39.
+
+Not affected by the fixes: the JSON routes (issue, hand-off, registration, log) all worked after `*/*` was added.
+
+Found, not fixed here (follow-ups):
+
+- The ROOM line never appears: catalog rooms are written like "Level 1 | Academy 409" and the pass text rule does not allow `|`, so the room falls back to empty.
+- No Compass tool lists the attendee's reservations, favourites or personal time; `export_calendar` with no input is the only read of the live schedule, and its UIDs (`session-<id>`, `layover-<id>`) were needed to find ids. `add_layover` returns the new `personalTimeId` in the structured result only, so a client that shows only text (Kiro) cannot see it.
+- The wanted hero shot (the pass on the lock screen) cannot be taken before the event: Wallet shows a pass there only around its `relevantDates` (30 November to 3 December). The pass's header label is "BOARDING CLOSES", not "Seat released at".
+- No screenshots or video were taken in this run.
+
+Fallback: not needed. Pushes work, so `APNS_ENABLED` stays `true`.
