@@ -512,7 +512,7 @@ Fixed template (`boardingPass`, `transitType: PKTransitTypeGeneric`):
 
 `signPass` builds the file buffers in memory (`pass.json`, `icon.png`, `icon@2x.png`, `icon@3x.png`, `logo@2x.png`, `logo@3x.png` from `src/apple/artwork.ts`), constructs `new PKPass(buffers, {wwdr, signerCert, signerKey, signerKeyPassphrase}, props)`, calls `setBarcodes(null)`, `setExpirationDate(...)` and `setRelevantDates([...])`, and returns `getAsBuffer()`. `signBundle` signs each pass and returns `PKPass.pack(...passes).getAsBuffer()`. Every call runs inside the console guard.
 
-**Artwork.** `scripts/make-artwork.ts` draws an original compass-rose glyph and wordmark in an original palette with a tiny PNG encoder (`src/artwork/png.ts` over `node:zlib`), and writes `src/apple/artwork.ts` holding the PNGs as base64 constants, so the images are inside the bundle and importable in tests with no loader. Image sizes follow Apple's Wallet design guidance, checked against Apple's current pages when the task runs. No AWS logo, colour or wording is used.
+**Artwork.** Superseded by task 38 (see "Post-SP3 change: owner artwork"): `scripts/make-artwork.mjs` renders the owner's `logo.svg` and `favicon.svg` into the six PNGs and writes `src/apple/artwork.ts`. The original drawn compass glyph and PNG encoder were removed. (Original note: `scripts/make-artwork.ts` draws an original compass-rose glyph and wordmark in an original palette with a tiny PNG encoder (`src/artwork/png.ts` over `node:zlib`), and writes `src/apple/artwork.ts` holding the PNGs as base64 constants, so the images are inside the bundle and importable in tests with no loader. Image sizes follow Apple's Wallet design guidance, checked against Apple's current pages when the task runs. No AWS logo, colour or wording is used.)
 
 ### Component 12: APNs client (`src/apns/*`)
 
@@ -1310,3 +1310,7 @@ Airline wording, owner decision:
 | auxiliaryFields | DATE: "3 Dec 2026                         | 13:00-14:00" |
 
 Wallet gives `logoText` no colour of its own (Apple documents only `foregroundColor` and `labelColor`), so the code shows in the value colour. A long BOARDING CLOSES header can shorten the logo text, which is how "Compass" became "Comp..."; session codes are short. Open owner wish, later: an event ticket with the owner's picture as the background and no QR code (Requirement 9.1 would change).
+
+## Post-SP3 change: owner artwork (20 October 2026, task 38)
+
+The pass logo and icon are the owner's own artwork, the same files the site uses: `site/public/artwork/logo.svg` (the Nevada map and road with a pin, "2026", and "re:Invent" over "Compass") and `site/public/artwork/favicon.svg` (the map alone). `scripts/make-artwork.mjs` renders them once with Playwright's Chromium onto transparent canvases at Apple's sizes and writes `src/apple/artwork.ts`; the module is committed, so the Lambda bundles carry the images with no file read. The logo is fitted to the 50-point height and left-aligned in the 160-point slot, which leaves the logo text (the session code) just right of the middle. The drawn compass glyph and its PNG encoder are removed. Requirement 9.10 still holds: the artwork is original and has no AWS mark; the year in the logo uses a free heavy sans-serif instead of AWS's Amazon Ember typeface.

@@ -569,6 +569,11 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 37.2 Header (top right): BOARDING CLOSES with the 24-hour time. Primary: TERMINAL (the venue, or "Venue not published") and GATE (the short room). Secondary: FLIGHT NAME (the title). Auxiliary: DATE "3 Dec 2026 | 13:00-14:00"
   - [x] 37.3 Tests and commit after the full gate passes, scoped `pass-service`
 
+- [x] 38. Use the owner's logo and icon on the pass (owner decision of 20 October, design "Post-SP3 change: owner artwork")
+  - [x] 38.1 `scripts/make-artwork.mjs` renders `site/public/artwork/logo.svg` into logo.png, logo@2x.png and logo@3x.png (160x50, 320x100, 480x150, the logo fitted to the height and left-aligned on a transparent canvas) and `site/public/artwork/favicon.svg` into icon.png, icon@2x.png and icon@3x.png (29, 58, 87, centred, transparent), with Playwright's Chromium (already a dev dependency), and writes `src/apple/artwork.ts`
+  - [x] 38.2 Remove the drawn artwork (`src/artwork/draw.ts`, `src/artwork/png.ts`, `scripts/make-artwork.ts`) and its tests; `src/artwork/render.ts` keeps the file list and the module writer
+  - [x] 38.3 Tests: the six images are PNGs of the documented sizes with transparent corners and visible ink, and the module header names the owner's SVGs; commit after the full gate passes, scoped `pass-service`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.
