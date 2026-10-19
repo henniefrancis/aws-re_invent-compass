@@ -543,6 +543,15 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
     - Tests: the three colours, and a contrast check of foreground and label against the background
   - [x] 33.2 Commit after the full gate passes, scoped `pass-service`
 
+- [x] 34. Owner's second pass review: no logo text, no front notice, purple and pink (owner decision of 20 October, design "Post-SP3 change: pass review 2", Requirement 9.2 amended)
+  - [x] 34.1 Remove `logoText` ("Compass" was cut to "Comp..." between the logo and SESSION), so the top row is the logo and the session code
+  - [x] 34.2 Remove the NOTICE field from the front. The disclaimer stays on the back, and `organizationName` "re:Invent Compass (unofficial)" and `description` "Unofficial boarding pass" still say unofficial; Requirement 9.2 is amended to the back only
+  - [x] 34.3 Set `backgroundColor` to `rgb(140, 79, 255)` (#8C4FFF, Cyber Purple), keep `foregroundColor` white and set `labelColor` to `rgb(255, 0, 127)` (#FF007F, Electric Pink)
+    - Wallet takes one solid background colour and one label colour, so the owner's ranges (#8C4FFF to #A020F0, #E0115F to #FF007F) become these two values
+    - Accepted deviation (owner decision): the pink labels are 1.2:1 against the purple, under the WCAG 4.5:1 guideline, so the field labels are hard to read. The values (white, 4.49:1) carry the information. The contrast test now checks the values only and pins the label colour as an owner decision
+  - [x] 34.4 Put the short room in the gate label, for example "GATE - OCTAVIUS 4" above "Caesars Palace", and drop ROOM from the bottom row, which keeps DATE and TIME. Wallet has no smaller line under a field value, so the owner chose the label over a right-aligned ROOM column. The full room stays on the back
+  - [x] 34.5 Tests and commit after the full gate passes, scoped `pass-service`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.

@@ -16,11 +16,15 @@ export const DISCLAIMER = 'Unofficial. Your badge is your ticket.';
 export const INDEPENDENT_NOTICE =
   're:Invent Compass is an independent community project, not affiliated with AWS.';
 export const NO_VENUE = 'Venue not published';
-/** The pass colours, taken from the owner's artwork (task 33). */
+/**
+ * The pass colours (owner decision, task 34): Cyber Purple #8C4FFF, white values and
+ * Electric Pink #FF007F labels. The labels are an accepted contrast deviation (design,
+ * "Post-SP3 change: pass review 2").
+ */
 export const PASS_COLOURS = {
-  background: 'rgb(18, 8, 48)',
+  background: 'rgb(140, 79, 255)',
   foreground: 'rgb(255, 255, 255)',
-  label: 'rgb(255, 176, 196)',
+  label: 'rgb(255, 0, 127)',
 } as const;
 
 const MINUTE_MS = 60_000;
@@ -40,7 +44,6 @@ export interface PassJson {
   serialNumber: string;
   organizationName: string;
   description: string;
-  logoText: string;
   sharingProhibited: true;
   backgroundColor: string;
   foregroundColor: string;
@@ -105,6 +108,12 @@ export function shortRoom(room: string): string {
   return second ?? first;
 }
 
+/** The gate label carries the short room, for example "GATE - OCTAVIUS 4" (task 34). */
+export function gateLabel(room: string): string {
+  const short = shortRoom(room);
+  return short === '' ? 'GATE' : `GATE - ${short.toUpperCase()}`;
+}
+
 function backFields(input: PassTemplateInput): PassField[] {
   const { fields, timezone } = input;
   const back: PassField[] = [];
@@ -144,8 +153,8 @@ function backFields(input: PassTemplateInput): PassField[] {
 
 export function buildPassJson(input: PassTemplateInput): PassJson {
   const { fields, timezone } = input;
-  // Row 4 (task 32): date, start to end time, the short room, and the disclaimer that
-  // Requirement 9.2 keeps on the front.
+  // Row 4 (tasks 32 and 34): date and start to end time. The room is in the gate label and
+  // the disclaimer is on the back only (Requirement 9.2 as amended).
   const auxiliary: PassField[] = [
     field('date', 'DATE', formatEventDate(fields.startsAt, timezone)),
     field(
@@ -154,10 +163,6 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
       `${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)}`,
     ),
   ];
-  if (fields.room !== '') {
-    auxiliary.push(field('room', 'ROOM', shortRoom(fields.room)));
-  }
-  auxiliary.push(field('notice', 'NOTICE', DISCLAIMER));
   const expiration = input.status === 'voided' ? input.voidedAt : fields.endsAt;
   return {
     formatVersion: 1,
@@ -166,9 +171,7 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
     serialNumber: input.serialNumber,
     organizationName: 're:Invent Compass (unofficial)',
     description: 'Unofficial boarding pass',
-    logoText: 'Compass',
     sharingProhibited: true,
-    // The owner's artwork: its deep indigo and the pink of its glow line (task 33).
     backgroundColor: PASS_COLOURS.background,
     foregroundColor: PASS_COLOURS.foreground,
     labelColor: PASS_COLOURS.label,
@@ -188,7 +191,7 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
           'BOARDING CLOSES',
           formatEventTime24(boardingClosesAt(fields.startsAt), timezone),
         ),
-        field('gate', 'GATE', fields.venue === '' ? NO_VENUE : fields.venue),
+        field('gate', gateLabel(fields.room), fields.venue === '' ? NO_VENUE : fields.venue),
       ],
       secondaryFields: [field('title', 'TITLE', fields.title)],
       auxiliaryFields: auxiliary,

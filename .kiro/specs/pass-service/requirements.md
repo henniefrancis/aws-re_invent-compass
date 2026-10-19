@@ -163,7 +163,7 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 #### Acceptance Criteria
 
 1. THE Api_Lambda and the Passkit_Lambda SHALL build every Apple_Pass from one fixed server template with `passkit-generator`, as a `boardingPass` pass with `transitType` `PKTransitTypeGeneric`.
-2. THE Apple_Pass SHALL show the text "Unofficial. Your badge is your ticket." on the front and on the back.
+2. THE Apple_Pass SHALL show the text "Unofficial. Your badge is your ticket." on the back, and its `organizationName` and `description` SHALL say unofficial (amended 20 October 2026 by owner decision: the notice no longer appears on the front).
 3. THE Apple_Pass SHALL carry no `barcodes` and no `barcode` key, `sharingProhibited` set to `true`, the configured `passTypeIdentifier` and `teamIdentifier`, the pass's Serial_Number, and `formatVersion` 1.
 4. THE Apple_Pass SHALL carry an `expirationDate` equal to `endsAt`, or equal to the void instant when the pass is voided, together with `voided: true` when voided.
 5. THE Apple_Pass SHALL carry one `relevantDates` interval with `startDate` equal to `startsAt` minus 40 minutes (boarding closes minus 30 minutes) and `endDate` equal to `endsAt`.
@@ -173,7 +173,7 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 9. THE pass-service SHALL derive each Auth_Token as HMAC-SHA256 of a fixed domain label and the Serial_Number with the Pepper, so that the token is never stored and every rebuild of the same pass carries the same token, and SHALL store only the SHA-256 of the token.
 10. THE Apple_Pass SHALL use only original artwork stored in `packages/pass-service`, including the required icon, and SHALL NOT include any AWS logo, AWS colour scheme or wording that suggests an official AWS product.
 11. THE Apple_Pass SHALL include `attendeeName` only when the PassFields carry it, and SHALL NOT include any client-supplied image, URL or barcode.
-12. THE Apple_Pass front SHALL show, in order, the session code in the header; boarding closes and the gate in the primary row; the title in the secondary row; and the date, the start to end time, the short room and the disclaimer in the auxiliary row, with every Apple_Pass time in 24-hour form (owner decision, 20 October 2026).
+12. THE Apple_Pass front SHALL show, in order, the session code in the header; boarding closes and the gate (its label carrying the short room) in the primary row; the title in the secondary row; and the date and the start to end time in the auxiliary row, with no logo text, with every Apple_Pass time in 24-hour form (owner decision, 20 October 2026).
 
 ### Requirement 10: Download a pass
 

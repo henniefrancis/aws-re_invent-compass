@@ -6,6 +6,7 @@ import {
   PASS_COLOURS,
   boardingClosesAt,
   buildPassJson,
+  gateLabel,
   relevantInterval,
   shortRoom,
   type PassTemplateInput,
@@ -94,11 +95,11 @@ describe('Feature: pass-service, pass template', () => {
     const json = buildPassJson(input(samplePassFields({ venue: '', room: '' })));
     const gate = json.boardingPass.primaryFields.find((f) => f.key === 'gate');
     expect(gate?.value).toBe('Venue not published');
-    expect(json.boardingPass.auxiliaryFields.some((f) => f.key === 'room')).toBe(false);
+    expect(gate?.label).toBe('GATE');
     expect(json.boardingPass.backFields.some((f) => f.key === 'roomFull')).toBe(false);
   });
 
-  test('the front reads session code, boarding closes and gate, title, then date, time, room and notice (task 32)', () => {
+  test('the front reads session code, boarding closes and gate with its room, title, then date and time (tasks 32 and 34)', () => {
     const json = buildPassJson(
       input(
         samplePassFields({
@@ -116,17 +117,13 @@ describe('Feature: pass-service, pass template', () => {
     expect(row(json.boardingPass.headerFields)).toEqual(['SESSION=MAM411']);
     expect(row(json.boardingPass.primaryFields)).toEqual([
       'BOARDING CLOSES=12:50',
-      'GATE=Caesars Palace',
+      'GATE - OCTAVIUS 4=Caesars Palace',
     ]);
     expect(row(json.boardingPass.secondaryFields)).toEqual([
       'TITLE=Best Practices for .NET modernization with AWS Transform',
     ]);
-    expect(row(json.boardingPass.auxiliaryFields)).toEqual([
-      'DATE=Thu 3 Dec',
-      'TIME=13:00-14:00',
-      'ROOM=Octavius 4',
-      `NOTICE=${DISCLAIMER}`,
-    ]);
+    expect(row(json.boardingPass.auxiliaryFields)).toEqual(['DATE=Thu 3 Dec', 'TIME=13:00-14:00']);
+    expect('logoText' in json).toBe(false);
     expect(json.boardingPass.backFields[0]).toEqual({
       key: 'roomFull',
       label: 'ROOM',
@@ -134,11 +131,11 @@ describe('Feature: pass-service, pass template', () => {
     });
   });
 
-  test('the colours come from the owner artwork and text stays readable on them (task 33)', () => {
+  test('the colours are the owner choice: purple, white values, pink labels (task 34)', () => {
     const json = buildPassJson(input());
-    expect(json.backgroundColor).toBe('rgb(18, 8, 48)');
+    expect(json.backgroundColor).toBe('rgb(140, 79, 255)');
     expect(json.foregroundColor).toBe('rgb(255, 255, 255)');
-    expect(json.labelColor).toBe('rgb(255, 176, 196)');
+    expect(json.labelColor).toBe('rgb(255, 0, 127)');
     const rgb = (value: string) => value.match(/\d+/g)!.map(Number);
     const channel = (c: number) => {
       const s = c / 255;
@@ -152,9 +149,18 @@ describe('Feature: pass-service, pass template', () => {
       const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
       return (hi + 0.05) / (lo + 0.05);
     };
-    expect(contrast(json.foregroundColor, json.backgroundColor)).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(json.labelColor, json.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+    // The white values measure 4.49:1 on the purple; the pink labels 1.19:1. Both are below
+    // WCAG AA 4.5:1 and accepted by the owner (design, "Post-SP3 change: pass review 2").
+    // These pins make any further drop a visible change.
+    expect(contrast(json.foregroundColor, json.backgroundColor)).toBeCloseTo(4.49, 2);
+    expect(contrast(json.labelColor, json.backgroundColor)).toBeCloseTo(1.19, 2);
     expect(PASS_COLOURS.background).toBe(json.backgroundColor);
+  });
+
+  test('the gate label carries the short room in capitals (task 34)', () => {
+    expect(gateLabel('Promenade South, Octavius 4, Content Hub')).toBe('GATE - OCTAVIUS 4');
+    expect(gateLabel('Ballroom E')).toBe('GATE - BALLROOM E');
+    expect(gateLabel('')).toBe('GATE');
   });
 
   test('the short room is the part after the first comma, or the whole room', () => {
@@ -245,8 +251,11 @@ describe('Feature: pass-service, pass template', () => {
             'transitType',
           ]);
           expect(json.boardingPass.transitType).toBe('PKTransitTypeGeneric');
-          expect(json.boardingPass.auxiliaryFields.some((f) => f.value === DISCLAIMER)).toBe(true);
+          // Requirement 9.2 as amended (task 34): the disclaimer is on the back, not the front.
+          expect(json.boardingPass.auxiliaryFields.some((f) => f.value === DISCLAIMER)).toBe(false);
           expect(json.boardingPass.backFields.some((f) => f.value === DISCLAIMER)).toBe(true);
+          expect(json.organizationName).toMatch(/unofficial/i);
+          expect(json.description).toMatch(/unofficial/i);
           expect(json.boardingPass.backFields.some((f) => f.value === INDEPENDENT_NOTICE)).toBe(
             true,
           );
@@ -282,14 +291,12 @@ describe('Feature: pass-service, pass template', () => {
             },
             {
               key: 'gate',
-              label: 'GATE',
+              label: gateLabel(fields.room),
               value: fields.venue === '' ? 'Venue not published' : fields.venue,
             },
           ]);
           const aux = json.boardingPass.auxiliaryFields;
-          expect(aux.map((f) => f.key)).toEqual(
-            fields.room === '' ? ['date', 'time', 'notice'] : ['date', 'time', 'room', 'notice'],
-          );
+          expect(aux.map((f) => f.key)).toEqual(['date', 'time']);
           expect(aux[0]?.value).toMatch(/^[A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}$/);
           expect(aux[1]?.value).toBe(`${expectedTime(startMs)}-${expectedTime(endMs)}`);
           expect(json.boardingPass.secondaryFields[0]?.value).toBe(fields.title);

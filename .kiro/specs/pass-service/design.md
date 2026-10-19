@@ -1268,3 +1268,13 @@ The short room is the part after the first comma (the room itself, without the l
 ## Post-SP3 change: pass colours (20 October 2026, task 33)
 
 The pass takes its colours from the owner's own artwork (`site/public/artwork/pass-background.jpg`): background `rgb(18, 8, 48)`, text white, labels `rgb(255, 176, 196)`. Apple's `background.png` is honoured only by the `eventTicket` style, so a boarding pass cannot show the picture itself; the owner chose to keep the boarding pass. The artwork is the owner's, so Requirement 9.10 (original artwork, no AWS colour scheme) still holds.
+
+## Post-SP3 change: pass review 2 (20 October 2026, task 34)
+
+Owner decisions after the second look at the live pass, superseding task 33's colours:
+
+- No `logoText`: the top row is the logo and SESSION.
+- The room is in the gate label ("GATE - OCTAVIUS 4" above the venue); the bottom row is DATE and TIME. Wallet cannot show a smaller line under a value.
+- No NOTICE on the front. The disclaimer is on the back; the organisation name and description still say unofficial. Requirement 9.2 is amended to the back.
+- Colours: background `rgb(140, 79, 255)` (#8C4FFF), values white, labels `rgb(255, 0, 127)` (#FF007F). Wallet allows one solid colour each, so the owner's ranges are reduced to one end.
+- **Accepted accessibility deviation.** Pink labels on the purple measure 1.2:1, far under WCAG 2.2 AA (4.5:1 for small text). The owner chose this knowingly on 20 October after seeing the measured contrast and two readable alternatives. The values stay white at 4.49:1, a hair under the guideline. The TAM and CTO reviews should treat this as an accepted owner decision, not an open finding.
