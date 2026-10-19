@@ -552,6 +552,14 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 34.4 Put the short room in the gate label, for example "GATE - OCTAVIUS 4" above "Caesars Palace", and drop ROOM from the bottom row, which keeps DATE and TIME. Wallet has no smaller line under a field value, so the owner chose the label over a right-aligned ROOM column. The full room stays on the back
   - [x] 34.5 Tests and commit after the full gate passes, scoped `pass-service`
 
+- [x] 35. Owner's third pass review (owner decisions of 20 October, design "Post-SP3 change: pass review 3", Requirements 9.7, 9.10 and 9.12 amended)
+  - [x] 35.1 GATE shows the short room (for example "Octavius 4"), or "Room not published"; the label is plain GATE again
+  - [x] 35.2 Bottom row: DATE "Thu, 3 Dec 2026" (left), TIME "13:00-14:00 PST" with the event timezone abbreviation (centred) and VENUE with the venue or "Venue not published" (right-aligned), using the PassKit `textAlignment` key
+    - Why PST: re:Invent runs on Las Vegas time; UTC would read eight hours off the venue clocks (owner chose PST)
+  - [x] 35.3 Colours: background `rgb(35, 47, 63)` (#232F3F), values white, labels `rgb(161, 102, 255)` (#A166FF)
+    - Accepted deviations (owner decisions): the background is one digit from AWS Squid Ink #232F3E (Requirement 9.10 note), and the labels are 3.78:1, under WCAG 4.5:1. White values are 13.6:1
+  - [x] 35.4 Tests and commit after the full gate passes, scoped `pass-service`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.

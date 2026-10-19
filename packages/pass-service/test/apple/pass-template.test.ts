@@ -6,7 +6,7 @@ import {
   PASS_COLOURS,
   boardingClosesAt,
   buildPassJson,
-  gateLabel,
+  NO_ROOM,
   relevantInterval,
   shortRoom,
   type PassTemplateInput,
@@ -17,6 +17,7 @@ import {
   formatEventDayTime24,
   formatEventTime,
   formatEventTime24,
+  timezoneAbbreviation,
   timezoneName,
 } from '../../src/apple/format-time.js';
 import { deriveAuthToken } from '../../src/security/auth-token.js';
@@ -71,14 +72,15 @@ describe('Feature: pass-service, time formatting', () => {
     expect(formatEventTime('2026-12-02T12:00:00Z', 'Africa/Johannesburg')).toBe('2:00 PM');
   });
 
-  test('the Apple pass uses 24-hour times and a short date in the event timezone (task 32)', () => {
+  test('the Apple pass uses 24-hour times, a full date and the zone abbreviation (tasks 32 and 35)', () => {
     expect(formatEventTime24('2026-12-03T13:00:00-08:00', TZ)).toBe('13:00');
     expect(formatEventTime24('2026-11-30T09:50:00-08:00', TZ)).toBe('09:50');
     expect(formatEventTime24('2026-12-01T08:05:00Z', TZ)).toBe('00:05');
     expect(formatEventDayTime24('2026-12-02T12:00:00-08:00', TZ)).toBe('Wed 12:00');
-    expect(formatEventDate('2026-12-03T13:00:00-08:00', TZ)).toBe('Thu 3 Dec');
+    expect(formatEventDate('2026-12-03T13:00:00-08:00', TZ)).toBe('Thu, 3 Dec 2026');
     // 07:30 UTC on 1 December is still 30 November in Las Vegas.
-    expect(formatEventDate('2026-12-01T07:30:00Z', TZ)).toBe('Mon 30 Nov');
+    expect(formatEventDate('2026-12-01T07:30:00Z', TZ)).toBe('Mon, 30 Nov 2026');
+    expect(timezoneAbbreviation('2026-12-03T13:00:00-08:00', TZ)).toBe('PST');
   });
 });
 
@@ -91,15 +93,16 @@ describe('Feature: pass-service, pass template', () => {
     });
   });
 
-  test('an empty venue reads Venue not published and an empty room is left out', () => {
+  test('an empty room reads Room not published as the gate and an empty venue Venue not published', () => {
     const json = buildPassJson(input(samplePassFields({ venue: '', room: '' })));
     const gate = json.boardingPass.primaryFields.find((f) => f.key === 'gate');
-    expect(gate?.value).toBe('Venue not published');
-    expect(gate?.label).toBe('GATE');
+    expect(gate).toEqual({ key: 'gate', label: 'GATE', value: NO_ROOM });
+    const venue = json.boardingPass.auxiliaryFields.find((f) => f.key === 'venue');
+    expect(venue?.value).toBe('Venue not published');
     expect(json.boardingPass.backFields.some((f) => f.key === 'roomFull')).toBe(false);
   });
 
-  test('the front reads session code, boarding closes and gate with its room, title, then date and time (tasks 32 and 34)', () => {
+  test('the front reads session code, boarding closes and the room as gate, title, then date, time and venue (task 35)', () => {
     const json = buildPassJson(
       input(
         samplePassFields({
@@ -117,12 +120,21 @@ describe('Feature: pass-service, pass template', () => {
     expect(row(json.boardingPass.headerFields)).toEqual(['SESSION=MAM411']);
     expect(row(json.boardingPass.primaryFields)).toEqual([
       'BOARDING CLOSES=12:50',
-      'GATE - OCTAVIUS 4=Caesars Palace',
+      'GATE=Octavius 4',
     ]);
     expect(row(json.boardingPass.secondaryFields)).toEqual([
       'TITLE=Best Practices for .NET modernization with AWS Transform',
     ]);
-    expect(row(json.boardingPass.auxiliaryFields)).toEqual(['DATE=Thu 3 Dec', 'TIME=13:00-14:00']);
+    expect(row(json.boardingPass.auxiliaryFields)).toEqual([
+      'DATE=Thu, 3 Dec 2026',
+      'TIME=13:00-14:00 PST',
+      'VENUE=Caesars Palace',
+    ]);
+    expect(json.boardingPass.auxiliaryFields.map((f) => f.textAlignment)).toEqual([
+      undefined,
+      'PKTextAlignmentCenter',
+      'PKTextAlignmentRight',
+    ]);
     expect('logoText' in json).toBe(false);
     expect(json.boardingPass.backFields[0]).toEqual({
       key: 'roomFull',
@@ -131,11 +143,11 @@ describe('Feature: pass-service, pass template', () => {
     });
   });
 
-  test('the colours are the owner choice: purple, white values, pink labels (task 34)', () => {
+  test('the colours are the owner choice: #232F3F, white values, #A166FF labels (task 35)', () => {
     const json = buildPassJson(input());
-    expect(json.backgroundColor).toBe('rgb(140, 79, 255)');
+    expect(json.backgroundColor).toBe('rgb(35, 47, 63)');
     expect(json.foregroundColor).toBe('rgb(255, 255, 255)');
-    expect(json.labelColor).toBe('rgb(255, 0, 127)');
+    expect(json.labelColor).toBe('rgb(161, 102, 255)');
     const rgb = (value: string) => value.match(/\d+/g)!.map(Number);
     const channel = (c: number) => {
       const s = c / 255;
@@ -149,18 +161,12 @@ describe('Feature: pass-service, pass template', () => {
       const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
       return (hi + 0.05) / (lo + 0.05);
     };
-    // The white values measure 4.49:1 on the purple; the pink labels 1.19:1. Both are below
-    // WCAG AA 4.5:1 and accepted by the owner (design, "Post-SP3 change: pass review 2").
-    // These pins make any further drop a visible change.
-    expect(contrast(json.foregroundColor, json.backgroundColor)).toBeCloseTo(4.49, 2);
-    expect(contrast(json.labelColor, json.backgroundColor)).toBeCloseTo(1.19, 2);
+    // White values measure 13.6:1; the #A166FF labels 3.78:1, under WCAG AA 4.5:1 and
+    // accepted by the owner (design, "Post-SP3 change: pass review 3"). The pins make any
+    // further drop a visible change.
+    expect(contrast(json.foregroundColor, json.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(json.labelColor, json.backgroundColor)).toBeCloseTo(3.78, 1);
     expect(PASS_COLOURS.background).toBe(json.backgroundColor);
-  });
-
-  test('the gate label carries the short room in capitals (task 34)', () => {
-    expect(gateLabel('Promenade South, Octavius 4, Content Hub')).toBe('GATE - OCTAVIUS 4');
-    expect(gateLabel('Ballroom E')).toBe('GATE - BALLROOM E');
-    expect(gateLabel('')).toBe('GATE');
   });
 
   test('the short room is the part after the first comma, or the whole room', () => {
@@ -291,14 +297,19 @@ describe('Feature: pass-service, pass template', () => {
             },
             {
               key: 'gate',
-              label: gateLabel(fields.room),
-              value: fields.venue === '' ? 'Venue not published' : fields.venue,
+              label: 'GATE',
+              value: shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room),
             },
           ]);
           const aux = json.boardingPass.auxiliaryFields;
-          expect(aux.map((f) => f.key)).toEqual(['date', 'time']);
-          expect(aux[0]?.value).toMatch(/^[A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}$/);
-          expect(aux[1]?.value).toBe(`${expectedTime(startMs)}-${expectedTime(endMs)}`);
+          expect(aux.map((f) => f.key)).toEqual(['date', 'time', 'venue']);
+          expect(aux[2]?.value).toBe(fields.venue === '' ? 'Venue not published' : fields.venue);
+          expect(aux[0]?.value).toMatch(/^[A-Z][a-z]{2}, \d{1,2} [A-Z][a-z]{2} 2026$/);
+          // An independent zone name: early November sessions can still be in daylight time.
+          const zone = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'short' })
+            .formatToParts(new Date(startMs))
+            .find((part) => part.type === 'timeZoneName')?.value;
+          expect(aux[1]?.value).toBe(`${expectedTime(startMs)}-${expectedTime(endMs)} ${zone}`);
           expect(json.boardingPass.secondaryFields[0]?.value).toBe(fields.title);
           const name = json.boardingPass.backFields.find((f) => f.key === 'name');
           expect(name?.value).toBe(fields.attendeeName);

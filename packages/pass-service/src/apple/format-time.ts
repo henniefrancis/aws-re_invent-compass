@@ -41,6 +41,7 @@ function partsOf(iso: string, timezone: string): Record<string, string> {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
+    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
@@ -60,10 +61,19 @@ export function formatEventDayTime24(iso: string, timezone: string): string {
   return `${parts['weekday']} ${parts['hour']}:${parts['minute']}`;
 }
 
-/** For example "Thu 3 Dec" (Apple pass task 32). */
+/** For example "Thu, 3 Dec 2026" (Apple pass task 35). */
 export function formatEventDate(iso: string, timezone: string): string {
   const parts = partsOf(iso, timezone);
-  return `${parts['weekday']} ${parts['day']} ${parts['month']}`;
+  return `${parts['weekday']}, ${parts['day']} ${parts['month']} ${parts['year']}`;
+}
+
+/** The short name of the zone at an instant, for example "PST" (Apple pass task 35). */
+export function timezoneAbbreviation(iso: string, timezone: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    timeZoneName: 'short',
+  }).formatToParts(instant(iso));
+  return parts.find((part) => part.type === 'timeZoneName')!.value;
 }
 
 /** The generic long name of the zone, for example "Pacific Time". */

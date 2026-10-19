@@ -1278,3 +1278,17 @@ Owner decisions after the second look at the live pass, superseding task 33's co
 - No NOTICE on the front. The disclaimer is on the back; the organisation name and description still say unofficial. Requirement 9.2 is amended to the back.
 - Colours: background `rgb(140, 79, 255)` (#8C4FFF), values white, labels `rgb(255, 0, 127)` (#FF007F). Wallet allows one solid colour each, so the owner's ranges are reduced to one end.
 - **Accepted accessibility deviation.** Pink labels on the purple measure 1.2:1, far under WCAG 2.2 AA (4.5:1 for small text). The owner chose this knowingly on 20 October after seeing the measured contrast and two readable alternatives. The values stay white at 4.49:1, a hair under the guideline. The TAM and CTO reviews should treat this as an accepted owner decision, not an open finding.
+
+## Post-SP3 change: pass review 3 (20 October 2026, task 35)
+
+Owner decisions after the third look, superseding the gate label and colours of task 34:
+
+| Row       | Fields                                                                        |
+| --------- | ----------------------------------------------------------------------------- |
+| Header    | SESSION                                                                       |
+| Primary   | BOARDING CLOSES, GATE (the short room, or "Room not published")               |
+| Secondary | TITLE                                                                         |
+| Auxiliary | DATE "Thu, 3 Dec 2026" (left), TIME "13:00-14:00 PST" (centre), VENUE (right) |
+
+- The timezone abbreviation is the event zone's short name at the session start (`Intl` `timeZoneName: "short"`, for example PST); the back still names the zone in full.
+- Colours: background #232F3F, values white (13.6:1), labels #A166FF (3.78:1). **Accepted deviations:** the background is one digit from AWS Squid Ink (#232F3E), which Requirement 9.10 otherwise rules out, and the label contrast is under WCAG AA. Both were the owner's informed choice on 20 October, after the closeness and the measured contrast were shown; reviews treat them as accepted owner decisions.

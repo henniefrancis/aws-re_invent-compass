@@ -9,6 +9,7 @@ import {
   formatEventDate,
   formatEventDayTime24,
   formatEventTime24,
+  timezoneAbbreviation,
   timezoneName,
 } from './format-time.js';
 
@@ -16,15 +17,16 @@ export const DISCLAIMER = 'Unofficial. Your badge is your ticket.';
 export const INDEPENDENT_NOTICE =
   're:Invent Compass is an independent community project, not affiliated with AWS.';
 export const NO_VENUE = 'Venue not published';
+export const NO_ROOM = 'Room not published';
 /**
- * The pass colours (owner decision, task 34): Cyber Purple #8C4FFF, white values and
- * Electric Pink #FF007F labels. The labels are an accepted contrast deviation (design,
- * "Post-SP3 change: pass review 2").
+ * The pass colours (owner decision, task 35): background #232F3F, white values and #A166FF
+ * labels. The background's closeness to AWS Squid Ink and the label contrast are accepted
+ * owner deviations (design, "Post-SP3 change: pass review 3").
  */
 export const PASS_COLOURS = {
-  background: 'rgb(140, 79, 255)',
+  background: 'rgb(35, 47, 63)',
   foreground: 'rgb(255, 255, 255)',
-  label: 'rgb(255, 0, 127)',
+  label: 'rgb(161, 102, 255)',
 } as const;
 
 const MINUTE_MS = 60_000;
@@ -35,6 +37,7 @@ export interface PassField {
   key: string;
   label: string;
   value: string;
+  textAlignment?: 'PKTextAlignmentCenter' | 'PKTextAlignmentRight';
 }
 
 export interface PassJson {
@@ -90,8 +93,13 @@ export function relevantInterval(fields: PassFields): { startDate: string; endDa
   };
 }
 
-function field(key: string, label: string, value: string): PassField {
-  return { key, label, value };
+function field(
+  key: string,
+  label: string,
+  value: string,
+  textAlignment?: PassField['textAlignment'],
+): PassField {
+  return textAlignment === undefined ? { key, label, value } : { key, label, value, textAlignment };
 }
 
 /**
@@ -106,12 +114,6 @@ export function shortRoom(room: string): string {
     .filter((part) => part !== '');
   const [first = '', second] = parts;
   return second ?? first;
-}
-
-/** The gate label carries the short room, for example "GATE - OCTAVIUS 4" (task 34). */
-export function gateLabel(room: string): string {
-  const short = shortRoom(room);
-  return short === '' ? 'GATE' : `GATE - ${short.toUpperCase()}`;
 }
 
 function backFields(input: PassTemplateInput): PassField[] {
@@ -153,15 +155,17 @@ function backFields(input: PassTemplateInput): PassField[] {
 
 export function buildPassJson(input: PassTemplateInput): PassJson {
   const { fields, timezone } = input;
-  // Row 4 (tasks 32 and 34): date and start to end time. The room is in the gate label and
-  // the disclaimer is on the back only (Requirement 9.2 as amended).
+  // Row 4 (task 35): date (left), start to end time with the zone (centre) and venue
+  // (right). The room is the gate; the disclaimer is on the back only (Requirement 9.2).
   const auxiliary: PassField[] = [
     field('date', 'DATE', formatEventDate(fields.startsAt, timezone)),
     field(
       'time',
       'TIME',
-      `${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)}`,
+      `${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)} ${timezoneAbbreviation(fields.startsAt, timezone)}`,
+      'PKTextAlignmentCenter',
     ),
+    field('venue', 'VENUE', fields.venue === '' ? NO_VENUE : fields.venue, 'PKTextAlignmentRight'),
   ];
   const expiration = input.status === 'voided' ? input.voidedAt : fields.endsAt;
   return {
@@ -191,7 +195,7 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
           'BOARDING CLOSES',
           formatEventTime24(boardingClosesAt(fields.startsAt), timezone),
         ),
-        field('gate', gateLabel(fields.room), fields.venue === '' ? NO_VENUE : fields.venue),
+        field('gate', 'GATE', shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room)),
       ],
       secondaryFields: [field('title', 'TITLE', fields.title)],
       auxiliaryFields: auxiliary,
