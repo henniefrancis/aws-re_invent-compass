@@ -373,6 +373,13 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
     - Tests: a page whose Notice sits only inside nested comment markers fails the check; the normal pages still pass
   - [x] 19.2 Commit after the full gate passes, scoped `showcase-site`. Do not push
 
+- [x] 20. Show the owner's artwork on the hand-off page (owner decision of 20 October, design "Post-SP3 change: board artwork")
+  - [x] 20.1 Add `site/public/artwork/pass-background.jpg` (the owner's own picture, 24 KB) and show it as a decorative banner at the top of the Board_Page, `alt=""`, with width and height set, cropped with `object-fit: cover` so the glow line shows
+    - Why: Apple Wallet cannot show the picture on a boarding pass, so the attendee sees it where they add their passes. The text stays on the existing solid panel, so contrast does not depend on the picture
+    - Same origin, so the CSP `img-src 'self'` already allows it; forced-colours mode keeps the panel border
+    - Tests: the banner is present, decorative (empty alt, hidden from assistive technology) and same-origin; the build output check and the budgets still pass
+  - [x] 20.2 Commit after the full gate passes, scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

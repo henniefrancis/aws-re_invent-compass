@@ -999,3 +999,7 @@ Recorded by the implementer (showcase-site stream). Each item is a change from, 
 ## Post-CodeQL change: comment stripping in the build check (20 October 2026, task 19)
 
 The build output check removes HTML comments before it looks for the Notice text. It now repeats the removal until the text is stable, so nested or overlapping comment markers cannot hide the Notice from the check. Build-time only; the site itself is unchanged.
+
+## Post-SP3 change: board artwork (20 October 2026, task 20)
+
+The Board_Page shows the owner's picture (`artwork/pass-background.jpg`) as a decorative banner above the hand-off panel. It is the same artwork whose colours the Apple pass uses (pass-service task 33), so the page where passes are added and the passes match. The image is decorative (`alt=""`), same-origin, and sits outside the text panel, so every text contrast is unchanged.

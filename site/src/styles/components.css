@@ -156,6 +156,19 @@
   max-inline-size: var(--measure);
 }
 
+/* The owner's artwork above the hand-off panel (showcase-site task 20). Decorative; the
+   text stays on the panel, so no contrast depends on it. The crop keeps the glow line. */
+.board-art {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: var(--measure);
+  block-size: 10rem;
+  margin-block-end: var(--space-4);
+  border-radius: var(--radius);
+  object-fit: cover;
+  object-position: center 55%;
+}
+
 .board-note {
   color: var(--color-ink-muted);
 }

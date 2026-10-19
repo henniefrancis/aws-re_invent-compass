@@ -119,6 +119,7 @@ describe('contentType', () => {
     expect(contentType('a.css')).toBe('text/css; charset=utf-8');
     expect(contentType('a.svg')).toBe('image/svg+xml');
     expect(contentType('a.ico')).toBe('image/x-icon');
+    expect(contentType('pass-background.jpg')).toBe('image/jpeg');
     expect(contentType('a.json')).toBe('application/json; charset=utf-8');
     expect(contentType('a.txt')).toBe('text/plain; charset=utf-8');
     expect(contentType('a.bin')).toBe('application/octet-stream');

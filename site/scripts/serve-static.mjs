@@ -37,6 +37,7 @@ const TYPES = Object.freeze({
   '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
+  '.jpg': 'image/jpeg',
   '.json': 'application/json; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
 });
