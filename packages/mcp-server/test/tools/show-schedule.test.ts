@@ -71,6 +71,39 @@ describe('show_schedule', () => {
     expect(fake.snapshot.writes).toHaveLength(1);
   });
 
+  test('a reserved session that is also a favourite is listed once, under reserved', async () => {
+    const { fake, ctx } = setup();
+    fake.events.schedule.reserved.push(TRIPLE.a);
+    fake.events.schedule.favorites.push(TRIPLE.a, TRIPLE.b);
+    const outcome = await showSchedule({}, ctx);
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.structured.schedule.favorites).toEqual([TRIPLE.a, TRIPLE.b]);
+    expect(outcome.text).toContain(
+      'Your schedule has 1 reserved sessions, 1 on your standby list and 0 layovers.',
+    );
+    expect(outcome.text).toContain('1 reserved sessions also stay in your Events favourites');
+    expect(outcome.text.split(`"sessionId": "${TRIPLE.a}"`)).toHaveLength(2);
+    expect(outcome.text).toContain(`"sessionId": "${TRIPLE.b}"`);
+  });
+
+  test('without an overlap there is no favourites note', async () => {
+    const { fake, ctx } = setup();
+    fake.events.schedule.reserved.push(TRIPLE.a);
+    fake.events.schedule.favorites.push(TRIPLE.b);
+    const outcome = await showSchedule({}, ctx);
+    expect(outcome.ok && outcome.text).not.toContain('Events favourites');
+  });
+
+  test('only reserved sessions that are also favourites leave the standby list empty', async () => {
+    const { fake, ctx } = setup();
+    fake.events.schedule.reserved.push(TRIPLE.a);
+    fake.events.schedule.favorites.push(TRIPLE.a);
+    const outcome = await showSchedule({}, ctx);
+    expect(outcome.ok && outcome.text).toContain('1 reserved sessions, 0 on your standby list');
+    expect(outcome.ok && outcome.text).toContain('"standby": []');
+  });
+
   test('lists sessions in start order, an untimed one last', async () => {
     const { fake, ctx } = setup(withUntimed(TRIPLE.a));
     fake.events.schedule.reserved.push(TRIPLE.a, TRIPLE.b);
@@ -100,6 +133,14 @@ describe('show_schedule', () => {
       '2 sessions on your schedule are not in the catalog',
     );
     expect(outcome.ok && outcome.text).toContain('refresh_catalog');
+  });
+
+  test('an unknown id that is both reserved and a favourite is named once', async () => {
+    const { fake, ctx } = setup();
+    fake.events.schedule.reserved.push('gone-1');
+    fake.events.schedule.favorites.push('gone-1');
+    const outcome = await showSchedule({}, ctx);
+    expect(outcome.ok && outcome.structured.notInCatalog).toEqual(['gone-1']);
   });
 
   test('an empty schedule says so and shows no data blocks', async () => {
@@ -137,6 +178,10 @@ describe('show_schedule', () => {
     const tool = listed.tools.find((t) => t.name === 'show_schedule');
     expect(tool?.annotations?.readOnlyHint).toBe(true);
     expect(tool?.description).toContain('Takes no input');
+    expect(tool?.description).toMatch(
+      /^What is on my schedule: .*reserved.*standby \(favourites\)/,
+    );
+    expect(tool?.description).toContain('what they have booked');
     const result = await connection.call('show_schedule', {});
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain(TRIPLE.a);

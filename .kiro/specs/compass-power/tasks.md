@@ -510,6 +510,21 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
     - _Requirements: P1.5_
   - [x] 33.4 Commit after the full gate passes (100 percent coverage, eslint, `tsc -b`, prettier, `npm run check:dash`), scoped `compass-power`, with no attribution trailer. Do not push
 
+- [x] 34. Make show_schedule easy to find and list each session once (dev test of 20 October, design "Post-SP3 change: show_schedule, round 2")
+  - [x] 34.1 Leave reserved sessions out of the standby list in `show_schedule`
+    - Why: the Events API keeps a reserved session in the attendee's favourites, so BIZ332 and MAM411 showed under both reserved and standby, and Kiro then offered to "clean up" the standby list. The text and the catalog block now list a reserved session once, under reserved; the count line counts standby without the reserved ones and says that reserved sessions stay in the Events favourites. `structured.schedule` stays the raw schedule. `notInCatalog` lists each id once
+    - Tests: a session that is both reserved and a favourite appears only under reserved, the counts match, the note appears only when there is an overlap, and an id missing from the catalog that is both reserved and a favourite is named once
+  - [x] 34.2 Make the description match how attendees ask
+    - Why: on dev, Kiro (running Compass as a plain MCP server, so without the Power's skill text) went through `check_itinerary`, `plan_week` and `export_calendar` before it found `show_schedule`. The description now leads with the questions it answers: what is on my schedule, what have I booked or reserved, what is on my standby (favourites) list
+    - Update the pinned description in this design's Descriptions line and in the registry test
+  - [x] 34.3 Commit after the full gate passes, scoped `compass-power`
+
+- [x] 35. Keep the CLI tests independent of the built `dist/` folder (flaky test found on 20 October)
+  - [x] 35.1 Give `test/cli/main.test.ts` its own checkout copy (package.json, `data/venues.json`, `fixtures/api`, `fixtures/synthetic`, `fixtures/sample-repo`) in a temporary folder, and point the default test host's `moduleUrl` at it
+    - Why: the pack smoke test rebuilds `packages/mcp-server/dist` (it removes and copies `dist/data` and the rest) while the CLI tests read `dist/data/venues.json` through the bundled-first lookup. When both ran at once, `main` could not read the venues and returned 1, so the demo and serve tests failed at random in the full run (seen twice locally; CI passed by timing). With its own copy the CLI test always uses the repository fallback and never touches `dist/`
+    - Tests: the 19 CLI tests pass on their own and in the full coverage run, twice in a row
+  - [x] 35.2 Commit after the full gate passes, scoped `compass-power`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

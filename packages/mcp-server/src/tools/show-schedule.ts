@@ -56,21 +56,30 @@ export async function showSchedule(
   await ensureSignedIn(ctx);
   const catalog = await ctx.runtime.events.catalog();
   const { schedule } = await readFreshSchedule(ctx);
-  const notInCatalog = [...schedule.reserved, ...schedule.favorites].filter(
+  // The Events API keeps a reserved session in the favourites too; list it once, under reserved.
+  const reserved = new Set(schedule.reserved);
+  const standby = schedule.favorites.filter((id) => !reserved.has(id));
+  const alsoFavourites = schedule.favorites.length - standby.length;
+  const notInCatalog = [...new Set([...schedule.reserved, ...standby])].filter(
     (id) => !catalog.byId.has(id),
   );
   const layovers = [...schedule.personalTime].sort(
     (a, b) => startOf(a.startDateTime) - startOf(b.startDateTime),
   );
 
-  const counts = `Your schedule has ${schedule.reserved.length} reserved sessions, ${schedule.favorites.length} on your standby list and ${layovers.length} layovers.`;
+  const counts = `Your schedule has ${schedule.reserved.length} reserved sessions, ${standby.length} on your standby list and ${layovers.length} layovers.`;
   const lines = [counts];
-  if (schedule.reserved.length + schedule.favorites.length > 0) {
+  if (alsoFavourites > 0) {
+    lines.push(
+      `${alsoFavourites} reserved sessions also stay in your Events favourites; they are listed once, under reserved, and need no clean-up.`,
+    );
+  }
+  if (schedule.reserved.length + standby.length > 0) {
     lines.push(
       'Use sessionId with cancel_reservation or remove_standby.',
       labelUntrusted('catalog', {
         reserved: sessionsFor(schedule.reserved, catalog).map(sessionRow),
-        standby: sessionsFor(schedule.favorites, catalog).map(sessionRow),
+        standby: sessionsFor(standby, catalog).map(sessionRow),
       }),
     );
   }

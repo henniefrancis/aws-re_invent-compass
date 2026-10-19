@@ -35,7 +35,7 @@ export const DESCRIPTIONS: Record<McpToolName, string> = {
   check_itinerary:
     'Check commitments you pass in (a proposed itinerary) against the booking guardrail and report clashes and tight walks. Nothing is changed. To see your current schedule, use show_schedule.',
   show_schedule:
-    'Show your live re:Invent schedule: reserved sessions, standby list and layovers, each with the id the other tools take. Takes no input. Nothing is changed.',
+    'What is on my schedule: the sessions you have reserved, your standby (favourites) list and your layovers, each with the id the other tools take. Use it when the attendee asks what they have booked. Takes no input. Nothing is changed.',
   reserve_with_guardrails: `Reserve one to ten sessions after the booking guardrail passes. ${SCHEDULE_WRITE_SENTENCE}`,
   cancel_reservation: `Cancel one reservation, safely swapping to a repeat when one is planned. ${SCHEDULE_WRITE_SENTENCE}`,
   add_standby: `Add one to ten sessions to your standby list as backups. ${SCHEDULE_WRITE_SENTENCE}`,
