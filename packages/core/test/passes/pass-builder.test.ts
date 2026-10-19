@@ -270,6 +270,13 @@ describe('Feature: boarding-passes, Property 6: empty venue and room are sent as
     expect(fields.venue).toBe('');
     expect(fields.room).toBe('');
   });
+
+  test('a catalog room written with a vertical bar is kept as a comma (SP3)', () => {
+    const fields = build({
+      session: makeSession({ venue: 'Venetian', room: 'Level 1 | Academy 409' }),
+    });
+    expect(fields.room).toBe('Level 1, Academy 409');
+  });
 });
 
 describe('Feature: boarding-passes, Property 7: no server-derived or barcode fields in builder output', () => {

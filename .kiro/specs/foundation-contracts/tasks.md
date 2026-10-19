@@ -289,6 +289,17 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
   - [x] 16.2 Commit
     - After the full gate passes, commit locally with a Conventional Commit scoped `foundation-contracts`. Do not push, merge, tag or open a PR
 
+- [x] 18. Keep catalog rooms written with a vertical bar on the pass (SP3 finding, design "Post-SP3 change: vertical bar in pass text")
+  - [x] 18.1 Turn a vertical bar into a comma in `normalisePassText`
+    - In `packages/contracts/src/pass-fields.ts`, after the whitespace collapse, split the text on `|`, trim each part, drop empty parts and join the rest with `, `, so "Level 1 | Academy 409" becomes "Level 1, Academy 409" and bars at either end disappear. `ALLOWED_TEXT` and the server-side PassFields rule stay as they are. Make the same change in the showcase copy `site/src/lib/demo/pass-text.ts` and add `|` to the marks of its equality property test
+    - Tests: a real-shaped room normalises to "Level 1, Academy 409" and is accepted as `room`; a bare bar, repeated bars and bars at either end; the raw room is still refused; the S4 Pass_Builder keeps the normalised room instead of falling back to an empty string
+    - Why: on 19 October SP3 showed every live pass without its ROOM line. Real catalog rooms read like "Level 1 | Academy 409", `|` is not in the allowlist, so the Pass_Builder sent an empty room and the Apple template left the ROOM field out
+    - Then the full test run at 100 percent, the site tests, lint, typecheck, prettier and the dash check. The owner redeploys and re-issues the passes
+    - _Requirements: 4.9_
+
+  - [x] 18.2 Commit
+    - After the full gate passes, commit locally with a Conventional Commit scoped `foundation-contracts`. Do not push, merge, tag or open a PR
+
 ## Notes
 
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.

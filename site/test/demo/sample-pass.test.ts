@@ -66,6 +66,7 @@ describe('pass text normalisation', () => {
   test('equals normalisePassText of @compass/contracts for any text', () => {
     const marks = [
       0x2013, 0x2014, 0x2018, 0x2019, 0x2032, 0x201c, 0x201d, 0x2033, 0x2026, 0xa0, 0x20, 0x9, 0xa,
+      0x7c,
     ].map((c) => String.fromCharCode(c));
     fc.assert(
       fc.property(
