@@ -5,7 +5,12 @@
 //
 // Pass keys: https://developer.apple.com/documentation/walletpasses/pass
 import type { PassFields } from '@compass/contracts';
-import { formatEventDayTime, formatEventTime, timezoneName } from './format-time.js';
+import {
+  formatEventDate,
+  formatEventDayTime24,
+  formatEventTime24,
+  timezoneName,
+} from './format-time.js';
 
 export const DISCLAIMER = 'Unofficial. Your badge is your ticket.';
 export const INDEPENDENT_NOTICE =
@@ -80,9 +85,26 @@ function field(key: string, label: string, value: string): PassField {
   return { key, label, value };
 }
 
+/**
+ * The room as the front shows it: the part after the first comma, which is the room itself
+ * without the level or area ("Academy 409" from "Level 1, Academy 409"), or the whole room
+ * when it has one part (task 32).
+ */
+export function shortRoom(room: string): string {
+  const parts = room
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part !== '');
+  const [first = '', second] = parts;
+  return second ?? first;
+}
+
 function backFields(input: PassTemplateInput): PassField[] {
   const { fields, timezone } = input;
   const back: PassField[] = [];
+  if (fields.room !== '') {
+    back.push(field('roomFull', 'ROOM', fields.room));
+  }
   if (fields.walkFromPrevious !== undefined) {
     const from =
       fields.walkFromPrevious.fromVenue === ''
@@ -99,7 +121,7 @@ function backFields(input: PassTemplateInput): PassField[] {
       field(
         'next',
         'NEXT SESSION',
-        `${next.sessionCode} at ${formatEventDayTime(next.startsAt, timezone)}, ${venue}, ${next.walkMinutes} min walk`,
+        `${next.sessionCode} at ${formatEventDayTime24(next.startsAt, timezone)}, ${venue}, ${next.walkMinutes} min walk`,
       ),
     );
   }
@@ -116,15 +138,20 @@ function backFields(input: PassTemplateInput): PassField[] {
 
 export function buildPassJson(input: PassTemplateInput): PassJson {
   const { fields, timezone } = input;
-  const auxiliary: PassField[] = [];
+  // Row 4 (task 32): date, start to end time, the short room, and the disclaimer that
+  // Requirement 9.2 keeps on the front.
+  const auxiliary: PassField[] = [
+    field('date', 'DATE', formatEventDate(fields.startsAt, timezone)),
+    field(
+      'time',
+      'TIME',
+      `${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)}`,
+    ),
+  ];
   if (fields.room !== '') {
-    auxiliary.push(field('room', 'ROOM', fields.room));
+    auxiliary.push(field('room', 'ROOM', shortRoom(fields.room)));
   }
-  auxiliary.push(
-    field('starts', 'STARTS', formatEventDayTime(fields.startsAt, timezone)),
-    field('ends', 'ENDS', formatEventDayTime(fields.endsAt, timezone)),
-    field('notice', 'NOTICE', DISCLAIMER),
-  );
+  auxiliary.push(field('notice', 'NOTICE', DISCLAIMER));
   const expiration = input.status === 'voided' ? input.voidedAt : fields.endsAt;
   return {
     formatVersion: 1,
@@ -145,15 +172,15 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
     relevantDates: [relevantInterval(fields)],
     boardingPass: {
       transitType: 'PKTransitTypeGeneric',
-      headerFields: [
+      // Rows 1 and 2 (task 32): the session code top right; boarding closes and the gate in
+      // the large primary row.
+      headerFields: [field('session', 'SESSION', fields.sessionCode)],
+      primaryFields: [
         field(
           'boardingCloses',
           'BOARDING CLOSES',
-          formatEventTime(boardingClosesAt(fields.startsAt), timezone),
+          formatEventTime24(boardingClosesAt(fields.startsAt), timezone),
         ),
-      ],
-      primaryFields: [
-        field('session', 'SESSION', fields.sessionCode),
         field('gate', 'GATE', fields.venue === '' ? NO_VENUE : fields.venue),
       ],
       secondaryFields: [field('title', 'TITLE', fields.title)],

@@ -6,9 +6,17 @@ import {
   boardingClosesAt,
   buildPassJson,
   relevantInterval,
+  shortRoom,
   type PassTemplateInput,
 } from '../../src/apple/pass-template.js';
-import { formatEventDayTime, formatEventTime, timezoneName } from '../../src/apple/format-time.js';
+import {
+  formatEventDate,
+  formatEventDayTime,
+  formatEventDayTime24,
+  formatEventTime,
+  formatEventTime24,
+  timezoneName,
+} from '../../src/apple/format-time.js';
 import { deriveAuthToken } from '../../src/security/auth-token.js';
 import { passFieldsArb, samplePassFields, TEST_WINDOW } from '../helpers/pass-fields.js';
 
@@ -37,9 +45,14 @@ function input(
   } as PassTemplateInput;
 }
 
-/** An independent formatter for the expected values. */
+/** An independent 24-hour formatter for the expected values. */
 function expectedTime(ms: number): string {
-  return new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' })
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  })
     .format(new Date(ms))
     .replace(/ /g, ' ');
 }
@@ -54,6 +67,16 @@ describe('Feature: pass-service, time formatting', () => {
     expect(formatEventDayTime('2026-12-02T10:30:00-08:00', TZ)).toBe('Wed 10:30 AM');
     expect(timezoneName('2026-12-02T10:30:00-08:00', TZ)).toBe('Pacific Time');
     expect(formatEventTime('2026-12-02T12:00:00Z', 'Africa/Johannesburg')).toBe('2:00 PM');
+  });
+
+  test('the Apple pass uses 24-hour times and a short date in the event timezone (task 32)', () => {
+    expect(formatEventTime24('2026-12-03T13:00:00-08:00', TZ)).toBe('13:00');
+    expect(formatEventTime24('2026-11-30T09:50:00-08:00', TZ)).toBe('09:50');
+    expect(formatEventTime24('2026-12-01T08:05:00Z', TZ)).toBe('00:05');
+    expect(formatEventDayTime24('2026-12-02T12:00:00-08:00', TZ)).toBe('Wed 12:00');
+    expect(formatEventDate('2026-12-03T13:00:00-08:00', TZ)).toBe('Thu 3 Dec');
+    // 07:30 UTC on 1 December is still 30 November in Las Vegas.
+    expect(formatEventDate('2026-12-01T07:30:00Z', TZ)).toBe('Mon 30 Nov');
   });
 });
 
@@ -71,6 +94,51 @@ describe('Feature: pass-service, pass template', () => {
     const gate = json.boardingPass.primaryFields.find((f) => f.key === 'gate');
     expect(gate?.value).toBe('Venue not published');
     expect(json.boardingPass.auxiliaryFields.some((f) => f.key === 'room')).toBe(false);
+    expect(json.boardingPass.backFields.some((f) => f.key === 'roomFull')).toBe(false);
+  });
+
+  test('the front reads session code, boarding closes and gate, title, then date, time, room and notice (task 32)', () => {
+    const json = buildPassJson(
+      input(
+        samplePassFields({
+          sessionCode: 'MAM411',
+          title: 'Best Practices for .NET modernization with AWS Transform',
+          venue: 'Caesars Palace',
+          room: 'Promenade South, Octavius 4',
+          startsAt: '2026-12-03T13:00:00-08:00',
+          endsAt: '2026-12-03T14:00:00-08:00',
+        }),
+      ),
+    );
+    const row = (fields: { label: string; value: string }[]) =>
+      fields.map((f) => `${f.label}=${f.value}`);
+    expect(row(json.boardingPass.headerFields)).toEqual(['SESSION=MAM411']);
+    expect(row(json.boardingPass.primaryFields)).toEqual([
+      'BOARDING CLOSES=12:50',
+      'GATE=Caesars Palace',
+    ]);
+    expect(row(json.boardingPass.secondaryFields)).toEqual([
+      'TITLE=Best Practices for .NET modernization with AWS Transform',
+    ]);
+    expect(row(json.boardingPass.auxiliaryFields)).toEqual([
+      'DATE=Thu 3 Dec',
+      'TIME=13:00-14:00',
+      'ROOM=Octavius 4',
+      `NOTICE=${DISCLAIMER}`,
+    ]);
+    expect(json.boardingPass.backFields[0]).toEqual({
+      key: 'roomFull',
+      label: 'ROOM',
+      value: 'Promenade South, Octavius 4',
+    });
+  });
+
+  test('the short room is the part after the first comma, or the whole room', () => {
+    expect(shortRoom('Level 1, Academy 409')).toBe('Academy 409');
+    expect(shortRoom('Promenade South, Octavius 4, Content Hub')).toBe('Octavius 4');
+    expect(shortRoom('Ballroom E')).toBe('Ballroom E');
+    expect(shortRoom(' , Hall B')).toBe('Hall B');
+    expect(shortRoom('')).toBe('');
   });
 
   test('walk and next connection appear on the back, with fallbacks for empty venues', () => {
@@ -86,7 +154,7 @@ describe('Feature: pass-service, pass template', () => {
     const back = buildPassJson(input(fields)).boardingPass.backFields;
     expect(back.find((f) => f.key === 'walk')?.value).toBe('12 min from the previous venue');
     expect(back.find((f) => f.key === 'next')?.value).toBe(
-      'NXT101 at Wed 12:00 PM, venue not published, 7 min walk',
+      'NXT101 at Wed 12:00, venue not published, 7 min walk',
     );
     const named = buildPassJson(
       input(
@@ -180,17 +248,26 @@ describe('Feature: pass-service, pass template', () => {
             },
           ]);
           expect(json.boardingPass.headerFields).toEqual([
+            { key: 'session', label: 'SESSION', value: fields.sessionCode },
+          ]);
+          expect(json.boardingPass.primaryFields).toEqual([
             {
               key: 'boardingCloses',
               label: 'BOARDING CLOSES',
               value: expectedTime(startMs - 10 * MINUTE),
             },
+            {
+              key: 'gate',
+              label: 'GATE',
+              value: fields.venue === '' ? 'Venue not published' : fields.venue,
+            },
           ]);
-          const gate = json.boardingPass.primaryFields.find((f) => f.key === 'gate');
-          expect(gate?.value).toBe(fields.venue === '' ? 'Venue not published' : fields.venue);
-          expect(json.boardingPass.primaryFields.find((f) => f.key === 'session')?.value).toBe(
-            fields.sessionCode,
+          const aux = json.boardingPass.auxiliaryFields;
+          expect(aux.map((f) => f.key)).toEqual(
+            fields.room === '' ? ['date', 'time', 'notice'] : ['date', 'time', 'room', 'notice'],
           );
+          expect(aux[0]?.value).toMatch(/^[A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}$/);
+          expect(aux[1]?.value).toBe(`${expectedTime(startMs)}-${expectedTime(endMs)}`);
           expect(json.boardingPass.secondaryFields[0]?.value).toBe(fields.title);
           const name = json.boardingPass.backFields.find((f) => f.key === 'name');
           expect(name?.value).toBe(fields.attendeeName);

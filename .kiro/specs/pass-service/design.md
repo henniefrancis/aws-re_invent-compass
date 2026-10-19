@@ -1251,3 +1251,16 @@ Each entry names the task that introduced it. Where this section and the text ab
 ## Post-CodeQL change: explicit APNS host match (20 October 2026, task 31)
 
 CodeQL flagged the APNS host allow-list check as an incomplete URL substring check. `APNS_HOSTS` is an array, so `includes` was already exact; the check now uses strict equality so the intent is explicit. No behaviour change.
+
+## Post-SP3 change: pass front layout (20 October 2026, task 32)
+
+Owner decision after seeing the live pass. Front, in Apple's fixed boarding-pass order:
+
+| Row | Apple slot      | Fields                                                   |
+| --- | --------------- | -------------------------------------------------------- |
+| 1   | headerFields    | SESSION: the session code                                |
+| 2   | primaryFields   | BOARDING CLOSES (24-hour), GATE (venue)                  |
+| 3   | secondaryFields | TITLE                                                    |
+| 4   | auxiliaryFields | DATE, TIME (start to end, 24-hour), ROOM (short), NOTICE |
+
+The short room is the part after the first comma (the room itself, without the level or area), or the whole room when it has one part. The full room is on the back. All Apple pass times are 24-hour ("13:00", "Thu 13:00"); the Google object and calendar are unchanged. NOTICE stays on the front because Requirement 9.2 requires the disclaimer there.

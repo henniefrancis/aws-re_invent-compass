@@ -528,6 +528,14 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
     - Tests: the existing config tests (an allowed host passes; `api.push.apple.com.evil.example` and a sandbox look-alike are refused) still pass; 100 percent coverage
   - [x] 31.2 Commit after the full gate passes, scoped `pass-service`. Do not push
 
+- [x] 32. New Apple pass front (owner decision of 20 October, Requirement 9.12, design "Post-SP3 change: pass front layout")
+  - [x] 32.1 Lay out the front as: header SESSION (the session code); primary BOARDING CLOSES (24-hour) and GATE (the venue, or "Venue not published"); secondary TITLE; auxiliary DATE (for example "Thu 3 Dec"), TIME (start to end, 24-hour, for example "13:00-14:00"), ROOM (the short room) and NOTICE (the disclaimer, which Requirement 9.2 keeps on the front)
+    - The short room is the part after the first comma of the room (for example "Academy 409" from "Level 1, Academy 409"), or the whole room when it has one part; ROOM is left out when the room is empty. The back gains a ROOM line with the full room
+    - Every time on the Apple pass, front and back, is 24-hour in the event timezone. The Google object and the calendar keep their formats
+    - Why: the owner reviewed the live pass on 20 October and asked for the session code at the top right, the title near the top, and date, time and room in one row. Apple fixes the boarding pass row order (header, primary, secondary, auxiliary), so the title sits under the large row
+    - Tests: the field keys, labels and order of every row; 24-hour times across midnight and in the event timezone; the short and full room, and no ROOM when empty; the disclaimer on front and back
+  - [x] 32.2 Commit after the full gate passes, scoped `pass-service`; the owner redeploys dev and syncs the passes
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.
