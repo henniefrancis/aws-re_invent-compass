@@ -17,7 +17,6 @@ import {
   formatEventDayTime24,
   formatEventTime,
   formatEventTime24,
-  timezoneAbbreviation,
   timezoneName,
 } from '../../src/apple/format-time.js';
 import { deriveAuthToken } from '../../src/security/auth-token.js';
@@ -72,15 +71,14 @@ describe('Feature: pass-service, time formatting', () => {
     expect(formatEventTime('2026-12-02T12:00:00Z', 'Africa/Johannesburg')).toBe('2:00 PM');
   });
 
-  test('the Apple pass uses 24-hour times, a full date and the zone abbreviation (tasks 32 and 35)', () => {
+  test('the Apple pass uses 24-hour times and a day, month and year date (tasks 32 and 36)', () => {
     expect(formatEventTime24('2026-12-03T13:00:00-08:00', TZ)).toBe('13:00');
     expect(formatEventTime24('2026-11-30T09:50:00-08:00', TZ)).toBe('09:50');
     expect(formatEventTime24('2026-12-01T08:05:00Z', TZ)).toBe('00:05');
     expect(formatEventDayTime24('2026-12-02T12:00:00-08:00', TZ)).toBe('Wed 12:00');
-    expect(formatEventDate('2026-12-03T13:00:00-08:00', TZ)).toBe('Thu, 3 Dec 2026');
+    expect(formatEventDate('2026-12-03T13:00:00-08:00', TZ)).toBe('3 Dec 2026');
     // 07:30 UTC on 1 December is still 30 November in Las Vegas.
-    expect(formatEventDate('2026-12-01T07:30:00Z', TZ)).toBe('Mon, 30 Nov 2026');
-    expect(timezoneAbbreviation('2026-12-03T13:00:00-08:00', TZ)).toBe('PST');
+    expect(formatEventDate('2026-12-01T07:30:00Z', TZ)).toBe('30 Nov 2026');
   });
 });
 
@@ -126,13 +124,11 @@ describe('Feature: pass-service, pass template', () => {
       'TITLE=Best Practices for .NET modernization with AWS Transform',
     ]);
     expect(row(json.boardingPass.auxiliaryFields)).toEqual([
-      'DATE=Thu, 3 Dec 2026',
-      'TIME=13:00-14:00 PST',
+      'DATE=3 Dec 2026 | 13:00-14:00',
       'VENUE=Caesars Palace',
     ]);
     expect(json.boardingPass.auxiliaryFields.map((f) => f.textAlignment)).toEqual([
       undefined,
-      'PKTextAlignmentCenter',
       'PKTextAlignmentRight',
     ]);
     expect('logoText' in json).toBe(false);
@@ -302,14 +298,11 @@ describe('Feature: pass-service, pass template', () => {
             },
           ]);
           const aux = json.boardingPass.auxiliaryFields;
-          expect(aux.map((f) => f.key)).toEqual(['date', 'time', 'venue']);
-          expect(aux[2]?.value).toBe(fields.venue === '' ? 'Venue not published' : fields.venue);
-          expect(aux[0]?.value).toMatch(/^[A-Z][a-z]{2}, \d{1,2} [A-Z][a-z]{2} 2026$/);
-          // An independent zone name: early November sessions can still be in daylight time.
-          const zone = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'short' })
-            .formatToParts(new Date(startMs))
-            .find((part) => part.type === 'timeZoneName')?.value;
-          expect(aux[1]?.value).toBe(`${expectedTime(startMs)}-${expectedTime(endMs)} ${zone}`);
+          expect(aux.map((f) => f.key)).toEqual(['date', 'venue']);
+          expect(aux[1]?.value).toBe(fields.venue === '' ? 'Venue not published' : fields.venue);
+          const [datePart, timePart] = (aux[0]?.value ?? '').split(' | ');
+          expect(datePart).toMatch(/^\d{1,2} [A-Z][a-z]{2} 2026$/);
+          expect(timePart).toBe(`${expectedTime(startMs)}-${expectedTime(endMs)}`);
           expect(json.boardingPass.secondaryFields[0]?.value).toBe(fields.title);
           const name = json.boardingPass.backFields.find((f) => f.key === 'name');
           expect(name?.value).toBe(fields.attendeeName);

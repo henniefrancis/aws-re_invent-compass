@@ -560,6 +560,10 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
     - Accepted deviations (owner decisions): the background is one digit from AWS Squid Ink #232F3E (Requirement 9.10 note), and the labels are 3.78:1, under WCAG 4.5:1. White values are 13.6:1
   - [x] 35.4 Tests and commit after the full gate passes, scoped `pass-service`
 
+- [x] 36. Owner's fourth pass review: one date and time field (owner decision of 20 October, design "Post-SP3 change: pass review 4", Requirement 9.12 amended)
+  - [x] 36.1 The bottom row is DATE (left) with "3 Dec 2026 | 13:00-14:00" (no weekday, no zone abbreviation) and VENUE (right-aligned); the separate TIME field goes. The zone is still named once on the back (Requirement 9.6)
+  - [x] 36.2 Remove the now unused zone abbreviation formatter; tests and commit after the full gate passes, scoped `pass-service`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.

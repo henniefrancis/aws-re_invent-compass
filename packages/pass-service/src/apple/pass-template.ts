@@ -9,7 +9,6 @@ import {
   formatEventDate,
   formatEventDayTime24,
   formatEventTime24,
-  timezoneAbbreviation,
   timezoneName,
 } from './format-time.js';
 
@@ -155,15 +154,13 @@ function backFields(input: PassTemplateInput): PassField[] {
 
 export function buildPassJson(input: PassTemplateInput): PassJson {
   const { fields, timezone } = input;
-  // Row 4 (task 35): date (left), start to end time with the zone (centre) and venue
-  // (right). The room is the gate; the disclaimer is on the back only (Requirement 9.2).
+  // Row 4 (task 36): the date and time together (left) and the venue (right). The room is
+  // the gate; the zone and the disclaimer are on the back only (Requirements 9.2 and 9.6).
   const auxiliary: PassField[] = [
-    field('date', 'DATE', formatEventDate(fields.startsAt, timezone)),
     field(
-      'time',
-      'TIME',
-      `${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)} ${timezoneAbbreviation(fields.startsAt, timezone)}`,
-      'PKTextAlignmentCenter',
+      'date',
+      'DATE',
+      `${formatEventDate(fields.startsAt, timezone)} | ${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)}`,
     ),
     field('venue', 'VENUE', fields.venue === '' ? NO_VENUE : fields.venue, 'PKTextAlignmentRight'),
   ];

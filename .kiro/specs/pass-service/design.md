@@ -1292,3 +1292,7 @@ Owner decisions after the third look, superseding the gate label and colours of 
 
 - The timezone abbreviation is the event zone's short name at the session start (`Intl` `timeZoneName: "short"`, for example PST); the back still names the zone in full.
 - Colours: background #232F3F, values white (13.6:1), labels #A166FF (3.78:1). **Accepted deviations:** the background is one digit from AWS Squid Ink (#232F3E), which Requirement 9.10 otherwise rules out, and the label contrast is under WCAG AA. Both were the owner's informed choice on 20 October, after the closeness and the measured contrast were shown; reviews treat them as accepted owner decisions.
+
+## Post-SP3 change: pass review 4 (20 October 2026, task 36)
+
+The bottom row is two fields: DATE on the left, holding the date and the time together as "3 Dec 2026 | 13:00-14:00", and VENUE on the right. The weekday and the zone abbreviation are gone from the front; the back still states the zone once ("All times are Pacific Time."), which Requirement 9.6 needs.
