@@ -1,6 +1,6 @@
 import { cp, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import { weekSpecDirectory } from '@compass/core/spec';
 import { createRuntime } from '../../src/runtime/create-runtime.js';
 import { DEMO_STEP_TITLES } from '../../src/demo/run-demo.js';
@@ -9,11 +9,21 @@ import { PassThrough } from 'node:stream';
 import { connect, textOf } from '../support/connect.js';
 import { repoRoot } from '../support/fake-catalog.js';
 import { installNetworkGuard } from '../support/network-guard.js';
+import { createPrivateCheckout, type PrivateCheckout } from '../support/private-checkout.js';
 import type { NetworkGuard } from '../support/network-guard.js';
 import { testEnvironment } from '../support/runtime-env.js';
 import { TRIPLE } from '../support/triple.js';
 
 let guard: NetworkGuard;
+// The CLI demo below reads its resources from a private copy, not from the dist/ folder that
+// the pack smoke test rebuilds (compass-power task 36).
+let checkout: PrivateCheckout;
+beforeAll(async () => {
+  checkout = await createPrivateCheckout();
+});
+afterAll(async () => {
+  await checkout.remove();
+});
 beforeEach(() => {
   guard = installNetworkGuard();
 });
@@ -147,7 +157,13 @@ describe('the demo acceptance (Requirements 18.2, 18.3, 25.2)', () => {
     stderr.on('data', (c: Buffer) => err.push(c.toString()));
     const code = await main(
       { argv: ['demo', '--repo', copy], env: {}, stdin, stdout, stderr },
-      { homeDir: env.home, platform: 'linux', cwd: env.workspace, tempRoot: env.workspace },
+      {
+        homeDir: env.home,
+        platform: 'linux',
+        cwd: env.workspace,
+        tempRoot: env.workspace,
+        moduleUrl: checkout.moduleUrl,
+      },
     );
     expect(code).toBe(0);
     const headings = [...out.join('').matchAll(/^Step (\d+) of 10: (.+)$/gm)];

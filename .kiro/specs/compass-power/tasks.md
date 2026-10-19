@@ -525,6 +525,10 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
     - Tests: the 19 CLI tests pass on their own and in the full coverage run, twice in a row
   - [x] 35.2 Commit after the full gate passes, scoped `compass-power`
 
+- [x] 36. Use the private checkout in every test that runs the CLI (flaky test found again on 20 October)
+  - [x] 36.1 Move the checkout copy of task 35 into `test/support/private-checkout.ts` and use it in `test/cli/main.test.ts` and `test/e2e/full-flow.test.ts`, whose demo run read `dist/` while the pack smoke test rebuilt it and returned 1 at random
+  - [x] 36.2 Tests pass on their own and twice in the full coverage run; commit scoped `compass-power`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

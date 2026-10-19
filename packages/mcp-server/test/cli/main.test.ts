@@ -1,4 +1,4 @@
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -14,31 +14,20 @@ import { connect } from '../support/connect.js';
 import { installNetworkGuard } from '../support/network-guard.js';
 import type { NetworkGuard } from '../support/network-guard.js';
 import { repoRoot } from '../support/fake-catalog.js';
+import { createPrivateCheckout, type PrivateCheckout } from '../support/private-checkout.js';
 import { testEnvironment } from '../support/runtime-env.js';
 
 let temp: string;
 let guard: NetworkGuard;
 
-// A private checkout copy (Kiro task 35). The pack smoke test rebuilds the real
-// packages/mcp-server/dist while this file runs, so main must not read resources from it:
-// this copy has no dist/, so every resource comes from the repository fallback.
-let checkout: string;
+// A private checkout copy (tasks 35 and 36): main never reads the dist/ folder that the pack
+// smoke test rebuilds.
+let checkout: PrivateCheckout;
 beforeAll(async () => {
-  checkout = await mkdtemp(join(tmpdir(), 'compass-checkout-'));
-  const root = repoRoot();
-  const files = [
-    'packages/mcp-server/package.json',
-    'data/venues.json',
-    'fixtures/api',
-    'fixtures/synthetic',
-    'fixtures/sample-repo',
-  ];
-  for (const file of files) {
-    await cp(join(root, file), join(checkout, file), { recursive: true });
-  }
+  checkout = await createPrivateCheckout();
 });
 afterAll(async () => {
-  await rm(checkout, { recursive: true, force: true });
+  await checkout.remove();
 });
 
 beforeEach(async () => {
@@ -74,7 +63,7 @@ const host = (): Host => ({
   platform: 'linux',
   cwd: temp,
   tempRoot: temp,
-  moduleUrl: pathToFileURL(join(checkout, 'packages', 'mcp-server', 'src', 'cli', 'main.js')).href,
+  moduleUrl: checkout.moduleUrl,
 });
 
 describe('readVersion', () => {
