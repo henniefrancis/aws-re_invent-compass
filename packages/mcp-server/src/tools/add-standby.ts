@@ -8,7 +8,13 @@ import { checkIdentifiers } from '../safety/identifiers.js';
 import { labelUntrusted } from '../safety/labelled-data.js';
 import { describeTargets } from '../safety/targets.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
-import { confirmMessage, ensureSignedIn, humanConfirms, readFreshSchedule } from './common.js';
+import {
+  confirmMessage,
+  ensureSignedIn,
+  humanConfirms,
+  readFreshSchedule,
+  readOnlyReply,
+} from './common.js';
 import { explainFailure } from './failure-codes.js';
 
 /** The reminder shown with every standby result. */
@@ -30,9 +36,17 @@ export async function addStandby(
     throw new CompassError('UnknownSession');
   }
   const { window } = await readFreshSchedule(ctx);
-  if (
-    !(await humanConfirms(ctx, confirmMessage('Add these to your standby list?', targets.found)))
-  ) {
+  const question = confirmMessage('Add these to your standby list?', targets.found);
+  const readOnly = readOnlyReply(ctx, question);
+  if (readOnly !== undefined) {
+    return {
+      ok: true,
+      structured: { result: { successful: [], failed: [] } },
+      text: `${readOnly}
+${STANDBY_NOTE}`,
+    };
+  }
+  if (!(await humanConfirms(ctx, question))) {
     return {
       ok: true,
       structured: { result: { successful: [], failed: [] } },

@@ -21,6 +21,7 @@ import {
   confirmedCommitments,
   ensureSignedIn,
   humanConfirms,
+  readOnlyReply,
   readFreshSchedule,
 } from './common.js';
 import { explainFailure } from './failure-codes.js';
@@ -89,10 +90,12 @@ export async function reserveWithGuardrails(
     };
   }
 
-  const approved = await humanConfirms(
-    ctx,
-    confirmMessage('Reserve these sessions?', targets.found, warnings),
-  );
+  const question = confirmMessage('Reserve these sessions?', targets.found, warnings);
+  const readOnly = readOnlyReply(ctx, question);
+  if (readOnly !== undefined) {
+    return { ok: true, structured: { verdict: guard.verdict }, text: readOnly };
+  }
+  const approved = await humanConfirms(ctx, question);
   if (!approved) {
     return {
       ok: true,

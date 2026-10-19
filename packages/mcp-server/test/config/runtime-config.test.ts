@@ -10,9 +10,22 @@ describe('readRuntimeConfig', () => {
   test('defaults to live mode and the build-time constant, with its own host allowed', () => {
     expect(readRuntimeConfig({})).toEqual({
       mode: 'live',
+      readOnly: false,
       compassApiUrl: COMPASS_API_BASE_URL,
       allowedHosts: [BUILT_IN_HOST],
     });
+  });
+
+  test('read-only live mode is on only for COMPASS_READ_ONLY=1 (task 37)', () => {
+    expect(readRuntimeConfig({ COMPASS_READ_ONLY: '1' }).readOnly).toBe(true);
+    expect(readRuntimeConfig({ COMPASS_READ_ONLY: 'true' }).readOnly).toBe(false);
+    expect(readRuntimeConfig({ COMPASS_READ_ONLY: '0' }).readOnly).toBe(false);
+    const override = readRuntimeConfig({
+      COMPASS_READ_ONLY: '1',
+      COMPASS_API_URL: 'https://example.test',
+      COMPASS_ALLOW_API_OVERRIDE: '1',
+    });
+    expect(override.readOnly).toBe(true);
   });
 
   test('reads simulated mode only for the exact value', () => {

@@ -21,6 +21,7 @@ import {
   ensureSignedIn,
   humanConfirms,
   readFreshSchedule,
+  readOnlyReply,
 } from './common.js';
 
 function notCancelled(text: string): ToolOutcome<'cancel_reservation'> {
@@ -52,6 +53,11 @@ export async function cancelReservation(
   const swap = ctx.state.swaps.forOriginal(input.sessionId);
   const repeat = swap === undefined ? undefined : catalog.byId.get(swap.repeatId)?.session;
   let confirmedByOverride = false;
+  const readOnly = readOnlyReply(ctx, confirmMessage('Cancel this reservation?', targets.found));
+  if (readOnly !== undefined) {
+    return notCancelled(readOnly);
+  }
+
   if (swap !== undefined && repeat !== undefined) {
     const plan = await rules.planSafeSwap(
       commitmentFor(session),

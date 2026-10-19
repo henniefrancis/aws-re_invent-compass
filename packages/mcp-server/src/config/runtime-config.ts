@@ -14,6 +14,8 @@ import { COMPASS_API_BASE_URL } from './compass-api.js';
 /** The settings read from the environment. */
 export interface RuntimeConfig {
   mode: 'live' | 'simulated';
+  /** COMPASS_READ_ONLY=1: no write ever reaches the Events API (compass-power task 37). */
+  readOnly: boolean;
   compassApiUrl: string;
   /** Passed to the pass client as `allowedHosts`: only the host of `compassApiUrl`. */
   allowedHosts: string[];
@@ -39,11 +41,13 @@ export function readRuntimeConfig(
   env: Readonly<Record<string, string | undefined>>,
 ): RuntimeConfig {
   const mode = env.COMPASS_MODE === 'simulated' ? 'simulated' : 'live';
+  const readOnly = env.COMPASS_READ_ONLY === '1';
   const override = env.COMPASS_API_URL;
   const overrideAllowed = env.COMPASS_ALLOW_API_OVERRIDE === '1';
   if (override === undefined || override === '' || !overrideAllowed) {
     return {
       mode,
+      readOnly,
       compassApiUrl: COMPASS_API_BASE_URL,
       allowedHosts: [new URL(COMPASS_API_BASE_URL).host],
     };
@@ -51,6 +55,7 @@ export function readRuntimeConfig(
   const url = parseOverride(override);
   return {
     mode,
+    readOnly,
     compassApiUrl: url.toString().replace(/\/+$/, ''),
     allowedHosts: [url.host],
     warning: `Warning: the Compass API override is in use, so passes go to ${url.host} and not the built-in service.`,

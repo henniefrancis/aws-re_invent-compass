@@ -14,6 +14,10 @@ import type { CompassErrorCode } from '../ports/errors.js';
 export const INTERNAL_MESSAGE =
   'Compass hit an internal problem. Nothing was changed by this step.';
 
+/** The message when read-only live mode stops a write (compass-power task 37). */
+export const READ_ONLY_MESSAGE =
+  'Compass is in read-only mode (COMPASS_READ_ONLY=1), so nothing in your re:Invent schedule changed.';
+
 const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, string> = {
   FolderNotFound: 'That folder could not be found.',
   IdentifierRejected: 'One of the ids is not a valid session id.',
@@ -46,6 +50,7 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
   ScanOutsideWorkspace:
     'That folder is outside the workspace Compass was started in, and this client cannot ask you to confirm it. Start Compass in that folder, or use a client that can ask.',
   UnsafePath: 'Compass will not write through a symbolic link, so it wrote nothing.',
+  ReadOnly: READ_ONLY_MESSAGE,
   Internal: INTERNAL_MESSAGE,
 };
 

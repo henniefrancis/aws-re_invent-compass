@@ -66,6 +66,8 @@ export interface FakeRuntimeOptions {
   specFs?: SpecFs;
   cwd?: string;
   mode?: 'live' | 'simulated';
+  /** Read-only live mode (compass-power task 37). */
+  readOnly?: boolean;
 }
 
 /** Builds a Runtime made only of recording fakes. */
@@ -78,6 +80,7 @@ export function createFakeRuntime(options: FakeRuntimeOptions = {}): FakeRuntime
   const stderr: string[] = [];
   const runtime: Runtime = {
     mode: options.mode ?? 'simulated',
+    ...(options.readOnly === true ? { readOnly: true } : {}),
     version: '0.0.0',
     events,
     rules,

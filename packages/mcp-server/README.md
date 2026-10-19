@@ -134,6 +134,16 @@ The server checks every booking again, so nothing is unsafe in a client without 
 
 AWS publishes its own MCP server at `https://api.awsevents.com/mcp` (https://docs.aws.amazon.com/events/latest/devguide/mcp-server.html). It is fine for reading events and sessions. Do not use its write tools (ReserveSessions, CancelReservation, AssociateFavorites, DisassociateFavorite, CreatePersonalTime, UpdatePersonalTime, DeletePersonalTime): they skip the Compass guardrail. If you add it yourself, add it to the workspace `.kiro/settings/mcp.json` (not to a Power) and list those seven in `disabledTools` by their full names: `AWSEventsPublicApi-Mcp-prod___ReserveSessions`, `AWSEventsPublicApi-Mcp-prod___CancelReservation`, `AWSEventsPublicApi-Mcp-prod___AssociateFavorites`, `AWSEventsPublicApi-Mcp-prod___DisassociateFavorite`, `AWSEventsPublicApi-Mcp-prod___CreatePersonalTime`, `AWSEventsPublicApi-Mcp-prod___UpdatePersonalTime` and `AWSEventsPublicApi-Mcp-prod___DeletePersonalTime`. A bare name such as `ReserveSessions` hides nothing. The Power does not bundle the server, because Kiro does not honour `disabledTools` inside a Power (ADR-024), and the hook template blocks the seven write tools as a second layer.
 
+## Read-only live mode
+
+Set `COMPASS_READ_ONLY=1` to use your real Builder ID and real data without changing anything in your re:Invent schedule. Compass signs in, reads the live catalog and your real reservations, standby list and layovers, and runs the booking guardrail as usual. The schedule write tools (`reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby` and `add_layover`) ask nothing and reply with what they would have done and that nothing changed. Underneath, every Events API write is refused before any request, so no path can change your schedule. Boarding passes still work, because they live on the Compass pass service, not in your re:Invent schedule. The server logs one line when the mode is on. Leave the variable out to book for real.
+
+In Kiro, add it to the `env` of the `compass` server in `.kiro/settings/mcp.json`:
+
+```json
+"env": { "COMPASS_READ_ONLY": "1" }
+```
+
 ## Simulated mode and the demo
 
 Set `COMPASS_MODE=simulated` to run the whole server on made-up data: a synthetic catalog, a signed-in attendee, a pinned clock, and an in-process pass service. No browser opens, no sign-in happens and nothing is sent anywhere. Every result starts with `SIMULATED MODE: no real data.` Simulated files live in a `simulated` folder, apart from real data. Simulated mode is refused when `NODE_ENV=production` unless `COMPASS_ALLOW_SIMULATED=1` is set.

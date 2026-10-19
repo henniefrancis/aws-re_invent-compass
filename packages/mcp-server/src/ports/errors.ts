@@ -36,6 +36,7 @@ export type CompassErrorCode =
   | 'LevelInvalid'
   | 'InputInvalid'
   | 'UnsafePath'
+  | 'ReadOnly'
   | 'Internal';
 
 /** Optional, non-sensitive details a code may carry. */

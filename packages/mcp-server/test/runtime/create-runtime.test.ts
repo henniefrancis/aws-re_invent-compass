@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { createTokenStore } from '@compass/core/auth';
 import type { LoopbackServer } from '@compass/core/auth';
 import type { HttpRequest } from '@compass/core/passes';
-import { createRuntime } from '../../src/runtime/create-runtime.js';
+import { READ_ONLY_NOTICE, createRuntime } from '../../src/runtime/create-runtime.js';
 import { SIMULATED_LABEL } from '../../src/server/results.js';
 import { connect, textOf } from '../support/connect.js';
 import { installNetworkGuard } from '../support/network-guard.js';
@@ -111,6 +111,29 @@ describe('live composition', () => {
     refreshToken: 'refresh-token-value',
     idToken: fakeIdToken(),
     accessTokenExpiresAt: Date.now() + 3_600_000,
+  });
+
+  test('read-only live mode refuses every Events write and says so once (task 37)', async () => {
+    const store = createTokenStore(memoryKeyring());
+    const env = await testEnvironment({ store });
+    const runtime = await createRuntime(env.environment, { COMPASS_READ_ONLY: '1' });
+    expect(runtime.mode).toBe('live');
+    expect(runtime.readOnly).toBe(true);
+    await expect(runtime.events.reserve(['x'])).rejects.toMatchObject({ code: 'ReadOnly' });
+    expect(env.stderr.join('')).toContain(READ_ONLY_NOTICE);
+    expect(guard.attempts).toEqual([]);
+    const writable = await createRuntime(env.environment, {});
+    expect(writable.readOnly).toBeUndefined();
+  });
+
+  test('read-only works in simulated mode too', async () => {
+    const env = await testEnvironment();
+    const runtime = await createRuntime(env.environment, {
+      COMPASS_MODE: 'simulated',
+      COMPASS_READ_ONLY: '1',
+    });
+    expect(runtime.readOnly).toBe(true);
+    await expect(runtime.events.cancel('x')).rejects.toMatchObject({ code: 'ReadOnly' });
   });
 
   test('builds without a network call and reports sign-in from the token store', async () => {

@@ -22,6 +22,7 @@ import {
   ensureSignedIn,
   humanConfirms,
   readFreshSchedule,
+  readOnlyReply,
 } from './common.js';
 
 /** What the handler can do with personal time. */
@@ -117,6 +118,22 @@ function declined(action: LayoverAction['action']): ToolOutcome<'add_layover'> {
   };
 }
 
+/**
+ * Asks before a layover write, or in read-only live mode (task 37) says what it would have done.
+ * Undefined means go ahead.
+ */
+async function confirmOrStop(
+  ctx: ToolContext,
+  action: LayoverAction['action'],
+  question: string,
+): Promise<ToolOutcome<'add_layover'> | undefined> {
+  const readOnly = readOnlyReply(ctx, question);
+  if (readOnly !== undefined) {
+    return { ok: true, structured: { action, done: false }, text: readOnly };
+  }
+  return (await humanConfirms(ctx, question)) ? undefined : declined(action);
+}
+
 function unconfirmed(action: LayoverAction['action']): ToolOutcome<'add_layover'> {
   return {
     ok: true,
@@ -182,8 +199,9 @@ async function createLayover(
   const fresh = await readFreshSchedule(ctx);
   const warnings = await overlapsOf(personalTime, undefined, ctx, fresh);
 
-  const approved = await humanConfirms(
+  const stop = await confirmOrStop(
     ctx,
+    'create',
     [
       `Add a layover from ${personalTime.startDateTime} to ${personalTime.endDateTime}? This changes your real re:Invent schedule.`,
       labelUntrusted('attendee', { title: personalTime.title }),
@@ -191,8 +209,8 @@ async function createLayover(
       'Go ahead?',
     ].join('\n'),
   );
-  if (!approved) {
-    return declined('create');
+  if (stop !== undefined) {
+    return stop;
   }
 
   const written = await ctx.runtime.events.createPersonalTime(personalTime);
@@ -240,8 +258,9 @@ async function updateLayover(
   }
   const warnings = await overlapsOf(personalTime, personalTimeId, ctx, fresh);
 
-  const approved = await humanConfirms(
+  const stop = await confirmOrStop(
     ctx,
+    'update',
     [
       `Change the layover (id ${personalTimeId}) now from ${current.startDateTime} to ${current.endDateTime} so that it runs from ${personalTime.startDateTime} to ${personalTime.endDateTime}? This changes your real re:Invent schedule.`,
       labelUntrusted('attendee', { was: current.title, now: personalTime.title }),
@@ -249,8 +268,8 @@ async function updateLayover(
       'Go ahead?',
     ].join('\n'),
   );
-  if (!approved) {
-    return declined('update');
+  if (stop !== undefined) {
+    return stop;
   }
 
   const written = await ctx.runtime.events.updatePersonalTime(personalTimeId, personalTime);
@@ -294,16 +313,17 @@ async function deleteLayover(
     };
   }
 
-  const approved = await humanConfirms(
+  const stop = await confirmOrStop(
     ctx,
+    'delete',
     [
       `Delete the layover (id ${personalTimeId}) from ${current.startDateTime} to ${current.endDateTime}? This changes your real re:Invent schedule.`,
       labelUntrusted('attendee', { title: current.title }),
       'Go ahead?',
     ].join('\n'),
   );
-  if (!approved) {
-    return declined('delete');
+  if (stop !== undefined) {
+    return stop;
   }
 
   const written = await ctx.runtime.events.deletePersonalTime(personalTimeId);

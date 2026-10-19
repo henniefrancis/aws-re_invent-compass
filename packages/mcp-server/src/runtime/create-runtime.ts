@@ -33,6 +33,7 @@ import { readFile } from 'node:fs/promises';
 import { createFetchTransport } from '../adapters/fetch-transport.js';
 import { defaultEventsFetch } from '../adapters/default-fetch.js';
 import { createEventsAdapter } from '../adapters/events-adapter.js';
+import { readOnlyEvents } from '../adapters/read-only-events.js';
 import type { AuthPort } from '../adapters/events-adapter.js';
 import { createNodeAppFileSystem } from '../adapters/node-fs-adapter.js';
 import { createRulesAdapter } from '../adapters/rules-adapter.js';
@@ -105,6 +106,10 @@ function simulatedAuth(): AuthPort {
   };
 }
 
+/** The one log line when read-only live mode is on (compass-power task 37). */
+export const READ_ONLY_NOTICE =
+  'Read-only mode is on (COMPASS_READ_ONLY=1): Compass reads your real schedule but never changes it.';
+
 /** Builds the Runtime for `env`. */
 export async function createRuntime(
   environment: RuntimeEnvironment,
@@ -114,6 +119,9 @@ export async function createRuntime(
   const config = readRuntimeConfig(env);
   const simulated = config.mode === 'simulated';
   const logger = createStderrLogger(environment.stderr);
+  if (config.readOnly) {
+    logger.warn(READ_ONLY_NOTICE);
+  }
   if (config.warning !== undefined) {
     logger.warn(config.warning);
   }
@@ -190,7 +198,7 @@ export async function createRuntime(
     signOut: () => signOut(store, { fetch: oauthFetch, logger: redacting }),
   };
 
-  const events = createEventsAdapter({
+  const writableEvents = createEventsAdapter({
     ctx,
     auth: simulated ? simulatedAuth() : live,
     catalogDir,
@@ -198,6 +206,8 @@ export async function createRuntime(
     venues: venues.list,
     now: nowMs,
   });
+  // Read-only live mode: every Events API write is refused before any request (task 37).
+  const events = config.readOnly ? readOnlyEvents(writableEvents) : writableEvents;
   const rules = createRulesAdapter({
     clock,
     venueData: venues.data,
@@ -219,24 +229,24 @@ export async function createRuntime(
   });
 
   if (simulated) {
-    return (
-      await createSimulatedRuntime({
-        version: environment.version,
-        cwd,
-        logger,
-        events,
-        rules,
-        createPasses: passesFactory,
-        scanFs: createNodeScanFs(),
-        specFs: createNodeSpecFs(),
-        appDataDir: root,
-        fs: createNodeAppFileSystem(),
-        ...scanRunner,
-      })
-    ).runtime;
+    const { runtime } = await createSimulatedRuntime({
+      version: environment.version,
+      cwd,
+      logger,
+      events,
+      rules,
+      createPasses: passesFactory,
+      scanFs: createNodeScanFs(),
+      specFs: createNodeSpecFs(),
+      appDataDir: root,
+      fs: createNodeAppFileSystem(),
+      ...scanRunner,
+    });
+    return config.readOnly ? { ...runtime, readOnly: true } : runtime;
   }
   return {
     mode: 'live',
+    ...(config.readOnly ? { readOnly: true } : {}),
     version: environment.version,
     events,
     rules,

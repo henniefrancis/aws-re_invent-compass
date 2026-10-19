@@ -4,6 +4,7 @@ import type { Commitment, NormalisedSession, ScheduleWire } from '@compass/contr
 import type { ScheduleView } from '@compass/core/passes';
 import { CompassError } from '../ports/errors.js';
 import type { CatalogView, EventWindow } from '../ports/events-port.js';
+import { READ_ONLY_MESSAGE } from '../server/error-messages.js';
 import type { ToolContext } from '../server/types.js';
 
 /** Throws NotSignedIn unless the attendee is signed in. Simulated mode is signed in at once. */
@@ -97,6 +98,21 @@ export function confirmMessage(
     'Go ahead?',
   ];
   return lines.join('\n');
+}
+
+/**
+ * In read-only live mode (compass-power task 37), the reply a schedule write tool gives instead
+ * of asking: what it would have done, and that nothing changed. Undefined when writes are on.
+ * The confirmation text is reused without its closing question.
+ */
+export function readOnlyReply(ctx: ToolContext, confirmation: string): string | undefined {
+  if (ctx.runtime.readOnly !== true) {
+    return undefined;
+  }
+  const preview = confirmation
+    .replace(/\nGo ahead\?$/, '')
+    .replace(' This changes your real re:Invent schedule.', '');
+  return [READ_ONLY_MESSAGE, 'Compass would have done this:', preview].join('\n');
 }
 
 /**

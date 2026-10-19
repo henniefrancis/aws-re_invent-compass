@@ -1569,3 +1569,13 @@ Found when the owner tried `show_schedule` on dev with a live Builder ID schedul
 
 - **One listing per session.** The Events API keeps a reserved session in the favourites. `show_schedule` now lists a reserved session only under reserved; the standby list and its count leave reserved ids out, and one sentence explains that reserved sessions also stay in the Events favourites (so removing them from standby is not needed). `structured.schedule` is unchanged, so callers that need the raw lists still have them. `notInCatalog` is de-duplicated.
 - **Description.** "What is on my schedule: the sessions you have reserved, your standby (favourites) list and your layovers, each with the id the other tools take. Use it when the attendee asks what they have booked. Takes no input. Nothing is changed." It names the attendee's words, because a client without the Power's skill text chooses tools from descriptions alone.
+
+## Post-SP3 change: read-only live mode (20 October 2026, task 37)
+
+Owner decision: Compass must be able to run against the owner's real Builder ID and real data without changing the owner's re:Invent schedule, for example while recording the demo.
+
+- **Switch.** `COMPASS_READ_ONLY=1` in the MCP server's environment. Off by default, so normal live mode still books.
+- **Hard guard.** The runtime wraps the Events adapter: in read-only mode every Events API write throws `ReadOnly` before any request. No tool, hook or future code path can write through it.
+- **Clear replies.** The five schedule write tools check the mode before the confirmation question and answer with the action they would have taken (the same text as the confirmation question) and "Nothing in your re:Invent schedule changed." They still run the guardrail first, so the demo shows blocks and warnings on real data.
+- **Passes stay on.** Issue, send-to-phone and sync write only to Compass's own pass service and the local snapshot, never to the Events API, so they keep working (owner decision). `forget_me` deletes local data only and stays on.
+- The official `awsevents` write tools are already blocked by the pre-write hook in every mode.
