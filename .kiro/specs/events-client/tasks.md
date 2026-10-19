@@ -402,6 +402,10 @@ Conventions followed: kebab-case files, one Events API operation per file, Pasca
   - [x] 20.2 Commit
     - After `npx eslint .` and `npx prettier --check .` both pass with zero errors, commit the captures with scope `events-client` (subject plus body via multiple `-m` flags). Never push.
 
+- [x] 21. Record the CodeQL PKCE alert as a false positive (CodeQL alert 3, design "Post-CodeQL review")
+  - [x] 21.1 Dismiss js/insufficient-password-hash on `packages/core/src/auth/pkce.ts` as a false positive, with the reason in the alert and in design.md
+    - Why: the hashed value is the PKCE code verifier, 32 random bytes, not a password. RFC 7636 section 4.2 requires the S256 challenge to be SHA-256 of the verifier, so a slow password hash would break sign-in with the Events API. No code change
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 21.1) is part of S1's definition of done, so every test task is mandatory.
