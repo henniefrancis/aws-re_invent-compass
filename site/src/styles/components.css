@@ -8,6 +8,14 @@
   text-decoration: none;
 }
 
+/* The owner's full logo as the home link (showcase-site task 21). The image is the link's
+   accessible name through its alt text. */
+.brand-logo {
+  display: block;
+  inline-size: auto;
+  block-size: 3.5rem;
+}
+
 .site-nav a {
   display: inline-flex;
   align-items: center;

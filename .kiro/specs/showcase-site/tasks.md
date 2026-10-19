@@ -380,6 +380,11 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
     - Tests: the banner is present, decorative (empty alt, hidden from assistive technology) and same-origin; the build output check and the budgets still pass
   - [x] 20.2 Commit after the full gate passes, scoped `showcase-site`
 
+- [x] 21. Use the owner's logo in the header and the owner's favicon (owner decision of 20 October, design "Post-SP3 change: owner logo")
+  - [x] 21.1 The header brand link shows `artwork/logo.svg` with `alt="re:Invent Compass"` (an image link named by its alt text) instead of the product name in text; `artwork/favicon.svg` is the owner's new map icon
+  - [x] 21.2 In `logo.svg`, the year "2026" used AWS's Amazon Ember Display typeface, which visitors do not have installed and which is AWS brand material; it now uses a free heavy sans-serif stack (Segoe UI Black, Arial Black, Arial, sans-serif). ARTWORK.md lists both files as the owner's artwork
+  - [x] 21.3 Tests: the header image has the product name as alt text, both SVGs have no script and no external reference, the static check still finds no AWS mark; build, budgets and a browser check at desktop and phone width; commit scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

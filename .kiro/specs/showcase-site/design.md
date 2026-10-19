@@ -1003,3 +1003,7 @@ The build output check removes HTML comments before it looks for the Notice text
 ## Post-SP3 change: board artwork (20 October 2026, task 20)
 
 The Board_Page shows the owner's picture (`artwork/pass-background.jpg`) as a decorative banner above the hand-off panel. It is the same artwork whose colours the Apple pass uses (pass-service task 33), so the page where passes are added and the passes match. The image is decorative (`alt=""`), same-origin, and sits outside the text panel, so every text contrast is unchanged.
+
+## Post-SP3 change: owner logo (20 October 2026, task 21)
+
+The header brand link is the owner's full logo (`artwork/logo.svg`, alt "re:Invent Compass"), and the favicon is the owner's map icon. The year in the logo is set in a free heavy sans-serif stack rather than Amazon Ember, so it renders the same for every visitor and the artwork carries no AWS typeface.

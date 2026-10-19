@@ -1,6 +1,8 @@
 <header class="site-header">
   <div class="container site-header__bar">
-    <a class="brand-link" routerLink="/">{{ productName }}</a>
+    <a class="brand-link" routerLink="/"
+      ><img class="brand-logo" src="artwork/logo.svg" width="129" height="56" [alt]="productName"
+    /></a>
     <nav aria-label="Main">
       <ul class="site-nav">
         @for (item of items; track item.path) {
