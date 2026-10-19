@@ -31,7 +31,7 @@
 #   - Request validation is enabled through x-amazon-apigateway-request-validators
 #     and each operation sets x-amazon-apigateway-request-validator.
 #   - Binary responses (.pkpass, .pkpasses, .ics) are declared in
-#     x-amazon-apigateway-binary-media-types.
+#     x-amazon-apigateway-binary-media-types, together with */* (see below).
 #
 # Errors use application/problem+json with the single Problem component. No error
 # example echoes request input. No account id, ARN, hostname or real domain
@@ -54,13 +54,17 @@ info:
     name: Apache-2.0
 
 # Binary media types so API Gateway returns the Apple pass bundles and the
-# calendar file as binary rather than attempting UTF-8 handling.
+# calendar file as binary rather than attempting UTF-8 handling. API Gateway
+# looks only at the first Accept media type, and a browser link sends
+# text/html first, so */* is listed too (SP3, 19 October 2026). Request bodies
+# then reach the Lambdas base64-encoded, which they decode.
 # API Gateway requires the x-api-key header on every method (see api_key below).
 x-amazon-apigateway-api-key-source: HEADER
 x-amazon-apigateway-binary-media-types:
   - application/vnd.apple.pkpass
   - application/vnd.apple.pkpasses
   - text/calendar
+  - '*/*'
 
 # Two request validators. Operations with a body validate the body and the
 # request parameters; parameter-only operations validate parameters only.

@@ -279,6 +279,16 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - [x] 15. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
+- [x] 16. Return the pass and calendar downloads as binary to browsers (SP3 finding, design "Post-SP3 change")
+  - [x] 16.1 Add `*/*` to the binary media types
+    - In `contracts/compass-api.openapi.yaml`, add `'*/*'` (quoted, because a bare `*` starts a YAML alias) to `x-amazon-apigateway-binary-media-types`, keep the three named types, and update the header comment to say why. Run `npm run gen:copy` so `packages/contracts/openapi.yaml` and `infra/modules/api/openapi.yaml` stay byte-identical, then the hash, placeholder and dash checks, the full test run at 100 percent, lint, typecheck and prettier, and the infra native test of `infra/modules/api`
+    - Why: on 19 October SP3 showed that Safari's Add to Apple Wallet link sends `Accept: text/html,...` first, and API Gateway honours only the first Accept media type, so the bundle arrived as base64 text and Wallet refused it. With `Accept: application/vnd.apple.pkpasses` the same URL returned a zip. AWS documents `*/*` for browser clients
+    - The owner redeploys dev with `scripts/release.sh dev` and repeats SP3 step 1; the JSON routes are checked on dev in the same run (issue, hand-off, device registration)
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+
+  - [x] 16.2 Commit
+    - After the full gate passes, commit locally with a Conventional Commit scoped `foundation-contracts`. Do not push, merge, tag or open a PR
+
 ## Notes
 
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
