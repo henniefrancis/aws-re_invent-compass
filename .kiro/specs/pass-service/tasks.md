@@ -564,6 +564,11 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 36.1 The bottom row is DATE (left) with "3 Dec 2026 | 13:00-14:00" (no weekday, no zone abbreviation) and VENUE (right-aligned); the separate TIME field goes. The zone is still named once on the back (Requirement 9.6)
   - [x] 36.2 Remove the now unused zone abbreviation formatter; tests and commit after the full gate passes, scoped `pass-service`
 
+- [x] 37. Owner's fifth pass review: airline wording (owner decision of 20 October, design "Post-SP3 change: pass review 5", Requirement 9.12 amended)
+  - [x] 37.1 `logoText` is the session code (no heading), next to the logo where "Compass" was. Wallet has no colour key for the logo text, so it takes the value colour; the owner wanted purple, which only a purple foreground for every value would give
+  - [x] 37.2 Header (top right): BOARDING CLOSES with the 24-hour time. Primary: TERMINAL (the venue, or "Venue not published") and GATE (the short room). Secondary: FLIGHT NAME (the title). Auxiliary: DATE "3 Dec 2026 | 13:00-14:00"
+  - [x] 37.3 Tests and commit after the full gate passes, scoped `pass-service`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.

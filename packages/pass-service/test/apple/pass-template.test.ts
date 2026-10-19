@@ -95,12 +95,12 @@ describe('Feature: pass-service, pass template', () => {
     const json = buildPassJson(input(samplePassFields({ venue: '', room: '' })));
     const gate = json.boardingPass.primaryFields.find((f) => f.key === 'gate');
     expect(gate).toEqual({ key: 'gate', label: 'GATE', value: NO_ROOM });
-    const venue = json.boardingPass.auxiliaryFields.find((f) => f.key === 'venue');
-    expect(venue?.value).toBe('Venue not published');
+    const terminal = json.boardingPass.primaryFields.find((f) => f.key === 'terminal');
+    expect(terminal).toEqual({ key: 'terminal', label: 'TERMINAL', value: 'Venue not published' });
     expect(json.boardingPass.backFields.some((f) => f.key === 'roomFull')).toBe(false);
   });
 
-  test('the front reads session code, boarding closes and the room as gate, title, then date, time and venue (task 35)', () => {
+  test('the front uses airline wording: code by the logo, boarding closes, terminal and gate, flight name, date (task 37)', () => {
     const json = buildPassJson(
       input(
         samplePassFields({
@@ -115,23 +115,16 @@ describe('Feature: pass-service, pass template', () => {
     );
     const row = (fields: { label: string; value: string }[]) =>
       fields.map((f) => `${f.label}=${f.value}`);
-    expect(row(json.boardingPass.headerFields)).toEqual(['SESSION=MAM411']);
+    expect(json.logoText).toBe('MAM411');
+    expect(row(json.boardingPass.headerFields)).toEqual(['BOARDING CLOSES=12:50']);
     expect(row(json.boardingPass.primaryFields)).toEqual([
-      'BOARDING CLOSES=12:50',
+      'TERMINAL=Caesars Palace',
       'GATE=Octavius 4',
     ]);
     expect(row(json.boardingPass.secondaryFields)).toEqual([
-      'TITLE=Best Practices for .NET modernization with AWS Transform',
+      'FLIGHT NAME=Best Practices for .NET modernization with AWS Transform',
     ]);
-    expect(row(json.boardingPass.auxiliaryFields)).toEqual([
-      'DATE=3 Dec 2026 | 13:00-14:00',
-      'VENUE=Caesars Palace',
-    ]);
-    expect(json.boardingPass.auxiliaryFields.map((f) => f.textAlignment)).toEqual([
-      undefined,
-      'PKTextAlignmentRight',
-    ]);
-    expect('logoText' in json).toBe(false);
+    expect(row(json.boardingPass.auxiliaryFields)).toEqual(['DATE=3 Dec 2026 | 13:00-14:00']);
     expect(json.boardingPass.backFields[0]).toEqual({
       key: 'roomFull',
       label: 'ROOM',
@@ -282,14 +275,19 @@ describe('Feature: pass-service, pass template', () => {
               endDate: new Date(endMs).toISOString(),
             },
           ]);
+          expect(json.logoText).toBe(fields.sessionCode);
           expect(json.boardingPass.headerFields).toEqual([
-            { key: 'session', label: 'SESSION', value: fields.sessionCode },
-          ]);
-          expect(json.boardingPass.primaryFields).toEqual([
             {
               key: 'boardingCloses',
               label: 'BOARDING CLOSES',
               value: expectedTime(startMs - 10 * MINUTE),
+            },
+          ]);
+          expect(json.boardingPass.primaryFields).toEqual([
+            {
+              key: 'terminal',
+              label: 'TERMINAL',
+              value: fields.venue === '' ? 'Venue not published' : fields.venue,
             },
             {
               key: 'gate',
@@ -297,9 +295,9 @@ describe('Feature: pass-service, pass template', () => {
               value: shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room),
             },
           ]);
+          expect(json.boardingPass.secondaryFields[0]?.label).toBe('FLIGHT NAME');
           const aux = json.boardingPass.auxiliaryFields;
-          expect(aux.map((f) => f.key)).toEqual(['date', 'venue']);
-          expect(aux[1]?.value).toBe(fields.venue === '' ? 'Venue not published' : fields.venue);
+          expect(aux.map((f) => f.key)).toEqual(['date']);
           const [datePart, timePart] = (aux[0]?.value ?? '').split(' | ');
           expect(datePart).toMatch(/^\d{1,2} [A-Z][a-z]{2} 2026$/);
           expect(timePart).toBe(`${expectedTime(startMs)}-${expectedTime(endMs)}`);

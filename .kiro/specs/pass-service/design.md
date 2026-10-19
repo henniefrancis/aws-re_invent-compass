@@ -1296,3 +1296,17 @@ Owner decisions after the third look, superseding the gate label and colours of 
 ## Post-SP3 change: pass review 4 (20 October 2026, task 36)
 
 The bottom row is two fields: DATE on the left, holding the date and the time together as "3 Dec 2026 | 13:00-14:00", and VENUE on the right. The weekday and the zone abbreviation are gone from the front; the back still states the zone once ("All times are Pacific Time."), which Requirement 9.6 needs.
+
+## Post-SP3 change: pass review 5 (20 October 2026, task 37)
+
+Airline wording, owner decision:
+
+| Slot            | Content                                   |
+| --------------- | ----------------------------------------- |
+| logoText        | the session code, no heading              |
+| headerFields    | BOARDING CLOSES: the 24-hour time         |
+| primaryFields   | TERMINAL: the venue; GATE: the short room |
+| secondaryFields | FLIGHT NAME: the title                    |
+| auxiliaryFields | DATE: "3 Dec 2026                         | 13:00-14:00" |
+
+Wallet gives `logoText` no colour of its own (Apple documents only `foregroundColor` and `labelColor`), so the code shows in the value colour. A long BOARDING CLOSES header can shorten the logo text, which is how "Compass" became "Comp..."; session codes are short. Open owner wish, later: an event ticket with the owner's picture as the background and no QR code (Requirement 9.1 would change).

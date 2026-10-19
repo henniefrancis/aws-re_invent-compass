@@ -168,12 +168,12 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 4. THE Apple_Pass SHALL carry an `expirationDate` equal to `endsAt`, or equal to the void instant when the pass is voided, together with `voided: true` when voided.
 5. THE Apple_Pass SHALL carry one `relevantDates` interval with `startDate` equal to `startsAt` minus 40 minutes (boarding closes minus 30 minutes) and `endDate` equal to `endsAt`.
 6. THE Apple_Pass SHALL show boarding closes as `startsAt` minus 10 minutes, and SHALL show every time in the Event_Window timezone with the timezone stated once on the back.
-7. WHEN `venue` is empty, THE Apple_Pass SHALL show "Venue not published" as the venue, and WHEN `room` is empty it SHALL show "Room not published" as the gate (amended 20 October 2026: the gate is the room).
+7. WHEN `venue` is empty, THE Apple_Pass SHALL show "Venue not published" as the terminal, and WHEN `room` is empty it SHALL show "Room not published" as the gate (amended 20 October 2026: the gate is the room).
 8. THE Apple_Pass SHALL carry a Web_Service_URL equal to the configured public base URL joined with the configured PassKit path (default `/api/passkit`), and an `authenticationToken` equal to the pass's Auth_Token.
 9. THE pass-service SHALL derive each Auth_Token as HMAC-SHA256 of a fixed domain label and the Serial_Number with the Pepper, so that the token is never stored and every rebuild of the same pass carries the same token, and SHALL store only the SHA-256 of the token.
 10. THE Apple_Pass SHALL use only original artwork stored in `packages/pass-service`, including the required icon, and SHALL NOT include any AWS logo, AWS colour scheme or wording that suggests an official AWS product. (Owner decision of 20 October 2026: the background is #232F3F, one digit from AWS Squid Ink #232F3E. The owner accepts the closeness; no AWS logo or wording is used.)
 11. THE Apple_Pass SHALL include `attendeeName` only when the PassFields carry it, and SHALL NOT include any client-supplied image, URL or barcode.
-12. THE Apple_Pass front SHALL show, in order, the session code in the header; boarding closes and the gate, which is the short room, in the primary row; the title in the secondary row; and, in the auxiliary row, one DATE field with the date and the start to end time (for example "3 Dec 2026 | 13:00-14:00") and the venue (right-aligned), with no logo text and every Apple_Pass time in 24-hour form (owner decisions, 20 October 2026).
+12. THE Apple_Pass front SHALL show the session code as the logo text; boarding closes (24-hour) in the header; the terminal (the venue) and the gate (the short room) in the primary row; the flight name (the title) in the secondary row; and one DATE field with the date and the start to end time (for example "3 Dec 2026 | 13:00-14:00") in the auxiliary row (owner decisions, 20 October 2026).
 
 ### Requirement 10: Download a pass
 

@@ -36,7 +36,6 @@ export interface PassField {
   key: string;
   label: string;
   value: string;
-  textAlignment?: 'PKTextAlignmentCenter' | 'PKTextAlignmentRight';
 }
 
 export interface PassJson {
@@ -46,6 +45,7 @@ export interface PassJson {
   serialNumber: string;
   organizationName: string;
   description: string;
+  logoText: string;
   sharingProhibited: true;
   backgroundColor: string;
   foregroundColor: string;
@@ -92,13 +92,8 @@ export function relevantInterval(fields: PassFields): { startDate: string; endDa
   };
 }
 
-function field(
-  key: string,
-  label: string,
-  value: string,
-  textAlignment?: PassField['textAlignment'],
-): PassField {
-  return textAlignment === undefined ? { key, label, value } : { key, label, value, textAlignment };
+function field(key: string, label: string, value: string): PassField {
+  return { key, label, value };
 }
 
 /**
@@ -154,15 +149,14 @@ function backFields(input: PassTemplateInput): PassField[] {
 
 export function buildPassJson(input: PassTemplateInput): PassJson {
   const { fields, timezone } = input;
-  // Row 4 (task 36): the date and time together (left) and the venue (right). The room is
-  // the gate; the zone and the disclaimer are on the back only (Requirements 9.2 and 9.6).
+  // The bottom row (tasks 36 and 37): the date and time together. The zone and the
+  // disclaimer are on the back only (Requirements 9.2 and 9.6).
   const auxiliary: PassField[] = [
     field(
       'date',
       'DATE',
       `${formatEventDate(fields.startsAt, timezone)} | ${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)}`,
     ),
-    field('venue', 'VENUE', fields.venue === '' ? NO_VENUE : fields.venue, 'PKTextAlignmentRight'),
   ];
   const expiration = input.status === 'voided' ? input.voidedAt : fields.endsAt;
   return {
@@ -172,6 +166,9 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
     serialNumber: input.serialNumber,
     organizationName: 're:Invent Compass (unofficial)',
     description: 'Unofficial boarding pass',
+    // The session code next to the logo, with no heading (task 37). Wallet gives the logo
+    // text no colour of its own, so it takes the value colour.
+    logoText: fields.sessionCode,
     sharingProhibited: true,
     backgroundColor: PASS_COLOURS.background,
     foregroundColor: PASS_COLOURS.foreground,
@@ -183,18 +180,20 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
     relevantDates: [relevantInterval(fields)],
     boardingPass: {
       transitType: 'PKTransitTypeGeneric',
-      // Rows 1 and 2 (task 32): the session code top right; boarding closes and the gate in
-      // the large primary row.
-      headerFields: [field('session', 'SESSION', fields.sessionCode)],
-      primaryFields: [
+      // Airline wording (task 37): boarding closes top right; terminal (the venue) and gate
+      // (the room) in the large primary row; the title as the flight name.
+      headerFields: [
         field(
           'boardingCloses',
           'BOARDING CLOSES',
           formatEventTime24(boardingClosesAt(fields.startsAt), timezone),
         ),
+      ],
+      primaryFields: [
+        field('terminal', 'TERMINAL', fields.venue === '' ? NO_VENUE : fields.venue),
         field('gate', 'GATE', shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room)),
       ],
-      secondaryFields: [field('title', 'TITLE', fields.title)],
+      secondaryFields: [field('title', 'FLIGHT NAME', fields.title)],
       auxiliaryFields: auxiliary,
       backFields: backFields(input),
     },
