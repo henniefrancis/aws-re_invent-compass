@@ -24,6 +24,16 @@ describe('pathological input finishes quickly', () => {
     expect(time(() => isIgnored(`dir/${name}`, false, rules))).toBeLessThan(1000);
     expect(time(() => isIgnored(name, false, rules))).toBeLessThan(1000);
   });
+
+  test('long runs of trailing slashes or spaces are trimmed in under 1 second (CodeQL alert 1)', () => {
+    const run = 100_000;
+    expect(time(() => parseGitignore(`${'/'.repeat(run)}x/`, ''))).toBeLessThan(1000);
+    expect(time(() => parseGitignore(`a${' '.repeat(run)}x `, ''))).toBeLessThan(1000);
+    expect(parseGitignore(`dir${'/'.repeat(run)}`, '')).toEqual([
+      { pattern: 'dir', negated: false, directoryOnly: true, anchored: false, base: '' },
+    ]);
+    expect(parseGitignore(`a\\${' '.repeat(run)}`, '').map((r) => r.pattern)).toEqual(['a\\ ']);
+  });
 });
 
 import {

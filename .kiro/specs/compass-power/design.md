@@ -1546,3 +1546,7 @@ These follow the CTO review (the same numbering as the requirements amendments) 
 - **M6.** The `find_sessions` adapter filters on the cached wire `services` itself (any match, case-insensitive).
 - **M8.** The rules adapter uses S2 `connectionsForDay(schedule, context)`, `energyForDay(schedule, context)` and `withContextDefaults`.
 - **L1, L2, L5.** The registry catches every handler throw; `limit` and `maxPerDay` refuse negative and non-integer values; the platform is injected into `src`.
+
+## Post-CodeQL change: linear gitignore trimming (20 October 2026, task 32)
+
+The first CodeQL scan of `main` flagged `parseGitignore` (js/polynomial-redos). Trailing spaces and trailing slashes are now trimmed with loops instead of regular expressions, so a long run of either costs linear time. Behaviour is unchanged: a trailing space escaped with a backslash is kept, as git does. The existing rule limits (`MAX_RULE_LENGTH`, `MAX_STARS_PER_RULE`) still apply after trimming.
