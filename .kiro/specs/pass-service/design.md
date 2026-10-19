@@ -1264,3 +1264,7 @@ Owner decision after seeing the live pass. Front, in Apple's fixed boarding-pass
 | 4   | auxiliaryFields | DATE, TIME (start to end, 24-hour), ROOM (short), NOTICE |
 
 The short room is the part after the first comma (the room itself, without the level or area), or the whole room when it has one part. The full room is on the back. All Apple pass times are 24-hour ("13:00", "Thu 13:00"); the Google object and calendar are unchanged. NOTICE stays on the front because Requirement 9.2 requires the disclaimer there.
+
+## Post-SP3 change: pass colours (20 October 2026, task 33)
+
+The pass takes its colours from the owner's own artwork (`site/public/artwork/pass-background.jpg`): background `rgb(18, 8, 48)`, text white, labels `rgb(255, 176, 196)`. Apple's `background.png` is honoured only by the `eventTicket` style, so a boarding pass cannot show the picture itself; the owner chose to keep the boarding pass. The artwork is the owner's, so Requirement 9.10 (original artwork, no AWS colour scheme) still holds.

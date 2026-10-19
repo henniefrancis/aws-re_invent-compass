@@ -536,6 +536,13 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
     - Tests: the field keys, labels and order of every row; 24-hour times across midnight and in the event timezone; the short and full room, and no ROOM when empty; the disclaimer on front and back
   - [x] 32.2 Commit after the full gate passes, scoped `pass-service`; the owner redeploys dev and syncs the passes
 
+- [x] 33. Take the Apple pass colours from the owner's artwork (owner decision of 20 October, design "Post-SP3 change: pass colours")
+  - [x] 33.1 Set `backgroundColor` to `rgb(18, 8, 48)` (the deep indigo of the owner's picture), keep `foregroundColor` white, and set `labelColor` to `rgb(255, 176, 196)` (the pink of its glow line)
+    - Why: the owner wanted their own picture as the pass background. Apple shows a background image only on event tickets, and the pass stays a boarding pass (Requirement 9.1), so the pass takes the picture's colours and the picture itself goes on the hand-off page (showcase-site task 20)
+    - Contrast: white on the indigo is 19:1 and the pink labels 11:1 (WCAG AA needs 4.5:1)
+    - Tests: the three colours, and a contrast check of foreground and label against the background
+  - [x] 33.2 Commit after the full gate passes, scoped `pass-service`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.

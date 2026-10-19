@@ -16,6 +16,12 @@ export const DISCLAIMER = 'Unofficial. Your badge is your ticket.';
 export const INDEPENDENT_NOTICE =
   're:Invent Compass is an independent community project, not affiliated with AWS.';
 export const NO_VENUE = 'Venue not published';
+/** The pass colours, taken from the owner's artwork (task 33). */
+export const PASS_COLOURS = {
+  background: 'rgb(18, 8, 48)',
+  foreground: 'rgb(255, 255, 255)',
+  label: 'rgb(255, 176, 196)',
+} as const;
 
 const MINUTE_MS = 60_000;
 const BOARDING_CLOSES_BEFORE_MS = 10 * MINUTE_MS;
@@ -162,9 +168,10 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
     description: 'Unofficial boarding pass',
     logoText: 'Compass',
     sharingProhibited: true,
-    backgroundColor: 'rgb(14, 62, 74)',
-    foregroundColor: 'rgb(255, 255, 255)',
-    labelColor: 'rgb(190, 226, 232)',
+    // The owner's artwork: its deep indigo and the pink of its glow line (task 33).
+    backgroundColor: PASS_COLOURS.background,
+    foregroundColor: PASS_COLOURS.foreground,
+    labelColor: PASS_COLOURS.label,
     webServiceURL: input.webServiceUrl,
     authenticationToken: input.authToken,
     expirationDate: canonical(expiration),

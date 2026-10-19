@@ -3,6 +3,7 @@ import { describe, expect, test, vi } from 'vitest';
 import {
   DISCLAIMER,
   INDEPENDENT_NOTICE,
+  PASS_COLOURS,
   boardingClosesAt,
   buildPassJson,
   relevantInterval,
@@ -131,6 +132,29 @@ describe('Feature: pass-service, pass template', () => {
       label: 'ROOM',
       value: 'Promenade South, Octavius 4',
     });
+  });
+
+  test('the colours come from the owner artwork and text stays readable on them (task 33)', () => {
+    const json = buildPassJson(input());
+    expect(json.backgroundColor).toBe('rgb(18, 8, 48)');
+    expect(json.foregroundColor).toBe('rgb(255, 255, 255)');
+    expect(json.labelColor).toBe('rgb(255, 176, 196)');
+    const rgb = (value: string) => value.match(/\d+/g)!.map(Number);
+    const channel = (c: number) => {
+      const s = c / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    };
+    const luminance = (value: string) => {
+      const [r, g, b] = rgb(value) as [number, number, number];
+      return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+    };
+    const contrast = (a: string, b: string) => {
+      const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    expect(contrast(json.foregroundColor, json.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(json.labelColor, json.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+    expect(PASS_COLOURS.background).toBe(json.backgroundColor);
   });
 
   test('the short room is the part after the first comma, or the whole room', () => {
