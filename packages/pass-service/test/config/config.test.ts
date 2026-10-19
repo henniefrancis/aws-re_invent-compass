@@ -184,6 +184,20 @@ describe('Feature: pass-service, configuration parsing', () => {
     expect(cfg.publicBaseUrl).toBe('https://host.example:8443');
   });
 
+  test('the APNS host must equal an allowed host exactly (CodeQL alert 4)', () => {
+    for (const host of [
+      'api.push.apple.com.evil.example',
+      'evil.api.push.apple.com',
+      'api.push.apple.co',
+      'API.PUSH.APPLE.COM',
+    ]) {
+      expect(() => parseApiConfig({ ...cognitoEnv, APNS_HOST: host }), host).toThrow(ConfigError);
+    }
+    expect(parseApiConfig({ ...cognitoEnv, APNS_HOST: 'api.push.apple.com' }).apns.host).toBe(
+      'api.push.apple.com',
+    );
+  });
+
   test('an empty string counts as not set for an optional variable', () => {
     const cfg = parseApiConfig({ ...cognitoEnv, APNS_ENABLED: '', APNS_PUSH_TYPE: '' });
     expect(cfg.apns.enabled).toBe(true);

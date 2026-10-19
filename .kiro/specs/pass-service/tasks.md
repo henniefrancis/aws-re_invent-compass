@@ -522,6 +522,12 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 30.2 Commit
     - After `npx eslint .` and `npx prettier --check .` both pass with zero errors, commit the captures with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
+- [ ] 31. Make the APNS host check an explicit exact match (CodeQL alert 4, design "Post-CodeQL change")
+  - [ ] 31.1 In `config.ts`, compare `APNS_HOST` to the allowed hosts with strict equality instead of `Array.prototype.includes`
+    - Why: CodeQL js/incomplete-url-substring-sanitization read `APNS_HOSTS.includes(host)` as a substring test. It is an array, so it was already an exact match (a false positive), but the explicit form says so and keeps the scan clean
+    - Tests: the existing config tests (an allowed host passes; `api.push.apple.com.evil.example` and a sandbox look-alike are refused) still pass; 100 percent coverage
+  - [ ] 31.2 Commit after the full gate passes, scoped `pass-service`. Do not push
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.

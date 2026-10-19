@@ -1247,3 +1247,7 @@ Each entry names the task that introduced it. Where this section and the text ab
 - Code review M3: the contract test validates every JSON and problem body against the OpenAPI document with ajv 6 (nullable on, `$ref`s resolved from the document's components) through `test/helpers/openapi-validator.ts`; the hand-written YAML tree reader stays for paths, methods and statuses.
 - CTO M2: the Compass API response schemas now live once in `@compass/contracts` (`packages/contracts/src/compass-api-schemas.ts`, exported from the index); `src/validation/response-schemas.ts` and core's `compass-api-schemas.ts` re-export them. HandoffView and SerialNumbers schemas are shared too.
 - CTO L4: `types: ["node"]` in the package tsconfig replaces `src/node-types.d.ts` (task 1 text superseded); a structural test guards it.
+
+## Post-CodeQL change: explicit APNS host match (20 October 2026, task 31)
+
+CodeQL flagged the APNS host allow-list check as an incomplete URL substring check. `APNS_HOSTS` is an array, so `includes` was already exact; the check now uses strict equality so the intent is explicit. No behaviour change.
