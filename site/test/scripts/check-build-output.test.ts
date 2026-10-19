@@ -168,6 +168,12 @@ describe('findOutputIssues', () => {
     ]);
   });
 
+  test('a Notice hidden inside nested comment markers is still missing (CodeQL alert 2)', () => {
+    // One pass would remove the inner comment and leave `<!-- Notice -->` behind.
+    const nested = `<html lang="en"><body><h1>x</h1><!-<!-- x -->- ${NOTICE_TEXT} --></body></html>`;
+    expect(rules(nested)).toEqual(['notice-missing']);
+  });
+
   test('noindex belongs on the board page only', () => {
     const noindex = '<meta name="robots" content="noindex">';
     expect(rules(page('', noindex), { expectNoindex: true })).toEqual([]);
