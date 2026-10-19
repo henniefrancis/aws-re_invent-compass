@@ -91,29 +91,30 @@ Every command here names the exact version of this package. Pinning it is delibe
 
 ## The tools
 
-| Tool                      | Class        | What it does                                                                      |
-| ------------------------- | ------------ | --------------------------------------------------------------------------------- |
-| `sign_in`                 | local action | Signs you in with your AWS Builder ID. Opens your browser.                        |
-| `sign_out`                | local action | Revokes your sign-in and clears the stored tokens.                                |
-| `refresh_catalog`         | read         | Loads the session catalog into a private local cache.                             |
-| `find_sessions`           | read         | Searches and filters the cached catalog.                                          |
-| `scan_repo`               | read         | Scans a folder read-only and reports AWS services and depth.                      |
-| `check_itinerary`         | read         | Runs the guardrail over proposed sessions. Writes nothing.                        |
-| `plan_week`               | local action | Plans a week and writes it as a Kiro spec in the workspace, after you confirm.    |
-| `export_calendar`         | local action | Writes an `.ics` calendar file of your schedule.                                  |
-| `reserve_with_guardrails` | write        | Reserves 1 to 10 sessions after the guardrail passes. Changes your real schedule. |
-| `cancel_reservation`      | write        | Cancels a reservation, with the safe swap rule. Changes your real schedule.       |
-| `add_standby`             | write        | Favourites sessions as backups. Changes your real schedule.                       |
-| `remove_standby`          | write        | Removes a favourite. Changes your real schedule.                                  |
-| `add_layover`             | write        | Creates, changes or deletes personal time. Changes your real schedule.            |
-| `issue_boarding_passes`   | write        | Creates unofficial boarding passes for sessions you hold.                         |
-| `send_to_phone`           | write        | Makes a 15-minute link and QR code for your passes.                               |
-| `sync_passes`             | write        | Makes the passes match your schedule. It can void passes.                         |
-| `forget_me`               | write        | Deletes your pass data on the server and on this machine.                         |
+| Tool                      | Class        | What it does                                                                       |
+| ------------------------- | ------------ | ---------------------------------------------------------------------------------- |
+| `sign_in`                 | local action | Signs you in with your AWS Builder ID. Opens your browser.                         |
+| `sign_out`                | local action | Revokes your sign-in and clears the stored tokens.                                 |
+| `refresh_catalog`         | read         | Loads the session catalog into a private local cache.                              |
+| `find_sessions`           | read         | Searches and filters the cached catalog.                                           |
+| `scan_repo`               | read         | Scans a folder read-only and reports AWS services and depth.                       |
+| `check_itinerary`         | read         | Runs the guardrail over proposed sessions. Writes nothing.                         |
+| `show_schedule`           | read         | Lists your reservations, standby list and layovers with their ids. Writes nothing. |
+| `plan_week`               | local action | Plans a week and writes it as a Kiro spec in the workspace, after you confirm.     |
+| `export_calendar`         | local action | Writes an `.ics` calendar file of your schedule.                                   |
+| `reserve_with_guardrails` | write        | Reserves 1 to 10 sessions after the guardrail passes. Changes your real schedule.  |
+| `cancel_reservation`      | write        | Cancels a reservation, with the safe swap rule. Changes your real schedule.        |
+| `add_standby`             | write        | Favourites sessions as backups. Changes your real schedule.                        |
+| `remove_standby`          | write        | Removes a favourite. Changes your real schedule.                                   |
+| `add_layover`             | write        | Creates, changes or deletes personal time. Changes your real schedule.             |
+| `issue_boarding_passes`   | write        | Creates unofficial boarding passes for sessions you hold.                          |
+| `send_to_phone`           | write        | Makes a 15-minute link and QR code for your passes.                                |
+| `sync_passes`             | write        | Makes the passes match your schedule. It can void passes.                          |
+| `forget_me`               | write        | Deletes your pass data on the server and on this machine.                          |
 
 ## Approvals
 
-Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. They change nothing and read nothing of yours. `scan_repo` is read-only too, but it reads a folder on your machine, so approve each scan yourself. It scans freely only inside the folder Compass was started in; for any other folder it asks you to confirm first, and a client that cannot ask cannot scan one. A scan never changes where the plan is written: that is always the folder Compass was started in.
+Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. They change nothing and read nothing of yours. `scan_repo` is read-only too, but it reads a folder on your machine, so approve each scan yourself. It scans freely only inside the folder Compass was started in; for any other folder it asks you to confirm first, and a client that cannot ask cannot scan one. A scan never changes where the plan is written: that is always the folder Compass was started in. `show_schedule` is read-only as well, but it reads your schedule, so approve each call yourself. It takes no input and lists your reserved sessions, standby list and layovers with the ids that `cancel_reservation`, `remove_standby` and `add_layover` take.
 
 **Write tools must never be auto-approved.** That means every tool marked write above, including `sync_passes`, which can void passes. Approve each call yourself. Where your client supports it, Compass also asks you to confirm in the client before it changes your schedule, listing the session ids, codes, titles and any warnings. Declining writes nothing.
 

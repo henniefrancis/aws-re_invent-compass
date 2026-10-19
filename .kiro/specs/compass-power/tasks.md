@@ -492,6 +492,24 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
     - Tests: the escaped-space and plain trailing-space cases still parse as before; a 100 000-character run of slashes or spaces parses in well under a second; 100 percent coverage
   - [x] 32.2 Commit after the full gate passes, scoped `compass-power`. Do not push
 
+- [x] 33. Let the agent read the schedule with its ids (SP3 finding, design "Post-SP3 change: show_schedule")
+  - [x] 33.1 Show the new layover's id in the `add_layover` text
+    - Why: on 19 October SP3 in Kiro created a layover, then could not change or delete it, because the new `personalTimeId` was only in `structuredContent` and Kiro shows the model the text alone
+    - The create and update results put `personalTimeId` next to the title inside the attendee Labelled_Data_Block, and the delete result names the id it deleted
+    - Tests: the create text contains the new id; the update and delete texts contain the id; a create the schedule does not confirm carries no id; 100 percent coverage
+    - _Requirements: P1.2_
+  - [x] 33.2 Build the `show_schedule` read tool (after foundation-contracts task 17 adds its contract)
+    - `packages/mcp-server/src/tools/show-schedule.ts`: no input; checks the sign-in, reads the fresh schedule (which also writes the Schedule_Snapshot) and the cached catalog; returns `{ schedule, notInCatalog }`; the text gives the counts, then one catalog Labelled_Data_Block with the reserved sessions and the standby list (`sessionId`, `code`, `title`, `venue`, `room`, `startsAt`, `endsAt`, in start order), then one attendee block with the layovers (`personalTimeId`, `title`, `startDateTime`, `endDateTime`, `location`), and the ids the catalog cache does not know, with a pointer to `refresh_catalog`. An empty schedule says so plainly. Nothing is written to S1 or S4
+    - Registry: class `read`, not a schedule write; title "Show my schedule"; description "Show your live re:Invent schedule ... Takes no input. Nothing is changed."
+    - Descriptions: `check_itinerary` says it checks commitments you pass in and points to `show_schedule` for the current schedule; `export_calendar` says that with no input it reads your live schedule and that commitments are only for a proposed itinerary
+    - Tests: a handler test (reserved, standby, layovers, ids not in the catalog, empty schedule, not signed in, hostile catalog and layover titles stay inside the blocks); the registry, annotation, Property 19 (read tools never write), stdout and tool count tests include it; the CLI tool list count is eighteen
+    - _Requirements: P1.1, P1.3, P1.4_
+  - [x] 33.3 Document it
+    - `packages/mcp-server/README.md` tool table (class read) and Approvals: `show_schedule` reads your schedule, so it is approved per call like `scan_repo` and is not in the recommended `autoApprove` list, which stays at three; `power/POWER.md` Approvals and `power/skills/plan-my-week/SKILL.md` name it as the way to see the schedule and the ids. The repository root README is the owner's draft and is not changed here
+    - Tests: the README test checks eighteen tools and keeps `show_schedule` out of the `autoApprove` snippet
+    - _Requirements: P1.5_
+  - [x] 33.4 Commit after the full gate passes (100 percent coverage, eslint, `tsc -b`, prettier, `npm run check:dash`), scoped `compass-power`, with no attribution trailer. Do not push
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

@@ -33,7 +33,9 @@ export const DESCRIPTIONS: Record<McpToolName, string> = {
   plan_week:
     'Suggest a week of sessions from your code and goals, and write it as a Kiro spec in your workspace. It does not book anything.',
   check_itinerary:
-    'Check a proposed itinerary against the booking guardrail and report clashes and tight walks. Nothing is changed.',
+    'Check commitments you pass in (a proposed itinerary) against the booking guardrail and report clashes and tight walks. Nothing is changed. To see your current schedule, use show_schedule.',
+  show_schedule:
+    'Show your live re:Invent schedule: reserved sessions, standby list and layovers, each with the id the other tools take. Takes no input. Nothing is changed.',
   reserve_with_guardrails: `Reserve one to ten sessions after the booking guardrail passes. ${SCHEDULE_WRITE_SENTENCE}`,
   cancel_reservation: `Cancel one reservation, safely swapping to a repeat when one is planned. ${SCHEDULE_WRITE_SENTENCE}`,
   add_standby: `Add one to ten sessions to your standby list as backups. ${SCHEDULE_WRITE_SENTENCE}`,
@@ -42,7 +44,8 @@ export const DESCRIPTIONS: Record<McpToolName, string> = {
   issue_boarding_passes: `Issue unofficial boarding passes for your reserved sessions. ${ISSUE_SENTENCE}`,
   send_to_phone: `Open a short-lived link and QR code that puts your passes on your phone. ${HANDOFF_SENTENCE}`,
   sync_passes: `Bring your boarding passes in line with your confirmed schedule. ${SYNC_SENTENCE}`,
-  export_calendar: 'Build a calendar file for your itinerary. Nothing is booked.',
+  export_calendar:
+    'Build a calendar file. With no input it reads your live schedule; pass commitments only to export a proposed itinerary. Nothing is booked.',
   forget_me: `Delete everything Compass holds about you. ${FORGET_SENTENCE}`,
 };
 
@@ -55,6 +58,7 @@ export const TITLES: Record<McpToolName, string> = {
   scan_repo: 'Scan a repository',
   plan_week: 'Plan my week',
   check_itinerary: 'Check my itinerary',
+  show_schedule: 'Show my schedule',
   reserve_with_guardrails: 'Reserve with guardrails',
   cancel_reservation: 'Cancel a reservation',
   add_standby: 'Add standby',

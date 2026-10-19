@@ -22,6 +22,10 @@ Do these steps in this order. Do not skip ahead.
    4. Only after a clear yes, call the write tool.
 6. After any change to the schedule, run `sync_passes` so the boarding passes match the schedule.
 
+## Seeing the schedule
+
+When the attendee asks what is on their schedule, or a write needs an id, call `show_schedule`. It takes no input and changes nothing. It lists the reserved sessions, the standby list and the layovers with the `sessionId` and `personalTimeId` the write tools take. It reads the attendee's schedule, so it is approved per call. `check_itinerary` is different: it checks sessions you pass in.
+
 ## Tools that change things
 
 These tools never run without the attendee's clear approval for that one call:

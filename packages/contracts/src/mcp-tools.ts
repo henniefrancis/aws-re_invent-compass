@@ -26,6 +26,7 @@ import { CommitmentSchema } from './domain/commitment.js';
 import { VerdictSchema } from './domain/verdict.js';
 import { BulkResultSchema } from './wire/bulk-result.js';
 import { PersonalTimeInputSchema } from './wire/personal-time.js';
+import { ScheduleWireSchema } from './wire/schedule.js';
 
 /**
  * A session id array bounded to the Events API limit of 1 to 10 ids, with
@@ -121,6 +122,16 @@ const CheckItineraryInput = z.object({
 });
 const CheckItineraryOutput = z.object({
   verdict: VerdictSchema,
+});
+
+// show_schedule: read the attendee's live schedule with the ids the write tools take (SP3,
+// compass-power task 33). No arguments. The output reuses the wire schedule (reserved and
+// standby session ids, personal time with its personalTimeId) and lists the schedule ids the
+// cached catalog does not know.
+const ShowScheduleInput = z.object({});
+const ShowScheduleOutput = z.object({
+  schedule: ScheduleWireSchema,
+  notInCatalog: z.array(z.string()),
 });
 
 // reserve_with_guardrails: reserve 1 to 10 sessions after the guardrail passes. The
@@ -234,9 +245,10 @@ const ForgetMeOutput = z.object({
 });
 
 /**
- * The seventeen MCP tools (build plan section 8.1), each with its input and output
- * zod object schema. S3 iterates this record by key to register the tools. The
- * record is frozen with `as const` so the key set is fixed and McpToolName is exact.
+ * The eighteen MCP tools (build plan section 8.1, plus show_schedule from SP3), each with
+ * its input and output zod object schema. S3 iterates this record by key to register the
+ * tools. The record is frozen with `as const` so the key set is fixed and McpToolName is
+ * exact.
  */
 export const mcpTools = {
   sign_in: { input: SignInInput, output: SignInOutput },
@@ -246,6 +258,7 @@ export const mcpTools = {
   scan_repo: { input: ScanRepoInput, output: ScanRepoOutput },
   plan_week: { input: PlanWeekInput, output: PlanWeekOutput },
   check_itinerary: { input: CheckItineraryInput, output: CheckItineraryOutput },
+  show_schedule: { input: ShowScheduleInput, output: ShowScheduleOutput },
   reserve_with_guardrails: {
     input: ReserveWithGuardrailsInput,
     output: ReserveWithGuardrailsOutput,

@@ -49,7 +49,13 @@ describe('registry', () => {
     const fake = createFakeRuntime();
     const connection = await connect(fake.runtime);
     const listed = await connection.client.listTools();
-    const read = ['refresh_catalog', 'find_sessions', 'scan_repo', 'check_itinerary'];
+    const read = [
+      'refresh_catalog',
+      'find_sessions',
+      'scan_repo',
+      'check_itinerary',
+      'show_schedule',
+    ];
     const scheduleWrites = [
       'reserve_with_guardrails',
       'cancel_reservation',

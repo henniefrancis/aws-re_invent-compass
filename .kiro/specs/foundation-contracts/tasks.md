@@ -289,6 +289,14 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
   - [x] 16.2 Commit
     - After the full gate passes, commit locally with a Conventional Commit scoped `foundation-contracts`. Do not push, merge, tag or open a PR
 
+- [x] 17. Add the `show_schedule` tool contract (SP3 finding, design "Post-SP3 change: the show_schedule tool contract")
+  - [x] 17.1 Add `show_schedule` to `mcpTools`
+    - In `packages/contracts/src/mcp-tools.ts`, add `ShowScheduleInput` (`z.object({})`) and `ShowScheduleOutput` (`{ schedule: ScheduleWireSchema, notInCatalog: z.array(z.string()) }`) and the `show_schedule` key, and say eighteen tools in the record comment. Add the accept and strip cases to `schemas-accept-strip.test.ts`
+    - Why: on 19 October SP3 in Kiro could not answer "check my itinerary", because no tool lists the reservations, standby list and personal time with their ids (compass-power task 33 builds the handler)
+    - _Requirements: 4.11_
+  - [x] 17.2 Commit
+    - After the full gate passes, commit locally in the same commit as compass-power task 33 (scoped `compass-power`), so the registry and the contract never disagree. Do not push, merge, tag or open a PR
+
 - [x] 18. Keep catalog rooms written with a vertical bar on the pass (SP3 finding, design "Post-SP3 change: vertical bar in pass text")
   - [x] 18.1 Turn a vertical bar into a comma in `normalisePassText`
     - In `packages/contracts/src/pass-fields.ts`, after the whitespace collapse, split the text on `|`, trim each part, drop empty parts and join the rest with `, `, so "Level 1 | Academy 409" becomes "Level 1, Academy 409" and bars at either end disappear. `ALLOWED_TEXT` and the server-side PassFields rule stay as they are. Make the same change in the showcase copy `site/src/lib/demo/pass-text.ts` and add `|` to the marks of its equality property test

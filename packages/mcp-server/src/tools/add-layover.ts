@@ -148,7 +148,16 @@ function matches(entry: PersonalTime, personalTime: PersonalTimeInput): boolean 
   );
 }
 
-function summaryLines(headline: string, warnings: readonly string[], title: string): string {
+/**
+ * The result text. A confirmed layover's `personalTimeId` sits beside its title inside the
+ * attendee block, because some clients show the model only the text (post-SP3 P1.2).
+ */
+function summaryLines(
+  headline: string,
+  warnings: readonly string[],
+  title: string,
+  personalTimeId?: string,
+): string {
   return [
     headline,
     ...(warnings.length > 0
@@ -157,7 +166,10 @@ function summaryLines(headline: string, warnings: readonly string[], title: stri
           labelUntrusted('catalog', warnings),
         ]
       : []),
-    labelUntrusted('attendee', { title }),
+    labelUntrusted(
+      'attendee',
+      personalTimeId === undefined ? { title } : { personalTimeId, title },
+    ),
   ].join('\n');
 }
 
@@ -204,6 +216,7 @@ async function createLayover(
         : 'The layover is on your schedule and your schedule confirms it.',
       warnings,
       personalTime.title,
+      entry?.personalTimeId,
     ),
   };
 }
@@ -260,6 +273,7 @@ async function updateLayover(
         : 'The layover is changed and your schedule confirms it.',
       warnings,
       personalTime.title,
+      personalTimeId,
     ),
   };
 }
@@ -302,8 +316,8 @@ async function deleteLayover(
     ok: true,
     structured: { action: 'delete', done: gone, personalTimeId },
     text: gone
-      ? 'The layover is deleted and your schedule confirms it.'
-      : 'The delete was sent, but your schedule still lists the layover, so it is not confirmed.',
+      ? `The layover (id ${personalTimeId}) is deleted and your schedule confirms it.`
+      : `The delete was sent, but your schedule still lists the layover (id ${personalTimeId}), so it is not confirmed.`,
   };
 }
 

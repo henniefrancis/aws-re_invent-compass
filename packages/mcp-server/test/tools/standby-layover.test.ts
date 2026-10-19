@@ -167,6 +167,7 @@ describe('add_layover', () => {
       done: true,
       personalTimeId: 'pt-1',
     });
+    expect(outcome.ok && outcome.text).toContain('"personalTimeId": "pt-1"');
     expect(fake.events.callsTo('createPersonalTime')).toHaveLength(1);
     expect(fake.snapshot.writes.at(-1)?.schedule.personalTime).toHaveLength(1);
   });
@@ -247,6 +248,7 @@ describe('add_layover', () => {
     const first = await addLayover(layover(), ignored.ctx);
     expect(first.ok && first.structured).toEqual({ action: 'create', done: false });
     expect(first.ok && first.text).toContain('does not list it');
+    expect(first.ok && first.text).not.toContain('personalTimeId');
     const unconfirmed = setup();
     unconfirmed.fake.events.confirm = 'unconfirmed';
     const second = await addLayover(layover(), unconfirmed.ctx);
@@ -310,6 +312,7 @@ describe('add_layover update', () => {
     });
     expect(asked[0]).toContain('id pt-7');
     expect(asked[0]).toContain('Late lunch');
+    expect(outcome.ok && outcome.text).toContain('"personalTimeId": "pt-7"');
     expect(fake.events.callsTo('updatePersonalTime')).toHaveLength(1);
     expect(fake.events.callsTo('createPersonalTime')).toEqual([]);
     expect(fake.snapshot.writes.at(-1)?.schedule.personalTime[0]?.title).toBe('Late lunch');
@@ -403,6 +406,7 @@ describe('add_layover delete', () => {
       personalTimeId: 'pt-7',
     });
     expect(asked[0]).toContain('Delete the layover (id pt-7)');
+    expect(outcome.ok && outcome.text).toContain('The layover (id pt-7) is deleted');
     expect(fake.events.callsTo('deletePersonalTime')).toHaveLength(1);
     expect(fake.snapshot.writes.at(-1)?.schedule.personalTime).toEqual([]);
   });
@@ -433,7 +437,7 @@ describe('add_layover delete', () => {
       done: false,
       personalTimeId: 'pt-7',
     });
-    expect(second.ok && second.text).toContain('still lists the layover');
+    expect(second.ok && second.text).toContain('still lists the layover (id pt-7)');
     const unconfirmed = setup();
     withEntry(unconfirmed.fake);
     unconfirmed.fake.events.confirm = 'unconfirmed';

@@ -656,6 +656,17 @@ const toolSamples: Record<
     input: { commitments: [commitmentSample] },
     output: { verdict: verdictSample },
   },
+  show_schedule: {
+    input: {},
+    output: {
+      schedule: {
+        reserved: ['s1'],
+        favorites: ['s2'],
+        personalTime: [{ ...personalTimeInputSample, personalTimeId: 'pt1' }],
+      },
+      notInCatalog: ['s2'],
+    },
+  },
   reserve_with_guardrails: {
     input: { sessionIds: ['AIM101'] },
     output: { verdict: verdictSample, result: bulkResultSample },

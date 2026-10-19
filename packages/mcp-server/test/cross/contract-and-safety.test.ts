@@ -134,6 +134,7 @@ const callArb: fc.Arbitrary<[McpToolName, Record<string, unknown>]> = fc.oneof(
           ],
         },
   ]),
+  fc.constant<[McpToolName, Record<string, unknown>]>(['show_schedule', {}]),
   fc.constant<[McpToolName, Record<string, unknown>]>(['forget_me', { confirm: true }]),
 );
 
@@ -221,6 +222,7 @@ describe('Property 19: read-side handlers never write', () => {
       { commitments: [{ kind: 'reservedSession', sessionId: 'inj-1', startsAt: '', endsAt: '' }] },
     ],
     ['check_itinerary', { commitments: [] }],
+    ['show_schedule', {}],
   );
 
   test('no Events or Passes write is ever sent, whatever the catalog text says', async () => {
@@ -392,6 +394,7 @@ describe('the server writes nothing to stdout', () => {
       ['scan_repo', { path: SAMPLE }],
       ['plan_week', { goals: ['workshop'] }],
       ['check_itinerary', { commitments: [] }],
+      ['show_schedule', {}],
       ['reserve_with_guardrails', { sessionIds: [TRIPLE.aRepeat] }],
       ['cancel_reservation', { sessionId: TRIPLE.a }],
       ['add_standby', { sessionIds: [TRIPLE.b] }],

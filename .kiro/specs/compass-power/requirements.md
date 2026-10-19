@@ -441,3 +441,17 @@ R2.12. **Sync and cancel safety.** `sync_passes` SHALL ask the human about any i
 R2.13. **Low findings.** THE `send_to_phone` structured result SHALL NOT carry the hand-off fragment; every success SHALL carry the untrusted-text note in its metadata; the schedule snapshot SHALL be written through the production file system adapter; `ensureDir` SHALL refuse a link from the app folder down; a response body SHALL be aborted at the byte cap; a search text over 200 characters, more than 20 goals and an invalid level SHALL be refused with fixed messages; and a request that does not match a tool schema SHALL be answered with a fixed message.
 
 R2.14. **Output hygiene.** THE tool text SHALL carry the QR code once and without escape codes; the demo SHALL add colour codes only on a terminal; `export_calendar` SHALL report unknown session ids; a suggested layover SHALL take its words from the rules context; and the `.gitignore` entry SHALL keep the file line ending.
+
+## Post-SP3 amendments (19 October 2026)
+
+These came from driving Compass from Kiro during SP3. They take precedence over the criteria above where they differ.
+
+P1.1. **Read the schedule with its ids.** THE Compass_Server SHALL offer an eighteenth Tool, `show_schedule`, a Read_Tool with no input that reads the attendee's fresh schedule and returns the reserved sessions, the standby list (favorites) and the personal time, each with the id the Write_Tools take (`sessionId`, `personalTimeId`), with codes, catalog titles, venues and times taken from the cached catalog. It SHALL write nothing to the Events API or the pass service. This replaces "seventeen" with "eighteen" in Requirement 8.2 and the glossary entry for Tool, and adds `show_schedule` to the Read_Tools.
+
+P1.2. **Ids in the text.** WHEN `add_layover` creates or updates a layover that the schedule confirms, THE text SHALL carry the `personalTimeId`, and WHEN it deletes one, THE text SHALL name the id deleted, because some clients show the model only the text and not `structuredContent`.
+
+P1.3. **Untrusted text stays labelled.** THE `show_schedule` text SHALL show catalog titles only inside a catalog Labelled_Data_Block and layover titles and locations only inside an attendee Labelled_Data_Block.
+
+P1.4. **Plain descriptions.** THE `show_schedule` description SHALL say it takes no input; THE `check_itinerary` description SHALL say it checks commitments the caller passes in and SHALL point to `show_schedule` for the current schedule; THE `export_calendar` description SHALL say that with no input it reads the live schedule.
+
+P1.5. **Approval.** `show_schedule` reads the attendee's schedule, so it SHALL NOT be in the recommended `autoApprove` list (which stays at the three tools of R2.8), and the README and the Power SHALL say it is approved per call.
