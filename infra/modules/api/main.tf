@@ -113,9 +113,9 @@ resource "aws_lambda_function" "passkit" {
 # ---------------------------------------------------------------------------
 
 # templatefile() receives exactly the two documented variables and no others
-# (Requirement 5.1). binary_media_types is not set here: the contract's
-# x-amazon-apigateway-binary-media-types extension supplies it on import
-# (Requirement 5.6).
+# (Requirement 5.1). binary_media_types repeats the contract's
+# x-amazon-apigateway-binary-media-types list, read from the same file, because
+# a body update alone did not change it on an existing API (design item 39).
 resource "aws_api_gateway_rest_api" "this" {
   name        = local.name_prefix
   description = "Compass API ${var.env}, imported from the OpenAPI contract."
@@ -125,6 +125,8 @@ resource "aws_api_gateway_rest_api" "this" {
     passkit_lambda_invoke_arn = aws_lambda_function.passkit.invoke_arn
   })
 
+  binary_media_types = local.binary_media_types
+
   # The API key is read from the x-api-key header, which CloudFront injects.
   api_key_source = "HEADER"
 
@@ -133,13 +135,14 @@ resource "aws_api_gateway_rest_api" "this" {
   }
 }
 
-# A change to the contract forces a new deployment. The new deployment is
-# created before the old one is removed, so the stage always has a deployment.
+# A change to the contract or its binary media types forces a new deployment.
+# The new deployment is created before the old one is removed, so the stage
+# always has a deployment.
 resource "aws_api_gateway_deployment" "this" {
   rest_api_id = aws_api_gateway_rest_api.this.id
 
   triggers = {
-    redeployment = sha1(aws_api_gateway_rest_api.this.body)
+    redeployment = sha1(join("\n", [aws_api_gateway_rest_api.this.body, jsonencode(local.binary_media_types)]))
   }
 
   lifecycle {

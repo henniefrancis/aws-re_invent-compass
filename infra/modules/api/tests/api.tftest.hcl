@@ -90,8 +90,13 @@ run "rest_api_from_contract" {
   }
 
   assert {
-    condition     = aws_api_gateway_rest_api.this.binary_media_types == null || length(aws_api_gateway_rest_api.this.binary_media_types) == 0
-    error_message = "binary_media_types must not be set in Terraform."
+    condition     = tolist(aws_api_gateway_rest_api.this.binary_media_types) == tolist(yamldecode(file("${path.module}/openapi.yaml"))["x-amazon-apigateway-binary-media-types"])
+    error_message = "binary_media_types must equal the contract's list (design item 39)."
+  }
+
+  assert {
+    condition     = contains(aws_api_gateway_rest_api.this.binary_media_types, "*/*") && contains(aws_api_gateway_rest_api.this.binary_media_types, "application/vnd.apple.pkpasses")
+    error_message = "binary_media_types must include */* for browser links and the pass bundle type."
   }
 
   assert {
@@ -141,8 +146,8 @@ run "deployment_and_stage" {
   command = plan
 
   assert {
-    condition     = aws_api_gateway_deployment.this.triggers["redeployment"] == sha1(aws_api_gateway_rest_api.this.body)
-    error_message = "The deployment must redeploy on a change of the rendered body."
+    condition     = aws_api_gateway_deployment.this.triggers["redeployment"] == sha1(join("\n", [aws_api_gateway_rest_api.this.body, jsonencode(yamldecode(file("${path.module}/openapi.yaml"))["x-amazon-apigateway-binary-media-types"])]))
+    error_message = "The deployment must redeploy on a change of the rendered body or the binary media types."
   }
 
   assert {
@@ -448,8 +453,8 @@ run "source_scan" {
   }
 
   assert {
-    condition     = !can(regex("(?m)^[^#]*aws_api_gateway_account", file("${path.module}/main.tf"))) && !can(regex("(?m)^[^#]*binary_media_types", file("${path.module}/main.tf")))
-    error_message = "The module must not create the account role or set binary_media_types."
+    condition     = !can(regex("(?m)^[^#]*aws_api_gateway_account", file("${path.module}/main.tf"))) && can(regex("(?m)^[[:space:]]*binary_media_types[[:space:]]*=[[:space:]]*local\\.binary_media_types[[:space:]]*$", file("${path.module}/main.tf")))
+    error_message = "The module must not create the account role, and must set binary_media_types only from the contract list."
   }
 
   assert {

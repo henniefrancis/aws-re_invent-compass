@@ -9,6 +9,11 @@ locals {
 
   stage_name = "live"
 
+  # The binary media types, read from the contract copy so the contract stays the
+  # single source. Updating the body of an existing REST API did not change its
+  # binary media types (SP3, design item 39), so the module sets them explicitly.
+  binary_media_types = yamldecode(file("${path.module}/openapi.yaml"))["x-amazon-apigateway-binary-media-types"]
+
   # Access log format. It records the route template only, through
   # resourcePath, and never the full request path, a source address or any
   # identifier (Requirements 5.7, 5.8 and 17.3). Only request id, route
