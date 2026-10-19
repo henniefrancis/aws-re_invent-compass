@@ -193,6 +193,12 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Re-run the relevant snapshot or render tests to generate the output shown in the captures; only after they pass, make one local commit with multiple `-m` flags scoped `boarding-passes` that stages the files under `docs/article/screenshots/boarding-passes/`. Never push, never open a PR, never tag.
     - Example: `git commit -m "docs(boarding-passes): add feature screenshots for the Builder Center post" -m "Capture the terminal QR hand-off, the offline itinerary page and a sync run for the article."`
 
+- [x] 11. Shorten a long room instead of dropping it (dev test of 20 October, design "Post-SP3 change: long rooms")
+  - [x] 11.1 In the Pass_Builder, when the normalised room is longer than the 40-character PassFields limit, drop comma-separated parts from the end until it fits; only a single part that is still too long falls back to the empty room
+    - Why: real catalog rooms such as "Promenade South | Octavius 4 | Content Hub | Builders' Session" normalise to 59 characters, so MAM411 and many other passes had no room at all. Shortened, it reads "Promenade South, Octavius 4, Content Hub" (40 characters)
+    - Tests: a long four-part room keeps its leading parts within 40 characters, a room that fits is unchanged, a single over-long part gives the empty room, and the fields still pass the PassFields schema
+  - [x] 11.2 Commit after the full gate passes, scoped `boarding-passes`
+
 ## Notes
 
 - Tasks are executed sequentially in numeric order, one at a time, directly in this chat session, never delegated to a subagent, with files saved after each step.

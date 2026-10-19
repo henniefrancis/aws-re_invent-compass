@@ -875,3 +875,7 @@ Each entry names the task that introduced it. Where this section and the text ab
 ### Neighbours within 12 hours (fix after the screenshots)
 
 - **Same rule as S2.** `buildPassFor` and `buildItinerary` used the commitment next to a session in the ordered list as its previous stop and next connection, whatever the distance, so a Friday pass could say "5 minutes' walk from your previous stop" about a Tuesday session. A neighbour now counts only when the gap is at most 12 hours (`NEIGHBOUR_WINDOW_MS`, the rules engine's `NEIGHBOUR_WINDOW_HOURS`): the start of the session minus the end of the previous commitment for the previous stop, and the start of the next reserved session minus the end of the session for the next connection. Across midnight is fine; exactly 12 hours counts and one millisecond more does not. Otherwise `walkFromPrevious` and `nextConnection` are omitted (and the itinerary entry has no `walkMinutes`), and the walk lookup is not asked about the far pair.
+
+## Post-SP3 change: long rooms (20 October 2026, task 11)
+
+The Pass_Builder used to send an empty room whenever the normalised room was over the 40-character PassFields limit. It now drops comma-separated parts from the end until the room fits (the level and the room itself come first in the catalog, the content hub and theatre last), and only an over-long single part falls back to empty.

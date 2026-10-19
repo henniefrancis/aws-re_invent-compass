@@ -27,6 +27,22 @@ const ASCII_ELLIPSIS = '...';
 const TITLE_FALLBACK = 'Title not shown';
 /** The longest attendee name the pass carries. */
 const MAX_NAME_LENGTH = 40;
+/** The longest room the pass carries, as the PassFields schema counts it. */
+const MAX_ROOM_LENGTH = 40;
+
+/**
+ * Fit a normalised room into the PassFields limit by dropping comma-separated parts from the
+ * end: the catalog puts the level and the room itself first and the content hub or theatre
+ * last (boarding-passes task 11). A single part that is still too long is returned as is, so
+ * the schema refuses it and the room falls back to empty.
+ */
+export function fitRoom(room: string): string {
+  const parts = room.split(', ');
+  while (parts.length > 1 && parts.join(', ').length > MAX_ROOM_LENGTH) {
+    parts.pop();
+  }
+  return parts.join(', ');
+}
 
 /** The input to buildPass. */
 export interface BuildPassInput {
@@ -169,7 +185,7 @@ function assembleCandidate(
     sessionCode: session.code,
     title: normalisePassText(session.title),
     venue: normalisePassText(sessionVenue),
-    room: normalisePassText(session.room ?? ''),
+    room: fitRoom(normalisePassText(session.room ?? '')),
     startsAt,
     endsAt,
   };
