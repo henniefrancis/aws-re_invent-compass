@@ -367,11 +367,11 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 18.2 Commit
     - After `npx eslint .`, `npx prettier --check .` and `npm run check:dash` pass with zero errors, commit the screenshots with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 19. Strip HTML comments until none remain in the build output check (CodeQL alert 2, design "Post-CodeQL change")
-  - [ ] 19.1 In `site/scripts/check-build-output.mjs`, repeat the comment removal until the text stops changing before looking for the Notice text
+- [x] 19. Strip HTML comments until none remain in the build output check (CodeQL alert 2, design "Post-CodeQL change")
+  - [x] 19.1 In `site/scripts/check-build-output.mjs`, repeat the comment removal until the text stops changing before looking for the Notice text
     - Why: CodeQL js/incomplete-multi-character-sanitization. This script only checks our own prerendered pages at build time, so it is not a security boundary, but a crafted nested comment could have hidden the Notice from the check
     - Tests: a page whose Notice sits only inside nested comment markers fails the check; the normal pages still pass
-  - [ ] 19.2 Commit after the full gate passes, scoped `showcase-site`. Do not push
+  - [x] 19.2 Commit after the full gate passes, scoped `showcase-site`. Do not push
 
 ## Notes
 

@@ -486,11 +486,11 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 31.2 Commit
     - After `npx eslint .` and `npx prettier --check .` both pass with zero errors, commit the captures with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
-- [ ] 32. Trim gitignore lines in linear time (CodeQL alert 1, design "Post-CodeQL change")
-  - [ ] 32.1 Replace the trailing-space and trailing-slash regexes in `parseGitignore` with linear loops that keep git's rule: a trailing space escaped by `\` stays
+- [x] 32. Trim gitignore lines in linear time (CodeQL alert 1, design "Post-CodeQL change")
+  - [x] 32.1 Replace the trailing-space and trailing-slash regexes in `parseGitignore` with linear loops that keep git's rule: a trailing space escaped by `\` stays
     - Why: CodeQL js/polynomial-redos on `packages/core/src/scanner/gitignore.ts`. A scanned `.gitignore` line made of a long run of `/` or spaces followed by another character made `/\/+$/` and `/(?<!\\) +$/` quadratic. The scanner reads repositories the attendee points it at, so the input is not trusted
     - Tests: the escaped-space and plain trailing-space cases still parse as before; a 100 000-character run of slashes or spaces parses in well under a second; 100 percent coverage
-  - [ ] 32.2 Commit after the full gate passes, scoped `compass-power`. Do not push
+  - [x] 32.2 Commit after the full gate passes, scoped `compass-power`. Do not push
 
 ## Notes
 
