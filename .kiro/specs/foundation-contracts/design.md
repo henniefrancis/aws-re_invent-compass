@@ -657,3 +657,7 @@ Deviation: `normalisePassText` now also turns a vertical bar into a comma. After
 ## Post-SP3 change: the show_schedule tool contract (19 October 2026, task 17)
 
 SP3 in Kiro showed that no MCP tool lists the attendee's current schedule with its ids (compass-power design "Post-SP3 change: show_schedule", task 33). `mcpTools` gains an eighteenth entry beyond build plan section 8.1, `show_schedule`: input `z.object({})`, output `z.object({ schedule: ScheduleWireSchema, notInCatalog: z.array(z.string()) })`. It reuses the shared wire schedule shape rather than declaring a new one (rule 4 of `mcp-tools.ts`), carries no secret, and strips unknown fields like every other tool schema.
+
+## Post-merge change: CI on develop pushes (20 October 2026, task 19)
+
+Deviation from "no push trigger" (ADR-018, build plan 11.1): `check.yml` now also runs on pushes to `develop`. With PR #1 merged there was no open pull request into `main`, so develop had no CI. The trigger is limited to the one integration branch; there is still no schedule and no deploy workflow. When a pull request from develop into main is open, a push runs the check twice (once per trigger); that is accepted, since a run takes about six minutes and the repository is public.

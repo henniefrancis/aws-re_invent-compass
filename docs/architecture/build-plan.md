@@ -421,7 +421,7 @@ Article: Claude writes an outline by 18 Oct, draft 1 by 24 Oct, draft 2 by 28 Oc
 | CodeQL        | Default setup                                            |                                                                                                                                                                                                                                                                                                                                                        |
 | Dependabot    | Monthly, `open-pull-requests-limit: 0` until after 1 Nov |                                                                                                                                                                                                                                                                                                                                                        |
 
-There is no deploy workflow, no push trigger and no cron. Soft cap: **300 minutes for the project**. Expected use is about 150 (10 PR runs, 3 e2e runs, 2 publishes). Check usage before every push (`gh api users/henniefrancis/settings/billing/usage`, path to confirm for a personal account). Actions are pinned by SHA.
+There is no deploy workflow and no cron; the only push trigger is `check.yml` on `develop` (ADR-018 amendment, 20 October 2026). Soft cap: **300 minutes for the project**. Expected use is about 150 (10 PR runs, 3 e2e runs, 2 publishes). Check usage before every push (`gh api users/henniefrancis/settings/billing/usage`, path to confirm for a personal account). Actions are pinned by SHA.
 
 ### 11.2 Test matrix
 

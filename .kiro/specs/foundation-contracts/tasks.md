@@ -308,7 +308,12 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
   - [x] 18.2 Commit
     - After the full gate passes, commit locally with a Conventional Commit scoped `foundation-contracts`. Do not push, merge, tag or open a PR
 
-## Notes
+- [x] 19. Run the check workflow on pushes to develop as well (design "Post-merge change: CI on develop pushes", ADR-018 amendment)
+  - [x] 19.1 Add `push: branches: [develop]` to `.github/workflows/check.yml` next to the pull request trigger, and update its header comment
+    - Why: `check.yml` ran only on pull requests into `main`. Once the standing pull request from develop (PR #1) was merged on 19 October, pushes to develop got no CI at all: ten commits went unchecked by CI. Running on develop pushes checks every change as it lands, without a standing pull request
+    - Still no schedule trigger, no deploy and no other branch; `publish.yml` stays the only tag trigger. The concurrency group cancels an older run on the same ref
+    - Tests: update `packages/contracts/test/workflows.test.ts` so it requires exactly the pull request into main and the push to develop, and still refuses a schedule or any other push branch
+  - [x] 19.2 Commit after the full gate passes, scoped `foundation-contracts`; the owner approved the push
 
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.

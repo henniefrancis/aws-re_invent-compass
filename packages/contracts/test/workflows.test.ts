@@ -37,12 +37,15 @@ function usesLines(text: string): string[] {
 }
 
 describe('Feature: foundation-contracts, CI workflows', () => {
-  test('check.yml triggers only on pull_request into main, with no push or schedule', () => {
-    expect(checkYml).toMatch(/on:\s*\n\s*pull_request:/);
-    expect(checkYml).toMatch(/branches:\s*\[main\]/);
-    // No push or schedule trigger. (Match a trigger key at indented top level.)
-    expect(/\n\s{2}push:/.test(checkYml)).toBe(false);
-    expect(/\n\s{2}schedule:/.test(checkYml)).toBe(false);
+  test('check.yml triggers on pull_request into main and on push to develop only, with no schedule', () => {
+    // ADR-018 amendment (20 October 2026): develop pushes run the check too.
+    const text = checkYml.replaceAll('\r\n', '\n');
+    const triggers = /\non:\n([\s\S]*?)\n(?=\S)/.exec(text)?.[1]?.trimEnd();
+    expect(triggers).toBe(
+      ['  pull_request:', '    branches: [main]', '  push:', '    branches: [develop]'].join('\n'),
+    );
+    // No schedule trigger. (Match a trigger key at indented top level.)
+    expect(/\n\s{2}schedule:/.test(text)).toBe(false);
   });
 
   test('e2e.yml triggers only on workflow_dispatch', () => {
