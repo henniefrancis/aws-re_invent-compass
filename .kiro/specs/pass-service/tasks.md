@@ -574,6 +574,11 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 38.2 Remove the drawn artwork (`src/artwork/draw.ts`, `src/artwork/png.ts`, `scripts/make-artwork.ts`) and its tests; `src/artwork/render.ts` keeps the file list and the module writer
   - [x] 38.3 Tests: the six images are PNGs of the documented sizes with transparent corners and visible ink, and the module header names the owner's SVGs; commit after the full gate passes, scoped `pass-service`
 
+- [x] 39. Owner's sixth pass review (owner decision of 20 October, design "Post-SP3 change: pass review 6", Requirement 9.12 amended)
+  - [x] 39.1 SESSION with the session code goes back to the header (top right); the logo text is removed, so the top row is the logo and SESSION
+  - [x] 39.2 The bottom row is DATE (left) and BOARDING CLOSES (right-aligned, 24-hour)
+  - [x] 39.3 Tests and commit after the full gate passes, scoped `pass-service`. Wallet draws the transit arrow (unchanged, `PKTransitTypeGeneric`) and picks every font size; a pass cannot set either
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.

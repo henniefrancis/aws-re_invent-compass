@@ -100,7 +100,7 @@ describe('Feature: pass-service, pass template', () => {
     expect(json.boardingPass.backFields.some((f) => f.key === 'roomFull')).toBe(false);
   });
 
-  test('the front uses airline wording: code by the logo, boarding closes, terminal and gate, flight name, date (task 37)', () => {
+  test('the front: session top right, terminal and gate, flight name, date and boarding closes (task 39)', () => {
     const json = buildPassJson(
       input(
         samplePassFields({
@@ -115,8 +115,8 @@ describe('Feature: pass-service, pass template', () => {
     );
     const row = (fields: { label: string; value: string }[]) =>
       fields.map((f) => `${f.label}=${f.value}`);
-    expect(json.logoText).toBe('MAM411');
-    expect(row(json.boardingPass.headerFields)).toEqual(['BOARDING CLOSES=12:50']);
+    expect('logoText' in json).toBe(false);
+    expect(row(json.boardingPass.headerFields)).toEqual(['SESSION=MAM411']);
     expect(row(json.boardingPass.primaryFields)).toEqual([
       'TERMINAL=Caesars Palace',
       'GATE=Octavius 4',
@@ -124,7 +124,14 @@ describe('Feature: pass-service, pass template', () => {
     expect(row(json.boardingPass.secondaryFields)).toEqual([
       'FLIGHT NAME=Best Practices for .NET modernization with AWS Transform',
     ]);
-    expect(row(json.boardingPass.auxiliaryFields)).toEqual(['DATE=3 Dec 2026 | 13:00-14:00']);
+    expect(row(json.boardingPass.auxiliaryFields)).toEqual([
+      'DATE=3 Dec 2026 | 13:00-14:00',
+      'BOARDING CLOSES=12:50',
+    ]);
+    expect(json.boardingPass.auxiliaryFields.map((f) => f.textAlignment)).toEqual([
+      undefined,
+      'PKTextAlignmentRight',
+    ]);
     expect(json.boardingPass.backFields[0]).toEqual({
       key: 'roomFull',
       label: 'ROOM',
@@ -275,13 +282,9 @@ describe('Feature: pass-service, pass template', () => {
               endDate: new Date(endMs).toISOString(),
             },
           ]);
-          expect(json.logoText).toBe(fields.sessionCode);
+          expect('logoText' in json).toBe(false);
           expect(json.boardingPass.headerFields).toEqual([
-            {
-              key: 'boardingCloses',
-              label: 'BOARDING CLOSES',
-              value: expectedTime(startMs - 10 * MINUTE),
-            },
+            { key: 'session', label: 'SESSION', value: fields.sessionCode },
           ]);
           expect(json.boardingPass.primaryFields).toEqual([
             {
@@ -297,7 +300,13 @@ describe('Feature: pass-service, pass template', () => {
           ]);
           expect(json.boardingPass.secondaryFields[0]?.label).toBe('FLIGHT NAME');
           const aux = json.boardingPass.auxiliaryFields;
-          expect(aux.map((f) => f.key)).toEqual(['date']);
+          expect(aux.map((f) => f.key)).toEqual(['date', 'boardingCloses']);
+          expect(aux[1]).toEqual({
+            key: 'boardingCloses',
+            label: 'BOARDING CLOSES',
+            value: expectedTime(startMs - 10 * MINUTE),
+            textAlignment: 'PKTextAlignmentRight',
+          });
           const [datePart, timePart] = (aux[0]?.value ?? '').split(' | ');
           expect(datePart).toMatch(/^\d{1,2} [A-Z][a-z]{2} 2026$/);
           expect(timePart).toBe(`${expectedTime(startMs)}-${expectedTime(endMs)}`);

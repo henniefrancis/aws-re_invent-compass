@@ -173,7 +173,7 @@ Scope boundary: this stream does not build the local pass builder, sync or Compa
 9. THE pass-service SHALL derive each Auth_Token as HMAC-SHA256 of a fixed domain label and the Serial_Number with the Pepper, so that the token is never stored and every rebuild of the same pass carries the same token, and SHALL store only the SHA-256 of the token.
 10. THE Apple_Pass SHALL use only original artwork stored in `packages/pass-service`, including the required icon, and SHALL NOT include any AWS logo, AWS colour scheme or wording that suggests an official AWS product. (Owner decision of 20 October 2026: the background is #232F3F, one digit from AWS Squid Ink #232F3E. The owner accepts the closeness; no AWS logo or wording is used.)
 11. THE Apple_Pass SHALL include `attendeeName` only when the PassFields carry it, and SHALL NOT include any client-supplied image, URL or barcode.
-12. THE Apple_Pass front SHALL show the session code as the logo text; boarding closes (24-hour) in the header; the terminal (the venue) and the gate (the short room) in the primary row; the flight name (the title) in the secondary row; and one DATE field with the date and the start to end time (for example "3 Dec 2026 | 13:00-14:00") in the auxiliary row (owner decisions, 20 October 2026).
+12. THE Apple_Pass front SHALL show the logo with no logo text and the session code in the header; the terminal (the venue) and the gate (the short room) in the primary row; the flight name (the title) in the secondary row; and, in the auxiliary row, one DATE field with the date and the start to end time (for example "3 Dec 2026 | 13:00-14:00") and boarding closes (24-hour, right-aligned) (owner decisions, 20 October 2026).
 
 ### Requirement 10: Download a pass
 
