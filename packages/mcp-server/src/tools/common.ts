@@ -101,7 +101,7 @@ export function confirmMessage(
 }
 
 /**
- * In read-only live mode (compass-power task 37), the reply a schedule write tool gives instead
+ * When Compass is read-only (the live default, compass-power task 37), the reply a schedule write tool gives instead
  * of asking: what it would have done, and that nothing changed. Undefined when writes are on.
  * The confirmation text is reused without its closing question.
  */

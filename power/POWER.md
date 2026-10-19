@@ -36,9 +36,9 @@ The `compass` server starts with `npx --yes reinvent-compass@0.0.0`; the version
 
 Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. `scan_repo` reads a folder of yours, so approve each scan. `show_schedule` reads your schedule, so approve each call: it takes no input and lists your reserved sessions, standby list and layovers with the ids the write tools take. Never auto-approve a write tool: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`, `issue_boarding_passes`, `send_to_phone`, `sync_passes` or `forget_me`. `sync_passes` can void passes, so it is a write tool. `add_layover` takes an `action` of `create`, `update` or `delete` (the last two need the `personalTimeId` that `show_schedule` lists), and each one asks you to confirm.
 
-## Look without changing anything
+## Read-only by default
 
-Set `COMPASS_READ_ONLY=1` in the `env` of the Compass MCP server to sign in with your real Builder ID and see your real schedule and the live catalog, with every booking tool answering what it would do instead of doing it. Passes still work. See the MCP server README, "Read-only live mode".
+Compass reads your real schedule and the live catalog but never changes your re:Invent schedule unless you set `COMPASS_ALLOW_WRITES=1` in the `env` of the Compass MCP server. Until then, every booking tool answers what it would do instead of doing it. Passes still work. See the MCP server README, "Read-only by default".
 
 ## Try it without an account
 

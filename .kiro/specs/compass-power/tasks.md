@@ -529,11 +529,11 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 36.1 Move the checkout copy of task 35 into `test/support/private-checkout.ts` and use it in `test/cli/main.test.ts` and `test/e2e/full-flow.test.ts`, whose demo run read `dist/` while the pack smoke test rebuilt it and returned 1 at random
   - [x] 36.2 Tests pass on their own and twice in the full coverage run; commit scoped `compass-power`
 
-- [x] 37. Read-only live mode (owner decision of 20 October, design "Post-SP3 change: read-only live mode")
-  - [x] 37.1 `COMPASS_READ_ONLY=1` sets `readOnly` in the runtime config; the server logs one line saying the mode is on
+- [x] 37. Read-only by default (owner decisions of 20 October, design "Post-SP3 change: read-only by default")
+  - [x] 37.1 In live mode Compass is read-only unless the attendee sets `COMPASS_ALLOW_WRITES=1`; the server logs one line when writes are on. Simulated mode never calls the Events API, so it keeps its made-up bookings
   - [x] 37.2 A read-only Events adapter wraps the real one: every write method (reserve, cancel, favourite, unfavourite, create, update and delete personal time) throws `CompassError('ReadOnly')` without a network call; reads are untouched
-  - [x] 37.3 The schedule write tools (`reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`) check the mode before asking for confirmation and reply with what they would have done and that nothing changed. The pass tools and `forget_me` still work: passes live on Compass's own pass service, not in the re:Invent schedule (owner decision)
-  - [x] 37.4 Tests: every write method refuses and makes no call in read-only mode; each schedule tool asks nothing and says nothing changed; reads and passes work; the mode is off by default. Document the variable in the MCP server README and the Power. Commit scoped `compass-power`
+  - [x] 37.3 The schedule write tools (`reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`) check first and, when read-only, ask nothing and reply with what they would have done, that nothing changed, and how to make the change in the re:Invent app. The pass tools and `forget_me` still work: passes live on Compass's own pass service (owner decision)
+  - [x] 37.4 Tests: live mode is read-only by default, every write refuses and makes no call, each schedule tool asks nothing and says nothing changed, `COMPASS_ALLOW_WRITES=1` turns writes on, simulated mode is unaffected. Documented in the MCP server README and the Power. Commit scoped `compass-power`
 
 ## Notes
 

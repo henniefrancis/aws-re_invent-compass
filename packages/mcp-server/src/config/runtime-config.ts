@@ -14,7 +14,11 @@ import { COMPASS_API_BASE_URL } from './compass-api.js';
 /** The settings read from the environment. */
 export interface RuntimeConfig {
   mode: 'live' | 'simulated';
-  /** COMPASS_READ_ONLY=1: no write ever reaches the Events API (compass-power task 37). */
+  /**
+   * Read-only by default in live mode: no write reaches the Events API unless the attendee sets
+   * COMPASS_ALLOW_WRITES=1 (compass-power task 37). Simulated mode never calls the Events API, so
+   * its made-up bookings stay on.
+   */
   readOnly: boolean;
   compassApiUrl: string;
   /** Passed to the pass client as `allowedHosts`: only the host of `compassApiUrl`. */
@@ -41,7 +45,7 @@ export function readRuntimeConfig(
   env: Readonly<Record<string, string | undefined>>,
 ): RuntimeConfig {
   const mode = env.COMPASS_MODE === 'simulated' ? 'simulated' : 'live';
-  const readOnly = env.COMPASS_READ_ONLY === '1';
+  const readOnly = mode === 'live' && env.COMPASS_ALLOW_WRITES !== '1';
   const override = env.COMPASS_API_URL;
   const overrideAllowed = env.COMPASS_ALLOW_API_OVERRIDE === '1';
   if (override === undefined || override === '' || !overrideAllowed) {

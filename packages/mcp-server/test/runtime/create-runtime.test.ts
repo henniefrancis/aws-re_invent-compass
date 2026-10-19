@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { createTokenStore } from '@compass/core/auth';
 import type { LoopbackServer } from '@compass/core/auth';
 import type { HttpRequest } from '@compass/core/passes';
-import { READ_ONLY_NOTICE, createRuntime } from '../../src/runtime/create-runtime.js';
+import { WRITES_ON_NOTICE, createRuntime } from '../../src/runtime/create-runtime.js';
 import { SIMULATED_LABEL } from '../../src/server/results.js';
 import { connect, textOf } from '../support/connect.js';
 import { installNetworkGuard } from '../support/network-guard.js';
@@ -113,27 +113,31 @@ describe('live composition', () => {
     accessTokenExpiresAt: Date.now() + 3_600_000,
   });
 
-  test('read-only live mode refuses every Events write and says so once (task 37)', async () => {
+  test('live mode is read-only by default: every Events write is refused (task 37)', async () => {
     const store = createTokenStore(memoryKeyring());
     const env = await testEnvironment({ store });
-    const runtime = await createRuntime(env.environment, { COMPASS_READ_ONLY: '1' });
+    const runtime = await createRuntime(env.environment, {});
     expect(runtime.mode).toBe('live');
     expect(runtime.readOnly).toBe(true);
     await expect(runtime.events.reserve(['x'])).rejects.toMatchObject({ code: 'ReadOnly' });
-    expect(env.stderr.join('')).toContain(READ_ONLY_NOTICE);
+    await expect(runtime.events.cancel('x')).rejects.toMatchObject({ code: 'ReadOnly' });
+    expect(env.stderr.join('')).not.toContain(WRITES_ON_NOTICE);
     expect(guard.attempts).toEqual([]);
-    const writable = await createRuntime(env.environment, {});
-    expect(writable.readOnly).toBeUndefined();
   });
 
-  test('read-only works in simulated mode too', async () => {
+  test('COMPASS_ALLOW_WRITES=1 turns writes on in live mode and says so once', async () => {
+    const store = createTokenStore(memoryKeyring());
+    const env = await testEnvironment({ store });
+    const runtime = await createRuntime(env.environment, { COMPASS_ALLOW_WRITES: '1' });
+    expect(runtime.readOnly).toBeUndefined();
+    expect(env.stderr.join('')).toContain(WRITES_ON_NOTICE);
+  });
+
+  test('simulated mode keeps its made-up bookings: never read-only, no notice', async () => {
     const env = await testEnvironment();
-    const runtime = await createRuntime(env.environment, {
-      COMPASS_MODE: 'simulated',
-      COMPASS_READ_ONLY: '1',
-    });
-    expect(runtime.readOnly).toBe(true);
-    await expect(runtime.events.cancel('x')).rejects.toMatchObject({ code: 'ReadOnly' });
+    const runtime = await createRuntime(env.environment, { COMPASS_MODE: 'simulated' });
+    expect(runtime.readOnly).toBeUndefined();
+    expect(env.stderr.join('')).not.toContain(WRITES_ON_NOTICE);
   });
 
   test('builds without a network call and reports sign-in from the token store', async () => {

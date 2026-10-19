@@ -106,9 +106,9 @@ function simulatedAuth(): AuthPort {
   };
 }
 
-/** The one log line when read-only live mode is on (compass-power task 37). */
-export const READ_ONLY_NOTICE =
-  'Read-only mode is on (COMPASS_READ_ONLY=1): Compass reads your real schedule but never changes it.';
+/** The one log line when the attendee turns writes on in live mode (compass-power task 37). */
+export const WRITES_ON_NOTICE =
+  'Writes are on (COMPASS_ALLOW_WRITES=1): Compass can change your real re:Invent schedule after you confirm each change.';
 
 /** Builds the Runtime for `env`. */
 export async function createRuntime(
@@ -119,8 +119,8 @@ export async function createRuntime(
   const config = readRuntimeConfig(env);
   const simulated = config.mode === 'simulated';
   const logger = createStderrLogger(environment.stderr);
-  if (config.readOnly) {
-    logger.warn(READ_ONLY_NOTICE);
+  if (!config.readOnly && !simulated) {
+    logger.warn(WRITES_ON_NOTICE);
   }
   if (config.warning !== undefined) {
     logger.warn(config.warning);
@@ -206,7 +206,8 @@ export async function createRuntime(
     venues: venues.list,
     now: nowMs,
   });
-  // Read-only live mode: every Events API write is refused before any request (task 37).
+  // Read-only by default in live mode: every Events API write is refused before any request
+  // unless COMPASS_ALLOW_WRITES=1 (task 37).
   const events = config.readOnly ? readOnlyEvents(writableEvents) : writableEvents;
   const rules = createRulesAdapter({
     clock,
@@ -229,6 +230,7 @@ export async function createRuntime(
   });
 
   if (simulated) {
+    // Simulated mode never calls the Events API, so it is never read-only (task 37).
     const { runtime } = await createSimulatedRuntime({
       version: environment.version,
       cwd,
@@ -242,7 +244,7 @@ export async function createRuntime(
       fs: createNodeAppFileSystem(),
       ...scanRunner,
     });
-    return config.readOnly ? { ...runtime, readOnly: true } : runtime;
+    return runtime;
   }
   return {
     mode: 'live',

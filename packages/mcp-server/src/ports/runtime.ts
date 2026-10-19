@@ -14,7 +14,7 @@ import type { SnapshotStore } from '../state/schedule-snapshot.js';
 /** The ports and settings behind every tool handler. */
 export interface Runtime {
   mode: 'live' | 'simulated';
-  /** Read-only live mode (compass-power task 37): no Events API write is ever made. */
+  /** True in live mode unless COMPASS_ALLOW_WRITES=1 (compass-power task 37): no Events API write. */
   readOnly?: boolean;
   version: string;
   events: EventsPort;

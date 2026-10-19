@@ -14,9 +14,9 @@ import type { CompassErrorCode } from '../ports/errors.js';
 export const INTERNAL_MESSAGE =
   'Compass hit an internal problem. Nothing was changed by this step.';
 
-/** The message when read-only live mode stops a write (compass-power task 37). */
+/** The message when the read-only default stops a write (compass-power task 37). */
 export const READ_ONLY_MESSAGE =
-  'Compass is in read-only mode (COMPASS_READ_ONLY=1), so nothing in your re:Invent schedule changed.';
+  'Compass is read-only, so nothing in your re:Invent schedule changed. Make this change yourself in the re:Invent app, or set COMPASS_ALLOW_WRITES=1 to let Compass do it.';
 
 const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, string> = {
   FolderNotFound: 'That folder could not be found.',

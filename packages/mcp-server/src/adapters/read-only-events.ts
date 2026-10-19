@@ -1,7 +1,8 @@
-// Read-only live mode (compass-power task 37): wraps the Events adapter so that no write can
-// reach the Events API, whatever calls it. Every read passes straight through; every write
-// throws ReadOnly before any request is made. The schedule tools check the mode first and
-// explain what they would have done, so this guard is the last line, not the usual path.
+// Read-only by default (compass-power task 37): wraps the Events adapter so that no write can
+// reach the Events API, whatever calls it, unless the attendee set COMPASS_ALLOW_WRITES=1.
+// Every read passes straight through; every write throws ReadOnly before any request is made.
+// The schedule tools check the mode first and explain what they would have done, so this
+// guard is the last line, not the usual path.
 
 import { CompassError } from '../ports/errors.js';
 import type { EventsPort } from '../ports/events-port.js';
