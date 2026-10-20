@@ -1330,3 +1330,7 @@ The arrow between TERMINAL and GATE is Wallet's own transit glyph for `PKTransit
 ## Post-SP3 change: Google layout (20 October 2026, task 40)
 
 The Google generic object follows the final Apple pass as far as the generic layout allows: `header` is the title (the flight name) and `subheader` the session code; the text modules read TERMINAL, GATE (short room), DATE ("3 Dec 2026 | 13:00-14:00"), BOARDING CLOSES (24-hour), ROOM (the full room, when known) and NOTICE (the disclaimer, since a Google pass has no back); `hexBackgroundColor` is #232F3F. The formatters and `shortRoom` are the Apple ones, so both passes always say the same. The Google class does not change, so `scripts/google-wallet-class.mjs` needs no new run.
+
+## Post-SP3 change: icon size (20 October 2026, task 41)
+
+The pass icon is 38 by 38 points (38, 76 and 114 pixels at 1x, 2x and 3x). Apple's current Wallet Human Interface Guidelines give `icon.png` as 38 by 38 points for every pass style, and the logo as 50 to 160 points wide and 50 points high; the 29-point icon in the task 12 note came from the older, archived PassKit Programming Guide. Source: https://developer.apple.com/design/human-interface-guidelines/wallet (checked 20 October 2026 through its data endpoint, since the page is rendered by script).

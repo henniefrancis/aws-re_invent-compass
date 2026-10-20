@@ -582,6 +582,9 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - [x] 40. Align the Google Wallet object with the final Apple layout (tracker GP1, design "Post-SP3 change: Google layout", Requirement 14.1 amended)
   - [x] 40.1 Text modules TERMINAL (venue, or "Venue not published"), GATE (the short room, or "Room not published"), DATE ("3 Dec 2026 | 13:00-14:00", 24-hour), BOARDING CLOSES (24-hour), ROOM (the full room, when there is one) and NOTICE (the disclaimer), reusing the Apple formatters and `shortRoom`; header the title (flight name), subheader the session code; background #232F3F. The Google class is unchanged
   - [x] 40.2 Tests and commit after the full gate passes, scoped `pass-service`
+- [x] 41. Pass icon at 38 points (CTO review M3 of 20 October, design "Post-SP3 change: icon size")
+  - [x] 41.1 `make-artwork.mjs` renders `icon.png`, `icon@2x.png` and `icon@3x.png` at 38, 76 and 114 pixels, the size in Apple's current Wallet Human Interface Guidelines (29 points was the older PassKit guide); regenerate `src/apple/artwork.ts`; the artwork test sizes and the comments follow. The logo stays up to 160 by 50 points
+  - [x] 41.2 Tests and commit after the full gate passes, scoped `pass-service`
 
 ## Notes
 

@@ -1,8 +1,8 @@
 // The pass image file list and the writer of the generated module src/apple/artwork.ts.
 // The images are the owner's artwork (site/public/artwork/logo.svg and favicon.svg), rendered
 // by scripts/make-artwork.mjs (task 38). The module is committed, so the images ship inside the
-// Lambda bundles with no loader and no file read. Image sizes follow Apple's Wallet guidance:
-// icon 29 points, logo up to 160 by 50 points, at 1x, 2x and 3x.
+// Lambda bundles with no loader and no file read. Image sizes follow Apple's Wallet Human Interface
+// Guidelines: icon 38 points, logo up to 160 by 50 points, at 1x, 2x and 3x.
 
 export const ARTWORK_FILES = [
   'icon.png',

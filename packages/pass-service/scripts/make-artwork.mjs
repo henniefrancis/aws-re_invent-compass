@@ -5,8 +5,8 @@
 // The logo (site/public/artwork/logo.svg) is fitted to the slot height and left-aligned on a
 // transparent canvas; the icon (site/public/artwork/favicon.svg) is fitted and centred on a
 // transparent square. Chromium from Playwright (a dev dependency) rasterises them, so no
-// image library is added. Sizes follow Apple's Wallet guidance: icon 29 points, logo up to
-// 160 by 50 points, at 1x, 2x and 3x.
+// image library is added. Sizes follow Apple's Wallet Human Interface Guidelines: icon 38
+// points, logo up to 160 by 50 points, at 1x, 2x and 3x.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { ARTWORK_FILES, artworkModuleSource } from '../src/artwork/render.ts';
@@ -15,9 +15,9 @@ const artworkDir = new URL('../../../site/public/artwork/', import.meta.url);
 const svg = (name) => readFileSync(new URL(name, artworkDir), 'utf8');
 
 const JOBS = {
-  'icon.png': { source: 'favicon.svg', width: 29, height: 29, align: 'centre' },
-  'icon@2x.png': { source: 'favicon.svg', width: 58, height: 58, align: 'centre' },
-  'icon@3x.png': { source: 'favicon.svg', width: 87, height: 87, align: 'centre' },
+  'icon.png': { source: 'favicon.svg', width: 38, height: 38, align: 'centre' },
+  'icon@2x.png': { source: 'favicon.svg', width: 76, height: 76, align: 'centre' },
+  'icon@3x.png': { source: 'favicon.svg', width: 114, height: 114, align: 'centre' },
   'logo.png': { source: 'logo.svg', width: 160, height: 50, align: 'left' },
   'logo@2x.png': { source: 'logo.svg', width: 320, height: 100, align: 'left' },
   'logo@3x.png': { source: 'logo.svg', width: 480, height: 150, align: 'left' },

@@ -4,9 +4,9 @@ import { ARTWORK_FILES, artworkModuleSource } from '../../src/artwork/render.js'
 import { ARTWORK } from '../../src/apple/artwork.js';
 
 const SIZES: Record<string, [number, number]> = {
-  'icon.png': [29, 29],
-  'icon@2x.png': [58, 58],
-  'icon@3x.png': [87, 87],
+  'icon.png': [38, 38],
+  'icon@2x.png': [76, 76],
+  'icon@3x.png': [114, 114],
   'logo.png': [160, 50],
   'logo@2x.png': [320, 100],
   'logo@3x.png': [480, 150],
