@@ -14,6 +14,7 @@ import {
   humanConfirms,
   readFreshSchedule,
   readOnlyReply,
+  catalogTargets,
 } from './common.js';
 import { explainFailure } from './failure-codes.js';
 
@@ -37,7 +38,11 @@ export async function addStandby(
   }
   const { window } = await readFreshSchedule(ctx);
   const question = confirmMessage('Add these to your standby list?', targets.found);
-  const readOnly = readOnlyReply(ctx, question);
+  const readOnly = readOnlyReply(
+    ctx,
+    'add these to your standby list.',
+    catalogTargets(targets.found),
+  );
   if (readOnly !== undefined) {
     return {
       ok: true,

@@ -13,6 +13,7 @@ import {
   humanConfirms,
   readFreshSchedule,
   readOnlyReply,
+  catalogTargets,
 } from './common.js';
 
 /** remove_standby. */
@@ -39,7 +40,11 @@ export async function removeStandby(
     };
   }
   const question = confirmMessage('Remove this from your standby list?', targets.found);
-  const readOnly = readOnlyReply(ctx, question);
+  const readOnly = readOnlyReply(
+    ctx,
+    'remove this from your standby list.',
+    catalogTargets(targets.found),
+  );
   if (readOnly !== undefined) {
     return { ok: true, structured: { removed: false }, text: readOnly };
   }

@@ -6,7 +6,7 @@ import type { McpToolName } from '@compass/contracts';
 
 /** The sentence every schedule-changing tool ends with. */
 export const SCHEDULE_WRITE_SENTENCE =
-  'This changes your real re:Invent schedule. Compass checks it first and asks you to approve it.';
+  'This changes your real re:Invent schedule. Compass checks it first and asks you to approve it. Compass is read-only unless the attendee turned writes on; then it only says what it would do.';
 
 /** The sentence for tools that create boarding passes. */
 export const ISSUE_SENTENCE = 'This creates real boarding passes on the Compass pass service.';

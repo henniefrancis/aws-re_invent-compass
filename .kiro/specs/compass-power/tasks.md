@@ -545,6 +545,12 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 39.1 When Compass is read-only, the walk-up reply of `reserve_with_guardrails` suggests adding the session to the favourites in the re:Invent app instead of the standby list, because `add_standby` is a write and would only reply what it would have done. Why: in Kiro the agent offered to add SVS339 to the standby list after the walk-up reply
   - [x] 39.2 Tests for both wordings; commit scoped `compass-power`
 
+- [x] 40. Pre-release review fixes for read-only mode (CTO H1, M1, M2, L4 and TAM L1 of 20 October; design "Post-SP3 change: pre-release review fixes")
+  - [x] 40.1 The read-only reply carries the sessions, layover text and guardrail warnings only inside labelled data blocks (Requirement on Labelled_Data_Block): `readOnlyReply(ctx, action, data)` takes already-labelled data, `catalogTargets` builds the catalog block. The required prompt-injection test now runs every schedule tool against the hostile catalog in read-only mode
+  - [x] 40.2 When writes are on in live mode, the schedule tools, `show_schedule` and `sign_in` start their reply with "Writes are on: ...", so the person in the chat sees it; the Power skill and POWER.md no longer name the setting, and the write-tool descriptions say Compass is read-only unless writes are turned on
+  - [x] 40.3 The Kiro pre-write hook resolves session codes with the same pure resolver as the server (`sessionIdResolver`), so a call made with a code is judged instead of passed through
+  - [x] 40.4 Tests and commit scoped `compass-power`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

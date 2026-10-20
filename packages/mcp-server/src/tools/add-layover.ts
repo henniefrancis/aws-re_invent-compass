@@ -126,8 +126,17 @@ async function confirmOrStop(
   ctx: ToolContext,
   action: LayoverAction['action'],
   question: string,
+  readOnlyData: { attendee: Record<string, string>; warnings?: readonly string[] },
 ): Promise<ToolOutcome<'add_layover'> | undefined> {
-  const readOnly = readOnlyReply(ctx, question);
+  // Read-only reply (task 40): the attendee's own text and the catalog warnings stay labelled.
+  const readOnly = readOnlyReply(
+    ctx,
+    `${action} a layover.`,
+    [
+      labelUntrusted('attendee', readOnlyData.attendee),
+      labelUntrusted('catalog', { warnings: readOnlyData.warnings ?? [] }),
+    ].join('\n'),
+  );
   if (readOnly !== undefined) {
     return { ok: true, structured: { action, done: false }, text: readOnly };
   }
@@ -208,6 +217,14 @@ async function createLayover(
       ...warnings.map((warning) => `Warning: ${warning}`),
       'Go ahead?',
     ].join('\n'),
+    {
+      attendee: {
+        title: personalTime.title,
+        from: personalTime.startDateTime,
+        to: personalTime.endDateTime,
+      },
+      warnings,
+    },
   );
   if (stop !== undefined) {
     return stop;
@@ -267,6 +284,16 @@ async function updateLayover(
       ...warnings.map((warning) => `Warning: ${warning}`),
       'Go ahead?',
     ].join('\n'),
+    {
+      attendee: {
+        personalTimeId,
+        was: current.title,
+        now: personalTime.title,
+        from: personalTime.startDateTime,
+        to: personalTime.endDateTime,
+      },
+      warnings,
+    },
   );
   if (stop !== undefined) {
     return stop;
@@ -321,6 +348,14 @@ async function deleteLayover(
       labelUntrusted('attendee', { title: current.title }),
       'Go ahead?',
     ].join('\n'),
+    {
+      attendee: {
+        personalTimeId,
+        title: current.title,
+        from: current.startDateTime,
+        to: current.endDateTime,
+      },
+    },
   );
   if (stop !== undefined) {
     return stop;

@@ -38,7 +38,7 @@ Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` a
 
 ## Read-only by default
 
-Compass reads your real schedule and the live catalog but never changes your re:Invent schedule unless you set `COMPASS_ALLOW_WRITES=1` in the `env` of the Compass MCP server. Until then, every booking tool answers what it would do instead of doing it. Passes still work. See the MCP server README, "Read-only by default".
+Compass reads your real schedule and the live catalog but never changes your re:Invent schedule unless you turn writes on yourself. Until then, every booking tool answers what it would do instead of doing it, and you make the change in the re:Invent app. Passes still work. How to turn writes on is in the MCP server README, "Read-only by default".
 
 ## Try it without an account
 

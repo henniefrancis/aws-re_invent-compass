@@ -22,6 +22,7 @@ import {
   humanConfirms,
   readFreshSchedule,
   readOnlyReply,
+  catalogTargets,
 } from './common.js';
 
 function notCancelled(text: string): ToolOutcome<'cancel_reservation'> {
@@ -53,7 +54,7 @@ export async function cancelReservation(
   const swap = ctx.state.swaps.forOriginal(input.sessionId);
   const repeat = swap === undefined ? undefined : catalog.byId.get(swap.repeatId)?.session;
   let confirmedByOverride = false;
-  const readOnly = readOnlyReply(ctx, confirmMessage('Cancel this reservation?', targets.found));
+  const readOnly = readOnlyReply(ctx, 'cancel this reservation.', catalogTargets(targets.found));
   if (readOnly !== undefined) {
     return notCancelled(readOnly);
   }

@@ -17,6 +17,7 @@ import { exitCodeFor } from './exit-policy.js';
 import type { HookDecision } from './exit-policy.js';
 import { parseHookInput, unwrapPowerCall } from './hook-input.js';
 import { identifyTool } from './tool-names.js';
+import { sessionIdResolver } from '../server/session-codes.js';
 
 /** A snapshot older than this is not trusted. */
 export const SNAPSHOT_MAX_AGE_MS = 15 * 60 * 1000;
@@ -55,8 +56,10 @@ async function judgeReserve(sessionIds: unknown, deps: HookDeps): Promise<HookDe
     return note();
   }
   const catalog = await deps.catalog();
+  // Codes such as SVS339 are judged like ids, as the server does (task 40).
+  const resolve = sessionIdResolver(catalog);
   const sessions = ids.flatMap((id) => {
-    const entry = catalog.byId.get(id);
+    const entry = catalog.byId.get(resolve(id));
     return entry === undefined ? [] : [entry.session];
   });
   if (sessions.length !== ids.length) {

@@ -1585,3 +1585,9 @@ Owner decisions: Compass reads the attendee's real Builder ID data (catalog, ses
 - **Codes as ids.** Attendees and agents use session codes such as SVS339. Before a tool with `sessionId` or `sessionIds` runs, the server replaces a value that is not a catalog id with the id of the one session whose code matches it, ignoring letter case. An unknown or shared code is left as given, so the tool still reports it as unknown. With no cached catalog the input is left alone.
 - **Walk-up sessions.** A session with `isReservable: false` needs no reservation. `reserve_with_guardrails` blocks it first, with the reason, and suggests walking up or adding it to the standby list; when Compass is read-only it suggests the favourites in the re:Invent app instead, since the standby tool would not write (task 39).
 - **No write invitations.** The read-only reply says to make the change in the re:Invent app and no longer names `COMPASS_ALLOW_WRITES`; the setting is documented for the attendee only. The Power skill forbids the agent to change Compass's settings or offer to.
+
+## Post-SP3 change: pre-release review fixes (20 October 2026, task 40)
+
+- **Labelled read-only replies.** In read-only mode the reply goes to the model, not only to the human, so the sessions acted on, the guardrail warnings and the layover text are returned inside labelled data blocks like every other catalog-derived text. The prompt-injection test covers all five schedule tools in read-only mode.
+- **Writes-on is visible.** With `COMPASS_ALLOW_WRITES=1` in live mode, the schedule tools, `show_schedule` and `sign_in` start with "Writes are on: Compass can change your real re:Invent schedule after you approve each change." The agent-facing Power text no longer names the setting; the MCP server README documents it for the attendee.
+- **Hook and codes.** `sessionIdResolver(catalog)` is the one code-to-id mapping, used by the server before a tool runs and by the pre-write hook.

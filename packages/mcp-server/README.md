@@ -138,7 +138,7 @@ AWS publishes its own MCP server at `https://api.awsevents.com/mcp` (https://doc
 
 Compass never changes your re:Invent schedule unless you ask it to in its settings. Signed in with your Builder ID, it reads the live catalog and your real reservations, standby list and layovers, and runs the booking guardrail as usual. By default the schedule write tools (`reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby` and `add_layover`) ask nothing and reply with what they would have done, that nothing changed, and that you can make the change in the re:Invent app. Underneath, every Events API write is refused before any request, so no path can change your schedule by accident. Boarding passes still work, because they live on the Compass pass service, not in your re:Invent schedule.
 
-To let Compass make changes, each one still confirmed by you first, set `COMPASS_ALLOW_WRITES=1`. The server logs one line when writes are on. In Kiro, add it to the `env` of the `compass` server in `.kiro/settings/mcp.json`:
+To let Compass make changes, each one still confirmed by you first, set `COMPASS_ALLOW_WRITES=1` in the environment of the Compass MCP server. In Kiro that is the `env` of the server in your MCP settings: the `compass` entry for a manual install, or the Compass server the Power added (shown as `power-power-compass` when imported from a folder). While writes are on, every schedule reply in the chat starts with "Writes are on", and the server also logs one line. Only you should change this setting; the Power tells the agent never to.
 
 ```json
 "env": { "COMPASS_ALLOW_WRITES": "1" }

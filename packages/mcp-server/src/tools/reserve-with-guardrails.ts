@@ -22,6 +22,7 @@ import {
   ensureSignedIn,
   humanConfirms,
   readOnlyReply,
+  catalogTargets,
   readFreshSchedule,
 } from './common.js';
 import { explainFailure } from './failure-codes.js';
@@ -115,7 +116,11 @@ export async function reserveWithGuardrails(
   }
 
   const question = confirmMessage('Reserve these sessions?', targets.found, warnings);
-  const readOnly = readOnlyReply(ctx, question);
+  const readOnly = readOnlyReply(
+    ctx,
+    'reserve these sessions.',
+    catalogTargets(targets.found, warnings),
+  );
   if (readOnly !== undefined) {
     return { ok: true, structured: { verdict: guard.verdict }, text: readOnly };
   }

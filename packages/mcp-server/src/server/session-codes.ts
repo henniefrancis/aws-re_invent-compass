@@ -5,10 +5,30 @@
 // unknown. With no cached catalog, or a value that fails the identifier check, the input is left
 // alone, so the tool refuses a bad identifier before any Events call.
 
-import type { EventsPort } from '../ports/events-port.js';
+import type { CatalogView, EventsPort } from '../ports/events-port.js';
 import { checkIdentifier } from '../safety/identifiers.js';
 
 type WithSessions = { sessionId?: unknown; sessionIds?: unknown };
+
+/**
+ * Maps a catalog id to itself and a code that exactly one session has (any letter case) to that
+ * session's id; anything else is returned as given. Pure, so the server and the Kiro hook share it
+ * (task 40).
+ */
+export function sessionIdResolver(catalog: CatalogView): (value: string) => string {
+  const byCode = new Map<string, string[]>();
+  for (const [id, entry] of catalog.byId) {
+    const code = entry.session.code.toUpperCase();
+    byCode.set(code, [...(byCode.get(code) ?? []), id]);
+  }
+  return (value) => {
+    if (catalog.byId.has(value)) {
+      return value;
+    }
+    const ids = byCode.get(value.toUpperCase());
+    return ids?.length === 1 ? (ids[0] as string) : value;
+  };
+}
 
 export async function resolveSessionCodes<T>(input: T, events: EventsPort): Promise<T> {
   const value = input as WithSessions;
@@ -29,22 +49,10 @@ export async function resolveSessionCodes<T>(input: T, events: EventsPort): Prom
   } catch {
     return input;
   }
-  const byCode = new Map<string, string[]>();
-  for (const [id, entry] of catalog.byId) {
-    const code = entry.session.code.toUpperCase();
-    byCode.set(code, [...(byCode.get(code) ?? []), id]);
-  }
-  const resolve = (candidate: unknown): string | undefined => {
-    const text = candidate as string;
-    if (catalog.byId.has(text)) {
-      return text;
-    }
-    const ids = byCode.get(text.toUpperCase());
-    return ids?.length === 1 ? ids[0] : text;
-  };
+  const resolve = sessionIdResolver(catalog);
   return {
     ...input,
-    ...(hasId ? { sessionId: resolve(value.sessionId) } : {}),
-    ...(hasIds ? { sessionIds: (value.sessionIds as unknown[]).map(resolve) } : {}),
+    ...(hasId ? { sessionId: resolve(value.sessionId as string) } : {}),
+    ...(hasIds ? { sessionIds: (value.sessionIds as string[]).map(resolve) } : {}),
   };
 }
