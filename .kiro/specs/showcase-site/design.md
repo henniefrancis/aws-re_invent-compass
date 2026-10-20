@@ -6,7 +6,7 @@ This design covers S7, the `showcase-site` stream: the public website of re:Inve
 
 The Site is a static Angular 22.2.3 application with standalone components, zoneless change detection and prerendered output (`outputMode: "static"`). It is served from S3 behind CloudFront at the distribution's default domain (S6). It has five routes:
 
-- `/` (Home_Page): the "Seat released at" story, the airline metaphor, Plan, Board, Fly, and links to the repository, the Builder Center post and the video.
+- `/` (Home_Page): the "Seat released at" story, the airline metaphor, Plan, Boarding, Fly, and links to the repository, the Builder Center post and the video.
 - `/demo` (Demo_Page): a click-through demo that runs the real rules engine (`@compass/core/rules`, S2) in the browser on sessions copied from the synthetic catalog (ADR-016).
 - `/install` (Install_Page): the Kiro Power, the npx one-liners and other MCP clients.
 - `/privacy` (Privacy_Page): "what leaves your machine", in plain words from build plan section 4.2.
@@ -1015,3 +1015,7 @@ The demo's sample pass now follows the final Apple pass (pass-service design, "P
 ## Post-SP3 change: board message shown once (20 October 2026, task 23)
 
 With an incomplete link the Board_Page showed "This link is not complete" in the heading, the full sentence "This link is not complete. Scan the QR code again on your computer." in the message, and the same sentence again in the polite live region. The live region is a normal paragraph (it has no visually hidden class), so it was on screen, and `announcement` was set to the message. Fix: the message of the invalid state is only "Scan the QR code again on your computer."; the live region on the board page uses the `visually-hidden` class (still announced, not shown); and for the plain states `announcement` is the heading, a full stop and the message, so a screen reader hears the whole sentence once.
+
+## Post-SP3 change: tagline and Boarding step (20 October 2026, task 24)
+
+Owner decisions: the tagline is "From your code to your seat, on time.", because it names the whole product in one line (the plan comes from your own code; the pass gets you in before the seat is released), and the three acts are Plan, Boarding and Fly. The tagline block now quotes `.kiro/steering/product.md`, since README.md is the owner's own draft to update; `CONCEPT.md` carries the new tagline and the heading "Act 2: Boarding". Users read "Boarding Pass" as a name (boarding-passes task 12), so the act line says "Boarding Pass"; the metaphor table keeps the airline term "Boarding pass", which it quotes from product steering. The demo and board pages are left to the stream that is changing them.

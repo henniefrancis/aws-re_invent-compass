@@ -4,9 +4,9 @@ export const PRODUCT_NAME = 're:Invent Compass';
 
 export const TAGLINE: ContentBlock = quoted(
   'tagline',
-  'Plan like a spec. Board like a flight.',
-  'README.md',
-  'Title',
+  'From your code to your seat, on time.',
+  '.kiro/steering/product.md',
+  'Product',
 );
 
 export const INTRO: ContentBlock = quoted(

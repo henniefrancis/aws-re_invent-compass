@@ -9,4 +9,4 @@ Every file in `public/` is original artwork made for this site. The site uses no
 | `public/artwork/seat-release.svg`    | Home page timeline: seat released at 10:20, session starts at 10:30                                                | Claude, for the re:Invent Compass project (S7 site)  | Yes      |
 | `public/artwork/pass-background.jpg` | Board page banner; the Apple pass takes its colours from it (task 20)                                              | Hennie Francis, the owner (abstract colour gradient) | Yes      |
 
-The sample boarding pass in the demo is drawn as inline SVG by the site code (`src/app/pages/demo/`). It is original too, and it has no barcode, no QR code and no AWS mark.
+The sample Boarding Pass in the demo is drawn as inline SVG by the site code (`src/app/pages/demo/`). It is original too, and it has no barcode, no QR code and no AWS mark.

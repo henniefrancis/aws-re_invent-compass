@@ -1,6 +1,6 @@
 # re:Invent Compass showcase site
 
-The public website of re:Invent Compass (stream S7). It tells the story ("Plan like a spec. Board like a flight."), runs a click-through demo on made-up sessions, explains how to install Compass and what leaves your machine, and serves the `/board` page that a phone opens from the QR code to add unofficial boarding passes to Apple Wallet or Google Wallet.
+The public website of re:Invent Compass (stream S7). It tells the story ("From your code to your seat, on time."), runs a click-through demo on made-up sessions, explains how to install Compass and what leaves your machine, and serves the `/board` page that a phone opens from the QR code to add unofficial boarding passes to Apple Wallet or Google Wallet.
 
 re:Invent Compass is an independent community project and is not affiliated with, endorsed by, or sponsored by Amazon Web Services.
 
@@ -10,7 +10,7 @@ It is a static Angular 22.2.3 site (standalone components, zoneless, prerendered
 
 | Route      | What it is                                                                                           |
 | ---------- | ---------------------------------------------------------------------------------------------------- |
-| `/`        | The story: seat released at 10:20, the airline metaphor, Plan, Board, Fly, three promises            |
+| `/`        | The story: seat released at 10:20, the airline metaphor, Plan, Boarding, Fly, three promises         |
 | `/demo`    | The demo on made-up sessions, using the real rules engine, a sample pass and a sample calendar       |
 | `/install` | Kiro Power install steps, the two npx commands, Node.js 24                                           |
 | `/privacy` | What stays on your machine, what leaves it and for how long, what this site does                     |

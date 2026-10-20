@@ -4,7 +4,7 @@
 
 This spec (S7, showcase-site) covers the public website of re:Invent Compass and its `/board` hand-off page. It owns `site/**` only.
 
-In the airline metaphor the site is the departures hall and the gate. The departures hall tells the story ("Plan like a spec. Board like a flight."), lets anyone try a click-through demo on made-up sessions, and explains how to install Compass and what leaves the attendee's machine. The gate is `/board`: the page a phone opens after scanning the QR code that Compass prints on the computer, where the attendee adds unofficial boarding passes to Apple Wallet or Google Wallet, or downloads a calendar file.
+In the airline metaphor the site is the departures hall and the gate. The departures hall tells the story ("From your code to your seat, on time."), lets anyone try a click-through demo on made-up sessions, and explains how to install Compass and what leaves the attendee's machine. The gate is `/board`: the page a phone opens after scanning the QR code that Compass prints on the computer, where the attendee adds unofficial boarding passes to Apple Wallet or Google Wallet, or downloads a calendar file.
 
 The site is plan on a computer, board on any device (ADR-005). It is a static Angular 22 application, prerendered to files and served from S3 behind CloudFront at the distribution's default domain. It has no sign-in, no cookies, no analytics and no third-party requests. The demo runs the real rules engine (`@compass/core/rules`, owned by S2) in the browser on sessions copied from the synthetic catalog (ADR-016). The `/board` page reads a 15-minute hand-off capability from the URL fragment only (ADR-011), calls one hand-off route from `contracts/compass-api.openapi.yaml`, and never stores, logs or shares that capability.
 
@@ -109,10 +109,10 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 
 #### Acceptance Criteria
 
-1. THE Home_Page SHALL show the product name and the tagline "Plan like a spec. Board like a flight."
+1. THE Home_Page SHALL show the product name and the tagline "From your code to your seat, on time." (amended 20 October 2026 by owner decision, task 24: it was "Plan like a spec. Board like a flight.")
 2. THE Home_Page SHALL tell the "Seat released at" story: a reserved seat is held only until 10 minutes before the session starts, and Compass shows "Seat released at 10:20" where most tools show "Starts 10:30", attributing the rule to the official re:Invent 2026 FAQ.
 3. THE Home_Page SHALL show the airline metaphor table with the terms and meanings from the product steering.
-4. THE Home_Page SHALL present the three acts Plan, Board and Fly with content from `CONCEPT.md` section 3, using the scanner list from the build plan and product steering (Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3 and boto3) where `CONCEPT.md` differs.
+4. THE Home_Page SHALL present the three acts Plan, Boarding and Fly (amended 20 October 2026, task 24: the second act was Board) with content from `CONCEPT.md` section 3, using the scanner list from the build plan and product steering (Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3 and boto3) where `CONCEPT.md` differs.
 5. THE Home_Page SHALL state in plain words the principles "The badge is the ticket", "A human approves every write" and "Local first".
 6. THE Home_Page SHALL link to the Demo_Page and the Install_Page as its two primary actions.
 7. THE Home_Page SHALL state that Compass passes are unofficial, carry the text "Unofficial. Your badge is your ticket." and never replace the attendee's badge.

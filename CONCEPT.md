@@ -1,6 +1,6 @@
 # re:Invent Compass
 
-**Plan like a spec. Board like a flight.**
+**From your code to your seat, on time.**
 
 A Kiro Power that turns a first-timer's re:Invent week into a Kiro spec, then issues unofficial boarding passes for every reserved seat so the right information is on their lock screen at the right moment.
 
@@ -45,7 +45,7 @@ Everyone at re:Invent has flown to get there. The metaphor needs no explaining.
   - `tasks.md`: each task is one API action (reserve, favorite, personal time). The attendee runs them in Kiro and approves each write.
 - **First-timer guardrails as hooks.** A Kiro `PreToolUse` hook checks every reservation against the rules (connection time, boarding time, clashes, no lunch) before it is sent. A `PostToolUse` hook re-reads the schedule after every write.
 
-### Act 2: Board (on the phone)
+### Act 2: Boarding (on the phone)
 
 - The final task issues a boarding pass for each reserved session: Apple Wallet and Google Wallet.
 - Each pass shows: session code and title, venue and room, **"Seat released at"**, walk time from the previous session, and the next connection.

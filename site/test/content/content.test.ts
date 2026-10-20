@@ -125,7 +125,7 @@ describe('content provenance', () => {
   });
 
   test('the story states the seat release rule with its official source', () => {
-    expect(story.TAGLINE.text).toBe('Plan like a spec. Board like a flight.');
+    expect(story.TAGLINE.text).toBe('From your code to your seat, on time.');
     expect(story.COMPASS_SHOWS.text).toBe('Seat released at 10:20');
     expect(story.MOST_TOOLS_SHOW.text).toBe('Starts 10:30');
     expect(story.DISCLAIMER.text).toBe('Unofficial. Your badge is your ticket.');
@@ -139,7 +139,7 @@ describe('content provenance', () => {
   });
 
   test('the acts and principles are the three the home page promises', () => {
-    expect(ACTS.map((a) => a.title)).toEqual(['Plan', 'Board', 'Fly']);
+    expect(ACTS.map((a) => a.title)).toEqual(['Plan', 'Boarding', 'Fly']);
     expect(PRINCIPLES.map((p) => p.title.text)).toEqual([
       'The badge is the ticket',
       'A human approves every write',

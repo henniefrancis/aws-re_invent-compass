@@ -392,6 +392,10 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 23. Say "This link is not complete" once on the hand-off page (tracker BM1, design "Post-SP3 change: board message shown once")
   - [x] 23.1 Find why the sentence shows twice; the live region is visible and repeats the message, which itself repeats the heading
   - [x] 23.2 Fix it: the message no longer repeats the heading, the live region is visually hidden and carries the heading plus the message, and a test covers it
+- [x] 24. New tagline and the "Boarding" step on the home page (owner decision of 20 October, design "Post-SP3 change: tagline and Boarding step", Requirements 4.1 and 4.4 amended)
+  - [x] 24.1 The tagline is "From your code to your seat, on time." in `.kiro/steering/product.md`, `CONCEPT.md`, the site (`TAGLINE`, now quoted from `.kiro/steering/product.md` because README.md is the owner's to change), the page description in `src/index.html` and `site/README.md`
+  - [x] 24.2 The three acts are Plan, Boarding and Fly: the home heading, the act title, `CONCEPT.md` "Act 2: Boarding" (the act cites it) and `site/README.md`; the act line and `site/ARTWORK.md` say "Boarding Pass" (the metaphor row keeps the airline term "Boarding pass" it quotes from product steering). The demo and board pages are out of scope (another stream is changing them)
+  - [x] 24.3 Tests follow the new wording; site unit tests and the site build pass; commit after the full gate passes, scoped `showcase-site`
 
 ## Notes
 

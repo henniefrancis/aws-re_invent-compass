@@ -4,7 +4,7 @@ inclusion: always
 
 # Product: re:Invent Compass
 
-**Plan like a spec. Board like a flight.**
+**From your code to your seat, on time.**
 
 re:Invent Compass helps a first-time AWS re:Invent attendee plan their week from their own code, book it safely, and get into every reserved session on time. It ships as a Kiro Power plus a local MCP server that any desktop MCP client can run. It writes the week as a Kiro spec, guards every booking, and issues unofficial Apple and Google Wallet boarding passes that void when a session is cancelled and expire when it ends.
 
