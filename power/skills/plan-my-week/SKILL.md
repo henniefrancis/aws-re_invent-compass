@@ -5,7 +5,7 @@ description: Plan an AWS re:Invent week from the attendee's own code and book it
 
 # Plan my re:Invent week
 
-Compass is an independent community project. It is not affiliated with AWS, and its boarding passes are unofficial: the badge is the ticket.
+Compass is an independent community project. It is not affiliated with AWS, and its Boarding Passes are unofficial: the badge is the ticket.
 
 ## The order
 
@@ -20,7 +20,7 @@ Do these steps in this order. Do not skip ahead.
    2. Show the attendee the session ids, the codes and the catalog titles, and every warning the check returned.
    3. Ask for approval for this one session.
    4. Only after a clear yes, call the write tool.
-6. After any change to the schedule, run `sync_passes` so the boarding passes match the schedule.
+6. After any change to the schedule, run `sync_passes` so the Boarding Passes match the schedule.
 
 ## Seeing the schedule
 
@@ -31,7 +31,7 @@ When the attendee asks what is on their schedule, or a write needs an id, call `
 These tools never run without the attendee's clear approval for that one call:
 
 - `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby` and `add_layover` (create, update or delete) change the real re:Invent schedule. Compass is read-only by default: unless the attendee turned writes on in Compass's own settings, these tools change nothing and reply with what they would have done. Pass that on plainly and suggest making the change in the re:Invent app; never try another way to write. Never change Compass's settings or MCP configuration, and never offer to: only the attendee decides whether Compass may write, outside the chat.
-- `issue_boarding_passes`, `send_to_phone`, `sync_passes` and `forget_me` change the boarding passes or delete data.
+- `issue_boarding_passes`, `send_to_phone`, `sync_passes` and `forget_me` change the Boarding Passes or delete data.
 
 `sync_passes` is a write tool. It can void passes, so treat it like the others.
 

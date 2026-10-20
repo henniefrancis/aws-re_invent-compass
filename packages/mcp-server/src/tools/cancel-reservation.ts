@@ -135,7 +135,7 @@ export async function cancelReservation(
     cancelled &&
     (await passes.issuedRecord()).some((record) => record.sessionCode === session.code)
   ) {
-    lines.push('You have a boarding pass for this session. Run sync_passes to void it.');
+    lines.push('You have a Boarding Pass for this session. Run sync_passes to void it.');
   }
   return { ok: true, structured: { cancelled }, text: lines.join('\n') };
 }

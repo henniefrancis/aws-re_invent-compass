@@ -1,6 +1,6 @@
 # reinvent-compass
 
-Plan your AWS re:Invent week from your own code, book it safely, and get boarding passes on your phone.
+Plan your AWS re:Invent week from your own code, book it safely, and get Boarding Passes on your phone.
 
 **Unofficial. Your badge is your ticket.** Reinvent Compass is an independent community project. It is not affiliated with, endorsed by or sponsored by AWS or Amazon.
 
@@ -13,7 +13,7 @@ Compass is a local MCP server and a Kiro Power. Your AI assistant uses it to:
 - plan a week of sessions that fits that, and write the plan as a Kiro spec in your workspace,
 - check every booking against your real schedule before it is made, and block clashes,
 - swap a booking for its repeat safely (it reserves the repeat first and cancels the original after),
-- issue unofficial boarding passes and hand them to your phone with a short-lived QR code.
+- issue unofficial Boarding Passes and hand them to your phone with a short-lived QR code.
 
 The guardrail that checks bookings runs inside the Compass server. It runs in every client, with or without hooks.
 
@@ -107,7 +107,7 @@ Every command here names the exact version of this package. Pinning it is delibe
 | `add_standby`             | write        | Favourites sessions as backups. Changes your real schedule.                        |
 | `remove_standby`          | write        | Removes a favourite. Changes your real schedule.                                   |
 | `add_layover`             | write        | Creates, changes or deletes personal time. Changes your real schedule.             |
-| `issue_boarding_passes`   | write        | Creates unofficial boarding passes for sessions you hold.                          |
+| `issue_boarding_passes`   | write        | Creates unofficial Boarding Passes for sessions you hold.                          |
 | `send_to_phone`           | write        | Makes a 15-minute link and QR code for your passes.                                |
 | `sync_passes`             | write        | Makes the passes match your schedule. It can void passes.                          |
 | `forget_me`               | write        | Deletes your pass data on the server and on this machine.                          |
@@ -136,7 +136,7 @@ AWS publishes its own MCP server at `https://api.awsevents.com/mcp` (https://doc
 
 ## Read-only by default
 
-Compass never changes your re:Invent schedule unless you ask it to in its settings. Signed in with your Builder ID, it reads the live catalog and your real reservations, standby list and layovers, and runs the booking guardrail as usual. By default the schedule write tools (`reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby` and `add_layover`) ask nothing and reply with what they would have done, that nothing changed, and that you can make the change in the re:Invent app. Underneath, every Events API write is refused before any request, so no path can change your schedule by accident. Boarding passes still work, because they live on the Compass pass service, not in your re:Invent schedule.
+Compass never changes your re:Invent schedule unless you ask it to in its settings. Signed in with your Builder ID, it reads the live catalog and your real reservations, standby list and layovers, and runs the booking guardrail as usual. By default the schedule write tools (`reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby` and `add_layover`) ask nothing and reply with what they would have done, that nothing changed, and that you can make the change in the re:Invent app. Underneath, every Events API write is refused before any request, so no path can change your schedule by accident. Boarding Passes still work, because they live on the Compass pass service, not in your re:Invent schedule.
 
 To let Compass make changes, each one still confirmed by you first, set `COMPASS_ALLOW_WRITES=1` in the environment of the Compass MCP server. In Kiro that is the `env` of the server in your MCP settings: the `compass` entry for a manual install, or the Compass server the Power added (shown as `power-power-compass` when imported from a folder). While writes are on, every schedule reply in the chat starts with "Writes are on", and the server also logs one line. Only you should change this setting; the Power tells the agent never to.
 
@@ -164,7 +164,7 @@ It forces simulated mode and runs ten steps through the real tools on a copy of 
 - **Your repository** is read on your machine. Only service names and a depth per service are used; no file name, path or content leaves the scanner, and the scan result stays in memory.
 - **Your schedule** is read from the AWS Events service. A copy is kept in your app-data folder (mode 0600) and removed by `forget_me`.
 - **Session text** from the catalog is shown to your assistant as labelled data, never as instructions. Session abstracts are never passed on.
-- **Boarding passes**: when you issue passes, the pass fields (session code, title, times, room and an optional name you type yourself) go to the Compass pass service. Apple or Google receive them if you add a pass to a wallet. The ID token is checked and never stored.
+- **Boarding Passes**: when you issue passes, the pass fields (session code, title, times, room and an optional name you type yourself) go to the Compass pass service. Apple or Google receive them if you add a pass to a wallet. The ID token is checked and never stored.
 - **Nothing is logged** that holds a token, an email address, a link or a file path. Logs go to stderr, never to stdout.
 - **The week spec** is written into your workspace folder, after you confirm the folder. If the folder is a public repository the plan would show where you will be and when, so Compass offers to add it to `.gitignore`.
 

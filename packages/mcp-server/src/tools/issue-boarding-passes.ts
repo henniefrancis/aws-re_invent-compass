@@ -51,7 +51,7 @@ export async function issueBoardingPasses(
   const approved = await humanConfirms(
     ctx,
     confirmMessage(
-      'Issue boarding passes for these sessions? This creates real passes on the Compass pass service.',
+      'Issue Boarding Passes for these sessions? This creates real passes on the Compass pass service.',
       reserved,
     ),
   );
@@ -75,7 +75,7 @@ export async function issueBoardingPasses(
       serials: issued.map((i) => i.serialNumber),
     },
     text: [
-      `Issued ${issued.length} boarding passes.`,
+      `Issued ${issued.length} Boarding Passes.`,
       PASS_DISCLAIMER,
       ...(refused.length > 0 ? ['Some sessions were refused because they are not reserved.'] : []),
       labelUntrusted('catalog', { issued: reserved, refused }),

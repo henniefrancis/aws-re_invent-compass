@@ -20,7 +20,7 @@ export async function forgetMe(
   await ensureSignedIn(ctx);
   const approved = await humanConfirms(
     ctx,
-    'Delete everything Compass holds about you? This voids your boarding passes and removes your local Compass data.\nGo ahead?',
+    'Delete everything Compass holds about you? This voids your Boarding Passes and removes your local Compass data.\nGo ahead?',
   );
   if (!approved) {
     return {
@@ -43,6 +43,6 @@ export async function forgetMe(
   return {
     ok: true,
     structured: { forgotten: true },
-    text: `Your boarding passes were voided and your local Compass data was deleted. ${PHONE_NOTE}`,
+    text: `Your Boarding Passes were voided and your local Compass data was deleted. ${PHONE_NOTE}`,
   };
 }

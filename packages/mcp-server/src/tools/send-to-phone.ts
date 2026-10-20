@@ -37,7 +37,7 @@ export async function sendToPhone(
   const shown = [...new Set(chosen.map((r) => r.sessionCode))];
   const approved = await humanConfirms(
     ctx,
-    `Create a 15-minute link that puts ${chosen.length} boarding passes (${shown.join(', ')}) on your phone? This creates a real link.\nGo ahead?`,
+    `Create a 15-minute link that puts ${chosen.length} Boarding Passes (${shown.join(', ')}) on your phone? This creates a real link.\nGo ahead?`,
   );
   if (!approved) {
     return {

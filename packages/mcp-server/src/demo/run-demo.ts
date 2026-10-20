@@ -155,12 +155,12 @@ const STEPS: Step[] = [
     },
   },
   {
-    title: 'Issue boarding passes',
+    title: 'Issue Boarding Passes',
     run: async (api) => {
       const { output } = await api.call('issue_boarding_passes', { sessionIds: [aRepeat, b] });
-      expect(output.issued.length === 2, 'The boarding passes were not issued.');
+      expect(output.issued.length === 2, 'The Boarding Passes were not issued.');
       return [
-        `Compass issued ${output.issued.length} boarding passes through the in-process pass service. They are unofficial; your badge is your ticket.`,
+        `Compass issued ${output.issued.length} Boarding Passes through the in-process pass service. They are unofficial; your badge is your ticket.`,
       ];
     },
   },

@@ -879,3 +879,7 @@ Each entry names the task that introduced it. Where this section and the text ab
 ## Post-SP3 change: long rooms (20 October 2026, task 11)
 
 The Pass_Builder used to send an empty room whenever the normalised room was over the 40-character PassFields limit. It now drops comma-separated parts from the end until the room fits (the level and the room itself come first in the catalog, the content hub and theatre last), and only an over-long single part falls back to empty.
+
+## Post-SP3 change: Boarding Pass name (20 October 2026, task 12)
+
+Owner decision: the Apple pass becomes an event ticket under the hood (pass-service task 42), but users still read "Boarding Pass", written as a name with capitals: "Boarding Pass" and "Boarding Passes". The wording changes wherever users read it: the MCP tool descriptions and titles, confirmations, replies, error messages, the post-write hook, the demo, the week spec's last task, the Power and the package READMEs. The compass-power design and requirements quote some of these sentences and follow. Identifiers stay as they are (`issue_boarding_passes`, this spec folder, the `/board` route, code names), and search keywords stay lower case. The site's demo and board pages and the Google pass title are changed by the streams that own them.

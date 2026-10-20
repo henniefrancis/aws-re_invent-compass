@@ -129,7 +129,7 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 
 1. THE Week_Spec `requirements.md` SHALL state the attendee's goals as EARS statements, including the 10-minute boarding rule and the meal layover goal.
 2. THE Week_Spec `design.md` SHALL show the itinerary by day with, for each pick, its session code, catalog title, type, level, gate (venue and room), times, reason, the connection from the previous commitment (classification, walking minutes and reason), the day's layovers and the day's energy result or count-only result.
-3. THE Week_Spec `tasks.md` SHALL contain exactly one task per API action, each naming the Compass Tool that performs it, and a final task "Issue boarding passes" that names `issue_boarding_passes`.
+3. THE Week_Spec `tasks.md` SHALL contain exactly one task per API action, each naming the Compass Tool that performs it, and a final task "Issue Boarding Passes" that names `issue_boarding_passes`.
 4. THE Week_Spec SHALL render every catalog-derived string as a single line of quoted data, with control characters and line breaks removed, Markdown control characters escaped, and em dashes and en dashes replaced by hyphens.
 5. THE Week_Spec SHALL include from the scan only service display names and Depth, never file names, paths or contents.
 6. THE Week_Spec SHALL state the event timezone once per view and show every time in event local time.

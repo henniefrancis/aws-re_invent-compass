@@ -1,7 +1,7 @@
 ---
 name: 'reinvent-compass'
 displayName: 'Reinvent Compass'
-description: 'Plan your AWS re:Invent week from your own code, book it safely with guardrails, and get unofficial boarding passes on your phone. Independent community project, not affiliated with AWS.'
+description: 'Plan your AWS re:Invent week from your own code, book it safely with guardrails, and get unofficial Boarding Passes on your phone. Independent community project, not affiliated with AWS.'
 keywords:
   ['reinvent', 're:Invent', 'conference', 'sessions', 'schedule', 'boarding pass', 'first-timer']
 author: 'Hennie Francis'
@@ -20,7 +20,7 @@ This power is the same power that `plugin.json` describes. `plugin.json`, `mcp.j
 - Plans a week of sessions and writes the plan as a Kiro spec in your workspace, after you confirm the folder.
 - Checks every booking against your real schedule before it is made, and blocks clashes.
 - Swaps a booking for its repeat safely: it reserves the repeat first and cancels the original after.
-- Issues unofficial boarding passes and hands them to your phone with a 15 minute link and QR code.
+- Issues unofficial Boarding Passes and hands them to your phone with a 15 minute link and QR code.
 
 ## Skills
 

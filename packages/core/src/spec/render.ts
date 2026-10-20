@@ -270,7 +270,7 @@ function renderTasks(input: WeekSpecInput): string {
       `Add the layover on ${formatLocal(layover.start, zone)} to ${formatLocal(layover.end, zone)} with \`add_layover\``,
     );
   }
-  actions.push('Issue boarding passes with `issue_boarding_passes`');
+  actions.push('Issue Boarding Passes with `issue_boarding_passes`');
   const lines = [
     '# Tasks: my re:Invent week',
     '',

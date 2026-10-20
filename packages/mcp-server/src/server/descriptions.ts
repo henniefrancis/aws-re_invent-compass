@@ -8,15 +8,15 @@ import type { McpToolName } from '@compass/contracts';
 export const SCHEDULE_WRITE_SENTENCE =
   'This changes your real re:Invent schedule. Compass checks it first and asks you to approve it. Compass is read-only unless the attendee turned writes on; then it only says what it would do.';
 
-/** The sentence for tools that create boarding passes. */
-export const ISSUE_SENTENCE = 'This creates real boarding passes on the Compass pass service.';
+/** The sentence for tools that create Boarding Passes. */
+export const ISSUE_SENTENCE = 'This creates real Boarding Passes on the Compass pass service.';
 
 /** The sentence for the phone hand-off. */
 export const HANDOFF_SENTENCE = 'This creates a real 15-minute link to your passes.';
 
 /** The sentence for the pass sync, which can void passes. */
 export const SYNC_SENTENCE =
-  'This can void boarding passes on the Compass pass service that no longer match your schedule.';
+  'This can void Boarding Passes on the Compass pass service that no longer match your schedule.';
 
 /** The sentence for forget_me. */
 export const FORGET_SENTENCE = 'This really deletes your passes and local Compass data.';
@@ -41,9 +41,9 @@ export const DESCRIPTIONS: Record<McpToolName, string> = {
   add_standby: `Add one to ten sessions to your standby list as backups. ${SCHEDULE_WRITE_SENTENCE}`,
   remove_standby: `Remove one session from your standby list. ${SCHEDULE_WRITE_SENTENCE}`,
   add_layover: `Create, change or delete a layover, a block of your own time for a meal or rest (action create, update or delete). ${SCHEDULE_WRITE_SENTENCE}`,
-  issue_boarding_passes: `Issue unofficial boarding passes for your reserved sessions. ${ISSUE_SENTENCE}`,
+  issue_boarding_passes: `Issue unofficial Boarding Passes for your reserved sessions. ${ISSUE_SENTENCE}`,
   send_to_phone: `Open a short-lived link and QR code that puts your passes on your phone. ${HANDOFF_SENTENCE}`,
-  sync_passes: `Bring your boarding passes in line with your confirmed schedule. ${SYNC_SENTENCE}`,
+  sync_passes: `Bring your Boarding Passes in line with your confirmed schedule. ${SYNC_SENTENCE}`,
   export_calendar:
     'Build a calendar file. With no input it reads your live schedule; pass commitments only to export a proposed itinerary. Nothing is booked.',
   forget_me: `Delete everything Compass holds about you. ${FORGET_SENTENCE}`,
@@ -64,9 +64,9 @@ export const TITLES: Record<McpToolName, string> = {
   add_standby: 'Add standby',
   remove_standby: 'Remove standby',
   add_layover: 'Add a layover',
-  issue_boarding_passes: 'Issue boarding passes',
+  issue_boarding_passes: 'Issue Boarding Passes',
   send_to_phone: 'Send passes to my phone',
-  sync_passes: 'Sync boarding passes',
+  sync_passes: 'Sync Boarding Passes',
   export_calendar: 'Export a calendar',
   forget_me: 'Forget me',
 };

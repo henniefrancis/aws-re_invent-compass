@@ -199,6 +199,10 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Tests: a long four-part room keeps its leading parts within 40 characters, a room that fits is unchanged, a single over-long part gives the empty room, and the fields still pass the PassFields schema
   - [x] 11.2 Commit after the full gate passes, scoped `boarding-passes`
 
+- [x] 12. Write "Boarding Pass" as the product name wherever users read it (owner decision of 20 October, design "Post-SP3 change: Boarding Pass name")
+  - [x] 12.1 Replace "boarding pass" and "boarding passes" in user-facing text with "Boarding Pass" and "Boarding Passes": the MCP tool descriptions and titles, confirmations, replies, error messages, the post-write hook and the demo (`packages/mcp-server/src`), the spec renderer's next actions (`packages/core/src/spec/render.ts`), the Power (`power/POWER.md`, `power/plugin.json`, `power/skills/plan-my-week/SKILL.md`) and the package READMEs (`packages/mcp-server/README.md`, `packages/pass-service/README.md`). Identifiers stay: the `issue_boarding_passes` tool, this spec folder, the `/board` route and code names. Fence exception (like task 10): these files are outside `packages/core/src/passes/**`, because the wording follows the pass across the product
+  - [x] 12.2 Tests that assert the old wording follow; commit after the full gate passes, scoped `boarding-passes`
+
 ## Notes
 
 - Tasks are executed sequentially in numeric order, one at a time, directly in this chat session, never delegated to a subagent, with files saved after each step.

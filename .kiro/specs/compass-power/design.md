@@ -488,7 +488,7 @@ function formatLocal(instant: string, timezone: string): string; // 'Tue 1 Dec 1
 
 - `requirements.md`: an introduction, then EARS goals, for example "WHEN a reserved session is on my itinerary, I SHALL be at its gate before boarding closes (start minus 10 minutes)", "WHILE a day has sessions over lunch, my itinerary SHALL keep a 30 minute layover between 11:30 and 14:00", and one goal per scanned service with its depth and level.
 - `design.md`: "All times are in <timezone>." once, then one section per day: picks in time order with code, quoted title, type, level, gate (or "Venue not published"), times, boarding closes, reason, the connection into it, then layovers and the energy line.
-- `tasks.md`: numbered checkbox tasks, one per API action: "Reserve DAT302 with `reserve_with_guardrails`", "Add DAT302-R to standby with `add_standby`", "Add the lunch layover on Tue 1 Dec 12:00 to 12:30 with `add_layover`"; walk-up picks get no task; the final task is "Issue boarding passes with `issue_boarding_passes`".
+- `tasks.md`: numbered checkbox tasks, one per API action: "Reserve DAT302 with `reserve_with_guardrails`", "Add DAT302-R to standby with `add_standby`", "Add the lunch layover on Tue 1 Dec 12:00 to 12:30 with `add_layover`"; walk-up picks get no task; the final task is "Issue Boarding Passes with `issue_boarding_passes`".
 - Catalog strings pass through `sanitiseCatalogText`: control characters and line breaks become spaces, runs of spaces collapse, `\`, `` ` ``, `*`, `_`, `[`, `]`, `<`, `>`, `#` and `|` are backslash-escaped, U+2013 and U+2014 become `-`, and the value is wrapped in double quotes. A title therefore can never start a heading, a task or a link.
 
 ### Component 4: Spec writer (`packages/core/src/spec/write.ts`, `diff.ts`, `gitignore-entry.ts`)
@@ -566,7 +566,7 @@ function runStdioServer(runtime: Runtime): Promise<void>;
 
 `createCompassServer` iterates `Object.keys(mcpTools)` and registers each with `inputSchema: mcpTools[k].input`, `outputSchema: mcpTools[k].output` and the `TOOL_SPECS` entry. A registry test asserts the two key sets are equal. `results.ts` parses every success `structured` with `mcpTools[k].output` before returning (a failure is a bug and returns a fixed internal error). `elicit` is defined only when `getClientCapabilities()?.elicitation` is present.
 
-Descriptions start with the airline-plain purpose; schedule write tools end with "This changes your real re:Invent schedule. Compass checks it first and asks you to approve it."; `issue_boarding_passes` says "This creates real boarding passes on the Compass pass service."; `send_to_phone` says "This creates a real 15-minute link to your passes."; `forget_me` says "This really deletes your passes and local Compass data."
+Descriptions start with the airline-plain purpose; schedule write tools end with "This changes your real re:Invent schedule. Compass checks it first and asks you to approve it."; `issue_boarding_passes` says "This creates real Boarding Passes on the Compass pass service."; `send_to_phone` says "This creates a real 15-minute link to your passes."; `forget_me` says "This really deletes your passes and local Compass data."
 
 Initialisation reads nothing: the catalog, schedule and tokens are loaded on the first tool call that needs them (cold start budget).
 
@@ -876,7 +876,7 @@ function readStdin(
 | `issue_boarding_passes`, `send_to_phone`, `forget_me`                                                    | exit 0, no output                                                                                                                        | exit 0, no output |
 | malformed input, unknown tool, missing or stale (over 15 minutes) snapshot, missing catalog, invalid ids | exit 0, stdout note: "Compass could not check this call here. The Compass server still checks it."                                       | exit 0, no output |
 
-The reminder is "Your schedule changed. Run sync_passes so your boarding passes match it." The guardrail uses the same `RulesPort.checkReservation` path as the server, the snapshot's schedule and window, and the catalog cache (S1 `readCache`; simulated mode reads the synthetic catalog fixtures). The hook makes no network request and no write. `exit-policy.ts` is the only place that maps a decision kind to an exit code, so SP1 changes one table.
+The reminder is "Your schedule changed. Run sync_passes so your Boarding Passes match it." The guardrail uses the same `RulesPort.checkReservation` path as the server, the snapshot's schedule and window, and the catalog cache (S1 `readCache`; simulated mode reads the synthetic catalog fixtures). The hook makes no network request and no write. `exit-policy.ts` is the only place that maps a decision kind to an exit code, so SP1 changes one table.
 
 ### Component 14: Power (`power/`)
 
@@ -1218,7 +1218,7 @@ _For any_ sequence of calls to the Read_Tools, `plan_week` and `check_itinerary`
 
 ### Property 20: Spec tasks match the API actions, ending with issue
 
-_For any_ plan result, `tasks.md` holds exactly one reserve task per reservable pick, one standby task per standby, one layover task per layover and no task for walk-up picks, each naming its Compass tool, and its last task is "Issue boarding passes with `issue_boarding_passes`".
+_For any_ plan result, `tasks.md` holds exactly one reserve task per reservable pick, one standby task per standby, one layover task per layover and no task for walk-up picks, each naming its Compass tool, and its last task is "Issue Boarding Passes with `issue_boarding_passes`".
 
 **Validates: Requirements 6.3**
 
