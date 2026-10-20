@@ -312,6 +312,10 @@ The build order lays the shared foundation first (version pins, provider, tags, 
   - [x] 22.1 Default `monthly_budget_usd` 60 and a correct description: dev and prod together cost about USD 38 to 40 a month (WAF is USD 16 to 17 per environment since ADR-021 was not adopted), and October also carries the USD 58 domain registration, so a USD 40 budget fired its 100 percent alert every month and hid real cost run-ups. The example tfvars and the native test follow; the owner sets 60 in his own terraform.tfvars and re-runs the bootstrap
   - [x] 22.2 Tests and commit scoped `infra`
 
+- [x] 23. Check the AWS session before the release builds or applies (design item 41)
+  - [x] 23.1 In `scripts/release.sh`, check `aws sts get-caller-identity` before the build, and after `terraform init` check with `aws s3api head-bucket` (which needs `s3:ListBucket`, like the sync) that the session can reach the site bucket from the last apply; a first deploy has no bucket yet and skips the bucket check. The message names `AWS_PROFILE` and `aws sso login` and says nothing was applied; it prints no bucket name or account id
+  - [x] 23.2 Static test for the two checks and their order; update the release runbook; shellcheck, the static tests and commit scoped `infra`
+
 ## Notes
 
 - The implementation language is Terraform/HCL, Bash, and Node.js (`.mjs`), fixed by the design and tech steering (Terraform only, no CDK/CloudFormation/SAM).

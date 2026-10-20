@@ -238,9 +238,31 @@ test('release.sh strips carriage returns from the backend file and pins the regi
     'aws sts get-caller-identity',
     'aws s3 sync',
     'aws cloudfront create-invalidation',
+    'aws s3api head-bucket',
   ]) {
     assert.match(source, new RegExp(`${command} --region "\\$\\{AWS_REGION\\}"`));
   }
+});
+
+test('release.sh checks the AWS session before the build and the bucket access before the plan', () => {
+  const source = readOwned('scripts/release.sh');
+  const session = source.indexOf('aws sts get-caller-identity');
+  const build = source.indexOf('bash -c "${lambda_build_cmd}"');
+  const init = source.indexOf('terraform init -input=false');
+  const bucketCheck = source.indexOf('aws s3api head-bucket');
+  const plan = source.indexOf('terraform plan -input=false');
+  assert.ok(session > 0 && build > session);
+  assert.ok(bucketCheck > init && plan > bucketCheck);
+  assert.match(
+    source,
+    /previous_bucket="\$\(terraform output -raw site_bucket_name 2>\/dev\/null \|\| true\)"\nif \[ -n "\$\{previous_bucket\}" \]; then/,
+  );
+  assert.match(
+    source,
+    /--bucket "\$\{previous_bucket\}" >\/dev\/null 2>&1 \\\n\s+\|\| fail "[^"]*AWS_PROFILE[^"]*nothing was applied"/,
+  );
+  // Checked again before the sync, because an SSO session can expire mid-run.
+  assert.ok(source.indexOf('aws sts get-caller-identity', session + 1) > plan);
 });
 
 test('bootstrap.sh exits 0 only after a clean apply and non-zero otherwise', () => {

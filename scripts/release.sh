@@ -139,6 +139,13 @@ for tool in terraform jq npm aws curl; do
   command -v "${tool}" >/dev/null 2>&1 || fail "${tool} is not installed"
 done
 
+# ---- AWS session: checked before anything is built or applied --------------
+
+# The site sync and the invalidation run under your own AWS session. A shell
+# whose default identity belongs to another account used to apply and only then
+# fail at the sync, so the session is checked here and again after init.
+aws sts get-caller-identity --region "${AWS_REGION}" >/dev/null 2>&1 || fail "no AWS session; run aws sso login first"
+
 # ---- build: Lambda zips and the site -------------------------------------
 
 lambda_build_cmd="${COMPASS_LAMBDA_BUILD_CMD:-npm run build:lambda --workspace @compass/pass-service}"
@@ -166,6 +173,15 @@ service_version="$(git -C "${repo_root}" describe --tags --always --dirty 2>/dev
 
 cd "${env_dir}"
 terraform init -input=false || fail "terraform init failed"
+
+# The session must reach the site bucket of the last apply. head-bucket needs
+# s3:ListBucket, as the sync does, so a session in another account gets 403 here,
+# before the plan. A first deploy has no bucket output yet and skips this.
+previous_bucket="$(terraform output -raw site_bucket_name 2>/dev/null || true)"
+if [ -n "${previous_bucket}" ]; then
+  aws s3api head-bucket --region "${AWS_REGION}" --bucket "${previous_bucket}" >/dev/null 2>&1 \
+    || fail "your AWS session cannot reach the ${env_name} site bucket (another account?); set AWS_PROFILE to your Compass profile, run aws sso login and try again; nothing was applied"
+fi
 
 echo "planning ${env_name}"
 # The saved plan file is written to infra/envs/<env>/tfplan. It is git-ignored,
