@@ -31,7 +31,7 @@ workspace_variables = {
 
 # Budget alerts for the whole account. Private: never commit the real address.
 alarm_email        = "REPLACE_WITH_ALARM_EMAIL_ADDRESS"
-monthly_budget_usd = 40
+monthly_budget_usd = 60
 
 # The existing Route 53 hosted zone of the custom domain (public, not secret).
 hosted_zone_name = "reinvent-compass.vegas"

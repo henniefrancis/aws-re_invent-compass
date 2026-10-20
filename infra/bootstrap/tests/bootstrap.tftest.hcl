@@ -384,8 +384,8 @@ run "one_account_budget_lives_in_the_bootstrap" {
   command = plan
 
   assert {
-    condition     = aws_budgets_budget.monthly.time_unit == "MONTHLY" && aws_budgets_budget.monthly.limit_unit == "USD" && aws_budgets_budget.monthly.budget_type == "COST" && aws_budgets_budget.monthly.limit_amount == "40"
-    error_message = "The account budget must be a monthly cost budget of 40 USD by default."
+    condition     = aws_budgets_budget.monthly.time_unit == "MONTHLY" && aws_budgets_budget.monthly.limit_unit == "USD" && aws_budgets_budget.monthly.budget_type == "COST" && aws_budgets_budget.monthly.limit_amount == "60"
+    error_message = "The account budget must be a monthly cost budget of 60 USD by default."
   }
 
   assert {

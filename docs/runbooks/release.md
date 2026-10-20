@@ -69,5 +69,5 @@ The script ends with `health check passed (HTTP 200)` and exit status 0. A secon
 - A plan refusal names the resource or type. Fix the cause; never edit the script to get past it.
 - An `AccessDenied` from the apply phase means a statement in the apply role policy in `infra/bootstrap` is too narrow. Extend only that one statement, apply the bootstrap again, and re-review the diff before you run the release again. Never widen a statement to a wildcard to get past it, and never let an IAM write statement name anything but the two Lambda roles. Expect this on the first dev apply: the policy has not been exercised against AWS.
 - The alarm topic subscription must be confirmed once with the link AWS emails to the alarm address.
-- A customer managed KMS key for the alarm topic costs about USD 1 a month, which counts against the USD 40 account budget.
+- A customer managed KMS key for the alarm topic costs about USD 1 a month, which counts against the USD 60 account budget.
 - To roll back, see `rollback.md`. For alarms and the switches, see `alarms.md`. To remove dev after 1 November, see `teardown.md`.

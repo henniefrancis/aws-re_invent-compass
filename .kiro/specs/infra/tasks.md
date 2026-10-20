@@ -308,6 +308,10 @@ The build order lays the shared foundation first (version pins, provider, tags, 
   - [x] 21.2 Native tests: the list equals the contract's list and includes `*/*`; the trigger is the hash of the body plus the list; replace the two assertions that forbade `binary_media_types`. Run fmt, validate, the module tests, `infra/tests` and the static tests
   - [x] 21.3 Commit with scope `infra`; the owner redeploys dev with `scripts/release.sh dev` and checks that `get-rest-api` lists `*/*`
 
+- [x] 22. Raise the account budget to USD 60 (TAM review M4 of 20 October, design item 40)
+  - [x] 22.1 Default `monthly_budget_usd` 60 and a correct description: dev and prod together cost about USD 38 to 40 a month (WAF is USD 16 to 17 per environment since ADR-021 was not adopted), and October also carries the USD 58 domain registration, so a USD 40 budget fired its 100 percent alert every month and hid real cost run-ups. The example tfvars and the native test follow; the owner sets 60 in his own terraform.tfvars and re-runs the bootstrap
+  - [x] 22.2 Tests and commit scoped `infra`
+
 ## Notes
 
 - The implementation language is Terraform/HCL, Bash, and Node.js (`.mjs`), fixed by the design and tech steering (Terraform only, no CDK/CloudFormation/SAM).

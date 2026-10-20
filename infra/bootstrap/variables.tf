@@ -69,9 +69,9 @@ variable "alarm_email" {
 }
 
 variable "monthly_budget_usd" {
-  description = "Monthly cost budget for the whole account, in USD. Dev and prod together cost about USD 33 a month, so the default leaves headroom; alerts fire at 50, 80 and 100 percent of actual spend."
+  description = "Monthly cost budget for the whole account, in USD. Dev and prod together cost about USD 38 to 40 a month (WAF is USD 16 to 17 per environment) and the domain registration adds USD 58 in the month it renews, so the default leaves headroom; alerts fire at 50, 80 and 100 percent of actual spend."
   type        = number
-  default     = 40
+  default     = 60
 
   validation {
     condition     = var.monthly_budget_usd > 0
