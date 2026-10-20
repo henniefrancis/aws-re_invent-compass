@@ -172,9 +172,13 @@ describe('live composition', () => {
     const simulated = await createRuntime(env.environment, { COMPASS_MODE: 'simulated' });
     expect(simulated.github).toBeUndefined();
     const plain = await testEnvironment({ store: createTokenStore(memoryKeyring()), githubStore });
-    expect((await createRuntime(plain.environment, {})).github?.status()).toEqual({
-      state: 'notConfigured',
-    });
+    const built = await createRuntime(plain.environment, {});
+    expect(built.github?.status()).toEqual({ state: 'connected' });
+    expect(built.github?.installUrl).toBe(
+      'https://github.com/apps/re-invent-compass-unofficial/installations/new',
+    );
+    const unset = await createRuntime(plain.environment, { COMPASS_GITHUB_CLIENT_ID: '' });
+    expect(unset.github?.status()).toEqual({ state: 'notConfigured' });
     expect(plain.stderr.join('')).not.toContain(GITHUB_OVERRIDE_NOTICE);
     expect(guard.attempts).toEqual([]);
   });

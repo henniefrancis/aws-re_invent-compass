@@ -6,17 +6,19 @@ import {
 } from '../../src/config/github.js';
 
 describe('the GitHub App settings', () => {
-  test('the build ships no secret: only a public client ID and slug, empty until the owner registers the app', () => {
-    expect(GITHUB_APP_CLIENT_ID).toMatch(/^[A-Za-z0-9.]{0,64}$/);
-    expect(GITHUB_APP_SLUG).toMatch(/^[a-z0-9-]{0,63}$/);
+  test('the build ships no secret: only the public client ID and slug of the registered app', () => {
+    expect(GITHUB_APP_CLIENT_ID).toBe('Iv23liKdFb0y0U0QXj6N');
+    expect(GITHUB_APP_SLUG).toBe('re-invent-compass-unofficial');
   });
 
-  test('with no client ID GitHub is not set up', () => {
-    expect(readGitHubAppConfig({})).toEqual(
-      GITHUB_APP_CLIENT_ID === ''
-        ? undefined
-        : expect.objectContaining({ clientId: GITHUB_APP_CLIENT_ID }),
-    );
+  test('with no environment the build app is used, with its install page', () => {
+    expect(readGitHubAppConfig({})).toEqual({
+      clientId: 'Iv23liKdFb0y0U0QXj6N',
+      installUrl: 'https://github.com/apps/re-invent-compass-unofficial/installations/new',
+    });
+  });
+
+  test('with an empty or invalid client ID GitHub is not set up', () => {
     expect(readGitHubAppConfig({ COMPASS_GITHUB_CLIENT_ID: '' })).toBeUndefined();
     expect(readGitHubAppConfig({ COMPASS_GITHUB_CLIENT_ID: 'bad id!' })).toBeUndefined();
   });
@@ -34,9 +36,10 @@ describe('the GitHub App settings', () => {
   });
 
   test('a client ID with the built-in slug', () => {
-    expect(readGitHubAppConfig({ COMPASS_GITHUB_CLIENT_ID: 'Iv23liAbc' })?.clientId).toBe(
-      'Iv23liAbc',
-    );
+    expect(readGitHubAppConfig({ COMPASS_GITHUB_CLIENT_ID: 'Iv23liAbc' })).toEqual({
+      clientId: 'Iv23liAbc',
+      installUrl: 'https://github.com/apps/re-invent-compass-unofficial/installations/new',
+    });
   });
 
   test('a slug that is not a plain GitHub slug gives no install link', () => {

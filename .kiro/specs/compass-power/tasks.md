@@ -585,6 +585,13 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 
 - [x] 46. Commit tasks 41 to 45 after the full gate passes (100 percent coverage, eslint, `tsc -b`, prettier, `npm run check:dash`, the site tests and build), scoped `compass-power`, with foundation-contracts task 20 in the same commit. Do not push
 
+- [x] 47. Wire in the registered Compass GitHub App (owner action of 20 October, design "GitHub, read-only")
+  - The owner registered the public app "re:Invent Compass (unofficial)" on his personal account: Contents: read and Metadata: read only, no account or organisation permissions, Device Flow on, expiring user tokens on, no webhook, no callback URL, installable on any account, no client secret and no private key
+  - Set `GITHUB_APP_CLIENT_ID` to `Iv23liKdFb0y0U0QXj6N` and `GITHUB_APP_SLUG` to `re-invent-compass-unofficial` in `packages/mcp-server/src/config/github.ts`; both are public. Update the comment and the tests that assumed the build constants were empty
+  - Tests: the build ships the client ID and slug, with no environment the build app is used with its install link, the environment still replaces them; 100 percent coverage
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage), then commit scoped `compass-power` on develop
+  - _Requirements: P2.8_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.
