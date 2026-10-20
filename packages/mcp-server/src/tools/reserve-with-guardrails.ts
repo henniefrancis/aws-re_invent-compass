@@ -45,6 +45,26 @@ export async function reserveWithGuardrails(
   }
   const { sessions } = targets;
 
+  // A session that is not reservable needs no reservation (task 38): say so before anything else.
+  const walkUp = sessions.filter((session) => !session.isReservable);
+  if (walkUp.length > 0) {
+    return {
+      ok: true,
+      structured: {
+        verdict: {
+          decision: 'block',
+          reasons: walkUp.map((session) => `${session.code} is not reservable.`),
+        },
+      },
+      text: [
+        'Nothing was reserved. These sessions are not reservable, so they need no reservation: walk up early, or add them to your standby list to keep them in your plan.',
+        labelUntrusted('catalog', {
+          notReservable: walkUp.map((session) => ({ code: session.code, title: session.title })),
+        }),
+      ].join('\n'),
+    };
+  }
+
   const { schedule, window } = await readFreshSchedule(ctx);
   const confirmed = confirmedCommitments(schedule, catalog);
   const guard = await guardBatch(sessions, confirmed, rules, catalog);

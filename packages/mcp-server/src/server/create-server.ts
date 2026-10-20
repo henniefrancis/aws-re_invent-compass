@@ -22,6 +22,7 @@ import type { Mutex } from './mutex.js';
 import { registrationSchema } from './output-schema.js';
 import { failureResult, toCallToolResult } from './results.js';
 import { TOOL_SPECS, annotationsFor } from './tool-registry.js';
+import { resolveSessionCodes } from './session-codes.js';
 import type { ElicitQuestion, ToolContext } from './types.js';
 
 function register<K extends McpToolName>(
@@ -76,7 +77,11 @@ function register<K extends McpToolName>(
         };
       }
       try {
-        const input = mcpTools[name].input.parse(args) as McpToolInput<K>;
+        // Codes such as SVS339 are accepted wherever a session id is (task 38).
+        const input = await resolveSessionCodes(
+          mcpTools[name].input.parse(args) as McpToolInput<K>,
+          runtime.events,
+        );
         // Write tools run one at a time; each re-reads the schedule when it gets its turn.
         const outcome =
           spec.class === 'write'

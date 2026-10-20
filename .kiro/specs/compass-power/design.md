@@ -1579,3 +1579,9 @@ Owner decisions: Compass reads the attendee's real Builder ID data (catalog, ses
 - **Clear replies.** The five schedule write tools check before the confirmation question and answer with the action they would have taken, that nothing changed, and that the attendee can make the change in the re:Invent app. They still run the guardrail first, so the checks (clashes, walks, the 10-minute release) work on real data.
 - **Passes stay on.** Issue, send-to-phone and sync write only to Compass's own pass service and the local snapshot, never to the Events API (owner decision). `forget_me` deletes local data only.
 - The official `awsevents` write tools are already blocked by the pre-write hook in every mode.
+
+## Post-SP3 change: codes, walk-up sessions, no write invitations (20 October 2026, task 38)
+
+- **Codes as ids.** Attendees and agents use session codes such as SVS339. Before a tool with `sessionId` or `sessionIds` runs, the server replaces a value that is not a catalog id with the id of the one session whose code matches it, ignoring letter case. An unknown or shared code is left as given, so the tool still reports it as unknown. With no cached catalog the input is left alone.
+- **Walk-up sessions.** A session with `isReservable: false` needs no reservation. `reserve_with_guardrails` blocks it first, with the reason, and suggests walking up or adding it to the standby list.
+- **No write invitations.** The read-only reply says to make the change in the re:Invent app and no longer names `COMPASS_ALLOW_WRITES`; the setting is documented for the attendee only. The Power skill forbids the agent to change Compass's settings or offer to.

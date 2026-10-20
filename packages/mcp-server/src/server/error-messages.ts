@@ -16,7 +16,7 @@ export const INTERNAL_MESSAGE =
 
 /** The message when the read-only default stops a write (compass-power task 37). */
 export const READ_ONLY_MESSAGE =
-  'Compass is read-only, so nothing in your re:Invent schedule changed. Make this change yourself in the re:Invent app, or set COMPASS_ALLOW_WRITES=1 to let Compass do it.';
+  'Compass is read-only, so nothing in your re:Invent schedule changed. Make this change yourself in the re:Invent app.';
 
 const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, string> = {
   FolderNotFound: 'That folder could not be found.',

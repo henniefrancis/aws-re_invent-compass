@@ -535,6 +535,12 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 37.3 The schedule write tools (`reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`) check first and, when read-only, ask nothing and reply with what they would have done, that nothing changed, and how to make the change in the re:Invent app. The pass tools and `forget_me` still work: passes live on Compass's own pass service (owner decision)
   - [x] 37.4 Tests: live mode is read-only by default, every write refuses and makes no call, each schedule tool asks nothing and says nothing changed, `COMPASS_ALLOW_WRITES=1` turns writes on, simulated mode is unaffected. Documented in the MCP server README and the Power. Commit scoped `compass-power`
 
+- [x] 38. Fixes from the first read-only try in Kiro (20 October, design "Post-SP3 change: codes, walk-up sessions, no write invitations")
+  - [x] 38.1 Accept a session code wherever a tool takes `sessionId` or `sessionIds`: the server maps a value that is not a catalog id but is exactly one session's code (any letter case) to that session's id before the tool runs. Why: Kiro called `reserve_with_guardrails` with "SVS339" and got "not in the catalog", and a catalog refresh did not help
+  - [x] 38.2 `reserve_with_guardrails` refuses a session that is not reservable before anything else, with a block verdict that says it needs no reservation (walk up, or keep it on the standby list). Why: SVS339 has `isReservable: false` and Compass offered to reserve it
+  - [x] 38.3 The read-only reply only points to the re:Invent app and no longer names the setting, and the Power skill tells the agent never to change Compass's settings or offer to. Why: Kiro offered to edit mcp.json to turn writes on, which is the accident read-only mode exists to prevent
+  - [x] 38.4 Tests and commit after the full gate passes, scoped `compass-power`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.
