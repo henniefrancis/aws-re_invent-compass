@@ -21,8 +21,11 @@ import {
   buildSamplePass,
   clampWalk,
   fitTitle,
+  shortRoom,
 } from '../../src/lib/demo/sample-pass';
-import { formatInZone } from '../../src/lib/time/time-format';
+import { PASS_COLOURS } from '../../src/lib/demo/pass-layout';
+import { contrastRatio } from '../../src/lib/design/contrast';
+import { formatDateInZone, formatInZone24 } from '../../src/lib/time/time-format';
 import { createFakeEngine } from '../doubles/rules-double';
 import { VENUE_DATA, heldIds, makeDeps, run, runStates, richWeek } from '../support/demo-harness';
 
@@ -94,15 +97,20 @@ describe('buildSamplePass examples', () => {
   test('shows every field of Requirement 11.2 for the first session of a day', () => {
     const pass = buildSamplePass('syn-003', starter, deps);
     expect(pass).toMatchObject({
-      sessionCode: 'AIM321',
+      session: 'AIM321',
       title: 'Identity and access: Deep dive',
-      gate: 'MGM Grand, Room 118',
-      seatReleased: 'Seat released at 11:20 AM',
+      terminal: 'MGM Grand',
+      gate: 'Room 118',
+      boardingCloses: '11:20',
+      boardingNote: null,
       walkFromPrevious: null,
       nextConnection: 'BWP213 at 1:00 PM, 10 min walk',
       label: SAMPLE_LABEL,
       disclaimer: PASS_DISCLAIMER,
     });
+    expect(pass?.date).toMatch(/^\d{1,2} [A-Z][a-z]{2} 2026 \| \d{2}:\d{2}-\d{2}:\d{2}$/);
+    expect(pass?.accessibleName).toContain('Terminal: MGM Grand. Gate: Room 118.');
+    expect(pass?.accessibleName).toContain('Boarding closes: 11:20.');
     expect(pass?.accessibleName).toContain('Walk from the previous session: not known.');
     expect(pass?.accessibleName).toContain('Next connection: BWP213 at 1:00 PM, 10 min walk.');
     expect(pass?.accessibleName).toContain(
@@ -130,13 +138,16 @@ describe('buildSamplePass examples', () => {
     >;
     expect(Object.keys(pass).sort()).toEqual([
       'accessibleName',
+      'boardingCloses',
+      'boardingNote',
+      'date',
       'disclaimer',
       'gate',
       'label',
       'nextConnection',
       'passFields',
-      'seatReleased',
-      'sessionCode',
+      'session',
+      'terminal',
       'title',
       'walkFromPrevious',
     ]);
@@ -146,7 +157,8 @@ describe('buildSamplePass examples', () => {
   test('a session with no venue shows "Venue not published" and an empty venue in the fields', () => {
     const state = run([{ type: 'add', sessionId: 'syn-008' }], deps);
     const pass = buildSamplePass('syn-008', state, deps);
-    expect(pass?.gate).toBe('Venue not published');
+    expect(pass?.terminal).toBe('Venue not published');
+    expect(pass?.gate).toBe('Room not published');
     expect(pass?.passFields.venue).toBe('');
     expect(pass?.passFields.room).toBe('');
     expect(schema.safeParse(pass?.passFields).success).toBe(true);
@@ -193,6 +205,33 @@ describe('buildSamplePass examples', () => {
     const after = neighboursOf('syn-047', state, deps).next;
     expect(after?.sessionCode).toBeNull();
     expect(after?.gate).toBe('Venue not published');
+  });
+});
+
+describe('shortRoom and the label colour', () => {
+  test('the gate is the part of the room after the first comma', () => {
+    expect(shortRoom('Level 1, Octavius 4')).toBe('Octavius 4');
+    expect(shortRoom('Room 118')).toBe('Room 118');
+    expect(shortRoom('A, B, C')).toBe('B');
+    expect(shortRoom(' , ')).toBe('Room not published');
+    expect(shortRoom('')).toBe('Room not published');
+    expect(shortRoom(undefined)).toBe('Room not published');
+  });
+
+  test('a session with no boarding time says why and shows "Not needed"', () => {
+    const pass = DEMO_SESSIONS.find((x) => !x.isReservable);
+    const id = pass?.sessionId as string;
+    const state = run([{ type: 'add', sessionId: id }], deps);
+    const built = buildSamplePass(id, state, deps);
+    expect(built?.boardingCloses).toBe('Not needed');
+    expect(built?.boardingNote).toBe(`${pass?.code} needs no reservation.`);
+  });
+
+  test('the label colour reaches 4.5:1 on the card and the value is white', () => {
+    expect(contrastRatio(PASS_COLOURS.label, PASS_COLOURS.background)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(PASS_COLOURS.value, PASS_COLOURS.background)).toBeGreaterThanOrEqual(4.5);
+    expect(PASS_COLOURS.value).toBe('#FFFFFF');
+    expect(PASS_COLOURS.background).toBe('#232F3F');
   });
 });
 
@@ -289,16 +328,19 @@ describe('Property 14: Sample pass fields follow the pass rules', () => {
               expect(p.title).toBe(normalised);
             }
             const session = longDeps.catalog.get(id) as NormalisedSession;
-            expect(p.gate === 'Venue not published' || session.venue !== undefined).toBe(true);
+            expect(p.terminal === 'Venue not published' || session.venue !== undefined).toBe(true);
+            expect(p.gate === 'Room not published' || session.room !== undefined).toBe(true);
+            expect(p.date).toBe(
+              `${formatDateInZone(session.startsAt as string, DEMO_EVENT.timezone)} | ${formatInZone24(session.startsAt as string, DEMO_EVENT.timezone)}-${formatInZone24(session.endsAt as string, DEMO_EVENT.timezone)}`,
+            );
             expect(p.passFields.venue).toBe(session.venue ?? '');
-            const closes = formatInZone(
+            const closes = formatInZone24(
               new Date(Date.parse(session.startsAt as string) - 10 * 60_000).toISOString(),
               DEMO_EVENT.timezone,
             );
-            expect(p.seatReleased).toBe(
-              session.isReservable
-                ? `Seat released at ${closes}`
-                : `${session.code} needs no reservation.`,
+            expect(p.boardingCloses).toBe(session.isReservable ? closes : 'Not needed');
+            expect(p.boardingNote).toBe(
+              session.isReservable ? null : `${session.code} needs no reservation.`,
             );
             expect(p.label).toBe('Sample pass. Made-up session.');
             expect(p.disclaimer).toBe('Unofficial. Your badge is your ticket.');

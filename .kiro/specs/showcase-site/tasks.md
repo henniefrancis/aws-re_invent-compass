@@ -385,6 +385,14 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 21.2 In `logo.svg`, the year "2026" used AWS's Amazon Ember Display typeface, which visitors do not have installed and which is AWS brand material; it now uses a free heavy sans-serif stack (Segoe UI Black, Arial Black, Arial, sans-serif). ARTWORK.md lists both files as the owner's artwork
   - [x] 21.3 Tests: the header image has the product name as alt text, both SVGs have no script and no external reference, the static check still finds no AWS mark; build, budgets and a browser check at desktop and phone width; commit scoped `showcase-site`
 
+- [x] 22. Make the demo's sample pass look like the final Apple pass (tracker SD1, design "Post-SP3 change: sample pass matches the Apple pass", Requirement 11 amended 20 October 2026)
+  - [x] 22.1 Face: owner logo and SESSION code on top, TERMINAL, an arrow and GATE (short room) in the large row, FLIGHT NAME, DATE with the 24-hour time range and BOARDING CLOSES (24-hour, from the rules port); card colours #232F3F with white values and a purple label that reaches 4.5:1; no barcode or QR code
+  - [x] 22.2 Under the face: "Sample pass. Made-up session.", the walk from the previous session, the next connection and "Unofficial. Your badge is your ticket."; long venue and room values are wrapped and shortened with "..."
+  - [x] 22.3 `SamplePass` and its accessible name use the new field names; `acts.ts` describes the new fields; tests updated, including a contrast check of the label colour
+- [x] 23. Say "This link is not complete" once on the hand-off page (tracker BM1, design "Post-SP3 change: board message shown once")
+  - [x] 23.1 Find why the sentence shows twice; the live region is visible and repeats the message, which itself repeats the heading
+  - [x] 23.2 Fix it: the message no longer repeats the heading, the live region is visually hidden and carries the heading plus the message, and a test covers it
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

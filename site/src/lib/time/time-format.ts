@@ -47,6 +47,31 @@ export function formatInZone(iso: string, timeZone: string): string {
   return text.split(NARROW_NO_BREAK_SPACE).join(' ');
 }
 
+function zoneParts(iso: string, timeZone: string): Record<string, string> {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(iso));
+  return Object.fromEntries(parts.map((part) => [part.type, part.value]));
+}
+
+/** The wall clock of an instant in an IANA zone, 24-hour, such as "13:00". */
+export function formatInZone24(iso: string, timeZone: string): string {
+  const parts = zoneParts(iso, timeZone);
+  return `${parts['hour']}:${parts['minute']}`;
+}
+
+/** The date of an instant in an IANA zone, such as "3 Dec 2026". */
+export function formatDateInZone(iso: string, timeZone: string): string {
+  const parts = zoneParts(iso, timeZone);
+  return `${parts['day']} ${parts['month']} ${parts['year']}`;
+}
+
 /** A day heading such as "Monday 30 November", from an event local date (YYYY-MM-DD). */
 export function dayHeading(isoDate: string): string {
   const date = new Date(

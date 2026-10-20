@@ -255,36 +255,56 @@
 }
 
 .pass__card {
-  fill: var(--color-surface);
-  stroke: var(--color-border);
-  stroke-width: 2;
+  fill: #232f3f;
+}
+
+.pass__arrow {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .pass__text {
   fill: var(--color-ink);
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13px;
 }
 
-.pass__text--label,
-.pass__text--detail {
-  fill: var(--color-ink-muted);
+.pass__text--card {
+  fill: #ffffff;
 }
 
-.pass__text--code {
-  fill: var(--color-brand);
-  font-size: 28px;
+.pass__text--label {
+  fill: #be9bff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.pass__text--session {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.pass__text--large {
+  font-size: 20px;
   font-weight: 700;
 }
 
 .pass__text--title {
+  font-size: 16px;
   font-weight: 600;
 }
 
-.pass__text--seat {
-  fill: var(--color-brand-strong);
-  font-size: 22px;
-  font-weight: 700;
+.pass__text--value {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.pass__text--small {
+  fill: var(--color-ink-muted);
 }
 
 .pass__text--disclaimer {

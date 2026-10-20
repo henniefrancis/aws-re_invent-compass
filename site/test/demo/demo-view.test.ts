@@ -8,7 +8,7 @@ import {
   buildVerdictView,
   guidedHint,
 } from '../../src/lib/demo/demo-view';
-import { PASS_WIDTH, layoutPass, wrapText } from '../../src/lib/demo/pass-layout';
+import { PASS_WIDTH, fitValue, layoutPass, wrapText } from '../../src/lib/demo/pass-layout';
 import { buildSamplePass } from '../../src/lib/demo/sample-pass';
 import { makeDeps, run, richWeek } from '../support/demo-harness';
 
@@ -184,19 +184,58 @@ describe('pass layout', () => {
     );
   });
 
-  test('lays out every field of the pass with growing y positions', () => {
+  test('shows the engine reason as a small line when there is no boarding time', () => {
+    const base = buildSamplePass('syn-002', starter, deps) as NonNullable<
+      ReturnType<typeof buildSamplePass>
+    >;
+    const layout = layoutPass({
+      ...base,
+      boardingCloses: 'Not needed',
+      boardingNote: 'X needs no reservation.',
+    });
+    const note = layout.lines.find((l) => l.text === 'X needs no reservation.');
+    expect(note).toMatchObject({ kind: 'small', onCard: false });
+  });
+
+  test('fitValue keeps two lines of 13 characters and shortens the rest with dots', () => {
+    expect(fitValue('MGM Grand')).toEqual(['MGM Grand']);
+    expect(fitValue('Room not published')).toEqual(['Room not', 'published']);
+    const long = fitValue('Mandalay Bay Convention Center Hall');
+    expect(long).toHaveLength(2);
+    expect(long[1]?.endsWith('...')).toBe(true);
+    fc.assert(
+      fc.property(fc.stringMatching(/^[A-Za-z]{1,40}( [A-Za-z]{1,40}){0,8}$/), (text) => {
+        const lines = fitValue(text);
+        expect(lines.length).toBeLessThanOrEqual(2);
+        for (const line of lines) {
+          expect(line.length).toBeLessThanOrEqual(13);
+        }
+      }),
+      { numRuns: 200 },
+    );
+  });
+
+  test('lays out every field of the pass with growing y positions on the card', () => {
     const pass = buildSamplePass('syn-002', starter, deps);
     const layout = layoutPass(pass as NonNullable<typeof pass>);
     expect(layout.width).toBe(PASS_WIDTH);
     const texts = layout.lines.map((l) => l.text);
-    expect(texts).toContain('Sample pass. Made-up session.');
+    for (const label of ['SESSION', 'TERMINAL', 'GATE', 'FLIGHT NAME', 'DATE', 'BOARDING CLOSES']) {
+      expect(texts).toContain(label);
+    }
     expect(texts).toContain('DAT204');
-    expect(texts).toContain('Seat released at 2:20 PM');
+    expect(texts).toContain(pass?.boardingCloses as string);
+    expect(texts).toContain(pass?.date as string);
+    expect(texts).toContain('Sample pass. Made-up session.');
     expect(texts).toContain('Unofficial. Your badge is your ticket.');
     expect(texts.some((t) => t.startsWith('40 min walk from'))).toBe(true);
     expect(texts).toContain('Next connection: not known');
+    expect(texts.join(' ')).not.toContain('Seat released');
     const ys = layout.lines.map((l) => l.y);
     expect(ys).toEqual([...ys].sort((a, b) => a - b));
+    const onCard = layout.lines.filter((l) => l.onCard);
+    expect(onCard.every((l) => l.y < layout.cardHeight)).toBe(true);
+    expect(layout.lines.filter((l) => !l.onCard).every((l) => l.y > layout.cardHeight)).toBe(true);
     expect(layout.height).toBeGreaterThan(ys.at(-1) ?? 0);
     const first = buildSamplePass('syn-003', starter, deps);
     const firstTexts = layoutPass(first as NonNullable<typeof first>).lines.map((l) => l.text);

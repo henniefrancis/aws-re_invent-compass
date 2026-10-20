@@ -7,15 +7,18 @@
 // PassFields text allowlist), walk minutes are clamped to 0 to 90, and a missing venue is an
 // empty string in passFields. "Venue not published" is display text only.
 //
-// The seat release time and the walks come from the rules port. The "walk" minutes are the
-// engine's walk plus its buffer, which is also what the sample calendar's "Leave now" alarm uses.
+// The pass has the fields of the final Apple pass (tasks 22 and 32 of the pass service): session,
+// terminal (the venue), gate (the short room), flight name (the title), date with the 24-hour
+// range, and boarding closes (24-hour). Boarding closes and the walks come from the rules port.
+// The "walk" minutes are the engine's walk plus its buffer, which is also what the sample
+// calendar's "Leave now" alarm uses.
 
 import type { DemoDeps } from './demo-deps';
 import type { DemoState } from './demo-state';
 import { neighboursOf } from './neighbours';
 import { normalisePassText } from './pass-text';
-import { gateText, boardingText } from './week-view';
-import { formatInZone } from '../time/time-format';
+import { boardingText } from './week-view';
+import { formatDateInZone, formatInZone, formatInZone24 } from '../time/time-format';
 import { DEMO_EVENT } from './demo-catalog';
 
 export const SAMPLE_LABEL = 'Sample pass. Made-up session.';
@@ -23,6 +26,9 @@ export const PASS_DISCLAIMER = 'Unofficial. Your badge is your ticket.';
 export const MAX_TITLE = 80;
 export const TITLE_KEPT = 77;
 export const MAX_WALK_MINUTES = 90;
+export const NO_VENUE = 'Venue not published';
+export const NO_ROOM = 'Room not published';
+export const NO_BOARDING = 'Not needed';
 
 export interface PassFieldsInput {
   sessionCode: string;
@@ -36,19 +42,39 @@ export interface PassFieldsInput {
 }
 
 export interface SamplePass {
-  readonly sessionCode: string;
-  /** At most 80 characters. */
+  /** SESSION: the session code. */
+  readonly session: string;
+  /** FLIGHT NAME: the title, at most 80 characters. */
   readonly title: string;
-  /** "Venue, Room" or "Venue not published". */
+  /** TERMINAL: the venue, or "Venue not published". */
+  readonly terminal: string;
+  /** GATE: the short room, or "Room not published". */
   readonly gate: string;
-  /** "Seat released at 10:20 AM", or the reason the engine gives. */
-  readonly seatReleased: string;
+  /** DATE: "3 Dec 2026 | 13:00-14:00", 24-hour, in the event timezone. */
+  readonly date: string;
+  /** BOARDING CLOSES: "12:50" (24-hour), or "Not needed" when the engine gives no time. */
+  readonly boardingCloses: string;
+  /** The engine's reason when there is no boarding time, otherwise null. */
+  readonly boardingNote: string | null;
   readonly walkFromPrevious: string | null;
   readonly nextConnection: string | null;
   readonly label: typeof SAMPLE_LABEL;
   readonly disclaimer: typeof PASS_DISCLAIMER;
   readonly accessibleName: string;
   readonly passFields: PassFieldsInput;
+}
+
+/**
+ * The room as the front of the pass shows it: the part after the first comma ("Octavius 4"
+ * from "Level 1, Octavius 4"), or the whole room when it has one part, or "Room not published".
+ */
+export function shortRoom(room: string | undefined): string {
+  const parts = (room ?? '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part !== '');
+  const [first = '', second] = parts;
+  return second ?? (first === '' ? NO_ROOM : first);
 }
 
 /** Normalise a title, and keep 77 characters plus three dots when it is longer than 80. */
@@ -80,8 +106,13 @@ export function buildSamplePass(
   const walkMinutes = previous?.walkMinutes ?? null;
   const nextWalk = next?.walkMinutes ?? null;
   const title = fitTitle(session.title);
-  const gate = gateText(session.venue, session.room);
-  const seatReleased = boardingText(deps.rules.computeBoarding(session, deps.context));
+  const terminal = session.venue === undefined || session.venue === '' ? NO_VENUE : session.venue;
+  const gate = shortRoom(session.room);
+  const date = `${formatDateInZone(session.startsAt as string, zone)} | ${formatInZone24(session.startsAt as string, zone)}-${formatInZone24(session.endsAt as string, zone)}`;
+  const boarding = deps.rules.computeBoarding(session, deps.context);
+  const boardingCloses =
+    boarding.status === 'closes' ? formatInZone24(boarding.at, zone) : NO_BOARDING;
+  const boardingNote = boarding.status === 'closes' ? null : boardingText(boarding);
   const walkText =
     previous === null || walkMinutes === null
       ? null
@@ -112,18 +143,24 @@ export function buildSamplePass(
         }),
   };
   const parts = [
-    `Boarding pass for ${session.code}, ${title}.`,
-    `Gate: ${gate}.`,
-    `${seatReleased}.`,
+    `Boarding pass. Session ${session.code}. Terminal: ${terminal}. Gate: ${gate}.`,
+    `Flight name: ${title}.`,
+    `Date: ${date}.`,
+    boardingNote === null
+      ? `Boarding closes: ${boardingCloses}.`
+      : `Boarding closes: ${boardingNote}.`,
     walkText === null ? 'Walk from the previous session: not known.' : `${walkText}.`,
     nextText === null ? 'Next connection: not known.' : `Next connection: ${nextText}.`,
     `${SAMPLE_LABEL} ${PASS_DISCLAIMER}`,
   ];
   return {
-    sessionCode: session.code,
+    session: session.code,
     title,
+    terminal,
     gate,
-    seatReleased,
+    date,
+    boardingCloses,
+    boardingNote,
     walkFromPrevious: walkText,
     nextConnection: nextText,
     label: SAMPLE_LABEL,

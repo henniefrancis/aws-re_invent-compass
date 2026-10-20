@@ -60,7 +60,7 @@ export const ACTS: readonly Act[] = [
       ),
       summary(
         'act-board-fields',
-        'Each pass shows the session code and title, the venue and room, "Seat released at", the walk from the previous session and the next connection.',
+        'Each pass shows the session code, the terminal (venue) and gate (room), the flight name (title), the date and time, when boarding closes, the walk from the previous session and the next connection.',
         'CONCEPT.md',
         'Act 2: Board',
       ),
