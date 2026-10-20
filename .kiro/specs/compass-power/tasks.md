@@ -541,6 +541,10 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 38.3 The read-only reply only points to the re:Invent app and no longer names the setting, and the Power skill tells the agent never to change Compass's settings or offer to. Why: Kiro offered to edit mcp.json to turn writes on, which is the accident read-only mode exists to prevent
   - [x] 38.4 Tests and commit after the full gate passes, scoped `compass-power`
 
+- [x] 39. Point the walk-up reply to the re:Invent app when Compass is read-only (20 October, design "Post-SP3 change: codes, walk-up sessions, no write invitations")
+  - [x] 39.1 When Compass is read-only, the walk-up reply of `reserve_with_guardrails` suggests adding the session to the favourites in the re:Invent app instead of the standby list, because `add_standby` is a write and would only reply what it would have done. Why: in Kiro the agent offered to add SVS339 to the standby list after the walk-up reply
+  - [x] 39.2 Tests for both wordings; commit scoped `compass-power`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

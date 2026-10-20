@@ -57,7 +57,11 @@ export async function reserveWithGuardrails(
         },
       },
       text: [
-        'Nothing was reserved. These sessions are not reservable, so they need no reservation: walk up early, or add them to your standby list to keep them in your plan.',
+        `Nothing was reserved. These sessions are not reservable, so they need no reservation: walk up early, or ${
+          ctx.runtime.readOnly === true
+            ? 'add them to your favourites in the re:Invent app'
+            : 'add them to your standby list'
+        } to keep them in your plan.`,
         labelUntrusted('catalog', {
           notReservable: walkUp.map((session) => ({ code: session.code, title: session.title })),
         }),

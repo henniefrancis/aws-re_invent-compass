@@ -86,4 +86,14 @@ describe('reserve_with_guardrails and sessions that need no reservation (task 38
     expect(asked).toEqual([]);
     expect(fake.events.writeCalls).toEqual([]);
   });
+
+  test('when Compass is read-only, the walk-up reply points to the re:Invent app (task 39)', async () => {
+    const catalog = buildCatalogView([wireSession('walk-up', { isReservable: false })]);
+    const fake = createFakeRuntime({ catalog, readOnly: true });
+    const outcome = await reserveWithGuardrails({ sessionIds: ['walk-up'] }, contextFor(fake));
+    expect(outcome.ok && outcome.text).toContain(
+      'add them to your favourites in the re:Invent app',
+    );
+    expect(outcome.ok && outcome.text).not.toContain('standby list');
+  });
 });
