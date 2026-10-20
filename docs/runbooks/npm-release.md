@@ -21,13 +21,13 @@ Do these in one commit, in this order.
    - `power/mcp.json`
    - the hook template
    - every `npx --yes reinvent-compass@X` example in `packages/mcp-server/README.md` and under `power/` (the power test checks that each one equals the package version)
-3. Set `COMPASS_API_BASE_URL` in `packages/mcp-server/src/config/compass-api.ts` to the production CloudFront domain, `https://` plus the `cloudfront_domain_name` output of the prod environment, with no trailing slash. This needs the prod first apply to be finished (see `release.md`, first-time setup). While the value is the `.invalid` placeholder, a live run fails loudly, so never tag before this step.
+3. Set `COMPASS_API_BASE_URL` in `packages/mcp-server/src/config/compass-api.ts` to `https://reinvent-compass.vegas`, the production apex domain (ADR-031), with no trailing slash. The address is known before the prod apply, but tag only after prod answers `GET /api/v1/health` (see `release.md`). While the value is the `.invalid` placeholder, a live run fails loudly, so never tag before this step.
 4. Run `npx eslint .`, `npx prettier --check .`, `npx tsc -b` and `npx vitest run --coverage`. The pack smoke test builds, packs and runs the package from the unpacked archive.
 5. Check the file list by hand once: `npm pack --dry-run --workspace packages/mcp-server`. The listing must hold only `package.json`, `README.md`, `dist/bin.js`, `dist/scan-worker.js` and the `dist/data`, `dist/sample-repo` and `dist/fixtures` folders.
 
 ## Tag order
 
-1. Deploy `prod` first (`release.md`), so the CloudFront domain exists and answers `GET /api/v1/health`.
+1. Deploy `prod` first (`release.md`), so `https://reinvent-compass.vegas` answers `GET /api/v1/health`.
 2. Commit the release changes above, with the real domain, and merge them to `main`.
 3. Only then create the tag `vX.Y.Z` on that commit, where `X.Y.Z` equals the package version, and push it. The publish job then waits for your approval in the `npm-publish` environment.
 

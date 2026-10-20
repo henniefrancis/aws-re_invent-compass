@@ -486,12 +486,12 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 25.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 26. Apply the SP2 result (waits on the owner)
-  - [ ] 26.1 Adjust the verifier configuration to the recorded SP2 result
+- [x] 26. Apply the SP2 result (done: the Cognito issuer is recorded in docs/spikes-results.md, dev runs `ID_TOKEN_VERIFIER=cognito` with that `ID_TOKEN_ISSUER` through the HCP workspace variables, and SP3 verified a live Builder ID token on dev on 19 October)
+  - [x] 26.1 Adjust the verifier configuration to the recorded SP2 result
     - Once the owner has recorded the SP2 result (design, Owner-run spike checklist): if it confirms the Cognito issuer, record the `ID_TOKEN_ISSUER` value in the README for S6 and keep `cognito`; if another OIDC issuer verified, document `oidc` with the issuer and `jwks_uri`, and add a test case built on that issuer's shape; if offline verification failed, stop and raise build plan 5.4 step 3 with the owner and integrator (no code change here). Never record a token or claim value other than `iss`, `aud`, `alg` and `token_use`
     - _Requirements: 4.2, 4.3, 4.9, 24.2, 24.6_
 
-  - [ ] 26.2 Commit
+  - [x] 26.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [x] 27. Apply the SP3 result (recorded 19 October)

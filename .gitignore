@@ -83,3 +83,8 @@ desktop.ini
 # Playwright output
 site/playwright-report/
 site/test-results/
+
+# Local Claude Code state: agent worktrees, local settings and launch configs.
+.claude/worktrees/
+.claude/settings.local.json
+.claude/launch.json

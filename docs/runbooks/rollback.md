@@ -19,7 +19,7 @@ Each of the seven carries `prevent_destroy` in Terraform, and `scripts/release.s
 
 ### CloudFront distribution
 
-Its domain is baked into every issued pass (`webServiceURL`) and into the npm package default API URL. If the distribution is lost, issued passes stop updating and attendees reissue them with `sync_passes --reissue-all`. Do not replace it to fix a configuration problem: change the configuration in place.
+Passes and the npm package use the custom domain (ADR-031), not the CloudFront domain, so a replaced distribution keeps working once the Route 53 alias points at it; Terraform updates the alias in the same apply. If the custom domain itself is lost, issued passes stop updating and attendees reissue them with `sync_passes --reissue-all`. Do not replace it to fix a configuration problem: change the configuration in place.
 
 ### DynamoDB table
 

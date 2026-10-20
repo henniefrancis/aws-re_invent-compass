@@ -1006,7 +1006,7 @@ The Board_Page shows the owner's picture (`artwork/pass-background.jpg`) as a de
 
 ## Post-SP3 change: owner logo (20 October 2026, task 21)
 
-The header brand link is the owner's full logo (`artwork/logo.svg`, alt "re:Invent Compass"), and the favicon is the owner's map icon. The year in the logo is set in a free heavy sans-serif stack rather than Amazon Ember, so it renders the same for every visitor and the artwork carries no AWS typeface.
+The header brand link is the owner's full logo (`artwork/logo.svg`, alt "re:Invent Compass"), and the favicon is the owner's map icon. The year in the logo is set in a heavy system sans-serif stack (Segoe UI Black, Arial Black, Arial, sans-serif) rather than Amazon Ember, so the artwork names no AWS typeface. It is not identical everywhere: visitors without Segoe UI see Arial Black or a generic bold sans-serif. Converting "2026" to outlined paths in the owner's design tool would make it identical (open item for the owner).
 
 ## Post-SP3 change: sample pass matches the Apple pass (20 October 2026, task 22)
 

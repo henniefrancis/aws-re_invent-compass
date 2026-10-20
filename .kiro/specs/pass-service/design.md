@@ -1307,23 +1307,23 @@ Airline wording, owner decision:
 | headerFields    | BOARDING CLOSES: the 24-hour time         |
 | primaryFields   | TERMINAL: the venue; GATE: the short room |
 | secondaryFields | FLIGHT NAME: the title                    |
-| auxiliaryFields | DATE: "3 Dec 2026                         | 13:00-14:00" |
+| auxiliaryFields | DATE: "3 Dec 2026 \| 13:00-14:00"         |
 
 Wallet gives `logoText` no colour of its own (Apple documents only `foregroundColor` and `labelColor`), so the code shows in the value colour. A long BOARDING CLOSES header can shorten the logo text, which is how "Compass" became "Comp..."; session codes are short. Open owner wish, later: an event ticket with the owner's picture as the background and no QR code (Requirement 9.1 would change).
 
 ## Post-SP3 change: owner artwork (20 October 2026, task 38)
 
-The pass logo and icon are the owner's own artwork, the same files the site uses: `site/public/artwork/logo.svg` (the Nevada map and road with a pin, "2026", and "re:Invent" over "Compass") and `site/public/artwork/favicon.svg` (the map alone). `scripts/make-artwork.mjs` renders them once with Playwright's Chromium onto transparent canvases at Apple's sizes and writes `src/apple/artwork.ts`; the module is committed, so the Lambda bundles carry the images with no file read. The logo is fitted to the 50-point height and left-aligned in the 160-point slot, which leaves the logo text (the session code) just right of the middle. The drawn compass glyph and its PNG encoder are removed. Requirement 9.10 still holds: the artwork is original and has no AWS mark; the year in the logo uses a free heavy sans-serif instead of AWS's Amazon Ember typeface.
+The pass logo and icon are the owner's own artwork, the same files the site uses: `site/public/artwork/logo.svg` (the Nevada map and road with a pin, "2026", and "re:Invent" over "Compass") and `site/public/artwork/favicon.svg` (the map alone). `scripts/make-artwork.mjs` renders them once with Playwright's Chromium onto transparent canvases at Apple's sizes and writes `src/apple/artwork.ts`; the module is committed, so the Lambda bundles carry the images with no file read. The logo is fitted to the 50-point height and left-aligned in the 160-point slot, which leaves the logo text (the session code) just right of the middle. The drawn compass glyph and its PNG encoder are removed. Requirement 9.10 still holds: the artwork is original and has no AWS mark; the year in the logo uses a system heavy sans-serif stack instead of AWS's Amazon Ember typeface; the pass PNGs bake in whichever of those fonts the machine running `make-artwork.mjs` has (Segoe UI Black on the owner's machine).
 
 ## Post-SP3 change: pass review 6 (20 October 2026, task 39)
 
-| Slot            | Content                                   |
-| --------------- | ----------------------------------------- |
-| logo            | the owner's logo, no logo text            |
-| headerFields    | SESSION: the session code                 |
-| primaryFields   | TERMINAL: the venue; GATE: the short room |
-| secondaryFields | FLIGHT NAME: the title                    |
-| auxiliaryFields | DATE "3 Dec 2026                          | 13:00-14:00" (left); BOARDING CLOSES, 24-hour (right-aligned) |
+| Slot            | Content                                                                           |
+| --------------- | --------------------------------------------------------------------------------- |
+| logo            | the owner's logo, no logo text                                                    |
+| headerFields    | SESSION: the session code                                                         |
+| primaryFields   | TERMINAL: the venue; GATE: the short room                                         |
+| secondaryFields | FLIGHT NAME: the title                                                            |
+| auxiliaryFields | DATE "3 Dec 2026 \| 13:00-14:00" (left); BOARDING CLOSES, 24-hour (right-aligned) |
 
 The arrow between TERMINAL and GATE is Wallet's own transit glyph for `PKTransitTypeGeneric`, and Wallet chooses the font sizes; the pass sets neither. Long primary values are shrunk a little and then cut by Wallet; the full room is on the back.
 

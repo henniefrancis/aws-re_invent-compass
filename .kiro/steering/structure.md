@@ -35,7 +35,7 @@ aws-re_invent-compass/
 │   ├── plugin.json
 │   ├── mcp.json                  #   compass (local stdio); awsevents is added only after SP1 (ADR-024)
 │   ├── skills/                   #   plan-my-week, first-timer-guide, install-hooks
-│   └── hook-templates/           #   PreToolUse guardrail, PostToolUse sync (copied into the attendee's .kiro/hooks)
+│   └── hook-templates/           #   PreToolUse guardrail (copied into the attendee's .kiro/hooks); the PostToolUse sync hook was removed (ADR-024)
 ├── site/                         # S7: Angular 22 showcase site (story, demo, install, privacy, /board)
 ├── infra/                        # S6: Terraform only (us-east-1, HCP Terraform)
 │   ├── bootstrap/                #   HCP OIDC provider and plan/apply roles (owner runs once)
