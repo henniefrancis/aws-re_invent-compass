@@ -10,7 +10,7 @@ import tseslintParser from '@typescript-eslint/parser';
 //
 // These are ordinary unit assertions, not property tests. They lock the facts that the
 // parallel streams rely on:
-//   - the core exports map exposes exactly the nine subpath keys, each with a
+//   - the core exports map exposes exactly the ten subpath keys, each with a
 //     @compass/source condition, and no "." root export (Requirements 2.1, 2.2);
 //   - there is no src/index.ts barrel file under packages/core/src (Requirement 2.3);
 //   - the flat eslint config rejects a deep relative cross-package import through
@@ -51,8 +51,8 @@ function readJson(path: string): Record<string, unknown> {
 const repoRoot = findRepoRoot();
 const coreRoot = join(repoRoot, 'packages', 'core');
 
-// The nine subpath keys the core package must export, as declared in the design and
-// the structure steering (no shared barrel file).
+// The ten subpath keys the core package must export, as declared in the design and
+// the structure steering (no shared barrel file). ./github joined in compass-power task 45.1.
 const EXPECTED_SUBPATHS = [
   './auth',
   './api',
@@ -63,13 +63,14 @@ const EXPECTED_SUBPATHS = [
   './spec',
   './passes',
   './redact',
+  './github',
 ] as const;
 
 describe('Feature: foundation-contracts, @compass/core exports map', () => {
   const manifest = readJson(join(coreRoot, 'package.json'));
   const exportsMap = manifest.exports as Record<string, Record<string, unknown>>;
 
-  test('exports map has exactly the nine expected subpath keys', () => {
+  test('exports map has exactly the ten expected subpath keys', () => {
     expect(exportsMap).toBeDefined();
     expect(Object.keys(exportsMap).sort()).toEqual([...EXPECTED_SUBPATHS].sort());
   });

@@ -39,6 +39,8 @@ describe('SERVICE_TABLE structure', () => {
         ['sdkPackage', entry.sdkPackages],
         ['sdkClientName', entry.sdkClientNames],
         ['boto3Name', entry.boto3Names],
+        ['nugetPackage', entry.nugetPackages],
+        ['dotnetClientName', entry.dotnetClientNames],
       ];
       for (const [kind, identifiers] of lists) {
         for (const identifier of identifiers) {
@@ -82,6 +84,30 @@ describe('resolveService', () => {
     expect(resolveService('sdkPackage', '@aws-sdk/client-nothing')).toBeUndefined();
     expect(resolveService('sdkClientName', 'Nothing')).toBeUndefined();
     expect(resolveService('boto3Name', 'nothing')).toBeUndefined();
+    expect(resolveService('nugetPackage', 'AWSSDK.Nothing')).toBeUndefined();
+    expect(resolveService('dotnetClientName', 'Nothing')).toBeUndefined();
+  });
+
+  test('AWS SDK for .NET identifiers (task 41.3): NuGet ids without regard to case, client names exactly', () => {
+    expect(resolveService('nugetPackage', 'AWSSDK.S3')).toBe('s3');
+    expect(resolveService('nugetPackage', 'awssdk.s3')).toBe('s3');
+    expect(resolveService('nugetPackage', 'AWSSDK.DynamoDBv2')).toBe('dynamodb');
+    expect(resolveService('nugetPackage', 'Amazon.Lambda.Core')).toBe('lambda');
+    expect(resolveService('nugetPackage', 'Amazon.Lambda.AspNetCoreServer')).toBe('lambda');
+    expect(resolveService('dotnetClientName', 'S3')).toBe('s3');
+    expect(resolveService('dotnetClientName', 'DynamoDB')).toBe('dynamodb');
+    expect(resolveService('dotnetClientName', 'SimpleNotificationService')).toBe('sns');
+    expect(resolveService('dotnetClientName', 'IdentityManagementService')).toBe('iam');
+    expect(resolveService('dotnetClientName', 's3')).toBeUndefined();
+  });
+
+  test('every service with an AWS SDK for .NET package also has a client name, and the reverse', () => {
+    for (const entry of SERVICE_TABLE) {
+      expect(entry.nugetPackages.length > 0).toBe(entry.dotnetClientNames.length > 0);
+      for (const id of entry.nugetPackages) {
+        expect(id).toMatch(/^(?:AWSSDK|Amazon\.Lambda)\.[A-Za-z0-9.]+$/);
+      }
+    }
   });
 
   test('SDK lib packages map to their service', () => {

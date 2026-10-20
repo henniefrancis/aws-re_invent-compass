@@ -3,6 +3,7 @@
 // a negative or non-integer limit is refused. The text lists sessions inside a
 // Labelled_Data_Block; abstracts never appear because the normalised session has none.
 
+import type { NormalisedSession } from '@compass/contracts';
 import { CompassError } from '../ports/errors.js';
 import { labelUntrusted } from '../safety/labelled-data.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
@@ -53,7 +54,16 @@ export async function findSessions(
   if (requested > MAX_LIMIT) {
     notes.push(`The limit was lowered to ${MAX_LIMIT}, the most Compass returns at once.`);
   }
-  const payload = sessions.map((s) => ({
+  return {
+    ok: true,
+    structured: { sessions, totalMatched: matched.length },
+    text: `${notes.join(' ')}\n${labelUntrusted('catalog', sessions.map(sessionPayload))}`,
+  };
+}
+
+/** The session fields shown to the model, inside a catalog Labelled_Data_Block. */
+export function sessionPayload(s: NormalisedSession): Record<string, unknown> {
+  return {
     sessionId: s.sessionId,
     code: s.code,
     title: s.title,
@@ -65,10 +75,5 @@ export async function findSessions(
     endsAt: s.endsAt,
     isReservable: s.isReservable,
     seatAvailability: s.seatAvailability,
-  }));
-  return {
-    ok: true,
-    structured: { sessions, totalMatched: matched.length },
-    text: `${notes.join(' ')}\n${labelUntrusted('catalog', payload)}`,
   };
 }

@@ -37,6 +37,8 @@ export type CompassErrorCode =
   | 'InputInvalid'
   | 'UnsafePath'
   | 'ReadOnly'
+  | 'GitHubNotConnected'
+  | 'GitHubConfirmationNeeded'
   | 'Internal';
 
 /** Optional, non-sensitive details a code may carry. */

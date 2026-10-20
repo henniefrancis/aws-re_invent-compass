@@ -168,6 +168,12 @@ describe('catalog and window', () => {
       expect(services.map((s) => s.toLowerCase())).toContain(label.toLowerCase());
     }
     expect(view.filter({ services: ['no-such-service'] })).toEqual([]);
+    // Whole words over title, abstract, topics and services (task 44).
+    const titleWord = String(view.filter({})[0]?.title.split(' ')[0]);
+    expect(view.filter({ words: [titleWord] }).length).toBeGreaterThan(0);
+    expect(view.filter({ words: [label] }).length).toBeGreaterThan(0);
+    expect(view.filter({ words: ['zzqqxx-not-a-word'] })).toEqual([]);
+    expect(view.filter({ words: [] })).toEqual([]);
     expect(view.filter({ text: `${TRIPLE.codes.a}` }).map((s) => s.sessionId)).toContain(TRIPLE.a);
   });
 

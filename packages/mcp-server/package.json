@@ -9,6 +9,7 @@
   "files": [
     "dist/bin.js",
     "dist/scan-worker.js",
+    "dist/github-scan-worker.js",
     "dist/data",
     "dist/sample-repo",
     "dist/fixtures",

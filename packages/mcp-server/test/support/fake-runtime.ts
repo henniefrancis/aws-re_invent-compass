@@ -2,6 +2,8 @@ import type { ScanFs, SpecFs } from '../../src/ports/fs-ports.js';
 import type { CatalogView } from '../../src/ports/events-port.js';
 import type { Runtime } from '../../src/ports/runtime.js';
 import type { ScheduleSnapshot, SnapshotStore } from '../../src/state/schedule-snapshot.js';
+import { addSources } from '../../src/state/tech-profile.js';
+import type { ProfileSource, TechProfile, TechProfileStore } from '../../src/state/tech-profile.js';
 import { createStderrLogger } from '../../src/logging/stderr-logger.js';
 import { fixedClock } from './fake-clock.js';
 import type { FixedClock } from './fake-clock.js';
@@ -32,6 +34,29 @@ export class MemorySnapshotStore implements SnapshotStore {
   }
 }
 
+/** An in-memory Tech_Profile store. */
+export class MemoryTechProfileStore implements TechProfileStore {
+  sources: ProfileSource[] = [];
+  removed = 0;
+
+  constructor(private readonly mode: 'live' | 'simulated' = 'simulated') {}
+
+  read(): Promise<TechProfile> {
+    return Promise.resolve({ version: 1, mode: this.mode, sources: [...this.sources] });
+  }
+
+  add(sources: readonly ProfileSource[]): Promise<TechProfile> {
+    this.sources = addSources(this.sources, sources);
+    return this.read();
+  }
+
+  remove(): Promise<void> {
+    this.sources = [];
+    this.removed += 1;
+    return Promise.resolve();
+  }
+}
+
 const unusedScanFs: ScanFs = {
   realpath: () => Promise.reject(new Error('scanFs not provided')),
   lstat: () => Promise.reject(new Error('scanFs not provided')),
@@ -54,6 +79,7 @@ export interface FakeRuntime {
   rules: FakeRules;
   passes: FakePasses;
   snapshot: MemorySnapshotStore;
+  techProfile: MemoryTechProfileStore;
   clock: FixedClock;
   /** Everything the logger wrote to its stderr stream. */
   stderr: string[];
@@ -76,6 +102,7 @@ export function createFakeRuntime(options: FakeRuntimeOptions = {}): FakeRuntime
   const rules = new FakeRules();
   const passes = new FakePasses();
   const snapshot = new MemorySnapshotStore();
+  const techProfile = new MemoryTechProfileStore(options.mode ?? 'simulated');
   const clock = fixedClock();
   const stderr: string[] = [];
   const runtime: Runtime = {
@@ -95,6 +122,7 @@ export function createFakeRuntime(options: FakeRuntimeOptions = {}): FakeRuntime
       },
     }),
     cwd: options.cwd ?? '/workspace',
+    techProfile,
   };
-  return { runtime, events, rules, passes, snapshot, clock, stderr };
+  return { runtime, events, rules, passes, snapshot, techProfile, clock, stderr };
 }

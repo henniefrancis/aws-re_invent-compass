@@ -26,13 +26,22 @@ import { realFs, resolveAppDataDir } from '@compass/core/catalog';
 import { APP_FOLDER_NAME, createAppDataResolver, joinInFolder } from '@compass/core/passes';
 import type { HttpTransport } from '@compass/core/passes';
 import { VenueDataSchema } from '@compass/core/rules';
-import { createNodeScanFs, scanInWorker } from '@compass/core/scanner';
+import {
+  createGitHubTokenStore,
+  defaultGitHubFetch,
+  registerGitHubSecrets,
+  scanGitHubRepoInWorker,
+} from '@compass/core/github';
+import type { GitHubFetch, GitHubTokenStore } from '@compass/core/github';
+import { createNodeScanFs, scanInWorker, ScanWorkerError } from '@compass/core/scanner';
 import { createFsFixtureLoader } from '@compass/core/simulated';
 import { createNodeSpecFs } from '@compass/core/spec';
 import { readFile } from 'node:fs/promises';
 import { createFetchTransport } from '../adapters/fetch-transport.js';
 import { defaultEventsFetch } from '../adapters/default-fetch.js';
 import { createEventsAdapter } from '../adapters/events-adapter.js';
+import { createGitHubAdapter } from '../adapters/github-adapter.js';
+import { readGitHubAppConfig } from '../config/github.js';
 import { readOnlyEvents } from '../adapters/read-only-events.js';
 import type { AuthPort } from '../adapters/events-adapter.js';
 import { createNodeAppFileSystem } from '../adapters/node-fs-adapter.js';
@@ -51,9 +60,10 @@ import {
   SIMULATED_NOW,
 } from '../simulated/simulated-runtime.js';
 import { createSnapshotStore } from '../state/schedule-snapshot.js';
+import { createTechProfileStore } from '../state/tech-profile.js';
 import { createBrowserOpener } from './browser-opener.js';
 import { realBind } from './real-bind.js';
-import { sleep } from './sleep.js';
+import { abortableSleep, sleep } from './sleep.js';
 import { expiryOf } from './token-expiry.js';
 import type { ExecFileLike } from './browser-opener.js';
 import { createPassesFactory } from './passes-factory.js';
@@ -73,6 +83,8 @@ export interface RuntimeEnvironment {
   venuesPath: string;
   /** The bundled scan worker. When it is left out the scan runs in the server's own thread. */
   scanWorkerPath?: string;
+  /** The bundled GitHub scan worker (task 45). When it is left out a repository is read in this thread. */
+  githubWorkerPath?: string;
   /** The folder with the simulated fixtures (`api` and `synthetic`). Left out, S1 uses the repository's. */
   fixturesRoot?: string;
   /** Test seams. Production leaves them out and the real ones are used. */
@@ -81,6 +93,8 @@ export interface RuntimeEnvironment {
   oauthFetch?: OAuthFetch;
   compassTransport?: HttpTransport;
   bind?: (expectedState: string, timeoutMs: number) => Promise<LoopbackServer>;
+  githubStore?: GitHubTokenStore;
+  githubFetch?: GitHubFetch;
 }
 
 /** Options a command can set for one run. */
@@ -262,6 +276,50 @@ export async function createRuntime(
     clock,
     logger,
     cwd,
+    techProfile: createTechProfileStore(root, 'live', createNodeAppFileSystem()),
+    github: liveGitHub(environment, env, { redacting, nowMs, notify: writeLine }),
     ...scanRunner,
   };
+}
+
+/** The one line printed when another GitHub App is named (security review L6). */
+export const GITHUB_OVERRIDE_NOTICE =
+  'Warning: COMPASS_GITHUB_CLIENT_ID names another GitHub App. Compass cannot check that it is read-only.';
+
+/** The live GitHub port (task 45): the read-only Compass GitHub App, tokens in the keychain. */
+function liveGitHub(
+  environment: RuntimeEnvironment,
+  env: EnvRecord,
+  parts: {
+    redacting: Parameters<typeof registerGitHubSecrets>[1];
+    nowMs: () => number;
+    notify: (line: string) => void;
+  },
+) {
+  const fetch = environment.githubFetch ?? defaultGitHubFetch;
+  if (env.COMPASS_GITHUB_CLIENT_ID !== undefined && env.COMPASS_GITHUB_CLIENT_ID !== '') {
+    parts.notify(GITHUB_OVERRIDE_NOTICE);
+  }
+  const { githubWorkerPath } = environment;
+  return createGitHubAdapter({
+    config: readGitHubAppConfig(env),
+    store: registerGitHubSecrets(
+      environment.githubStore ?? createGitHubTokenStore(),
+      parts.redacting,
+    ),
+    fetch,
+    openBrowser: createBrowserOpener({
+      platform: environment.platform,
+      execFile: environment.execFile,
+      notify: parts.notify,
+    }),
+    now: parts.nowMs,
+    sleep: abortableSleep,
+    // Without the bundled worker there is no hard time and memory budget, so nothing is read
+    // (security review M1): a source checkout scans local folders only.
+    scanRepository: (fullName, accessToken) =>
+      githubWorkerPath === undefined
+        ? Promise.reject(new ScanWorkerError())
+        : scanGitHubRepoInWorker({ fullName, accessToken }, { workerPath: githubWorkerPath }),
+  });
 }

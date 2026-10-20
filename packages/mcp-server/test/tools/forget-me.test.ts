@@ -25,6 +25,7 @@ function setup(elicit?: ToolContext['elicit']) {
       },
       truncated: false,
       pythonAnalysed: false,
+      technologies: [],
     },
     taxonomy: [],
     root: '/scanned',

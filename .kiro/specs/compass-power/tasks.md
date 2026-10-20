@@ -551,6 +551,40 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 40.3 The Kiro pre-write hook resolves session codes with the same pure resolver as the server (`sessionIdResolver`), so a call made with a code is judged instead of passed through
   - [x] 40.4 Tests and commit scoped `compass-power`
 
+- [x] 41. Scan for all technology, AWS first (owner request of 20 October, design "Owner change: your tech and your GitHub")
+  - [x] 41.1 Stream the scan through `SourceFile` and `analyseFiles`: the walker also yields a name-only entry for each regular file it does not read, `scanRepo` becomes `analyseFiles(walk(...))`, and `productionMarkerFor` is exported. Existing scan results are unchanged
+  - [x] 41.2 Add the Tech_Table and the Tech_Detectors (extensions and manifests) and `ScanResult.technologies`, scored as files + 5 x declarations
+  - [x] 41.3 Add the AWS SDK for .NET to the Service_Table (`nugetPackages`, `dotnetClientNames`) with an official source for every identifier, and a `dotnet` detector for `*.csproj` and `*.cs`
+  - [x] 41.4 `scan_repo` scans each git repository in a dev folder as its own project (depth 1 and 2, up to 50, 120 seconds in all) and its text lists AWS services first, then other technology, names only
+  - Tests: every detector on good, malformed and hostile input; name-only entries never reach a detector's `detect`; no path or name in any result (property test); a dev folder with three repositories, one over the limit; 100 percent coverage
+  - _Requirements: P2.1, P2.2, P2.3_
+
+- [x] 42. Keep a tech profile on the device (design "Tech_Profile")
+  - [x] 42.1 `tech-profile.ts`: the store (app-data, 0600, atomic write, `simulated` subfolder), hashed source ids, replace on rescan, at most 500 sources, `mergeProfile` and its ranking; a `techProfile` port on the Runtime
+  - [x] 42.2 `scan_repo` adds each project to the profile; `forget_me` removes it; `plan_week` ranks by the merged profile (AWS findings and techs), falling back to `lastScan`
+  - Tests: merge and ranking (property test: order does not change the merge), rescan replaces, the cap, a corrupt file reads as empty, no path in the file, `forget_me` removes it, the planner's tech weight and reason; 100 percent coverage
+  - _Requirements: P2.4, P2.7_
+
+- [x] 43. Build the `show_my_tech` read tool (design "show_my_tech")
+  - [x] 43.1 Handler, registry (class `read`), title "Show my tech", description led by "What tech do I work on, and what do I use the most"; `top` 1 to 50
+  - Tests: AWS first, ranking, `top`, empty profile, simulated mode; registry, annotation, Property 19 (read tools never write), stdout and tool count tests; 100 percent coverage
+  - _Requirements: P2.5, P2.10_
+
+- [x] 44. Build the `find_sessions_by_tech` read tool (design "find_sessions_by_tech and the planner")
+  - [x] 44.1 Whole-word `words` matching in the Events adapter's catalog filter (title, abstract, topics, services); alias resolution; grouped results from the profile when no tech is given
+  - [x] 44.2 Handler, registry (class `read`), title "Find sessions by tech", description led by "Find me sessions on a technology, for example .NET"
+  - Tests: ".NET", "dotnet" and "C#" find the same sessions; "net" does not match "network"; an unknown tech is a literal word; no tech uses the profile; hostile catalog text stays inside the blocks; limits; 100 percent coverage
+  - _Requirements: P2.6, P2.10_
+
+- [x] 45. Read your GitHub repositories, read-only, with consent (design "GitHub, read-only")
+  - [x] 45.1 Core GitHub module: device flow and refresh, the GitHub_Token_Store (keychain, memory fallback, redaction), the listing client (installations, repositories, paging), the archive reader (manual redirect to codeload only, no token on the redirect, gunzip and tar in memory, size caps) and the worker request that scans one repository under the budget
+  - [x] 45.2 `connect_github`, `scan_github` and `disconnect_github`: background polling, the consent message, forks left out by default, each repository a `github` profile source, simulated mode makes no request, no client ID means not set up
+  - [x] 45.3 Document it: MCP server README (tools, approvals, what leaves your machine, threat model), POWER.md and the plan-my-week skill, the site privacy page (GitHub hosts). Owner action recorded: register the GitHub App and fill in the client ID and slug
+  - Tests: every device-flow error, refresh, token never in a log or error, host allowlist, a redirect to another host is refused, a tar bomb and a huge file stop at the caps, PAX long names, links skipped, decline reads nothing, a client that cannot ask is refused; 100 percent coverage. A security review of the module before the commit
+  - _Requirements: P2.8, P2.9, P2.10_
+
+- [x] 46. Commit tasks 41 to 45 after the full gate passes (100 percent coverage, eslint, `tsc -b`, prettier, `npm run check:dash`, the site tests and build), scoped `compass-power`, with foundation-contracts task 20 in the same commit. Do not push
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

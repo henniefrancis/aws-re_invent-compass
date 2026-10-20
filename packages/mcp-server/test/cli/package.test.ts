@@ -16,6 +16,7 @@ describe('the package manifest and the entry file', () => {
     expect(manifest.files).toEqual([
       'dist/bin.js',
       'dist/scan-worker.js',
+      'dist/github-scan-worker.js',
       'dist/data',
       'dist/sample-repo',
       'dist/fixtures',

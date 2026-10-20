@@ -18,7 +18,14 @@ import { build } from 'esbuild';
 const here = dirname(fileURLToPath(import.meta.url));
 
 /** What is built, relative to `dist/`. Anything else under `dist/` (such as `tsc`) is untouched. */
-export const BUILT_PATHS = ['bin.js', 'scan-worker.js', 'data', 'sample-repo', 'fixtures'];
+export const BUILT_PATHS = [
+  'bin.js',
+  'scan-worker.js',
+  'github-scan-worker.js',
+  'data',
+  'sample-repo',
+  'fixtures',
+];
 
 /** The ES module banner that gives bundled CommonJS code a working `require`. */
 const BANNER =
@@ -40,6 +47,14 @@ export async function buildPackage({
     entryPoints: {
       bin: join(packageDir, 'src', 'bin.ts'),
       'scan-worker': join(repoDir, 'packages', 'core', 'src', 'scanner', 'scan-worker.ts'),
+      'github-scan-worker': join(
+        repoDir,
+        'packages',
+        'core',
+        'src',
+        'github',
+        'github-scan-worker.ts',
+      ),
     },
     outdir: dist,
     bundle: true,

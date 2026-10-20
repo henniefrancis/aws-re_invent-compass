@@ -10,7 +10,9 @@ import { cancelReservation } from '../tools/cancel-reservation.js';
 import { checkItinerary } from '../tools/check-itinerary.js';
 import { exportCalendar } from '../tools/export-calendar.js';
 import { findSessions } from '../tools/find-sessions.js';
+import { findSessionsByTech } from '../tools/find-sessions-by-tech.js';
 import { forgetMe } from '../tools/forget-me.js';
+import { connectGithub, disconnectGithub, scanGithub } from '../tools/github.js';
 import { issueBoardingPasses } from '../tools/issue-boarding-passes.js';
 import { planWeekTool } from '../tools/plan-week.js';
 import { refreshCatalog } from '../tools/refresh-catalog.js';
@@ -18,6 +20,7 @@ import { removeStandby } from '../tools/remove-standby.js';
 import { reserveWithGuardrails } from '../tools/reserve-with-guardrails.js';
 import { scanRepoTool } from '../tools/scan-repo.js';
 import { sendToPhone } from '../tools/send-to-phone.js';
+import { showMyTech } from '../tools/show-my-tech.js';
 import { showSchedule } from '../tools/show-schedule.js';
 import { signIn } from '../tools/sign-in.js';
 import { signOut } from '../tools/sign-out.js';
@@ -61,6 +64,11 @@ export const TOOL_SPECS: { [K in McpToolName]: ToolSpec<K> } = {
   sync_passes: spec('sync_passes', 'write', false, syncPasses),
   export_calendar: spec('export_calendar', 'localAction', false, exportCalendar),
   forget_me: spec('forget_me', 'write', false, forgetMe),
+  show_my_tech: spec('show_my_tech', 'read', false, showMyTech),
+  find_sessions_by_tech: spec('find_sessions_by_tech', 'read', false, findSessionsByTech),
+  connect_github: spec('connect_github', 'localAction', false, connectGithub),
+  scan_github: spec('scan_github', 'read', false, scanGithub),
+  disconnect_github: spec('disconnect_github', 'localAction', false, disconnectGithub),
 };
 
 /** The MCP annotations for a tool class. */

@@ -7,7 +7,8 @@
 // `.gitignore` entry is added only on an explicit accept; without elicitation the offer, the
 // reason and the exact line are returned as text and nothing changes.
 
-import { depthToNumber } from '@compass/core/scanner';
+import { depthToNumber, mapToTaxonomy } from '@compass/core/scanner';
+import type { DepthName } from '@compass/core/scanner';
 import {
   addWeekSpecToGitignore,
   eventDay,
@@ -21,11 +22,20 @@ import {
   weekSpecDirectory,
   writeWeekSpec,
 } from '@compass/core/spec';
-import type { PlannerFinding, PlannerRules, WeekSpecFiles, WriteOutcome } from '@compass/core/spec';
+import type {
+  PlannerFinding,
+  PlannerRules,
+  PlannerTech,
+  WeekSpecFiles,
+  WriteOutcome,
+} from '@compass/core/spec';
 import { CompassError } from '../ports/errors.js';
 import type { CatalogView } from '../ports/events-port.js';
 import { labelUntrusted } from '../safety/labelled-data.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
+import { mergeProfile } from '../state/tech-profile.js';
+import { serviceName, techName } from './show-my-tech.js';
+import { queryForTechKey, sessionsFor } from './tech-query.js';
 import type { ConnectionLine } from '../ports/rules-port.js';
 import {
   commitmentFor,
@@ -78,6 +88,58 @@ function bindRules(
       // A risk is a bad walk that the candidate creates: one that was not there before.
       return [...after].some(([id, line]) => bad(line) && !bad(before.get(id)));
     },
+  };
+}
+
+/** The most technologies of the profile the planner ranks by. */
+export const PLANNER_TECHS = 10;
+
+const DEPTH_NAMES = ['none', 'exploring', 'building', 'production'] as const;
+
+/** What the planner learns about the attendee's work. */
+interface WorkInputs {
+  findings: PlannerFinding[];
+  techs: PlannerTech[];
+  scanSummary: { displayName: string; depth: DepthName }[];
+}
+
+/**
+ * The attendee's work from the merged Tech_Profile (task 42): AWS services with the catalog labels
+ * their taxonomy maps to, and the top technologies with the sessions that match them. With an
+ * empty profile, the last scan of this session, as before.
+ */
+async function workFrom(ctx: ToolContext, catalog: CatalogView): Promise<WorkInputs> {
+  const profile = mergeProfile((await ctx.runtime.techProfile.read()).sources);
+  if (profile.services.length + profile.technologies.length === 0) {
+    return {
+      findings: findingsFrom(ctx),
+      techs: [],
+      scanSummary: (ctx.state.lastScan?.result.services ?? []).map((s) => ({
+        displayName: s.displayName,
+        depth: s.depth,
+      })),
+    };
+  }
+  const findings = profile.services.map((service) => ({
+    displayName: serviceName(service.key),
+    depth: service.depth as 0 | 1 | 2 | 3,
+    ...(service.level === undefined ? {} : { level: service.level }),
+    labels: mapToTaxonomy([{ key: service.key }], catalog.labels).flatMap((match) => match.labels),
+  }));
+  const techs = profile.technologies.slice(0, PLANNER_TECHS).map((tech) => ({
+    displayName: techName(tech.key).name,
+    sessionIds: new Set(
+      sessionsFor(catalog, queryForTechKey(tech.key)).map((session) => session.sessionId),
+    ),
+    projects: tech.projects,
+  }));
+  return {
+    findings,
+    techs,
+    scanSummary: findings.map((finding) => ({
+      displayName: finding.displayName,
+      depth: DEPTH_NAMES[finding.depth],
+    })),
   };
 }
 
@@ -198,11 +260,11 @@ export async function planWeekTool(
     throw new CompassError('LevelInvalid');
   }
   await ensureSignedIn(ctx);
-  const { runtime, state } = ctx;
+  const { runtime } = ctx;
   const catalog = await runtime.events.catalog();
   const { schedule, window } = await readFreshSchedule(ctx);
   const confirmed = confirmedCommitments(schedule, catalog);
-  const findings = findingsFrom(ctx);
+  const { findings, techs, scanSummary } = await workFrom(ctx, catalog);
   const goals = input.goals ?? [];
 
   const plan = await planWeek(
@@ -210,6 +272,7 @@ export async function planWeekTool(
       sessions: [...catalog.byId.values()],
       confirmed,
       findings,
+      techs,
       goals,
       ...(input.level === undefined ? {} : { level: input.level }),
       maxPerDay,
@@ -223,10 +286,7 @@ export async function planWeekTool(
     plan,
     connections: await runtime.rules.connections(all, catalog),
     energyByDay: await runtime.rules.energy(all, catalog),
-    scanSummary: (state.lastScan?.result.services ?? []).map((s) => ({
-      displayName: s.displayName,
-      depth: s.depth,
-    })),
+    scanSummary,
     goals,
     eventWindow: window,
     generatedAt: runtime.clock.now().toISOString(),
@@ -239,8 +299,10 @@ export async function planWeekTool(
   const lines = [
     `Planned ${plan.picks.length} sessions and ${plan.layovers.length} layovers. Nothing has been booked.`,
   ];
-  if (findings.length === 0 && goals.length === 0) {
-    lines.push('Run scan_repo first, or give goals, so the plan can match your work.');
+  if (findings.length === 0 && techs.length === 0 && goals.length === 0) {
+    lines.push(
+      'Run scan_repo or scan_github first, or give goals, so the plan can match your work.',
+    );
   }
   if (plan.excludedForMissingTimes > 0) {
     lines.push(

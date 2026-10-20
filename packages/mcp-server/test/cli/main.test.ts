@@ -148,7 +148,7 @@ describe('main', () => {
       .filter((line) => line.trim() !== '')
       .map((line) => JSON.parse(line) as { id?: number; result?: { tools?: unknown[] } });
     expect(messages.every((m) => 'result' in m || 'method' in m)).toBe(true);
-    expect(messages.find((m) => m.id === 2)?.result?.tools).toHaveLength(18);
+    expect(messages.find((m) => m.id === 2)?.result?.tools).toHaveLength(23);
   });
 
   test('a start-up failure exits 1 with a fixed message', async () => {

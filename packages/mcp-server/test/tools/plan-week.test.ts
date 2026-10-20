@@ -14,6 +14,7 @@ import type { ToolContext } from '../../src/server/types.js';
 import { contextFor } from '../support/context.js';
 import {
   buildCatalogView,
+  loadSyntheticWires,
   repoRoot,
   syntheticCatalogView,
   wireSession,
@@ -99,7 +100,7 @@ describe('plan_week', () => {
     await expect(planWeekTool({}, ctx)).rejects.toMatchObject({ code: 'CatalogMissing' });
     const fresh = setup();
     const outcome = await planWeekTool({}, fresh.ctx);
-    expect(outcome.ok && outcome.text).toContain('Run scan_repo first');
+    expect(outcome.ok && outcome.text).toContain('Run scan_repo or scan_github first');
     expect(outcome.ok && outcome.text).toContain(
       '2 sessions were left out because their times are missing.',
     );
@@ -161,6 +162,7 @@ describe('plan_week', () => {
             reasoning: 'z',
           },
         ],
+        technologies: [],
         unmappedCount: 0,
         filesRead: 1,
         truncated: false,
@@ -185,7 +187,34 @@ describe('plan_week', () => {
     expect(specFs.files.get(join(weekSpecDirectory(ROOT), 'requirements.md'))).toContain(
       '"Amazon S3"',
     );
-    expect(outcome.ok && outcome.text).not.toContain('Run scan_repo first');
+    expect(outcome.ok && outcome.text).not.toContain('Run scan_repo or scan_github first');
+  });
+
+  test('ranks by the tech profile when there is one, and names its AWS services in the plan (task 42)', async () => {
+    const { fake, ctx, specFs } = setup();
+    fake.techProfile.sources = [
+      {
+        id: 'a'.repeat(64),
+        kind: 'github',
+        scannedAt: '2026-10-20T10:00:00.000Z',
+        services: [{ key: 's3', depth: 2, level: 300, score: 3 }],
+        technologies: [{ key: 'python', files: 4, declarations: 1, score: 9 }],
+      },
+    ];
+    fake.events.catalogView = buildCatalogView([
+      ...loadSyntheticWires(),
+      wireSession('py-tech', { title: 'Python on AWS Lambda', services: ['other'] }),
+    ]);
+    const outcome = await planWeekTool({}, ctx);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.ok && outcome.text).not.toContain('Run scan_repo or scan_github first');
+    expect(specFs.files.get(join(weekSpecDirectory(ROOT), 'requirements.md'))).toContain(
+      '"Amazon S3"',
+    );
+    fake.techProfile.sources = [
+      { ...fake.techProfile.sources[0], services: [{ key: 's3', depth: 1, score: 1 }] },
+    ];
+    expect((await planWeekTool({}, contextFor(fake))).ok).toBe(true);
   });
 
   test('a missing workspace folder is refused and nothing is written', async () => {
@@ -448,6 +477,7 @@ describe('plan_week writing (security M2, QA M5 and M8)', () => {
         },
         truncated: false,
         pythonAnalysed: true,
+        technologies: [],
       },
       taxonomy: [],
       root: join('/', 'somewhere', 'else'),

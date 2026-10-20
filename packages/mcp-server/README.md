@@ -9,8 +9,10 @@ Plan your AWS re:Invent week from your own code, book it safely, and get Boardin
 Compass is a local MCP server and a Kiro Power. Your AI assistant uses it to:
 
 - read the session catalog and search it on your machine,
-- scan a folder of yours (read-only) to see which AWS services you use and how deeply,
-- plan a week of sessions that fits that, and write the plan as a Kiro spec in your workspace,
+- scan a folder of yours, or a dev folder of git repositories (read-only), to see which AWS services you use and how deeply, and which other technology you use (.NET, Node.js, Python, React, Docker and more),
+- read your GitHub repositories the same way, read-only and only after you confirm the list,
+- keep that tech list on your machine, answer "What tech do I work on (the most)?" and find sessions on a technology ("Find me sessions on .NET"),
+- plan a week of sessions that fits your tech, and write the plan as a Kiro spec in your workspace,
 - check every booking against your real schedule before it is made, and block clashes,
 - swap a booking for its repeat safely (it reserves the repeat first and cancels the original after),
 - issue unofficial Boarding Passes and hand them to your phone with a short-lived QR code.
@@ -97,7 +99,12 @@ Every command here names the exact version of this package. Pinning it is delibe
 | `sign_out`                | local action | Revokes your sign-in and clears the stored tokens.                                 |
 | `refresh_catalog`         | read         | Loads the session catalog into a private local cache.                              |
 | `find_sessions`           | read         | Searches and filters the cached catalog.                                           |
-| `scan_repo`               | read         | Scans a folder read-only and reports AWS services and depth.                       |
+| `scan_repo`               | read         | Scans a folder (or a dev folder of repos) read-only for AWS services and tech.     |
+| `show_my_tech`            | read         | Lists your tech list on this machine: AWS services first, then other technology.   |
+| `find_sessions_by_tech`   | read         | Finds catalog sessions on a technology, or on the tech you use the most.           |
+| `connect_github`          | local action | Connects the read-only Compass GitHub App. Shows a code to enter on GitHub.        |
+| `scan_github`             | read         | Reads your GitHub repositories, read-only, after you confirm the list.             |
+| `disconnect_github`       | local action | Deletes the GitHub sign-in on this machine.                                        |
 | `check_itinerary`         | read         | Runs the guardrail over proposed sessions. Writes nothing.                         |
 | `show_schedule`           | read         | Lists your reservations, standby list and layovers with their ids. Writes nothing. |
 | `plan_week`               | local action | Plans a week and writes it as a Kiro spec in the workspace, after you confirm.     |
@@ -114,7 +121,7 @@ Every command here names the exact version of this package. Pinning it is delibe
 
 ## Approvals
 
-Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. They change nothing and read nothing of yours. `scan_repo` is read-only too, but it reads a folder on your machine, so approve each scan yourself. It scans freely only inside the folder Compass was started in; for any other folder it asks you to confirm first, and a client that cannot ask cannot scan one. A scan never changes where the plan is written: that is always the folder Compass was started in. `show_schedule` is read-only as well, but it reads your schedule, so approve each call yourself. It takes no input and lists your reserved sessions, standby list and layovers with the ids that `cancel_reservation`, `remove_standby` and `add_layover` take.
+Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. They change nothing and read nothing of yours. `scan_repo` is read-only too, but it reads a folder on your machine, so approve each scan yourself. It scans freely only inside the folder Compass was started in; for any other folder it asks you to confirm first, and a client that cannot ask cannot scan one. A scan never changes where the plan is written: that is always the folder Compass was started in. `show_schedule` is read-only as well, but it reads your schedule, so approve each call yourself. It takes no input and lists your reserved sessions, standby list and layovers with the ids that `cancel_reservation`, `remove_standby` and `add_layover` take. `show_my_tech` and `find_sessions_by_tech` read your tech list on this machine, so approve them per call too. `connect_github`, `scan_github` and `disconnect_github` touch your GitHub account: approve each call yourself. `scan_github` also asks you to confirm the repositories before it reads any, and a client that cannot ask cannot run it.
 
 **Write tools must never be auto-approved.** That means every tool marked write above, including `sync_passes`, which can void passes. Approve each call yourself. Where your client supports it, Compass also asks you to confirm in the client before it changes your schedule, listing the session ids, codes, titles and any warnings. Declining writes nothing.
 
@@ -158,10 +165,21 @@ npx --yes reinvent-compass@0.0.0 demo
 
 It forces simulated mode and runs ten steps through the real tools on a copy of a sample repo: sign in and load the catalog, scan the repo, plan the week, a clash that is blocked, a safe swap, reserve the session that clashed, issue passes, hand them to a phone with a QR code, cancel a session, and void its pass. It prints which step failed and exits 1 if one does. `demo --repo <folder>` scans a folder of yours instead (a copy is used, so your folder is not changed).
 
+## Your tech list and GitHub
+
+Every scan adds to one tech list on your machine: the AWS services you use (with depth) and the other technology you use, such as .NET, C#, Node.js, TypeScript, Python, Java, Go, React, Angular, Docker, Kubernetes and Terraform. Ask "What tech do I work on?" or "What do I use the most?" (`show_my_tech`), and "Find me sessions on .NET" (`find_sessions_by_tech`, which also knows "dotnet" and "C#"). `plan_week` ranks sessions by the whole list.
+
+- **A dev folder.** Point `scan_repo` at a folder of projects. Each git repository one or two levels down is scanned on its own, up to 50, and the reply says how many it scanned and skipped.
+- **The AWS SDK for .NET** counts as AWS evidence: `AWSSDK.*` package references in `.csproj` files and `new Amazon<Name>Client(` in C#.
+- **GitHub, read-only.** `connect_github` signs you in to the Compass GitHub App with a code you enter on github.com. The app has only Contents: read and Metadata: read, so it can never change your code. When you install it on GitHub you choose which accounts, organisations and repositories it may read; an organisation's owner must approve it there. `scan_github` lists the repositories it is about to read and reads nothing until you confirm. Forks are left out unless you ask (`includeForks`). Each repository is downloaded as an archive into memory, scanned under a time and size limit and dropped; nothing is written to disk.
+- **Disconnect.** `disconnect_github` (or `forget_me`) deletes the GitHub sign-in on this machine. To remove the app on GitHub as well, uninstall it at https://github.com/settings/installations and revoke it at https://github.com/settings/apps/authorizations.
+
 ## What leaves your machine
 
 - **Your sign-in tokens** stay in your operating system keychain (or in memory only, if there is no keychain). The access token goes only to `api.awsevents.com`, the refresh token only to `oauth.awsevents.com`, and the ID token only to the Compass pass service.
-- **Your repository** is read on your machine. Only service names and a depth per service are used; no file name, path or content leaves the scanner, and the scan result stays in memory.
+- **Your repository** is read on your machine. Only service and technology names, a depth per service and counts are used; no file name, path or content leaves the scanner.
+- **Your tech list** is kept in your app-data folder (mode 0600) and removed by `forget_me`. Each project is stored under a one-way hash, so no folder path or repository name is kept. It is never sent anywhere.
+- **GitHub**: the GitHub tokens stay in your operating system keychain (or in memory only) and go only to `github.com` and `api.github.com`. Repository archives come from `codeload.github.com` without the token, are read in memory and are never saved. Nothing about your repositories goes to Compass or to AWS.
 - **Your schedule** is read from the AWS Events service. A copy is kept in your app-data folder (mode 0600) and removed by `forget_me`.
 - **Session text** from the catalog is shown to your assistant as labelled data, never as instructions. Session abstracts are never passed on.
 - **Boarding Passes**: when you issue passes, the pass fields (session code, title, times, room and an optional name you type yourself) go to the Compass pass service. Apple or Google receive them if you add a pass to a wallet. The ID token is checked and never stored.
@@ -170,7 +188,9 @@ It forces simulated mode and runs ten steps through the real tools on a copy of 
 
 ## How depth is worked out
 
-The scanner counts evidence per AWS service from Terraform, CDK (TypeScript), AWS SDK for JavaScript v3, boto3 (Python) and package manifests.
+Other technology gets a score instead of a depth: 1 for each file of its language, plus 5 for each manifest or package that declares it. `show_my_tech` ranks it by the number of projects that use it, then by score.
+
+The scanner counts evidence per AWS service from Terraform, CDK (TypeScript), AWS SDK for JavaScript v3, boto3 (Python), the AWS SDK for .NET (`.csproj` and C#) and package manifests.
 
 - `none`: no evidence.
 - `exploring`: only imports, or packages listed as dependencies.
@@ -189,6 +209,8 @@ The score is 2 for each resource, construct or client, plus 1 for each command, 
 | Someone books through the remote `awsevents` server and skips the guardrail                     | Do not use its write tools. The hook template blocks them in Kiro.                                                                                                                                                                                                                     |
 | The wrong program runs when you start Compass with `npx` (the local copy risk)                  | `npx` can prefer a copy of a package from the folder you are in. Pin the version (`reinvent-compass@0.0.0`), do not start Compass from inside a repository you do not trust, and prefer a global install of a pinned version.                                                          |
 | Someone else publishes a package under the same npm name before the owner does (name squatting) | The owner must claim the npm package name `reinvent-compass` (and any scope used) before the first publish, and publish from the owner's account with provenance. Until the name is claimed, install only from the repository. This is an owner action, not something the code can do. |
+| A hostile repository (a slow pattern, a huge archive, a deep or `..` path, links)               | Every scan runs in a worker with a hard time budget. Archives stop at 100 MB compressed or 500 MB unpacked, files over 1 MB and binary files are skipped, links and `..` paths are never followed, and nothing is written to disk.                                                     |
+| A GitHub token is stolen or misused                                                             | The Compass GitHub App can only read code. Tokens live in the OS keychain, are redacted from every log and error, go only to `github.com` and `api.github.com`, and are never sent on the archive redirect. `disconnect_github` deletes them.                                          |
 | A workspace edits the hook to skip the check                                                    | The hook is a convenience. The server runs the same check.                                                                                                                                                                                                                             |
 | Supply chain                                                                                    | Exact version pins in the Power and in the hook template.                                                                                                                                                                                                                              |
 

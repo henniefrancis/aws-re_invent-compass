@@ -7,6 +7,7 @@ export type {
   PlanResult,
   PlannerFinding,
   PlannerInput,
+  PlannerTech,
   PlannerRules,
   PlannerSession,
   Pick,

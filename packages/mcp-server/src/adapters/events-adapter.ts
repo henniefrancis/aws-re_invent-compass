@@ -59,6 +59,7 @@ import type {
   PlannerSession,
 } from '../ports/events-port.js';
 import { checkIdentifier, checkIdentifiers } from '../safety/identifiers.js';
+import { containsAnyWord } from './word-match.js';
 
 /** The sign-in side of S1, injected so the adapter works the same in live and simulated mode. */
 export interface AuthPort {
@@ -192,13 +193,18 @@ function viewOf(entries: readonly CacheEntry[]): CatalogView {
     byId,
     labels: [...labels].sort(),
     filter: (filter) => {
-      const { services, ...rest } = filter;
+      const { services, words, ...rest } = filter;
       const wanted = services?.map((s) => s.toLowerCase());
       return filterCatalog(entries, rest)
         .filter(
           ({ wire }) =>
             wanted === undefined ||
             (wire.services ?? []).some((s) => wanted.includes(s.toLowerCase())),
+        )
+        .filter(
+          ({ session, wire }) =>
+            words === undefined ||
+            containsAnyWord([session.title, wire.abstract, wire.topics, wire.services], words),
         )
         .map(({ session }) => session);
     },

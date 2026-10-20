@@ -2,9 +2,15 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { createTokenStore } from '@compass/core/auth';
+import { createGitHubTokenStore } from '@compass/core/github';
+import type { GitHubFetch } from '@compass/core/github';
 import type { LoopbackServer } from '@compass/core/auth';
 import type { HttpRequest } from '@compass/core/passes';
-import { WRITES_ON_NOTICE, createRuntime } from '../../src/runtime/create-runtime.js';
+import {
+  GITHUB_OVERRIDE_NOTICE,
+  WRITES_ON_NOTICE,
+  createRuntime,
+} from '../../src/runtime/create-runtime.js';
 import { SIMULATED_LABEL } from '../../src/server/results.js';
 import { connect, textOf } from '../support/connect.js';
 import { installNetworkGuard } from '../support/network-guard.js';
@@ -122,6 +128,54 @@ describe('live composition', () => {
     await expect(runtime.events.reserve(['x'])).rejects.toMatchObject({ code: 'ReadOnly' });
     await expect(runtime.events.cancel('x')).rejects.toMatchObject({ code: 'ReadOnly' });
     expect(env.stderr.join('')).not.toContain(WRITES_ON_NOTICE);
+    expect(guard.attempts).toEqual([]);
+  });
+
+  test('live mode has a GitHub port that reads through the core module, in this thread or the worker (task 45)', async () => {
+    const githubStore = createGitHubTokenStore({ keyring: memoryKeyring() });
+    githubStore.save({ accessToken: 'ghu_test' });
+    const requested: string[] = [];
+    const githubFetch: GitHubFetch = (url) => {
+      requested.push(url);
+      return Promise.resolve({
+        status: 404,
+        headers: { get: () => null },
+        body: null,
+        text: () => Promise.resolve('{}'),
+      });
+    };
+    const repo = { id: 1, fullName: 'me/api', owner: 'me', fork: false, archived: false };
+    const env = await testEnvironment({ store: createTokenStore(memoryKeyring()) });
+    const config = {
+      COMPASS_GITHUB_CLIENT_ID: 'Iv23liTest',
+      COMPASS_GITHUB_APP_SLUG: 'compass-test',
+    };
+    const runtime = await createRuntime({ ...env.environment, githubStore, githubFetch }, config);
+    expect(runtime.github?.status()).toEqual({ state: 'connected' });
+    expect(runtime.github?.installUrl).toBe(
+      'https://github.com/apps/compass-test/installations/new',
+    );
+    // No bundled worker means no budget, so nothing is read at all (security review M1).
+    await expect(runtime.github?.scanRepository(repo)).rejects.toMatchObject({ code: 'Network' });
+    expect(requested).toEqual([]);
+    expect(env.stderr.join('')).toContain(GITHUB_OVERRIDE_NOTICE);
+    const workerEnv = {
+      ...env.environment,
+      githubStore,
+      githubFetch,
+      githubWorkerPath: join(env.home, 'missing-worker.js'),
+    };
+    const withWorker = await createRuntime(workerEnv, config);
+    await expect(withWorker.github?.scanRepository(repo)).rejects.toMatchObject({
+      code: 'Network',
+    });
+    const simulated = await createRuntime(env.environment, { COMPASS_MODE: 'simulated' });
+    expect(simulated.github).toBeUndefined();
+    const plain = await testEnvironment({ store: createTokenStore(memoryKeyring()), githubStore });
+    expect((await createRuntime(plain.environment, {})).github?.status()).toEqual({
+      state: 'notConfigured',
+    });
+    expect(plain.stderr.join('')).not.toContain(GITHUB_OVERRIDE_NOTICE);
     expect(guard.attempts).toEqual([]);
   });
 

@@ -315,6 +315,12 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
     - Tests: update `packages/contracts/test/workflows.test.ts` so it requires exactly the pull request into main and the push to develop, and still refuses a schedule or any other push branch
   - [x] 19.2 Commit after the full gate passes, scoped `foundation-contracts`; the owner approved the push
 
+- [x] 20. Add the tech and GitHub tool contracts (owner request of 20 October, design "Owner change: tech and GitHub tool contracts")
+  - [x] 20.1 In `packages/contracts/src/mcp-tools.ts`, add `show_my_tech`, `find_sessions_by_tech`, `connect_github`, `scan_github` and `disconnect_github`, give `ScanRepoOutput` an optional `technologies` list, and say twenty-three tools in the record comment. Add the accept and strip cases to `schemas-accept-strip.test.ts`
+    - Why: compass-power tasks 41 to 45 build the handlers
+    - _Requirements: 4.11_
+  - [x] 20.2 Commit in the same commit as compass-power tasks 41 to 45 (scoped `compass-power`), so the registry and the contract never disagree. Do not push
+
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.
 - Each top-level task (1 through 14) ends with a commit sub-task. Commit locally only after that task's tests pass, using Conventional Commits with `foundation-contracts` as the scope. The first commit (1.6) also includes `.kiro/specs/foundation-contracts/`. Never push, merge, tag or open a PR: the integrator does that after review.

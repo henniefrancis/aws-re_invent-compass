@@ -13,7 +13,7 @@ Do these steps in this order. Do not skip ahead.
 
 1. `sign_in`. The attendee signs in once with their AWS Builder ID. Tokens never appear in any result.
 2. `refresh_catalog`. Loads the session catalog into a private local cache.
-3. `scan_repo` on the folder the attendee names. It reads the folder only. Only service names and how deeply each is used leave the scanner, never file contents.
+3. `scan_repo` on the folder the attendee names (one project, or a dev folder of git repositories). It reads the folder only. Only AWS service and technology names, depth and counts leave the scanner, never file contents. If the attendee wants their GitHub repositories too, use `connect_github` and then `scan_github` (see "Your tech").
 4. `plan_week`. It writes the plan as a Kiro spec in the workspace. Read the target folder it states, and make sure the attendee agrees with it before anything is written.
 5. For each task in the week spec, one at a time:
    1. Run `check_itinerary` for that session.
@@ -21,6 +21,12 @@ Do these steps in this order. Do not skip ahead.
    3. Ask for approval for this one session.
    4. Only after a clear yes, call the write tool.
 6. After any change to the schedule, run `sync_passes` so the Boarding Passes match the schedule.
+
+## Your tech
+
+Every scan adds to the attendee's tech list on their machine. When they ask "What tech do I work on?" or "What do I use the most?", call `show_my_tech` (with `top` for the most used). When they ask for sessions on a technology ("Find me sessions on .NET"), call `find_sessions_by_tech` with that technology; with no technology it searches the tech they use the most. `plan_week` already ranks by the whole list.
+
+For GitHub: `connect_github` shows a code; tell the attendee to enter it on the GitHub page and, if asked, to install the Compass GitHub App only on the accounts and organisations they are allowed to share. Then `scan_github`; it asks the attendee to confirm the repositories before it reads any. Never read repositories the attendee has not confirmed, and never offer to scan an organisation they have not said they may scan. `disconnect_github` deletes the GitHub sign-in.
 
 ## Seeing the schedule
 

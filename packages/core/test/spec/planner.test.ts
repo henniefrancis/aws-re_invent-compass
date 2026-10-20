@@ -38,6 +38,28 @@ function entry(id: string, services: string[], overrides: Partial<NormalisedSess
 }
 
 describe('planWeek examples', () => {
+  test('the attendee technology ranks sessions and names itself in the reason (compass-power task 42)', async () => {
+    const rules = new FakePlannerRules();
+    const sessions = [
+      entry('t1', ['other'], { title: 'Unrelated' }),
+      entry('t2', ['other'], { title: 'Serverless .NET' }),
+      entry('t3', ['storage'], { title: 'S3 with .NET' }),
+    ];
+    const techs = [
+      { displayName: '.NET', sessionIds: new Set(['t2', 't3']), projects: 5 },
+      { displayName: 'Go', sessionIds: new Set(['t9']), projects: 1 },
+    ];
+    const result = await planWeek(input(sessions, { findings: [], techs }), rules);
+    expect(result.picks.map((p) => p.session.sessionId).sort()).toEqual(['t2', 't3']);
+    expect(result.picks.find((p) => p.session.sessionId === 't2')?.reason).toContain(
+      'Matches your work with .NET',
+    );
+    const withFindings = await planWeek(input(sessions, { techs }), new FakePlannerRules());
+    expect(withFindings.picks.find((p) => p.session.sessionId === 't3')?.reason).toContain(
+      'Amazon S3',
+    );
+  });
+
   test('picks matching sessions, marks walk-ups and builds commitments', async () => {
     const rules = new FakePlannerRules();
     rules.layovers = () => [

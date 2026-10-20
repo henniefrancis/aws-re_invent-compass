@@ -55,6 +55,9 @@ describe('registry', () => {
       'scan_repo',
       'check_itinerary',
       'show_schedule',
+      'show_my_tech',
+      'find_sessions_by_tech',
+      'scan_github',
     ];
     const scheduleWrites = [
       'reserve_with_guardrails',

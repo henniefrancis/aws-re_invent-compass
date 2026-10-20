@@ -29,7 +29,7 @@ export const DESCRIPTIONS: Record<McpToolName, string> = {
   find_sessions:
     'Search the cached session catalog by words, service, level, type or day. Nothing is changed.',
   scan_repo:
-    'Scan a local folder read-only and report which AWS services it uses and how deeply. Only service names and depth leave the scanner.',
+    'Scan a local folder read-only (a project, or a dev folder of git repositories) and report which AWS services it uses and how deeply, then the other technology it uses, such as .NET, Node.js or Python. Adds it to your tech list on this machine. Only names, depth and counts leave the scanner.',
   plan_week:
     'Suggest a week of sessions from your code and goals, and write it as a Kiro spec in your workspace. It does not book anything.',
   check_itinerary:
@@ -47,6 +47,16 @@ export const DESCRIPTIONS: Record<McpToolName, string> = {
   export_calendar:
     'Build a calendar file. With no input it reads your live schedule; pass commitments only to export a proposed itinerary. Nothing is booked.',
   forget_me: `Delete everything Compass holds about you. ${FORGET_SENTENCE}`,
+  show_my_tech:
+    'What tech do I work on, and what do I use the most: lists your tech list on this machine, AWS services first (with depth), then languages, frameworks and tools, from the folders and GitHub repositories Compass has scanned. top narrows it to the most used. Nothing is changed.',
+  find_sessions_by_tech:
+    'Find me sessions on a technology, for example .NET, Python, React or Amazon S3: searches the cached session catalog for that technology. With no tech, it finds sessions for the tech you use the most. Nothing is changed.',
+  connect_github:
+    'Connect Compass to your GitHub account, read-only, through the Compass GitHub App (it can only read code, never change it). Shows a code to enter on GitHub. You choose on GitHub which accounts, organisations and repositories it may read.',
+  scan_github:
+    'Scan your GitHub repositories, read-only, after you confirm the list, and add the AWS services and other technology they use to your tech list on this machine. Forks are left out unless includeForks is true. No code is saved.',
+  disconnect_github:
+    'Delete the GitHub sign-in Compass holds on this machine. Your tech list stays until forget_me.',
 };
 
 /** A short title for each tool. */
@@ -55,7 +65,7 @@ export const TITLES: Record<McpToolName, string> = {
   sign_out: 'Sign out',
   refresh_catalog: 'Refresh the catalog',
   find_sessions: 'Find sessions',
-  scan_repo: 'Scan a repository',
+  scan_repo: 'Scan a folder or repository',
   plan_week: 'Plan my week',
   check_itinerary: 'Check my itinerary',
   show_schedule: 'Show my schedule',
@@ -69,4 +79,9 @@ export const TITLES: Record<McpToolName, string> = {
   sync_passes: 'Sync Boarding Passes',
   export_calendar: 'Export a calendar',
   forget_me: 'Forget me',
+  show_my_tech: 'Show my tech',
+  find_sessions_by_tech: 'Find sessions by tech',
+  connect_github: 'Connect GitHub',
+  scan_github: 'Scan my GitHub',
+  disconnect_github: 'Disconnect GitHub',
 };

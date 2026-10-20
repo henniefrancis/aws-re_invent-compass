@@ -16,6 +16,7 @@ export const REQUIRED_FILES = [
   'README.md',
   'dist/bin.js',
   'dist/scan-worker.js',
+  'dist/github-scan-worker.js',
   'dist/data/venues.json',
   'dist/sample-repo/infra/main.tf',
   'dist/fixtures/api/get-event/success.json',
@@ -24,7 +25,7 @@ export const REQUIRED_FILES = [
 
 /** Every file must match one of these. */
 export const ALLOWED_FILE =
-  /^(?:package\.json|README\.md|dist\/(?:bin\.js|scan-worker\.js)|dist\/(?:data|sample-repo|fixtures)\/.+)$/;
+  /^(?:package\.json|README\.md|dist\/(?:bin\.js|scan-worker\.js|github-scan-worker\.js)|dist\/(?:data|sample-repo|fixtures)\/.+)$/;
 
 /** Returns the problems found in a list of packed file paths (empty when it is fine). */
 export function checkPackFiles(paths) {

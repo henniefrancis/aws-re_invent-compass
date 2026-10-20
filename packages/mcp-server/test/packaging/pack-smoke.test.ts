@@ -75,6 +75,7 @@ describe('the packed package (QA H2, security M1)', () => {
   test('contains the bundle, the worker, the resources and the README, and nothing else', () => {
     expect(built.entries).toContain('dist/bin.js');
     expect(built.entries).toContain('dist/scan-worker.js');
+    expect(built.entries).toContain('dist/github-scan-worker.js');
     expect(built.entries).toContain('dist/data/venues.json');
     expect(built.entries).toContain('dist/sample-repo/infra/main.tf');
     expect(built.entries).toContain('dist/fixtures/api/get-event/success.json');
@@ -83,7 +84,7 @@ describe('the packed package (QA H2, security M1)', () => {
     expect(built.entries).toContain('README.md');
     for (const entry of built.entries) {
       expect(entry, entry).toMatch(
-        /^(dist\/(bin\.js|scan-worker\.js|data\/|sample-repo\/|fixtures\/)|package\.json$|README\.md$)/,
+        /^(dist\/(bin\.js|scan-worker\.js|github-scan-worker\.js|data\/|sample-repo\/|fixtures\/)|package\.json$|README\.md$)/,
       );
       expect(entry).not.toMatch(/\.ts$|dist\/tsc|\/test\//);
     }
@@ -98,7 +99,7 @@ describe('the packed package (QA H2, security M1)', () => {
     expect(manifest.dependencies).toEqual({ '@napi-rs/keyring': '2.1.1' });
     expect(manifest.private).toBe(true);
     expect(manifest.bin).toEqual({ 'reinvent-compass': 'dist/bin.js' });
-    for (const file of ['bin.js', 'scan-worker.js']) {
+    for (const file of ['bin.js', 'scan-worker.js', 'github-scan-worker.js']) {
       const text = await readFile(join(built.extracted, 'dist', file), 'utf8');
       expect(text.startsWith(file === 'bin.js' ? '#!/usr/bin/env node\n' : 'import')).toBe(true);
       const imports = [...text.matchAll(/^import\s[^;]*?from\s*["']([^"']+)["']/gm)].map(

@@ -51,6 +51,10 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
     'That folder is outside the workspace Compass was started in, and this client cannot ask you to confirm it. Start Compass in that folder, or use a client that can ask.',
   UnsafePath: 'Compass will not write through a symbolic link, so it wrote nothing.',
   ReadOnly: READ_ONLY_MESSAGE,
+  GitHubNotConnected:
+    'Compass is not connected to GitHub, or the connection has ended. Run connect_github, then try again.',
+  GitHubConfirmationNeeded:
+    'Compass reads your GitHub repositories only after you confirm the list, and this client cannot ask. Use a client that can ask you to confirm.',
   Internal: INTERNAL_MESSAGE,
 };
 

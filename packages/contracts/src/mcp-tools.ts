@@ -102,6 +102,87 @@ const ScanRepoOutput = z.object({
       }),
     )
     .optional(),
+  // Other technology found, by display name and score (task 20). Optional, so older outputs parse.
+  technologies: z
+    .array(
+      z.object({
+        technology: z.string(),
+        score: z.number(),
+      }),
+    )
+    .optional(),
+});
+
+// show_my_tech: list the attendee's tech profile, kept on their machine: AWS services first,
+// then other technology (task 20). top narrows the list to the most used.
+const ShowMyTechInput = z.object({
+  top: z.number().optional(),
+});
+const ShowMyTechOutput = z.object({
+  services: z.array(
+    z.object({
+      service: z.string(),
+      depth: z.number(),
+      projects: z.number(),
+    }),
+  ),
+  technologies: z.array(
+    z.object({
+      technology: z.string(),
+      group: z.string(),
+      projects: z.number(),
+      score: z.number(),
+    }),
+  ),
+  sources: z.object({
+    folders: z.number(),
+    githubRepositories: z.number(),
+  }),
+});
+
+// find_sessions_by_tech: find cached catalog sessions on one technology, or on the top
+// technologies of the profile when none is given, grouped by technology (task 20).
+const FindSessionsByTechInput = z.object({
+  tech: z.string().optional(),
+  limit: z.number().optional(),
+});
+const FindSessionsByTechOutput = z.object({
+  groups: z.array(
+    z.object({
+      tech: z.string(),
+      sessions: z.array(NormalisedSessionSchema),
+      totalMatched: z.number(),
+    }),
+  ),
+});
+
+// connect_github: start or report the GitHub device sign-in for the read-only GitHub App
+// (task 20). The user code is shown to the human; no token is ever modelled.
+const ConnectGithubInput = z.object({});
+const ConnectGithubOutput = z.object({
+  state: z.enum(['notConfigured', 'waiting', 'connected', 'failed']),
+  userCode: z.string().optional(),
+  verificationUri: z.string().optional(),
+});
+
+// scan_github: read the attendee's GitHub repositories, read-only and after they confirm, into
+// the tech profile (task 20). Only counts and names of technology come back, never a repository.
+const ScanGithubInput = z.object({
+  owners: z.array(z.string()).optional(),
+  includeForks: z.boolean().optional(),
+  maxRepositories: z.number().optional(),
+});
+const ScanGithubOutput = z.object({
+  scanned: z.number(),
+  skipped: z.number(),
+  services: z.array(z.string()),
+  technologies: z.array(z.string()),
+});
+
+// disconnect_github: delete the GitHub tokens on this machine (task 20). No arguments.
+const DisconnectGithubInput = z.object({});
+const DisconnectGithubOutput = z.object({
+  disconnected: z.boolean(),
 });
 
 // plan_week: suggest a week of commitments from goals, level and a per-day cap. The
@@ -245,8 +326,8 @@ const ForgetMeOutput = z.object({
 });
 
 /**
- * The eighteen MCP tools (build plan section 8.1, plus show_schedule from SP3), each with
- * its input and output zod object schema. S3 iterates this record by key to register the
+ * The twenty-three MCP tools (build plan section 8.1, plus show_schedule from SP3 and the five
+ * tech and GitHub tools of task 20), each with its input and output zod object schema. S3 iterates this record by key to register the
  * tools. The record is frozen with `as const` so the key set is fixed and McpToolName is
  * exact.
  */
@@ -278,6 +359,11 @@ export const mcpTools = {
   sync_passes: { input: SyncPassesInput, output: SyncPassesOutput },
   export_calendar: { input: ExportCalendarInput, output: ExportCalendarOutput },
   forget_me: { input: ForgetMeInput, output: ForgetMeOutput },
+  show_my_tech: { input: ShowMyTechInput, output: ShowMyTechOutput },
+  find_sessions_by_tech: { input: FindSessionsByTechInput, output: FindSessionsByTechOutput },
+  connect_github: { input: ConnectGithubInput, output: ConnectGithubOutput },
+  scan_github: { input: ScanGithubInput, output: ScanGithubOutput },
+  disconnect_github: { input: DisconnectGithubInput, output: DisconnectGithubOutput },
 } as const;
 
 /**

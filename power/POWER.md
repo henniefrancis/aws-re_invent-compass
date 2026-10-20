@@ -16,7 +16,9 @@ This power is the same power that `plugin.json` describes. `plugin.json`, `mcp.j
 ## What it does
 
 - Reads the re:Invent session catalog and searches it on your machine.
-- Scans a folder of yours, read-only, to see which AWS services you use and how deeply.
+- Scans a folder of yours, or a dev folder of git repositories, read-only, to see which AWS services you use and how deeply, and which other technology you use (.NET, Node.js, Python, React and more).
+- Reads your GitHub repositories the same way, through a read-only GitHub App, only after you confirm the list.
+- Keeps that tech list on your machine, tells you what tech you work on the most, and finds sessions on a technology.
 - Plans a week of sessions and writes the plan as a Kiro spec in your workspace, after you confirm the folder.
 - Checks every booking against your real schedule before it is made, and blocks clashes.
 - Swaps a booking for its repeat safely: it reserves the repeat first and cancels the original after.
@@ -34,7 +36,7 @@ The `compass` server starts with `npx --yes reinvent-compass@0.0.0`; the version
 
 ## Approvals
 
-Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. `scan_repo` reads a folder of yours, so approve each scan. `show_schedule` reads your schedule, so approve each call: it takes no input and lists your reserved sessions, standby list and layovers with the ids the write tools take. Never auto-approve a write tool: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`, `issue_boarding_passes`, `send_to_phone`, `sync_passes` or `forget_me`. `sync_passes` can void passes, so it is a write tool. `add_layover` takes an `action` of `create`, `update` or `delete` (the last two need the `personalTimeId` that `show_schedule` lists), and each one asks you to confirm.
+Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. `scan_repo` reads a folder of yours, so approve each scan. `show_my_tech` and `find_sessions_by_tech` read your tech list, and `connect_github`, `scan_github` and `disconnect_github` touch your GitHub account, so approve each call; `scan_github` also asks you to confirm the repositories first. `show_schedule` reads your schedule, so approve each call: it takes no input and lists your reserved sessions, standby list and layovers with the ids the write tools take. Never auto-approve a write tool: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`, `issue_boarding_passes`, `send_to_phone`, `sync_passes` or `forget_me`. `sync_passes` can void passes, so it is a write tool. `add_layover` takes an `action` of `create`, `update` or `delete` (the last two need the `personalTimeId` that `show_schedule` lists), and each one asks you to confirm.
 
 ## Read-only by default
 

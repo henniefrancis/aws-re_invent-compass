@@ -16,6 +16,7 @@ import type { PassesPort } from '../ports/passes-port.js';
 import type { Runtime } from '../ports/runtime.js';
 import type { RulesPort } from '../ports/rules-port.js';
 import { createSnapshotStore } from '../state/schedule-snapshot.js';
+import { createTechProfileStore } from '../state/tech-profile.js';
 import { createInProcessPassService, SIMULATED_HOST } from './in-process-pass-service.js';
 import type { InProcessPassService } from './in-process-pass-service.js';
 
@@ -80,6 +81,7 @@ export async function createSimulatedRuntime(
       clock,
       logger: deps.logger,
       cwd: deps.cwd,
+      techProfile: createTechProfileStore(deps.appDataDir, 'simulated', deps.fs),
       ...(deps.scanRunner === undefined ? {} : { scanRunner: deps.scanRunner }),
     },
   };

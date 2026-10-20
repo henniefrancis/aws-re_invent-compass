@@ -7,6 +7,7 @@ import { quoted, summary, type ContentBlock } from './content-block';
 const PLAN = 'docs/architecture/build-plan.md';
 const PRODUCT = '.kiro/steering/product.md';
 const SITE = '.kiro/specs/showcase-site/requirements.md';
+const MCP_README = 'packages/mcp-server/README.md';
 
 export interface PrivacySection {
   readonly id: 'stays' | 'leaves' | 'handoff' | 'site' | 'rights' | 'party';
@@ -55,6 +56,12 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         'The result of the code scan stays in memory. The week spec gets service names and depth only, with no file paths.',
         PLAN,
         '4.2 (P7)',
+      ),
+      summary(
+        'privacy-tech-list',
+        'Your tech list, the AWS services and other technology from the folders and GitHub repositories you scan, stays in a folder on your computer. Each project is stored under a one-way hash, so no path or repository name is kept. forget_me deletes it.',
+        MCP_README,
+        'What leaves your machine',
       ),
       summary(
         'privacy-generated-files',
@@ -109,6 +116,12 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         'When you add a pass to a wallet, Apple (the push token) and Google (the pass object) also process data. Google acts as a processor.',
         PLAN,
         '4.2 (P15, P16)',
+      ),
+      summary(
+        'privacy-github',
+        'If you connect GitHub, Compass uses a GitHub App that can only read code. Your GitHub tokens stay in your computer keychain and go only to github.com and api.github.com. Repository archives are read in memory on your computer and never saved, and nothing about your repositories goes to Compass or AWS.',
+        MCP_README,
+        'What leaves your machine',
       ),
       quoted('privacy-no-human', 'No human reads server data in normal operation.', PLAN, '4.2'),
     ],

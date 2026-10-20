@@ -661,3 +661,14 @@ SP3 in Kiro showed that no MCP tool lists the attendee's current schedule with i
 ## Post-merge change: CI on develop pushes (20 October 2026, task 19)
 
 Deviation from "no push trigger" (ADR-018, build plan 11.1): `check.yml` now also runs on pushes to `develop`. With PR #1 merged there was no open pull request into `main`, so develop had no CI. The trigger is limited to the one integration branch; there is still no schedule and no deploy workflow. When a pull request from develop into main is open, a push runs the check twice (once per trigger); that is accepted, since a run takes about six minutes and the repository is public.
+
+## Owner change: tech and GitHub tool contracts (20 October 2026, task 20)
+
+`mcpTools` grows from eighteen to twenty-three entries for compass-power tasks 41 to 45 (design "Owner change: your tech and your GitHub"). Every schema strips unknown fields and carries no secret, no path and no repository name.
+
+- `show_my_tech`: input `{ top?: number }`; output `{ services: { service, depth, projects }[], technologies: { technology, group, projects, score }[], sources: { folders, githubRepositories } }`.
+- `find_sessions_by_tech`: input `{ tech?: string, limit?: number }`; output `{ groups: { tech, sessions: NormalisedSession[], totalMatched }[] }`.
+- `connect_github`: input `{}`; output `{ state: 'notConfigured' | 'waiting' | 'connected' | 'failed', userCode?, verificationUri? }`.
+- `scan_github`: input `{ owners?: string[], includeForks?: boolean, maxRepositories?: number }`; output `{ scanned: number, skipped: number, technologies: string[], services: string[] }`.
+- `disconnect_github`: input `{}`; output `{ disconnected: boolean }`.
+- `ScanRepoOutput` gains an optional `technologies: { technology, score }[]`, so older outputs still parse.

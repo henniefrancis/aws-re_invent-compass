@@ -455,3 +455,27 @@ P1.3. **Untrusted text stays labelled.** THE `show_schedule` text SHALL show cat
 P1.4. **Plain descriptions.** THE `show_schedule` description SHALL say it takes no input; THE `check_itinerary` description SHALL say it checks commitments the caller passes in and SHALL point to `show_schedule` for the current schedule; THE `export_calendar` description SHALL say that with no input it reads the live schedule.
 
 P1.5. **Approval.** `show_schedule` reads the attendee's schedule, so it SHALL NOT be in the recommended `autoApprove` list (which stays at the three tools of R2.8), and the README and the Power SHALL say it is approved per call.
+
+## Owner amendments: your tech and your GitHub (20 October 2026)
+
+The owner asked that Compass learn every technology the attendee works on, not only AWS services, from local folders and from their GitHub accounts, read-only and with consent, and use that list to find and plan sessions. These take precedence over the criteria above where they differ.
+
+P2.1. **All technology, AWS first.** THE Scanner SHALL report, besides AWS services, the languages, frameworks and tools a scanned folder uses (for example .NET, C#, Node.js, JavaScript, TypeScript, Python, Java, Go, React, Angular, Docker, Kubernetes and Terraform), from file extensions and package manifests, with a score per technology. AWS services SHALL always be listed before other technology. THE Scanner SHALL also count the AWS SDK for .NET (NuGet `AWSSDK.*` package references and `new Amazon<Name>Client(` in C#) as AWS service evidence, with every identifier taken from an official source.
+
+P2.2. **Names only.** No file name, path, repository name or file content SHALL leave the Scanner; only technology and service names, counts, depths and scores.
+
+P2.3. **A dev folder of projects.** WHEN the scanned folder is not itself a git repository but holds git repositories one or two levels down, THE Compass_Server SHALL scan each repository as its own project, each with its own limits and time budget, up to 50 projects, and say how many it scanned and how many it skipped.
+
+P2.4. **Tech profile on the device.** Every scan SHALL add to one Tech_Profile kept on the attendee's machine (app-data folder, file mode 0600, a `simulated` subfolder in simulated mode). A project scanned again SHALL replace its earlier entry, keyed by a one-way hash of its folder or repository, so no path or repository name is stored. `forget_me` SHALL delete the Tech_Profile.
+
+P2.5. **What tech do I work on.** THE Compass_Server SHALL offer a Read_Tool `show_my_tech` that lists the Tech_Profile: AWS services first (depth, suggested level, number of projects), then other technology ranked by the number of projects and then by score, with how many folders and GitHub repositories it came from. It SHALL accept an optional `top` count for "the most". It reads only the local profile.
+
+P2.6. **Find sessions by tech.** THE Compass_Server SHALL offer a Read_Tool `find_sessions_by_tech`. Given a technology (any common spelling, for example ".NET", "dotnet" or "C#"), it SHALL return cached catalog sessions whose title, abstract, topics or services match that technology's search words, matched as whole words. Given none, it SHALL use the top technologies of the Tech_Profile and group the sessions by technology. Session text SHALL stay inside a catalog Labelled_Data_Block.
+
+P2.7. **Plans use your tech.** `plan_week` SHALL rank sessions by the whole Tech_Profile (AWS services and other technology), not only the last scan.
+
+P2.8. **GitHub, read-only, with consent.** THE Compass_Server SHALL offer `connect_github`, `scan_github` and `disconnect_github`. Compass SHALL reach GitHub only through a GitHub App whose only permissions are Contents: read and Metadata: read, signed in with GitHub's device flow, so the token can never write. The attendee chooses which accounts, organisations and repositories the app may read when they install it on GitHub; an organisation's owner must approve an install there. `scan_github` SHALL list the repositories it is about to read and SHALL read no repository content until the human confirms (listing the repository names the app may read, which the confirmation needs, is allowed before it); a client that cannot ask SHALL be refused. Forks SHALL be left out unless asked for.
+
+P2.9. **GitHub data stays on the device.** Repository archives SHALL be read in memory inside the scan worker, under a hard time and size budget per repository, and SHALL never be written to disk. Only the Tech_Profile entry of each repository is kept. The GitHub tokens SHALL live in the OS keychain (memory only if there is none), SHALL be sent only to `github.com` and `api.github.com`, and SHALL never be logged. An archive download SHALL follow a redirect only to `codeload.github.com` and SHALL not send the token there. `disconnect_github` and `forget_me` SHALL delete the tokens and say where to revoke the app on GitHub.
+
+P2.10. **Approval and modes.** `show_my_tech` and `find_sessions_by_tech` read nothing of the attendee beyond the local profile and the cached catalog, but the profile is the attendee's data, so neither SHALL be in the recommended `autoApprove` list, which stays at three. `connect_github`, `scan_github` and `disconnect_github` SHALL be approved per call. In simulated mode the GitHub tools SHALL say that GitHub is not used and make no request. None of these tools writes to the Events API, so the read-only default (P1, task 37) is unchanged.

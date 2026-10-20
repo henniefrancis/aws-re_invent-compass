@@ -1,9 +1,16 @@
 import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
-import { DEFAULT_DETECTORS, scanRepo } from '../../src/scanner/scan-repo.js';
+import {
+  DEFAULT_DETECTORS,
+  DEFAULT_TECH_DETECTORS,
+  analyseFiles,
+  scanRepo,
+} from '../../src/scanner/scan-repo.js';
 import type { ScanDeps } from '../../src/scanner/scan-repo.js';
 import { FolderNotFoundError } from '../../src/scanner/walker.js';
-import type { Detector } from '../../src/scanner/detectors/types.js';
+import type { WalkSummary } from '../../src/scanner/walker.js';
+import type { SourceFile } from '../../src/scanner/source-file.js';
+import type { Detector, TechDetector } from '../../src/scanner/detectors/types.js';
 import { MemoryScanFs } from '../support/memory-scan-fs.js';
 import type { MemoryTree } from '../support/memory-scan-fs.js';
 
@@ -194,5 +201,166 @@ describe('Property 11: scan results do not depend on listing order', () => {
       ),
       { numRuns: 100 },
     );
+  });
+});
+
+describe('technologies (task 41.2)', () => {
+  test('counts files by extension and manifests by declaration, scored and sorted', async () => {
+    const result = await scan({
+      'web/package.json': JSON.stringify({
+        dependencies: { react: '18', express: '4' },
+        devDependencies: { typescript: '5' },
+      }),
+      'web/a.ts': 'x',
+      'web/b.tsx': 'x',
+      'web/c.js': 'x',
+      'api/Api.csproj':
+        '<Project><ItemGroup><PackageReference Include="Microsoft.AspNetCore.OpenApi" /></ItemGroup></Project>',
+      'api/Program.cs': 'var app = 1;',
+      'api/Startup.cs': 'var b = 2;',
+      'svc/Main.java': 'class Main {}',
+      'svc/Other.java': 'class Other {}',
+      'go/main.go': 'package main',
+      'notes.md': 'x',
+      Dockerfile: 'FROM node:24',
+    });
+    expect(result.technologies.map((t) => [t.key, t.files, t.declarations, t.score])).toEqual([
+      ['typescript', 2, 1, 7],
+      ['aspnet', 0, 1, 5],
+      ['docker', 0, 1, 5],
+      ['dotnet', 0, 1, 5],
+      ['express', 0, 1, 5],
+      ['nodejs', 0, 1, 5],
+      ['react', 0, 1, 5],
+      ['csharp', 2, 0, 2],
+      ['java', 2, 0, 2],
+      ['go', 1, 0, 1],
+      ['javascript', 1, 0, 1],
+    ]);
+    expect(result.technologies[0]).toEqual({
+      key: 'typescript',
+      displayName: 'TypeScript',
+      group: 'language',
+      files: 2,
+      declarations: 1,
+      score: 7,
+    });
+    // Java, Go and Markdown files are counted by name only, never read.
+    expect(result.filesRead).toBe(8);
+    expect(result.skipped.unsupportedType).toBe(4);
+    expect(JSON.stringify(result.technologies)).not.toContain('web');
+    expect(JSON.stringify(result.technologies)).not.toContain('Program');
+  });
+
+  test('a scan with no technology gives an empty list', async () => {
+    expect((await scan({ 'readme.md': 'x' })).technologies).toEqual([]);
+  });
+
+  test('custom Tech_Detectors replace the defaults and unknown technology keys are dropped', async () => {
+    const custom: TechDetector = {
+      id: 'custom',
+      accepts: (name) => name === 'package.json',
+      detect: () => [
+        { tech: 'cobol', kind: 'declarations', count: 3 },
+        { tech: 'vue', kind: 'declarations', count: 2 },
+      ],
+    };
+    const result = await scan({ 'package.json': '{}' }, { techDetectors: [custom] });
+    expect(result.technologies.map((t) => [t.key, t.score])).toEqual([['vue', 10]]);
+    const none = await scan({ 'package.json': '{}', 'a.ts': 'x' }, { techDetectors: [] });
+    expect(none.technologies.map((t) => t.key)).toEqual(['typescript']);
+  });
+
+  test('a .NET project with the AWS SDK for .NET reaches the building depth', async () => {
+    const result = await scan({
+      'App.csproj': '<Project><PackageReference Include="AWSSDK.S3" /></Project>',
+      'Program.cs': '// new AmazonSQSClient();\nvar s3 = new AmazonS3Client();',
+    });
+    expect(result.services.map((s) => [s.key, s.depth])).toEqual([['s3', 'building']]);
+    expect(result.services[0]?.evidence).toMatchObject({
+      dependencyDeclarations: 1,
+      sdkClients: 1,
+    });
+    expect(result.technologies.map((t) => t.key)).toEqual(['dotnet', 'csharp']);
+  });
+
+  test('the result survives a structured clone unchanged', async () => {
+    const result = await scan({
+      'main.tf': TERRAFORM(1),
+      'package.json': '{"dependencies":{"react":"18"}}',
+      'a.go': 'x',
+    });
+    expect(structuredClone(result)).toEqual(result);
+  });
+});
+
+describe('analyseFiles (task 41.1)', () => {
+  const SUMMARY: WalkSummary = {
+    filesRead: 2,
+    skipped: {
+      excludedDirectory: 0,
+      gitignored: 0,
+      tooLarge: 0,
+      binary: 0,
+      symlink: 0,
+      unsupportedType: 1,
+    },
+    truncated: false,
+    productionMarker: false,
+  };
+
+  async function* stream(files: SourceFile[]): AsyncGenerator<SourceFile, WalkSummary> {
+    for (const file of files) {
+      yield await Promise.resolve(file);
+    }
+    return SUMMARY;
+  }
+
+  test('detectors see only files with text; the extension count sees every file', async () => {
+    const seen: string[] = [];
+    const techSeen: string[] = [];
+    const spy: Detector = {
+      id: 'terraform',
+      accepts: (name) => {
+        seen.push(name);
+        return true;
+      },
+      detect: () => [],
+    };
+    const techSpy: TechDetector = {
+      id: 'spy',
+      accepts: (name) => {
+        techSeen.push(name);
+        return false;
+      },
+      detect: () => [],
+    };
+    const result = await analyseFiles(
+      stream([
+        { relativePath: 'src/a.ts', text: 'x' },
+        { relativePath: 'src/Main.java' },
+        { relativePath: 'b.py', text: '' },
+      ]),
+      { detectors: [spy], techDetectors: [techSpy] },
+    );
+    expect(seen).toEqual(['a.ts', 'b.py']);
+    expect(techSeen).toEqual(['a.ts', 'b.py']);
+    expect(result.technologies.map((t) => t.key)).toEqual(['java', 'python', 'typescript']);
+    expect(result.pythonAnalysed).toBe(false);
+    expect(result.filesRead).toBe(2);
+    expect(result.skipped).toEqual(SUMMARY.skipped);
+  });
+
+  test('without options it runs the default detectors', async () => {
+    const result = await analyseFiles(
+      stream([
+        { relativePath: 'app.py', text: "import boto3\nboto3.client('s3')" },
+        { relativePath: 'Program.cs', text: 'new AmazonSQSClient();' },
+      ]),
+    );
+    expect(result.services.map((s) => s.key)).toEqual(['s3', 'sqs']);
+    expect(result.pythonAnalysed).toBe(true);
+    expect(DEFAULT_DETECTORS.map((d) => d.id)).toContain('dotnet');
+    expect(DEFAULT_TECH_DETECTORS.length).toBeGreaterThan(0);
   });
 });

@@ -1591,3 +1591,71 @@ Owner decisions: Compass reads the attendee's real Builder ID data (catalog, ses
 - **Labelled read-only replies.** In read-only mode the reply goes to the model, not only to the human, so the sessions acted on, the guardrail warnings and the layover text are returned inside labelled data blocks like every other catalog-derived text. The prompt-injection test covers all five schedule tools in read-only mode.
 - **Writes-on is visible.** With `COMPASS_ALLOW_WRITES=1` in live mode, the schedule tools, `show_schedule` and `sign_in` start with "Writes are on: Compass can change your real re:Invent schedule after you approve each change." The agent-facing Power text no longer names the setting; the MCP server README documents it for the attendee.
 - **Hook and codes.** `sessionIdResolver(catalog)` is the one code-to-id mapping, used by the server before a tool runs and by the pre-write hook.
+
+## Owner change: your tech and your GitHub (20 October 2026, tasks 41 to 45)
+
+Requirements P2.1 to P2.10. The flow the owner described: scan, build a tech list, ask "What tech do I work on (the most)?", ask "Find me sessions on .NET", and plan with it.
+
+### Scanner: all technology, AWS first (task 41)
+
+- **Source files.** `packages/core/src/scanner/source-file.ts` defines `SourceFile { relativePath: string; text?: string }`. `text` is present only for files the Scanner reads; a file it only counts by extension has no text. The walker yields a name-only entry for every regular file it does not read (not excluded, not ignored, not a link), so languages are counted without reading their files. `analyseFiles(files: AsyncGenerator<SourceFile, WalkSummary>, options)` runs the AWS detectors and the Tech_Detectors over the stream and returns the `ScanResult`; `scanRepo` is `analyseFiles(walk(...))`, and the GitHub archive reader produces the same stream. `productionMarkerFor(relativePath)` is the walker's production rule, exported so both producers share it.
+- **Tech_Table.** `packages/core/src/scanner/tech-table.ts`: one entry per technology with `key`, `displayName`, `group` (`language`, `framework`, `platform` or `tool`), `searchWords` (the catalog phrases `find_sessions_by_tech` matches), `aliases` and its signals: file extensions, manifest file names, and npm, PyPI, NuGet, Maven or Gradle and Ruby package names. Aliases (".NET", "dotnet", "C#" and so on) resolve to one key. The table is sorted by key (structural test).
+- **Tech_Detectors.** Pure over one file's text, like the AWS detectors: `package.json` (dependencies and devDependencies), `requirements.txt`, `pyproject.toml`, `Pipfile`, `*.csproj` and `*.fsproj` (`PackageReference Include`), `pom.xml`, `build.gradle(.kts)`, `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`, `Dockerfile` and compose files, Helm `Chart.yaml` and `kustomization.yaml`. A malformed manifest counts nothing and never throws. `isSupportedFile` gains these names; the AWS detectors' `accepts` is unchanged, so they never see them.
+- **Score.** Per technology: `files` (files counted by extension) and `declarations` (manifest declarations and manifest files). Score = files + 5 x declarations. `ScanResult.technologies: TechFinding[]` is sorted by score (highest first), then key; a technology with score 0 is left out.
+- **AWS SDK for .NET.** The Service_Table gains `nugetPackages` (`AWSSDK.S3`, `AWSSDK.DynamoDBv2`, `Amazon.Lambda.Core` and so on) and `dotnetClientNames` (the `<Name>` in `new Amazon<Name>Client(`), each checked on nuget.org or in the AWS SDK for .NET API reference and recorded in the table's source comment. A new `dotnet` detector reads `*.csproj` (dependency declarations) and `*.cs` (clients), so a .NET project can reach `building` depth.
+
+### Projects in a dev folder (task 41)
+
+`scan_repo` looks for git repositories (a folder holding `.git`) at depth 1 and 2 under the folder, unless the folder itself is one. With none it scans the folder as one project, as before. With some, it scans each repository on its own through the scan runner (its own worker, limits and 20 second budget), in name order, up to 50, and stops starting new ones after 120 seconds in all. The reply names no folder: "Scanned 12 projects (3 skipped: over the limit of 50)". `lastScan` keeps the merged result for compatibility; the Tech_Profile is the record that counts.
+
+### Tech_Profile (task 42)
+
+`packages/mcp-server/src/state/tech-profile.ts`, stored as `tech-profile.json` beside the Schedule_Snapshot with the same file system adapter, modes and atomic write.
+
+```
+{ version: 1, mode, sources: [ { id, kind: "folder" | "github", scannedAt,
+    services: [ { key, depth, level?, score } ], technologies: [ { key, files, declarations, score } ] } ] }
+```
+
+- `id` is SHA-256 of `folder:<resolved path>` or `github:<repository id>`, so no path or name is stored. A source scanned again replaces its entry. At most 500 sources; the oldest is dropped first.
+- `mergeProfile(sources)` gives per service the deepest depth and the number of projects, and per technology the total score and the number of projects. Ranking for "the most": AWS services by depth, then projects; other technology by projects, then score, then key.
+- The store is a port on the Runtime (`techProfile`), so tests use an in-memory one. `forget_me` removes the file after the pass service confirms, with the Schedule_Snapshot.
+
+### show_my_tech (task 43)
+
+Read_Tool. Input `{ top?: number }` (1 to 50, default all). Text: one count line ("From 2 folders and 14 GitHub repositories."), then "AWS services" lines (display name, depth, suggested level, projects), then "Other technology" lines (display name, group, projects, score), AWS first. An empty profile says to run `scan_repo` or `scan_github`. Structured: `{ services: [{ service, depth, projects }], technologies: [{ technology, group, projects, score }], sources: { folders, githubRepositories } }`. Description leads with the attendee's words: "What tech do I work on, and what do I use the most: ..."
+
+### find_sessions_by_tech and the planner (task 44)
+
+- **Input** `{ tech?: string; limit?: number }`. `tech` (at most 100 characters) resolves through the Tech_Table aliases and the Service_Table display names; an unknown value is searched as one literal word. With no `tech`, the top five technologies and top five AWS services of the profile are searched, five sessions each.
+- **Matching.** The Events adapter's `CatalogFilter` gains `words?: string[]`: a session matches when any word appears in its title, abstract, topics or services as a whole word, case-insensitive: where a search word starts or ends with a letter or digit, the text next to it must not be a letter or digit, and where it starts or ends with a mark that side is not checked, so ".NET" matches "ASP.NET", "C#" matches, and "net" does not match "network" (`adapters/word-match.ts`, `indexOf` only, linear). AWS services also match by catalog service label, as `find_sessions` does.
+- **Output** `{ groups: [{ tech, sessions: NormalisedSession[], totalMatched }] }`; the text has one catalog Labelled_Data_Block per group with the same session fields as `find_sessions`.
+- **Planner.** `PlannerInput` gains an optional `techs: { displayName, sessionIds, projects }[]`: `plan_week` finds each technology's matching sessions with the same search as `find_sessions_by_tech` (the planner itself never sees abstracts), a matching session adds 2 x min(projects, 3), and the pick reason says "Matches your work with <tech>" when no AWS service matched. At most the top 10 technologies are used. `plan_week` builds AWS findings and techs from the merged Tech_Profile (taxonomy labels recomputed from the cached catalog), falling back to `lastScan` when the profile is empty.
+
+### GitHub, read-only (task 45)
+
+- **GitHub App.** The owner registers a public GitHub App "re:Invent Compass (unofficial)" with only Contents: read and Metadata: read, no webhook, device flow enabled, installable on any account. Its client ID and slug are build constants in `packages/mcp-server/src/config/github.ts`; `COMPASS_GITHUB_CLIENT_ID` and `COMPASS_GITHUB_APP_SLUG` can replace them for a self-hosted app. With no client ID the GitHub tools say GitHub scanning is not set up in this build. The client ID is public, so no secret ships.
+- **Sign-in (`connect_github`).** `POST https://github.com/login/device/code` with `client_id`, then the text shows the user code and `https://github.com/login/device`, opens that page with the browser opener, and gives the install link `https://github.com/apps/<slug>/installations/new`. Polling `POST https://github.com/login/oauth/access_token` (`grant_type` `urn:ietf:params:oauth:grant-type:device_code`) runs in the background at the given interval, adding 5 seconds on `slow_down`, until success, `access_denied`, `expired_token` or 15 minutes. Calling `connect_github` again reports the state. The `ghu_` access token (8 hours) and `ghr_` refresh token (6 months) go to the GitHub_Token_Store: keychain service `reinvent-compass`, accounts `github-access` (with its expiry, as the Events store does) and `github-refresh`, memory only when there is no keychain, both registered with the redacting logger. A device-flow token refreshes without a client secret (`grant_type=refresh_token`). Docs checked 20 October 2026: GitHub "Generating a user access token for a GitHub App" and "Refreshing user access tokens".
+- **Listing.** `GET https://api.github.com/user/installations` then `GET /user/installations/{id}/repositories` (`per_page=100`, paged), headers `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2026-03-10`, `Authorization: Bearer`. Input `{ owners?: string[]; includeForks?: boolean; maxRepositories?: number }` (default 50, at most 200). Archived repositories are included; forks only with `includeForks`.
+- **Consent.** Before reading, the human confirms a message naming the accounts and up to 20 repositories ("and 31 more"). A client that cannot ask is refused, and nothing is read on decline.
+- **Reading.** For each repository, in its own GitHub scan worker (`dist/github-scan-worker.js`, 60 second budget, the same pattern as security review H1; a checkout without the bundle reads in the server thread): `GET /repos/{owner}/{repo}/tarball` with `redirect: 'manual'`; the `Location` must be `https://codeload.github.com/...` and is fetched without the Authorization header. The body is streamed through gunzip into a small tar reader (`ustar` and PAX long names; the top folder GitHub adds is dropped) that applies `isExcludedDirectory`, `isSupportedFile`, the file size limit, the binary probe and `maxFiles`, and yields `SourceFile`s to `analyseFiles`. The download stops at 100 MB compressed or 500 MB unpacked. Nothing is written to disk. A repository that fails or times out is counted as skipped and the rest go on; the whole scan stops starting repositories after 300 seconds.
+- **Result.** Each repository becomes a `github` source in the Tech_Profile. The text gives the counts and the merged tech list, names only.
+- **`disconnect_github`.** Clears both tokens and says the app can be removed at `https://github.com/settings/installations` and its authorisation at `https://github.com/settings/apps/authorizations` (a GitHub App user token can be revoked by the app only with its client secret, which Compass does not have).
+- **Threat model additions.** A hostile repository (ReDoS, a tar bomb, deep paths, links): the worker budget, the size caps and links skipped. Token theft: keychain, redaction, fixed hosts, no token on the redirect. Over-reach: the app has no write permission, so even a stolen token cannot change code. The privacy page lists the GitHub hosts.
+
+### Security review (20 October 2026)
+
+A read-only review of the GitHub and tech-list code found no Critical or High issue. Fixed before the commit:
+
+- **M1.** A GitHub repository is read only in the bundled `github-scan-worker.js`, which has the 60 second budget and a 512 MB heap limit (`resourceLimits`). Without the bundle (a source checkout) nothing is read and the repository counts as skipped; there is no unbudgeted fallback.
+- **M2.** The Tech_Profile accepts only keys of the Service_Table and the Tech_Table, a real ISO time, levels 100 to 400 and at most 200 keys per project and 500 projects. A file with anything else reads as empty, so text planted in it never reaches the model.
+- **L2.** Two `connect_github` calls at once share one device code.
+- **L3.** The sign-in poll timer is `unref`'d, so it never keeps the server alive.
+- **L6.** `COMPASS_GITHUB_CLIENT_ID` prints one warning line, because Compass cannot check another app is read-only.
+- **L7.** Profile changes are queued, so two scans that finish together never lose a write.
+
+Accepted: **L1** (the project ids are unsalted hashes, so someone who already has the 0600 file could test a guessed path or repository id), **L4** (listing repository names before the confirmation, now stated in P2.8) and **L5** (the confirmation names 20 repositories and counts the rest; `owners` narrows a large list). Owner checks before launch: the GitHub App has only Contents: read and Metadata: read, expiring user tokens on, device flow on, no webhook and no callback URL.
+
+### Tool count and contracts
+
+Twenty-three tools: `show_my_tech`, `find_sessions_by_tech`, `connect_github`, `scan_github` and `disconnect_github` join the eighteen. Classes: the first two `read`; `connect_github` and `disconnect_github` `local action`; `scan_github` `read` (it reads the attendee's code and asks first, like `scan_repo`). The contracts come from foundation-contracts task 20 and land in the same commit as the handlers.

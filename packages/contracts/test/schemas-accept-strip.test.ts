@@ -646,7 +646,11 @@ const toolSamples: Record<
   },
   scan_repo: {
     input: { path: '/repo' },
-    output: { services: ['bedrock'], depthByService: [{ service: 'bedrock', depth: 2 }] },
+    output: {
+      services: ['bedrock'],
+      depthByService: [{ service: 'bedrock', depth: 2 }],
+      technologies: [{ technology: '.NET', score: 12 }],
+    },
   },
   plan_week: {
     input: { goals: ['learn'], level: '300', maxPerDay: 4 },
@@ -695,6 +699,31 @@ const toolSamples: Record<
     output: { ics: 'BEGIN:VCALENDAR' },
   },
   forget_me: { input: { confirm: true }, output: { forgotten: true } },
+  show_my_tech: {
+    input: { top: 5 },
+    output: {
+      services: [{ service: 'Amazon S3', depth: 2, projects: 3 }],
+      technologies: [{ technology: '.NET', group: 'platform', projects: 2, score: 40 }],
+      sources: { folders: 1, githubRepositories: 4 },
+    },
+  },
+  find_sessions_by_tech: {
+    input: { tech: '.NET', limit: 10 },
+    output: { groups: [{ tech: '.NET', sessions: [normalisedSample], totalMatched: 1 }] },
+  },
+  connect_github: {
+    input: {},
+    output: {
+      state: 'waiting',
+      userCode: 'WDJB-MJHT',
+      verificationUri: 'https://github.com/login/device',
+    },
+  },
+  scan_github: {
+    input: { owners: ['octo-org'], includeForks: false, maxRepositories: 50 },
+    output: { scanned: 4, skipped: 1, services: ['Amazon S3'], technologies: ['.NET'] },
+  },
+  disconnect_github: { input: {}, output: { disconnected: true } },
 };
 
 // ----------------------------------------------------------------------------------
