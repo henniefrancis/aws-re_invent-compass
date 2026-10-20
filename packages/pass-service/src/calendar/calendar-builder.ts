@@ -17,7 +17,7 @@ export function buildCalendar(
   timezone: string,
   nowMs: number,
 ): string {
-  const calendar = ical({ prodId: { company: 're:Invent Compass', product: 'boarding passes' } });
+  const calendar = ical({ prodId: { company: 're:Invent Compass', product: 'Boarding Passes' } });
   for (const { serialNumber, fields } of passes) {
     const location = [fields.venue === '' ? NO_VENUE : fields.venue, fields.room]
       .filter((part) => part !== '')

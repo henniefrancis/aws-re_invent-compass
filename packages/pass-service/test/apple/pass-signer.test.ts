@@ -52,6 +52,9 @@ function checkPass(pkpass: Uint8Array): Record<string, unknown> {
     'icon.png',
     'icon@2x.png',
     'icon@3x.png',
+    'primaryLogo@2x.png',
+    'primaryLogo@3x.png',
+    'artwork@2x.png',
   ]) {
     expect(files.has(name), name).toBe(true);
   }
@@ -104,6 +107,20 @@ describe('Feature: pass-service, pass signer', () => {
       { startDate: '2026-12-02T17:20:00.000Z', endDate: '2026-12-02T19:00:00.000Z' },
     ]);
     expect(json.voided).toBeUndefined();
+    // Task 42: the poster event ticket keys survive passkit-generator.
+    expect(json.boardingPass).toBeUndefined();
+    expect(json.preferredStyleSchemes).toEqual(['posterEventTicket', 'eventTicket']);
+    expect(json.semantics).toMatchObject({
+      eventType: 'PKEventTypeGeneric',
+      venueRegionName: 'Las Vegas',
+      eventStartDate: '2026-12-02T18:00:00.000Z',
+    });
+    const ticket = json.eventTicket as Record<string, { key: string }[]>;
+    expect(ticket.additionalInfoFields?.map((f) => f.key)).toEqual([
+      'boardingClosesInfo',
+      'disclaimerInfo',
+    ]);
+    expect(ticket.primaryFields?.map((f) => f.key)).toEqual(['terminal', 'gate']);
   });
 
   test('a voided pass keeps voided true and a past expiration date', async () => {

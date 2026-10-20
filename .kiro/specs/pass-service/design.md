@@ -1334,3 +1334,21 @@ The Google generic object follows the final Apple pass as far as the generic lay
 ## Post-SP3 change: icon size (20 October 2026, task 41)
 
 The pass icon is 38 by 38 points (38, 76 and 114 pixels at 1x, 2x and 3x). Apple's current Wallet Human Interface Guidelines give `icon.png` as 38 by 38 points for every pass style, and the logo as 50 to 160 points wide and 50 points high; the 29-point icon in the task 12 note came from the older, archived PassKit Programming Guide. Source: https://developer.apple.com/design/human-interface-guidelines/wallet (checked 20 October 2026 through its data endpoint, since the page is rendered by script).
+
+## Post-SP3 change: poster event ticket (20 October 2026, task 42)
+
+Owner decision: the pass carries the owner's picture, so it is an Apple event ticket, not a boarding pass. Users still read "Boarding Pass" (the pass `description` is "Unofficial Boarding Pass"), and the airline labels stay. Apple's facts, checked on 20 October 2026 against the Wallet Human Interface Guidelines (updated 8 June 2026 for iOS 27), the Pass reference and "Creating an event pass using semantic tags":
+
+- A boarding pass takes a logo, an icon and (airline passes only) a footer. It cannot show a background, strip or thumbnail.
+- A legacy event ticket takes a logo, an icon, a thumbnail and a background (343 by 503 points), which Wallet always blurs.
+- A poster event ticket (iOS 26 and later) shows `artwork.png` (358 by 448 points) unblurred, with `primaryLogo.png` (up to 126 by 30 points). It needs `posterEventTicket` in `preferredStyleSchemes` and the semantic tags `eventName`, `venueName`, `venueRegionName` and `venueRoom`, and it is not for passes with a barcode (ours has none). If validation fails, Wallet falls back to the legacy event ticket.
+
+| Key                     | Content                                                                                             |
+| ----------------------- | --------------------------------------------------------------------------------------------------- |
+| `preferredStyleSchemes` | `["posterEventTicket", "eventTicket"]`                                                              |
+| `semantics`             | `PKEventTypeGeneric`; title; venue; "Las Vegas"; full room; start and end (canonical)               |
+| `eventTicket` fields    | as task 39 (SESSION; TERMINAL, GATE; FLIGHT NAME; DATE, BOARDING CLOSES; the back), no transit type |
+| `additionalInfoFields`  | BOARDING CLOSES (24-hour) and NOTICE (the disclaimer), shown below the poster                       |
+| Images                  | the task 38 icon and logo, plus `primaryLogo@2x.png`, `primaryLogo@3x.png` and `artwork@2x.png`     |
+
+Wallet draws the poster front from the semantics, so the seat release time is not guaranteed a place there; it is in the additional info fields and on the legacy front. The artwork ships at 2x only (716 by 896 pixels, 286 KB as PNG; 3x would be 480 KB): with every image the set is about 397 KB, so a 10-pass `.pkpasses` is about 4 MB, about 5.3 MB in base64, under Lambda's 6 MB synchronous response limit. A test holds the set under 420 KB. No client image is added (Requirement 9.11), and the semantic dates are built from `Date.parse` like every other date (review H1). The Google object is unchanged for now; a Google pass can carry a picture through the generic object's hero image, which is a later task. Owner check: delete the old dev passes on the iPhone, issue new ones, and confirm the poster on iOS 26 or later.
