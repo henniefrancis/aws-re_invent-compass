@@ -579,6 +579,10 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 39.2 The bottom row is DATE (left) and BOARDING CLOSES (right-aligned, 24-hour)
   - [x] 39.3 Tests and commit after the full gate passes, scoped `pass-service`. Wallet draws the transit arrow (unchanged, `PKTransitTypeGeneric`) and picks every font size; a pass cannot set either
 
+- [x] 40. Align the Google Wallet object with the final Apple layout (tracker GP1, design "Post-SP3 change: Google layout", Requirement 14.1 amended)
+  - [x] 40.1 Text modules TERMINAL (venue, or "Venue not published"), GATE (the short room, or "Room not published"), DATE ("3 Dec 2026 | 13:00-14:00", 24-hour), BOARDING CLOSES (24-hour), ROOM (the full room, when there is one) and NOTICE (the disclaimer), reusing the Apple formatters and `shortRoom`; header the title (flight name), subheader the session code; background #232F3F. The Google class is unchanged
+  - [x] 40.2 Tests and commit after the full gate passes, scoped `pass-service`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.

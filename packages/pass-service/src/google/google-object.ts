@@ -6,8 +6,17 @@
 // public URL; Google then shows the first letter of the card title).
 // https://developers.google.com/wallet/generic/rest/v1/genericobject
 import type { PassFields } from '@compass/contracts';
-import { formatEventDayTime, formatEventTime } from '../apple/format-time.js';
-import { DISCLAIMER, NO_VENUE, boardingClosesAt } from '../apple/pass-template.js';
+import { formatEventDate, formatEventTime24 } from '../apple/format-time.js';
+import {
+  DISCLAIMER,
+  NO_ROOM,
+  NO_VENUE,
+  boardingClosesAt,
+  shortRoom,
+} from '../apple/pass-template.js';
+
+/** The Apple pass background (PASS_COLOURS, rgb(35, 47, 63)) as Google hex (task 40). */
+export const GOOGLE_BACKGROUND = '#232F3F';
 
 export type GoogleObjectState = 'ACTIVE' | 'INACTIVE';
 
@@ -60,17 +69,28 @@ export function buildGenericObject(
     cardTitle: localized('Compass boarding pass'),
     header: localized(fields.title),
     subheader: localized(fields.sessionCode),
+    // The same fields and formats as the Apple pass (task 40).
     textModulesData: [
-      { id: 'gate', header: 'Gate', body: fields.venue === '' ? NO_VENUE : fields.venue },
+      { id: 'terminal', header: 'TERMINAL', body: fields.venue === '' ? NO_VENUE : fields.venue },
+      {
+        id: 'gate',
+        header: 'GATE',
+        body: shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room),
+      },
+      {
+        id: 'date',
+        header: 'DATE',
+        body: `${formatEventDate(fields.startsAt, timezone)} | ${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)}`,
+      },
       {
         id: 'boardingCloses',
-        header: 'Boarding closes',
-        body: formatEventTime(boardingClosesAt(fields.startsAt), timezone),
+        header: 'BOARDING CLOSES',
+        body: formatEventTime24(boardingClosesAt(fields.startsAt), timezone),
       },
-      { id: 'starts', header: 'Starts', body: formatEventDayTime(fields.startsAt, timezone) },
-      { id: 'notice', header: 'Notice', body: DISCLAIMER },
+      ...(fields.room === '' ? [] : [{ id: 'room', header: 'ROOM', body: fields.room }]),
+      { id: 'notice', header: 'NOTICE', body: DISCLAIMER },
     ],
-    hexBackgroundColor: '#0e3e4a',
+    hexBackgroundColor: GOOGLE_BACKGROUND,
     validTimeInterval: { end: { date: fields.endsAt } },
   };
 }

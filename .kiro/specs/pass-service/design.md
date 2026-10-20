@@ -1326,3 +1326,7 @@ The pass logo and icon are the owner's own artwork, the same files the site uses
 | auxiliaryFields | DATE "3 Dec 2026                          | 13:00-14:00" (left); BOARDING CLOSES, 24-hour (right-aligned) |
 
 The arrow between TERMINAL and GATE is Wallet's own transit glyph for `PKTransitTypeGeneric`, and Wallet chooses the font sizes; the pass sets neither. Long primary values are shrunk a little and then cut by Wallet; the full room is on the back.
+
+## Post-SP3 change: Google layout (20 October 2026, task 40)
+
+The Google generic object follows the final Apple pass as far as the generic layout allows: `header` is the title (the flight name) and `subheader` the session code; the text modules read TERMINAL, GATE (short room), DATE ("3 Dec 2026 | 13:00-14:00"), BOARDING CLOSES (24-hour), ROOM (the full room, when known) and NOTICE (the disclaimer, since a Google pass has no back); `hexBackgroundColor` is #232F3F. The formatters and `shortRoom` are the Apple ones, so both passes always say the same. The Google class does not change, so `scripts/google-wallet-class.mjs` needs no new run.

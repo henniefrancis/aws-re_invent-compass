@@ -2,13 +2,17 @@ import { verify } from 'node:crypto';
 import { JWT } from 'google-auth-library';
 import fc from 'fast-check';
 import { describe, expect, test, vi } from 'vitest';
-import { formatEventDayTime, formatEventTime } from '../../src/apple/format-time.js';
-import { boardingClosesAt } from '../../src/apple/pass-template.js';
+import { formatEventDate, formatEventTime24 } from '../../src/apple/format-time.js';
+import { PASS_COLOURS, boardingClosesAt, shortRoom } from '../../src/apple/pass-template.js';
 import {
   GENERIC_OBJECT_URL,
   createGoogleWalletClient,
 } from '../../src/google/google-wallet-client.js';
-import { buildGenericObject, googleObjectId } from '../../src/google/google-object.js';
+import {
+  GOOGLE_BACKGROUND,
+  buildGenericObject,
+  googleObjectId,
+} from '../../src/google/google-object.js';
 import { SAVE_URL_PREFIX, saveLink, signSaveJwt } from '../../src/google/save-jwt.js';
 import { WALLET_SCOPE, createGoogleTokenSource } from '../../src/google/token-source.js';
 import { createFakeSecrets } from '../helpers/fake-secrets.js';
@@ -85,13 +89,29 @@ describe('Feature: pass-service, Google generic object', () => {
           expect(obj.header.defaultValue.value).toBe(fields.title);
           expect(obj.subheader.defaultValue.value).toBe(fields.sessionCode);
           expect(obj.cardTitle.defaultValue.value).toBe('Compass boarding pass');
+          // The same fields and formats as the final Apple pass (task 40).
+          expect(obj.textModulesData.map((m) => m.header)).toEqual([
+            'TERMINAL',
+            'GATE',
+            'DATE',
+            'BOARDING CLOSES',
+            ...(fields.room === '' ? [] : ['ROOM']),
+            'NOTICE',
+          ]);
           const bodies = Object.fromEntries(obj.textModulesData.map((m) => [m.id, m.body]));
-          expect(bodies.gate).toBe(fields.venue === '' ? 'Venue not published' : fields.venue);
-          expect(bodies.boardingCloses).toBe(
-            formatEventTime(boardingClosesAt(fields.startsAt), TZ),
+          expect(bodies.terminal).toBe(fields.venue === '' ? 'Venue not published' : fields.venue);
+          expect(bodies.gate).toBe(
+            shortRoom(fields.room) === '' ? 'Room not published' : shortRoom(fields.room),
           );
-          expect(bodies.starts).toBe(formatEventDayTime(fields.startsAt, TZ));
+          expect(bodies.date).toBe(
+            `${formatEventDate(fields.startsAt, TZ)} | ${formatEventTime24(fields.startsAt, TZ)}-${formatEventTime24(fields.endsAt, TZ)}`,
+          );
+          expect(bodies.boardingCloses).toBe(
+            formatEventTime24(boardingClosesAt(fields.startsAt), TZ),
+          );
+          expect(bodies.room).toBe(fields.room === '' ? undefined : fields.room);
           expect(bodies.notice).toBe('Unofficial. Your badge is your ticket.');
+          expect(obj.hexBackgroundColor).toBe(GOOGLE_BACKGROUND);
           expect(obj.validTimeInterval).toEqual({ end: { date: fields.endsAt } });
           expect(JSON.stringify(obj)).not.toMatch(/barcode|logo/i);
         },
@@ -99,6 +119,15 @@ describe('Feature: pass-service, Google generic object', () => {
       { numRuns: 200 },
     );
   });
+});
+
+test('the Google background is the Apple pass background in hex (task 40)', () => {
+  const hex = PASS_COLOURS.background
+    .match(/\d+/g)
+    ?.map((channel) => Number(channel).toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+  expect(GOOGLE_BACKGROUND).toBe(`#${hex ?? ''}`);
 });
 
 describe('Feature: pass-service, Google REST client', () => {
