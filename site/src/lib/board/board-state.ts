@@ -66,7 +66,7 @@ export const MESSAGES = {
   readingMessage: 'Reading your link.',
   loadingMessage: 'Loading your passes.',
   invalidHeading: 'This link is not complete',
-  invalidMessage: 'This link is not complete. Scan the QR code again on your computer.',
+  invalidMessage: 'Scan the QR code again on your computer.',
   readyHeading: 'Your boarding passes are ready',
   readyMessage: 'Choose how to add your passes.',
   expiredHeading: 'This link has expired',
@@ -194,7 +194,9 @@ function plain(
   message: string,
   extra: Partial<BoardViewModel> = {},
 ): BoardViewModel {
-  return { ...PLAIN, heading, message, announcement: message, ...extra };
+  // The heading is on screen and the live region is hidden, so a screen reader hears the
+  // heading and the message together once.
+  return { ...PLAIN, heading, message, announcement: `${heading}. ${message}`, ...extra };
 }
 
 /** What the page shows for a state at a given time. Only Ready has links. */

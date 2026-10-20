@@ -196,8 +196,18 @@ describe('toBoardViewModel examples', () => {
       expect(vm).toMatchObject(expected);
       expect(vm.actions).toEqual([]);
       expect(vm.sessions).toEqual([]);
-      expect(vm.announcement).toBe(vm.message);
+      expect(vm.announcement).toBe(`${vm.heading}. ${vm.message}`);
     }
+  });
+
+  test('the incomplete link sentence is not repeated between heading and message', () => {
+    const vm = toBoardViewModel({ kind: 'invalidLink' }, NOW);
+    expect(vm.heading).toBe('This link is not complete');
+    expect(vm.message).toBe('Scan the QR code again on your computer.');
+    expect(vm.message).not.toContain(vm.heading);
+    expect(vm.announcement).toBe(
+      'This link is not complete. Scan the QR code again on your computer.',
+    );
   });
 });
 
