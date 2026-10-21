@@ -24,12 +24,11 @@ import {
   COMING_SOON,
   navGroups,
   SITE_LINKS,
-  footerItems,
   privateReportingUrl,
   type SiteLinks,
 } from '../../src/lib/content/links';
 import { METAPHOR_HEADERS, METAPHOR_ROWS } from '../../src/lib/content/metaphor';
-import { NOTICE } from '../../src/lib/content/notice';
+import { NOTICE, NOTICE_HEADING } from '../../src/lib/content/notice';
 import { PRINCIPLES, principleBlocks } from '../../src/lib/content/principles';
 import { PRIVACY_SECTIONS, privacyBlocks } from '../../src/lib/content/privacy';
 import * as story from '../../src/lib/content/story';
@@ -180,7 +179,6 @@ describe('no impersonation and the product voice', () => {
       ...allBlocks.map((b) => b.text),
       COPIED_MESSAGE,
       COPY_FAILED_MESSAGE,
-      ...footerItems(SITE_LINKS).map((i) => i.label),
       ...navGroups(SITE_LINKS).flatMap((g) => [
         g.label,
         ...g.items.flatMap((i) => [i.label, i.description]),
@@ -246,37 +244,25 @@ describe('links and footer', () => {
     );
   });
 
-  test('the footer keeps a fixed order', () => {
-    expect(footerItems(SITE_LINKS).map((i) => i.label)).toEqual([
-      'Repository',
-      'Builder Center post',
-      'Video',
-      'Install',
-      'Privacy',
-    ]);
-    expect(footerItems(known).map((i) => i.label)).toEqual(
-      footerItems(SITE_LINKS).map((i) => i.label),
-    );
+  test('the footer is the Notice under its heading (task 27)', () => {
+    expect(NOTICE_HEADING).toBe('Disclaimer Notice');
   });
 
-  test('an unknown address becomes coming soon text with no link', () => {
-    const items = footerItems(SITE_LINKS);
-    expect(items[1]).toEqual({
+  test('an unknown address becomes coming soon text with no link, a known one a link', () => {
+    const project = (links: typeof SITE_LINKS) => navGroups(links)[1]?.items ?? [];
+    expect(project(SITE_LINKS)[1]).toEqual({
       kind: 'pending',
       label: 'Builder Center post',
       text: `Builder Center post (${COMING_SOON})`,
+      description: 'How Compass was built with Kiro',
     });
-    expect(items[2]?.kind).toBe('pending');
-  });
-
-  test('a known address becomes a link', () => {
-    const items = footerItems(known);
-    expect(items[1]).toEqual({
+    expect(project(known)[1]).toEqual({
       kind: 'external',
       label: 'Builder Center post',
       href: 'https://example.invalid/post',
+      description: 'How Compass was built with Kiro',
     });
-    expect(items[0]).toEqual({
+    expect(project(known)[0]).toMatchObject({
       kind: 'external',
       label: 'Repository',
       href: 'https://github.com/henniefrancis/aws-re_invent-compass',

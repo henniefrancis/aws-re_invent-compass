@@ -10,13 +10,8 @@ test.describe('every page', () => {
       await expect(browser).toHaveTitle(page.title);
       await expect(browser.locator('main')).toHaveCount(1);
       await expect(browser.locator('footer .notice')).toHaveText(NOTICE);
-      await expect(browser.locator('footer .footer-list li')).toHaveText([
-        'Repository',
-        'Builder Center post (coming soon)',
-        'Video (coming soon)',
-        'Install',
-        'Privacy',
-      ]);
+      await expect(browser.locator('footer h2')).toHaveText('Disclaimer Notice');
+      await expect(browser.locator('footer a')).toHaveCount(0);
       await expect(browser.locator('html')).toHaveAttribute('lang', 'en');
     });
   }
@@ -30,12 +25,18 @@ test.describe('every page', () => {
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
   });
 
-  test('the footer links to the repository and never to an unknown address', async ({ page }) => {
+  test('the Project group links to the repository and never to an unknown address', async ({
+    page,
+  }) => {
     await page.goto('/');
-    await expect(page.locator('footer a[href^="https://"]')).toHaveCount(1);
-    await expect(page.locator('footer a[href^="https://github.com/henniefrancis/"]')).toHaveText(
+    await openNav(page, 'Project');
+    const nav = page.getByRole('navigation', { name: 'Main' });
+    await expect(nav.locator('a[href^="https://"]')).toHaveCount(1);
+    await expect(nav.locator('a[href^="https://github.com/henniefrancis/"]')).toContainText(
       'Repository',
     );
+    await expect(nav.getByText('Builder Center post (coming soon)')).toBeVisible();
+    await expect(nav.getByText('Video (coming soon)')).toBeVisible();
   });
 });
 

@@ -7,3 +7,6 @@ export const NOTICE: ContentBlock = quoted(
   'README.md',
   'Licence',
 );
+
+/** The footer heading over the Notice (task 27). */
+export const NOTICE_HEADING = 'Disclaimer Notice';

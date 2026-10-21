@@ -411,6 +411,10 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 26.4 The page card is about 70 percent of a wide window (at least the old 64rem), and the home page says the disclaimer once
   - [x] 26.5 e2e tests open the Product group before choosing Install; site unit tests, the build, screenshots at phone and desktop widths and the e2e suite on all seven profiles; commit after the full gate passes, scoped `showcase-site`
 
+- [x] 27. A compact footer: "Disclaimer Notice" over the Notice, centred, no links (owner request of 21 October, design "Post-SP3 change: compact footer", Requirement 4.2 amended)
+  - [x] 27.1 The footer shows the heading and the Notice only; `footerItems` goes, its link item type stays as the type of the navigation items, and its tests move to the navigation test
+  - [x] 27.2 e2e tests check the heading and the Notice in every footer and the repository link in the Project group; site unit tests, the build, a screenshot and the e2e suite on all seven profiles; commit after the full gate passes, scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

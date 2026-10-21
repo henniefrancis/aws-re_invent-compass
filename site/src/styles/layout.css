@@ -48,10 +48,28 @@
   margin-block-start: var(--space-7);
 }
 
+/* The footer (task 27): the Notice under a small heading, centred and compact. */
 .site-footer {
-  padding-block: var(--space-5);
+  padding-block: var(--space-4);
   border-block-start: 1px solid var(--color-tint);
   background: var(--color-paper);
+  text-align: center;
+}
+
+.site-footer__inner {
+  max-inline-size: 64rem;
+}
+
+.site-footer__heading {
+  margin: 0 0 var(--space-1);
+  font-size: 0.9375rem;
+  letter-spacing: 0;
+}
+
+.site-footer .notice {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .stack > * + * {

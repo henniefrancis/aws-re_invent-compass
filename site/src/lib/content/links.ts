@@ -30,30 +30,20 @@ export function privateReportingUrl(links: SiteLinks): string {
 
 export const COMING_SOON = 'coming soon';
 
-export type FooterItem =
+/** A link the site shows: inside the site, outside it, or plain text while the address is unknown. */
+export type LinkItem =
   | { readonly kind: 'external'; readonly label: string; readonly href: string }
   | { readonly kind: 'internal'; readonly label: string; readonly path: string }
   | { readonly kind: 'pending'; readonly label: string; readonly text: string };
 
-function externalOrPending(label: string, href: string | null): FooterItem {
+function externalOrPending(label: string, href: string | null): LinkItem {
   return href === null
     ? { kind: 'pending', label, text: `${label} (${COMING_SOON})` }
     : { kind: 'external', label, href };
 }
 
-/** The footer links in their fixed order, the same on every page. */
-export function footerItems(links: SiteLinks): readonly FooterItem[] {
-  return [
-    { kind: 'external', label: 'Repository', href: links.repository },
-    externalOrPending('Builder Center post', links.builderCenterPost),
-    externalOrPending('Video', links.video),
-    { kind: 'internal', label: 'Install', path: '/install' },
-    { kind: 'internal', label: 'Privacy', path: '/privacy' },
-  ];
-}
-
 /** One item of a navigation group, with a one-line description under its label. */
-export type NavItem = FooterItem & { readonly description: string };
+export type NavItem = LinkItem & { readonly description: string };
 
 /** A group of the main navigation (task 26, Requirement 4.1). */
 export interface NavGroup {

@@ -1,18 +1,6 @@
 <footer class="site-footer">
-  <div class="container">
+  <div class="container site-footer__inner">
+    <h2 class="site-footer__heading">{{ heading }}</h2>
     <p class="notice">{{ notice }}</p>
-    <ul class="footer-list">
-      @for (item of items; track item.label) {
-        <li>
-          @if (item.kind === 'external') {
-            <a [href]="item.href" rel="noopener noreferrer">{{ item.label }}</a>
-          } @else if (item.kind === 'internal') {
-            <a [routerLink]="item.path">{{ item.label }}</a>
-          } @else {
-            <span>{{ item.text }}</span>
-          }
-        </li>
-      }
-    </ul>
   </div>
 </footer>

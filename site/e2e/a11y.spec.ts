@@ -1,6 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { PAGES, boardPath, expectNoAxeViolations, mockHandoff } from './support/site';
 
+// axe in Firefox on a loaded machine can pass the default 30 s on any page (seen on several
+// pages and board states after the task 25 restyle), so every axe test there gets the slow
+// timeout. The checks themselves are unchanged.
+test.beforeEach(({ browserName }) => {
+  test.slow(browserName === 'firefox');
+});
+
 const addButton = (page: Page, code: string) =>
   page.getByRole('button', { name: new RegExp(`^Add ${code}, `) });
 
