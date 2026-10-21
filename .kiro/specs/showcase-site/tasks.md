@@ -404,6 +404,13 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 25.5 The e2e tests that still expected the pre-task-22 pass wording ("Boarding pass for", "Gate: MGM Grand", "Seat released at 12:50 PM") and a pass with no image now expect the final wording and the owner's logo; the Install page keeps the space after each option label
   - [x] 25.3 Contrast, token and denylist tests pass with the new palette; site unit tests, the site build and a visual check of every page; commit after the full gate passes, scoped `showcase-site`
 
+- [x] 26. A grouped main menu, an About page, wider content and one disclaimer line (owner request of 21 October, design "Post-SP3 change: grouped menu and About page", Requirements 4.1 and 4.5 amended, 18 added)
+  - [x] 26.1 `navGroups(links)` in `src/lib/content/links.ts` gives the three groups and their described items (the Builder Center post and the video stay plain "coming soon" text until their addresses are known); `src/lib/shell/menu.ts` holds the open and close rules; both are unit tested
+  - [x] 26.2 The header shows the groups as disclosure buttons with panels, a "Try the demo" button and, on narrow screens, a "Menu" button; panels close on a second press, Escape, a click outside and navigation
+  - [x] 26.3 The About_Page at `/about` (prerendered, in the build output check) with the placeholder text of Requirement 18
+  - [x] 26.4 The page card is about 70 percent of a wide window (at least the old 64rem), and the home page says the disclaimer once
+  - [x] 26.5 e2e tests open the Product group before choosing Install; site unit tests, the build, screenshots at phone and desktop widths and the e2e suite on all seven profiles; commit after the full gate passes, scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

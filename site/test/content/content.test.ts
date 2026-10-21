@@ -1,3 +1,4 @@
+import { ABOUT_BUILT_BY, ABOUT_COMING_SOON } from '../../src/lib/content/about';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
@@ -21,7 +22,7 @@ import {
 } from '../../src/lib/content/install';
 import {
   COMING_SOON,
-  NAV_ITEMS,
+  navGroups,
   SITE_LINKS,
   footerItems,
   privateReportingUrl,
@@ -50,6 +51,8 @@ const storyBlocks: readonly ContentBlock[] = [
   story.DISCLAIMER,
   story.UNOFFICIAL_STATEMENT,
   story.TRY_IT,
+  ABOUT_BUILT_BY,
+  ABOUT_COMING_SOON,
 ];
 
 const installBlocks: readonly ContentBlock[] = [
@@ -178,6 +181,10 @@ describe('no impersonation and the product voice', () => {
       COPIED_MESSAGE,
       COPY_FAILED_MESSAGE,
       ...footerItems(SITE_LINKS).map((i) => i.label),
+      ...navGroups(SITE_LINKS).flatMap((g) => [
+        g.label,
+        ...g.items.flatMap((i) => [i.label, i.description]),
+      ]),
       ...kiroImportOptions(SITE_LINKS).flatMap((o) => [o.label, o.value, o.note]),
     ];
     for (const text of strings) {
@@ -276,8 +283,25 @@ describe('links and footer', () => {
     });
   });
 
-  test('the navigation has Home, Demo, Install and Privacy', () => {
-    expect(NAV_ITEMS.map((n) => n.label)).toEqual(['Home', 'Demo', 'Install', 'Privacy']);
+  test('the navigation has Product, Project and About, each item described (task 26)', () => {
+    const groups = navGroups(SITE_LINKS);
+    expect(groups.map((g) => [g.label, g.items.map((i) => i.label)])).toEqual([
+      ['Product', ['Try the demo', 'Install']],
+      ['Project', ['Repository', 'Builder Center post', 'Video']],
+      ['About', ['About the creator', 'Privacy']],
+    ]);
+    for (const item of groups.flatMap((g) => g.items)) {
+      expect(item.description.length, item.label).toBeGreaterThan(0);
+    }
+    // Unknown addresses stay plain text; known ones become links.
+    const project = (links: typeof SITE_LINKS) => navGroups(links)[1]?.items ?? [];
+    expect(project(SITE_LINKS).map((i) => i.kind)).toEqual(['external', 'pending', 'pending']);
+    const known = {
+      ...SITE_LINKS,
+      builderCenterPost: 'https://example.invalid/post',
+      video: 'https://example.invalid/video',
+    };
+    expect(project(known).map((i) => i.kind)).toEqual(['external', 'external', 'external']);
   });
 });
 

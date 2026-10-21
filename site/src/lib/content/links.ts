@@ -52,10 +52,71 @@ export function footerItems(links: SiteLinks): readonly FooterItem[] {
   ];
 }
 
-/** The main navigation, in order. */
-export const NAV_ITEMS: readonly { readonly label: string; readonly path: string }[] = [
-  { label: 'Home', path: '/' },
-  { label: 'Demo', path: '/demo' },
-  { label: 'Install', path: '/install' },
-  { label: 'Privacy', path: '/privacy' },
-];
+/** One item of a navigation group, with a one-line description under its label. */
+export type NavItem = FooterItem & { readonly description: string };
+
+/** A group of the main navigation (task 26, Requirement 4.1). */
+export interface NavGroup {
+  readonly id: 'product' | 'project' | 'about';
+  readonly label: string;
+  readonly items: readonly NavItem[];
+}
+
+/** The main navigation: three groups, in order. Unknown addresses stay plain "coming soon" text. */
+export function navGroups(links: SiteLinks): readonly NavGroup[] {
+  return [
+    {
+      id: 'product',
+      label: 'Product',
+      items: [
+        {
+          kind: 'internal',
+          label: 'Try the demo',
+          path: '/demo',
+          description: 'Plan a made-up week in your browser',
+        },
+        {
+          kind: 'internal',
+          label: 'Install',
+          path: '/install',
+          description: 'Add the Kiro Power or run it with npx',
+        },
+      ],
+    },
+    {
+      id: 'project',
+      label: 'Project',
+      items: [
+        {
+          kind: 'external',
+          label: 'Repository',
+          href: links.repository,
+          description: 'The source code on GitHub',
+        },
+        {
+          ...externalOrPending('Builder Center post', links.builderCenterPost),
+          description: 'How Compass was built with Kiro',
+        },
+        { ...externalOrPending('Video', links.video), description: 'See Compass in action' },
+      ],
+    },
+    {
+      id: 'about',
+      label: 'About',
+      items: [
+        {
+          kind: 'internal',
+          label: 'About the creator',
+          path: '/about',
+          description: 'Who built re:Invent Compass',
+        },
+        {
+          kind: 'internal',
+          label: 'Privacy',
+          path: '/privacy',
+          description: 'What leaves your machine, and what does not',
+        },
+      ],
+    },
+  ];
+}

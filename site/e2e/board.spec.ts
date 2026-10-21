@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { HANDOFF_ID, installClock, mockHandoff, watch, openBoard } from './support/site';
+import { HANDOFF_ID, installClock, mockHandoff, openBoard, openNav, watch } from './support/site';
 
 const heading = (page: import('@playwright/test').Page) => page.locator('h1');
 
@@ -181,9 +181,10 @@ test.describe('history (security L-3)', () => {
     await openBoard(page);
     await expect(heading(page)).toHaveText('Your boarding passes are ready');
     expect(page.url()).not.toContain('#');
+    await openNav(page, 'Product');
     await page
       .getByRole('navigation', { name: 'Main' })
-      .getByRole('link', { name: 'Install' })
+      .getByRole('link', { name: /^Install/ })
       .click();
     await expect(heading(page)).toHaveText('Install');
     await page.goBack();

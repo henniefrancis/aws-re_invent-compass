@@ -22,6 +22,7 @@ export function expectedRouteFiles() {
     'demo/index.html',
     'install/index.html',
     'privacy/index.html',
+    'about/index.html',
     'board/index.html',
   ];
 }

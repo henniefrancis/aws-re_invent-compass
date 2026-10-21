@@ -33,6 +33,6 @@
 
   --radius: 0.5rem;
   --measure: 40rem;
-  --page-width: 64rem;
+  --page-width: max(64rem, 70vw);
   --target: 44px;
 }

@@ -3,20 +3,69 @@
     <a class="brand-link" routerLink="/"
       ><img class="brand-logo" src="artwork/logo.svg" width="129" height="56" [alt]="productName"
     /></a>
-    <nav aria-label="Main">
+    <button
+      type="button"
+      class="menu-toggle"
+      aria-controls="site-menu"
+      [attr.aria-expanded]="menu().expanded"
+      (click)="toggleMenu()"
+    >
+      <span class="menu-toggle__bars" aria-hidden="true"></span>Menu
+    </button>
+    <nav
+      id="site-menu"
+      class="site-menu"
+      aria-label="Main"
+      [class.site-menu--expanded]="menu().expanded"
+    >
       <ul class="site-nav">
-        @for (item of items; track item.path) {
-          <li>
-            <a
-              [routerLink]="item.path"
-              routerLinkActive
-              ariaCurrentWhenActive="page"
-              [routerLinkActiveOptions]="item.path === '/' ? exactHome : partial"
-              >{{ item.label }}</a
+        @for (group of groups; track group.id) {
+          <li class="site-nav__group">
+            <button
+              type="button"
+              class="site-nav__trigger"
+              [attr.aria-controls]="panelId(group.id)"
+              [attr.aria-expanded]="menu().open === group.id"
+              (click)="toggleGroup(group.id)"
             >
+              {{ group.label }}<span class="site-nav__chevron" aria-hidden="true"></span>
+            </button>
+            <div
+              class="site-nav__panel"
+              [id]="panelId(group.id)"
+              [hidden]="menu().open !== group.id"
+            >
+              <ul class="site-nav__items">
+                @for (item of group.items; track item.label) {
+                  <li>
+                    @if (item.kind === 'internal') {
+                      <a
+                        class="site-nav__link"
+                        [routerLink]="item.path"
+                        routerLinkActive
+                        ariaCurrentWhenActive="page"
+                        ><span class="site-nav__label">{{ item.label }}</span
+                        ><span class="site-nav__description">{{ item.description }}</span></a
+                      >
+                    } @else if (item.kind === 'external') {
+                      <a class="site-nav__link" [href]="item.href" rel="noopener noreferrer"
+                        ><span class="site-nav__label">{{ item.label }}</span
+                        ><span class="site-nav__description">{{ item.description }}</span></a
+                      >
+                    } @else {
+                      <span class="site-nav__link site-nav__link--pending"
+                        ><span class="site-nav__label">{{ item.text }}</span
+                        ><span class="site-nav__description">{{ item.description }}</span></span
+                      >
+                    }
+                  </li>
+                }
+              </ul>
+            </div>
           </li>
         }
       </ul>
+      <a class="button site-nav__cta" routerLink="/demo">Try the demo</a>
     </nav>
   </div>
 </header>

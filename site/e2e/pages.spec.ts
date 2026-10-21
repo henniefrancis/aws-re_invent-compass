@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { NOTICE, PAGES, boardPath, mockHandoff } from './support/site';
+import { NOTICE, PAGES, boardPath, mockHandoff, openNav } from './support/site';
 
 test.describe('every page', () => {
   for (const page of PAGES) {
@@ -42,9 +42,10 @@ test.describe('every page', () => {
 test.describe('navigation', () => {
   test('moves focus to the page heading and sets the title', async ({ page }) => {
     await page.goto('/');
+    await openNav(page, 'Product');
     await page
       .getByRole('navigation', { name: 'Main' })
-      .getByRole('link', { name: 'Install' })
+      .getByRole('link', { name: /^Install/ })
       .click();
     await expect(page.locator('h1')).toHaveText('Install');
     await expect(page.locator('h1')).toBeFocused();
@@ -55,7 +56,7 @@ test.describe('navigation', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: 'Try the demo' }).click();
+    await page.getByRole('main').getByRole('link', { name: 'Try the demo' }).click();
     await expect(page.locator('h1')).toHaveText('Demo');
     await expect(page.locator('h1')).toBeFocused();
   });

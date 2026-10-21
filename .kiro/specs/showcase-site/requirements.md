@@ -96,11 +96,11 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 
 #### Acceptance Criteria
 
-1. THE Shell SHALL render on every page a skip link to the main content as the first focusable element, a header with the product name and links to Home, Demo, Install and Privacy, exactly one `<main>` landmark, and a footer.
+1. THE Shell SHALL render on every page a skip link to the main content as the first focusable element, a header with the product logo as the link home, a main navigation of three groups (Product: Try the demo and Install; Project: Repository, Builder Center post and Video; About: About the creator and Privacy, each item with a one-line description) and a "Try the demo" button, exactly one `<main>` landmark, and a footer (amended 21 October 2026 by owner decision, task 26).
 2. THE Shell footer SHALL show on every page the Notice exactly as written, and links to the repository, the Builder Center post and the video, in the same order on every page.
 3. WHERE the Builder Center post URL or the video URL is not yet configured, THE Shell SHALL show that item as plain text saying it is coming soon, and SHALL NOT render a link to an unknown address.
 4. WHEN the user navigates to a page within the Site, THE Shell SHALL set the document title to `<page name> | re:Invent Compass` and SHALL move keyboard focus to the page's single `<h1>` heading.
-5. THE Shell SHALL NOT use fixed or sticky positioned elements, or menus that open over content.
+5. THE Shell SHALL NOT use fixed or sticky positioned elements. Each navigation group SHALL be a disclosure: a button with `aria-expanded` that shows or hides its panel, one panel open at a time, closed by a second press, by Escape (focus returns to its button), by a click outside the header and by any navigation. On wide screens a panel MAY open over the content below the header; on narrow screens a "Menu" button shows the groups in the page flow (amended 21 October 2026 by owner decision, task 26: it said no menus that open over content).
 6. THE Site SHALL set `lang="en"` on the `<html>` element and SHALL include `<meta name="referrer" content="no-referrer">` in the document head.
 7. THE Site SHALL use the look of the Compass QR page and pass: the owner's Pass Designer gradient behind the page, the main content on a dark card, white text and the pass's orange for links and buttons, with every text and graphic pairing meeting WCAG 2.2 AA and no AWS brand colour (owner request of 21 October 2026, task 25).
 
@@ -377,3 +377,12 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 3. THE stream SHALL commit locally after each top-level task with Conventional Commits scoped `showcase-site`, subject and body passed through multiple `-m` flags, with no Co-Authored-By trailer and no AI attribution, and SHALL NOT push, merge, open a pull request or tag.
 4. THE stream SHALL provide `site/README.md` covering the build, the tests, the output folder for the release script, the Required_CSP, the content sources and the artwork manifest.
 5. THE stream SHALL save two or three screenshots of the Site working (the Home_Page, the blocked clash in the demo on a phone profile, and the Board_Page Ready state with mocked data) to `docs/article/screenshots/showcase-site/` for the Builder Center post.
+
+### Requirement 18: About the creator
+
+**User Story:** As a visitor, I want to know who built Compass, so that I know it is a community project with a real person behind it.
+
+#### Acceptance Criteria
+
+1. THE Site SHALL have an About_Page at `/about`, titled "About the creator", reached from the About group of the main navigation.
+2. THE About_Page SHALL say that re:Invent Compass was built by Hennie Francis, an AWS Community Builder, as an entry in the re:Invent Catalog API Builder Challenge, and that more about Hennie is coming soon. The owner adds the full page later (owner decision of 21 October 2026, task 26).

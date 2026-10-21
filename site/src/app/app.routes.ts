@@ -24,6 +24,11 @@ export const routes: Routes = [
       import('./pages/privacy/privacy-page.component').then((m) => m.PrivacyPage),
   },
   {
+    path: 'about',
+    title: 'About the creator',
+    loadComponent: () => import('./pages/about/about-page.component').then((m) => m.AboutPage),
+  },
+  {
     path: 'board',
     title: 'Board',
     loadComponent: () => import('./pages/board/board-page.component').then((m) => m.BoardPage),

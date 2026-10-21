@@ -81,7 +81,7 @@ export const DISCLAIMER: ContentBlock = quoted(
 
 export const UNOFFICIAL_STATEMENT: ContentBlock = summary(
   'unofficial-statement',
-  'Compass passes are unofficial. Every pass says the line above, and a pass never replaces your badge.',
+  'Compass passes are unofficial and never replace your badge. Every pass says so:',
   '.kiro/steering/product.md',
   'Product principles, 1',
 );

@@ -82,11 +82,24 @@ export async function expectNoAxeViolations(page: Page): Promise<void> {
   ).toEqual([]);
 }
 
+/**
+ * Opens a group of the main navigation. On narrow screens the Menu button shows the groups first
+ * (task 26).
+ */
+export async function openNav(page: Page, group: string): Promise<void> {
+  const toggle = page.getByRole('button', { name: 'Menu' });
+  if (await toggle.isVisible()) {
+    await toggle.click();
+  }
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: group }).click();
+}
+
 /** The pages with a plain path. The board page needs a fixture and a fragment. */
 export const PAGES = [
   { path: '/', h1: 're:Invent Compass', title: 'Home | re:Invent Compass' },
   { path: '/demo', h1: 'Demo', title: 'Demo | re:Invent Compass' },
   { path: '/install', h1: 'Install', title: 'Install | re:Invent Compass' },
+  { path: '/about', h1: 'About the creator', title: 'About the creator | re:Invent Compass' },
   {
     path: '/privacy',
     h1: 'Privacy: what leaves your machine',
