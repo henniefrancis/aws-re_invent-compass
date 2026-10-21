@@ -107,9 +107,13 @@ describe('Feature: pass-service, pass signer', () => {
       { startDate: '2026-12-02T17:20:00.000Z', endDate: '2026-12-02T19:00:00.000Z' },
     ]);
     expect(json.voided).toBeUndefined();
-    // Task 42: the poster event ticket keys survive passkit-generator.
+    // Task 43: both styles and the semantics survive passkit-generator.
     expect(json.boardingPass).toBeUndefined();
-    expect(json.preferredStyleSchemes).toEqual(['posterEventTicket', 'eventTicket']);
+    expect(json.preferredStyleSchemes).toBeUndefined();
+    const poster = json.posterGeneric as Record<string, { key: string }[]>;
+    expect(poster.headerFields?.map((f) => f.key)).toEqual(['session']);
+    expect(poster.primaryFields?.map((f) => f.key)).toEqual(['title', 'terminal', 'arrow', 'gate']);
+    expect(poster.footerFields?.map((f) => f.key)).toEqual(['date', 'boardingCloses']);
     expect(json.semantics).toMatchObject({
       eventType: 'PKEventTypeGeneric',
       venueRegionName: 'Las Vegas',
@@ -120,7 +124,8 @@ describe('Feature: pass-service, pass signer', () => {
       'boardingClosesInfo',
       'disclaimerInfo',
     ]);
-    expect(ticket.primaryFields?.map((f) => f.key)).toEqual(['terminal', 'gate']);
+    expect(ticket.primaryFields?.map((f) => f.key)).toEqual(['title']);
+    expect(ticket.secondaryFields?.map((f) => f.key)).toEqual(['terminal', 'gate']);
   });
 
   test('a voided pass keeps voided true and a past expiration date', async () => {

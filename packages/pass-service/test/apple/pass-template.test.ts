@@ -2,6 +2,7 @@ import fc from 'fast-check';
 import { describe, expect, test, vi } from 'vitest';
 import {
   DISCLAIMER,
+  ARROW,
   EVENT_REGION,
   INDEPENDENT_NOTICE,
   PASS_COLOURS,
@@ -96,14 +97,20 @@ describe('Feature: pass-service, pass template', () => {
 
   test('an empty room reads Room not published as the gate and an empty venue Venue not published', () => {
     const json = buildPassJson(input(samplePassFields({ venue: '', room: '' })));
-    const gate = json.eventTicket.primaryFields.find((f) => f.key === 'gate');
-    expect(gate).toEqual({ key: 'gate', label: 'GATE', value: NO_ROOM });
-    const terminal = json.eventTicket.primaryFields.find((f) => f.key === 'terminal');
-    expect(terminal).toEqual({ key: 'terminal', label: 'TERMINAL', value: 'Venue not published' });
+    const gate = {
+      key: 'gate',
+      label: 'GATE',
+      value: NO_ROOM,
+      textAlignment: 'PKTextAlignmentRight',
+    };
+    const terminal = { key: 'terminal', label: 'TERMINAL', value: 'Venue not published' };
+    expect(json.eventTicket.secondaryFields).toEqual([terminal, gate]);
+    expect(json.posterGeneric.primaryFields).toContainEqual(gate);
+    expect(json.posterGeneric.primaryFields).toContainEqual(terminal);
     expect(json.eventTicket.backFields.some((f) => f.key === 'roomFull')).toBe(false);
   });
 
-  test('the front: session top right, terminal and gate, flight name, date and boarding closes (task 39)', () => {
+  test('the front: session top right, flight name, terminal arrow gate, date and boarding closes (task 43)', () => {
     const json = buildPassJson(
       input(
         samplePassFields({
@@ -119,13 +126,32 @@ describe('Feature: pass-service, pass template', () => {
     const row = (fields: { label: string; value: string }[]) =>
       fields.map((f) => `${f.label}=${f.value}`);
     expect('logoText' in json).toBe(false);
-    expect(row(json.eventTicket.headerFields)).toEqual(['SESSION=MAM411']);
-    expect(row(json.eventTicket.primaryFields)).toEqual([
+    // The iOS 27 poster front in the owner's reading order (task 43).
+    expect(row(json.posterGeneric.headerFields)).toEqual(['SESSION=MAM411']);
+    expect(row(json.posterGeneric.primaryFields)).toEqual([
+      'FLIGHT NAME=Best Practices for .NET modernization with AWS Transform',
       'TERMINAL=Caesars Palace',
+      `=${ARROW}`,
       'GATE=Octavius 4',
     ]);
-    expect(row(json.eventTicket.secondaryFields)).toEqual([
+    expect(ARROW).toBe('→');
+    expect(row(json.posterGeneric.footerFields)).toEqual([
+      'DATE=3 Dec 2026 | 13:00-14:00',
+      'BOARDING CLOSES=12:50',
+    ]);
+    expect(json.posterGeneric.footerFields.map((f) => f.textAlignment)).toEqual([
+      undefined,
+      'PKTextAlignmentRight',
+    ]);
+    expect(json.posterGeneric.backFields).toEqual(json.eventTicket.backFields);
+    // The legacy fallback keeps the room in view: one primary field, then terminal and gate.
+    expect(row(json.eventTicket.headerFields)).toEqual(['SESSION=MAM411']);
+    expect(row(json.eventTicket.primaryFields)).toEqual([
       'FLIGHT NAME=Best Practices for .NET modernization with AWS Transform',
+    ]);
+    expect(row(json.eventTicket.secondaryFields)).toEqual([
+      'TERMINAL=Caesars Palace',
+      'GATE=Octavius 4',
     ]);
     expect(row(json.eventTicket.auxiliaryFields)).toEqual([
       'DATE=3 Dec 2026 | 13:00-14:00',
@@ -164,7 +190,8 @@ describe('Feature: pass-service, pass template', () => {
     expect(unknown.venueRoom).toBe('Room not published');
     const json = buildPassJson(input(fields));
     expect(json.description).toBe('Unofficial Boarding Pass');
-    expect(json.preferredStyleSchemes).toEqual(['posterEventTicket', 'eventTicket']);
+    // Task 43: no poster event ticket scheme, which needs NFC; the poster generic style leads.
+    expect('preferredStyleSchemes' in json).toBe(false);
   });
 
   test('the colours are the owner choice: #232F3F, white values, #A166FF labels (task 35)', () => {
@@ -272,7 +299,19 @@ describe('Feature: pass-service, pass template', () => {
           const startMs = Date.parse(fields.startsAt);
           const endMs = Date.parse(fields.endsAt);
 
-          // Task 42: a poster event ticket with a legacy event ticket fallback, no transit type.
+          // Task 43: a poster generic pass with a legacy event ticket fallback, no transit type.
+          expect(Object.keys(json.posterGeneric).sort()).toEqual([
+            'backFields',
+            'footerFields',
+            'headerFields',
+            'primaryFields',
+          ]);
+          expect(json.posterGeneric.primaryFields.map((f) => f.key)).toEqual([
+            'title',
+            'terminal',
+            'arrow',
+            'gate',
+          ]);
           expect(Object.keys(json.eventTicket).sort()).toEqual([
             'additionalInfoFields',
             'auxiliaryFields',
@@ -283,7 +322,7 @@ describe('Feature: pass-service, pass template', () => {
           ]);
           expect('boardingPass' in json).toBe(false);
           expect(text).not.toContain('transitType');
-          expect(json.preferredStyleSchemes).toEqual(['posterEventTicket', 'eventTicket']);
+          expect('preferredStyleSchemes' in json).toBe(false);
           expect(json.semantics).toEqual({
             eventType: 'PKEventTypeGeneric',
             eventName: fields.title,
@@ -334,19 +373,30 @@ describe('Feature: pass-service, pass template', () => {
           expect(json.eventTicket.headerFields).toEqual([
             { key: 'session', label: 'SESSION', value: fields.sessionCode },
           ]);
-          expect(json.eventTicket.primaryFields).toEqual([
-            {
-              key: 'terminal',
-              label: 'TERMINAL',
-              value: fields.venue === '' ? 'Venue not published' : fields.venue,
-            },
-            {
-              key: 'gate',
-              label: 'GATE',
-              value: shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room),
-            },
+          const terminal = {
+            key: 'terminal',
+            label: 'TERMINAL',
+            value: fields.venue === '' ? 'Venue not published' : fields.venue,
+          };
+          const gate = {
+            key: 'gate',
+            label: 'GATE',
+            value: shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room),
+            textAlignment: 'PKTextAlignmentRight',
+          };
+          const title = { key: 'title', label: 'FLIGHT NAME', value: fields.title };
+          // Task 43: the poster front and the legacy fallback both show the room as the gate.
+          expect(json.eventTicket.primaryFields).toEqual([title]);
+          expect(json.eventTicket.secondaryFields).toEqual([terminal, gate]);
+          expect(json.posterGeneric.headerFields).toEqual(json.eventTicket.headerFields);
+          expect(json.posterGeneric.primaryFields).toEqual([
+            title,
+            terminal,
+            { key: 'arrow', label: '', value: ARROW },
+            gate,
           ]);
-          expect(json.eventTicket.secondaryFields[0]?.label).toBe('FLIGHT NAME');
+          expect(json.posterGeneric.footerFields).toEqual(json.eventTicket.auxiliaryFields);
+          expect(json.posterGeneric.backFields).toEqual(json.eventTicket.backFields);
           const aux = json.eventTicket.auxiliaryFields;
           expect(aux.map((f) => f.key)).toEqual(['date', 'boardingCloses']);
           expect(aux[1]).toEqual({
@@ -358,7 +408,6 @@ describe('Feature: pass-service, pass template', () => {
           const [datePart, timePart] = (aux[0]?.value ?? '').split(' | ');
           expect(datePart).toMatch(/^\d{1,2} [A-Z][a-z]{2} 2026$/);
           expect(timePart).toBe(`${expectedTime(startMs)}-${expectedTime(endMs)}`);
-          expect(json.eventTicket.secondaryFields[0]?.value).toBe(fields.title);
           const name = json.eventTicket.backFields.find((f) => f.key === 'name');
           expect(name?.value).toBe(fields.attendeeName);
           expect(name === undefined).toBe(fields.attendeeName === undefined);

@@ -1,11 +1,11 @@
-// The fixed server template of every Apple pass (Requirement 9): a poster event ticket with a
-// legacy event ticket fallback (task 42). Pure: the same input always gives the same pass.json.
+// The fixed server template of every Apple pass (Requirement 9): a poster generic pass with a
+// legacy event ticket fallback in the same pass.json (task 43). Pure: the same input always gives the same pass.json.
 // Client text appears only as field values and semantic tags; no client string is ever a date
 // (review H1): every date here is built from `Date.parse` and written in the canonical
 // 24-character toISOString() form.
 //
 // Pass keys: https://developer.apple.com/documentation/walletpasses/pass
-// Poster event tickets: https://developer.apple.com/documentation/walletpasses/creating-an-event-pass-using-semantic-tags
+// Poster generic passes: https://developer.apple.com/documentation/walletpasses/creating-a-poster-generic-pass
 import type { PassFields } from '@compass/contracts';
 import {
   formatEventDate,
@@ -21,8 +21,11 @@ export const NO_VENUE = 'Venue not published';
 export const NO_ROOM = 'Room not published';
 /** The poster's region tag: re:Invent is held in Las Vegas (task 42). */
 export const EVENT_REGION = 'Las Vegas';
-/** Wallet tries the poster event ticket first and falls back to the legacy one (task 42). */
-export const STYLE_SCHEMES = ['posterEventTicket', 'eventTicket'] as const;
+/**
+ * The arrow between the terminal and the gate on the poster front (task 43), where the boarding
+ * pass drew its transit arrow. A rightwards arrow, U+2192.
+ */
+export const ARROW = '→';
 /**
  * The pass colours (owner decision, task 35): background #232F3F, white values and #A166FF
  * labels. The background's closeness to AWS Squid Ink and the label contrast are accepted
@@ -45,7 +48,7 @@ export interface PassField {
   textAlignment?: 'PKTextAlignmentRight';
 }
 
-/** The semantic tags a poster event ticket needs (task 42). */
+/** The event semantic tags (task 42); kept for Siri and the system (task 43). */
 export interface PassSemantics {
   eventType: 'PKEventTypeGeneric';
   eventName: string;
@@ -72,8 +75,15 @@ export interface PassJson {
   expirationDate: string;
   voided?: true;
   relevantDates: { startDate: string; endDate: string }[];
-  preferredStyleSchemes: typeof STYLE_SCHEMES;
   semantics: PassSemantics;
+  /** The iOS 27 poster front (task 43). Wallet prefers it when present. */
+  posterGeneric: {
+    headerFields: PassField[];
+    primaryFields: PassField[];
+    footerFields: PassField[];
+    backFields: PassField[];
+  };
+  /** The legacy fallback for systems without poster generic passes. */
   eventTicket: {
     headerFields: PassField[];
     primaryFields: PassField[];
@@ -169,8 +179,8 @@ function backFields(input: PassTemplateInput): PassField[] {
 }
 
 /**
- * The semantic tags of the poster event ticket (task 42). Wallet lays out the poster front
- * from these; the dates are canonical, built from Date.parse, never a client string.
+ * The event semantic tags (task 42). The dates are canonical, built from Date.parse, never a
+ * client string.
  */
 export function passSemantics(fields: PassFields): PassSemantics {
   return {
@@ -187,9 +197,15 @@ export function passSemantics(fields: PassFields): PassSemantics {
 export function buildPassJson(input: PassTemplateInput): PassJson {
   const { fields, timezone } = input;
   const closes = formatEventTime24(boardingClosesAt(fields.startsAt), timezone);
+  const venue = fields.venue === '' ? NO_VENUE : fields.venue;
+  const gate = shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room);
+  const session = [field('session', 'SESSION', fields.sessionCode)];
+  const title = field('title', 'FLIGHT NAME', fields.title);
+  const terminal = field('terminal', 'TERMINAL', venue);
+  const gateField = field('gate', 'GATE', gate, true);
   // The bottom row (task 39): the date and time together on the left and boarding closes on
-  // the right. The zone and the disclaimer are on the back only (Requirements 9.2 and 9.6).
-  const auxiliary: PassField[] = [
+  // the right. The zone and the disclaimer are on the back (Requirements 9.2 and 9.6).
+  const bottom: PassField[] = [
     field(
       'date',
       'DATE',
@@ -197,6 +213,7 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
     ),
     field('boardingCloses', 'BOARDING CLOSES', closes, true),
   ];
+  const back = backFields(input);
   const expiration = input.status === 'voided' ? input.voidedAt : fields.endsAt;
   return {
     formatVersion: 1,
@@ -214,26 +231,28 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
     expirationDate: canonical(expiration),
     ...(input.status === 'voided' ? { voided: true as const } : {}),
     relevantDates: [relevantInterval(fields)],
-    preferredStyleSchemes: STYLE_SCHEMES,
     semantics: passSemantics(fields),
+    // The owner's layout on iOS 27 (task 43): logo top left and the session top right; the
+    // flight name; terminal, arrow and gate; then date and boarding closes in the footer, over
+    // the unblurred artwork.
+    posterGeneric: {
+      headerFields: session,
+      primaryFields: [title, terminal, field('arrow', '', ARROW), gateField],
+      footerFields: bottom,
+      backFields: back,
+    },
+    // The legacy event ticket shows one primary field, so the terminal and the gate move to the
+    // secondary row where both stay in view (task 43).
     eventTicket: {
-      // Airline wording (tasks 37 and 39) on the legacy event ticket: the session code top
-      // right; terminal (the venue) and gate (the room) in the large primary row; the title
-      // as the flight name. The poster front comes from the semantics (task 42).
-      headerFields: [field('session', 'SESSION', fields.sessionCode)],
-      primaryFields: [
-        field('terminal', 'TERMINAL', fields.venue === '' ? NO_VENUE : fields.venue),
-        field('gate', 'GATE', shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room)),
-      ],
-      secondaryFields: [field('title', 'FLIGHT NAME', fields.title)],
-      auxiliaryFields: auxiliary,
-      // Shown below a poster event ticket, so the seat release time and the disclaimer stay
-      // in view whichever layout Wallet picks (task 42).
+      headerFields: session,
+      primaryFields: [title],
+      secondaryFields: [terminal, gateField],
+      auxiliaryFields: bottom,
       additionalInfoFields: [
         field('boardingClosesInfo', 'BOARDING CLOSES', closes),
         field('disclaimerInfo', 'NOTICE', DISCLAIMER),
       ],
-      backFields: backFields(input),
+      backFields: back,
     },
   };
 }

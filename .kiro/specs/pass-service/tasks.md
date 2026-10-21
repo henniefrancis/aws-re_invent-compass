@@ -591,6 +591,10 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 42.3 Users read "Boarding Pass": `description` is "Unofficial Boarding Pass" and the calendar product name is "Boarding Passes"
   - [x] 42.4 Tests (pass.json style, schemes, semantics with and without venue and room, additional info fields, image names, sizes and the artwork budget, a signed pass carries the new files) and commit after the full gate passes, scoped `pass-service`. Owner check on the iPhone: delete the old dev passes, issue new ones and confirm the poster layout (iOS 26 or later) and the legacy fallback
 
+- [x] 43. Show the room and the unblurred picture on iPhone: a poster generic pass with an event ticket fallback (owner decision of 21 October, design "Post-SP3 change: poster generic pass", Requirements 9.1 and 9.12 amended)
+  - [x] 43.1 `buildPassJson` writes `posterGeneric` (header SESSION; primary FLIGHT NAME, TERMINAL, an arrow, GATE; footer DATE and BOARDING CLOSES; the back fields) and keeps `eventTicket` as the fallback (header SESSION; primary FLIGHT NAME; secondary TERMINAL and GATE; auxiliary DATE and BOARDING CLOSES; additional info and back as before). `preferredStyleSchemes` is dropped, because the poster event ticket needs NFC, which this pass cannot have. The semantics stay
+  - [x] 43.2 Tests (both styles, field order, the arrow, no room and no venue, a signed bundle carries both styles and the artwork) and commit after the full gate passes, scoped `pass-service`. Owner check on iOS 27: remove the old dev pass, issue a new one, and confirm the picture is unblurred and the room shows as GATE
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.
