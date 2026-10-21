@@ -12,6 +12,7 @@
 
 import { join } from 'node:path';
 import type { QrPagePort } from '../ports/qr-page-port.js';
+import { QR_BRAND_ICON, QR_BRAND_LOGO } from './qr-brand.js';
 
 /** The file name inside the page's own folder. */
 export const QR_PAGE_FILE = 'board-qr.html';
@@ -90,7 +91,18 @@ export function isPlainSvg(svg: string): boolean {
   return QR_SVG.test(svg);
 }
 
-/** The page: static HTML with the SVG QR code inline. */
+/** The page title (task 49). */
+export const QR_PAGE_TITLE = 're:Invent Compass Boarding Pass';
+
+/** An owner SVG as a data: URL, the only kind of image the page's CSP allows. */
+export function svgDataUrl(base64: string): string {
+  return `data:image/svg+xml;base64,${base64}`;
+}
+
+/**
+ * The page: static HTML with the SVG QR code inline, branded with the owner's icon and logo
+ * (task 49) in the colours of the Apple pass.
+ */
 export function qrPageHtml(page: { svg: string; expiresAt: string }): string {
   return [
     '<!doctype html>',
@@ -100,10 +112,13 @@ export function qrPageHtml(page: { svg: string; expiresAt: string }): string {
     `<meta http-equiv="Content-Security-Policy" content="${QR_PAGE_CSP}">`,
     '<meta name="referrer" content="no-referrer">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
-    '<title>Compass: scan to add your Boarding Passes</title>',
+    `<title>${QR_PAGE_TITLE}</title>`,
+    `<link rel="icon" type="image/svg+xml" href="${svgDataUrl(QR_BRAND_ICON)}">`,
     '<style>',
-    'body{margin:0;font-family:system-ui,sans-serif;background:#232f3f;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center}',
-    'main{text-align:center;padding:24px}',
+    'body{margin:0;font-family:system-ui,sans-serif;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center;background:#000 linear-gradient(160deg,#05052e 0%,#2236f0 40%,#2b34ee 60%,#e61ee8 85%,#ff6a20 100%) fixed}',
+    'main{text-align:center;padding:24px;margin:16px;max-width:440px;background:rgba(0,0,0,.6);border-radius:16px}',
+    '.logo{width:min(280px,70vw);height:auto;display:block;margin:0 auto 8px}',
+    'h1{color:#f09740;font-size:1.4rem;margin:8px 0 16px}',
     '.qr{background:#fff;display:inline-block;padding:8px;border-radius:8px}',
     '.qr svg{width:min(360px,80vw);height:auto;display:block}',
     'p{margin:12px 0}',
@@ -111,6 +126,7 @@ export function qrPageHtml(page: { svg: string; expiresAt: string }): string {
     '</head>',
     '<body>',
     '<main>',
+    `<img class="logo" src="${svgDataUrl(QR_BRAND_LOGO)}" alt="re:Invent Compass">`,
     '<h1>Scan with your phone camera</h1>',
     `<div class="qr">${page.svg}</div>`,
     `<p>${expiryLine(page.expiresAt)}</p>`,

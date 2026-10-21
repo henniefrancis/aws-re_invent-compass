@@ -495,3 +495,5 @@ P3.4. **Fallback.** IF the page cannot be written or the browser cannot be opene
 P3.5. **Lifetime.** THE page SHALL be deleted when its link expires, when a newer page replaces it, when the server exits or is stopped by SIGTERM, SIGINT or SIGHUP, and by `forget_me`; a page left behind by a killed server SHALL be removed the next time a page is shown. The link and the page's path SHALL never be written to a log.
 
 P3.6. **The Power asks.** THE Power SHALL tell the agent to ask "Link or QR code?" before calling `send_to_phone`, unless the attendee already said which.
+
+P3.7. **Branded page.** THE QR page SHALL carry the title "re:Invent Compass Boarding Pass", the owner's icon (`site/public/artwork/favicon.svg`) as its favicon and the owner's full logo (`site/public/artwork/logo.svg`) above "Scan with your phone camera", in the pass colours. Both images SHALL be inline `data:image/svg+xml` URLs inside the existing Content-Security-Policy, so the page still loads nothing from outside itself and runs no script (owner request of 21 October 2026, task 49).

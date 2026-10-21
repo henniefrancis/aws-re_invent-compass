@@ -599,6 +599,13 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage), a security review of the page and the temporary file, then commit scoped `compass-power` on develop
   - _Requirements: P3.1, P3.2, P3.3, P3.4, P3.5, P3.6_
 
+- [x] 49. Brand the QR page (owner request of 21 October, design "Owner change: branded QR page")
+  - `scripts/make-qr-brand.mjs` writes `src/adapters/qr-brand.ts` with the owner's `logo.svg` and `favicon.svg` as base64; a test fails when the module and the site files drift apart
+  - `qrPageHtml`: title "re:Invent Compass Boarding Pass"; the icon as an SVG favicon and the full logo above the heading, both `data:` URLs; the pass gradient behind a dark card, orange heading
+  - Tests: the title, the favicon and logo are the owner's files as `data:` URLs, the logo comes before the heading, still no script, no external URL and the same CSP
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
+  - _Requirements: P3.3, P3.7_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

@@ -1,5 +1,5 @@
 import { lstat, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
-import { rmSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { describe, expect, test } from 'vitest';
@@ -10,9 +10,12 @@ import {
   QR_PAGE_CSP,
   QR_PAGE_FILE,
   QR_PAGE_PREFIX,
+  QR_PAGE_TITLE,
   qrPageHtml,
   STALE_PAGE_MS,
+  svgDataUrl,
 } from '../../src/adapters/qr-page.js';
+import { QR_BRAND_ICON, QR_BRAND_LOGO } from '../../src/adapters/qr-brand.js';
 import type { QrPageDeps, QrPageEntryStat, QrPageFs } from '../../src/adapters/qr-page.js';
 
 // Feature: compass-power, task 48 (P3.3 to P3.5): the QR page in the browser.
@@ -134,7 +137,39 @@ describe('the QR page HTML', () => {
     expect(html).toContain('This code works until 16:15 UTC.');
     expect(html).toContain('Unofficial. Your badge is your ticket.');
     expect(html).toContain('Do not share this QR code.');
-    expect(html).not.toMatch(/<script|<link|<img|<iframe|https?:\/\/(?!www\.w3\.org)/i);
+    expect(html).not.toMatch(/<script|<iframe|<object|<embed|https?:\/\/(?!www\.w3\.org)/i);
+    // The only link and image are the owner's icon and logo as data: URLs (task 49).
+    const links = [...html.matchAll(/<link [^>]*>/g)].map((m) => m[0]);
+    const images = [...html.matchAll(/<img [^>]*>/g)].map((m) => m[0]);
+    expect(links).toEqual([
+      `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,${QR_BRAND_ICON}">`,
+    ]);
+    expect(images).toEqual([
+      `<img class="logo" src="data:image/svg+xml;base64,${QR_BRAND_LOGO}" alt="re:Invent Compass">`,
+    ]);
+    expect(html).not.toMatch(/(?:src|href)="(?!data:image\/svg\+xml;base64,)/);
+  });
+
+  test('is branded: the title, the favicon and the full logo above the heading (task 49)', () => {
+    const html = qrPageHtml({ svg: SVG, expiresAt: EXPIRES });
+    expect(QR_PAGE_TITLE).toBe('re:Invent Compass Boarding Pass');
+    expect(html).toContain('<title>re:Invent Compass Boarding Pass</title>');
+    expect(html.indexOf('<img class="logo"')).toBeGreaterThan(html.indexOf('<main>'));
+    expect(html.indexOf('<img class="logo"')).toBeLessThan(
+      html.indexOf('<h1>Scan with your phone camera</h1>'),
+    );
+    expect(svgDataUrl('QUJD')).toBe('data:image/svg+xml;base64,QUJD');
+  });
+
+  test('the embedded logo and icon are the site artwork, so they cannot drift (task 49)', () => {
+    const artwork = (name: string) =>
+      readFileSync(new URL(`../../../../site/public/artwork/${name}`, import.meta.url));
+    expect(Buffer.from(QR_BRAND_LOGO, 'base64').equals(artwork('logo.svg'))).toBe(true);
+    expect(Buffer.from(QR_BRAND_ICON, 'base64').equals(artwork('favicon.svg'))).toBe(true);
+    for (const encoded of [QR_BRAND_LOGO, QR_BRAND_ICON]) {
+      const svg = Buffer.from(encoded, 'base64').toString('utf8');
+      expect(svg).not.toMatch(/<script|<foreignObject|\son[a-z]+=|href="(?!#)/i);
+    }
   });
 
   test('the expiry line is HH:MM in UTC', () => {
