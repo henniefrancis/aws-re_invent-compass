@@ -429,8 +429,8 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 30. Wallet badges side by side with the calendar below (owner request of 21 October, design "Post-SP3 change: board page and local e2e workers")
   - [x] 30.1 The Apple and Google badges share one row, top-aligned, and the calendar button takes the row below; the badges scale down a little on narrow screens (2.5rem to 3.25rem high) so both fit side by side on a phone; board, accessibility and layout e2e tests; commit scoped `showcase-site`
 
-- [x] 31. The owner's restyled badge set (owner request of 21 October, design "Post-SP3 change: board page and local e2e workers")
-  - [x] 31.1 `apple-wallet.svg`, `google-wallet.svg` and `calendar.svg` are the owner's matching versions from `docs/previews` (680 by 216, 701 by 217 and 681 by 230); the Apple file's four linked shadow images, which it named but did not include and a browser would not load, are removed. ARTWORK.md records that both wallet badges were restyled from the vendors' official badges, whose guidelines ask for them unchanged (the owner was told); tests and commit scoped `showcase-site`
+- [x] 31. Higher-quality badges at one size (owner request of 21 October, design "Post-SP3 change: board page and local e2e workers")
+  - [x] 31.1 `apple-wallet.svg`, `google-wallet.svg` and `calendar.svg` are the owner's higher-quality files from `docs/previews` at one size (680 by 216, 701 by 217 and 681 by 230). The wallet badges are still Apple's and Google's official badges (the owner confirmed), so no licence risk is open. The Apple file's four linked shadow images, which it named but did not include and a browser would not load, are removed; tests and commit scoped `showcase-site`
 
 ## Notes
 
