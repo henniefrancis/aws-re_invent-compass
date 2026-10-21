@@ -3,8 +3,10 @@
 // so the attendee confirmed once per pass. Passes are issued only for sessions the fresh confirmed
 // schedule lists as reserved; anything else is refused without any pass call. Each session is
 // refreshed through S1 GetSession first, so the pass carries current times, and the adapter splits
-// a long list into chunks for the pass service. The text says the pass is unofficial and that the
-// badge is the ticket, and never claims a pass can be deleted from a phone.
+// a long list into chunks for the pass service. The client's approval of the call is the one
+// confirmation (P4.5, task 52: one for all passes, one per single pass), so neither tool asks again;
+// only the pick list asks which session when none is named. The text says the pass is unofficial
+// and that the badge is the ticket, and never claims a pass can be deleted from a phone.
 
 import type { CatalogView } from '../ports/events-port.js';
 import { CompassError } from '../ports/errors.js';
@@ -14,13 +16,7 @@ import { describeTargets } from '../safety/targets.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
 import type { ScheduleWire } from '@compass/contracts';
 import type { ActingOn } from './common.js';
-import {
-  confirmMessage,
-  ensureSignedIn,
-  humanConfirms,
-  readFreshSchedule,
-  scheduleViewOf,
-} from './common.js';
+import { ensureSignedIn, readFreshSchedule, scheduleViewOf } from './common.js';
 import { PASS_DISCLAIMER } from './pass-text.js';
 
 type Issued = ToolOutcome<'issue_all_boarding_passes'>;
@@ -40,7 +36,7 @@ function nothing(text: string): Issued {
   return { ok: true, structured: { issued: [], serials: [] }, text };
 }
 
-/** Issues the passes after the confirmation, and says what was issued. */
+/** Issues the passes and says what was issued. */
 async function issueFor(
   ctx: ToolContext,
   ids: readonly string[],
@@ -73,7 +69,7 @@ function reservedKnown(schedule: ScheduleWire, catalog: CatalogView): string[] {
   return schedule.reserved.filter((id) => catalog.byId.has(id));
 }
 
-/** issue_all_boarding_passes: every reserved session, after one confirmation (P4.1). */
+/** issue_all_boarding_passes: every reserved session, in one call (P4.1, P4.5). */
 export async function issueAllBoardingPasses(
   _input: Record<string, never>,
   ctx: ToolContext,
@@ -85,18 +81,7 @@ export async function issueAllBoardingPasses(
   if (ids.length === 0) {
     return nothing(NOTHING_RESERVED);
   }
-  const targets = describeTargets(ids, catalog).found;
-  const approved = await humanConfirms(
-    ctx,
-    confirmMessage(
-      `Issue Boarding Passes for all ${String(ids.length)} of your reserved sessions? This creates real passes on the Compass pass service.`,
-      targets,
-    ),
-  );
-  if (!approved) {
-    return nothing('No passes were issued, because you did not confirm.');
-  }
-  return issueFor(ctx, ids, schedule, catalog, targets);
+  return issueFor(ctx, ids, schedule, catalog, describeTargets(ids, catalog).found);
 }
 
 /** Pick-list options: "CODE Title", made unique with the id when two would read the same. */
@@ -110,7 +95,7 @@ function optionsFor(targets: readonly ActingOn[]): { value: string; label: strin
   });
 }
 
-/** issue_boarding_pass: one session, named or picked from the reserved ones (P4.2). */
+/** issue_boarding_pass: one session, named or picked from the reserved ones (P4.2, P4.5). */
 export async function issueBoardingPass(
   input: { sessionId?: string | undefined },
   ctx: ToolContext,
@@ -148,16 +133,5 @@ export async function issueBoardingPass(
     );
   }
 
-  const targets = describeTargets([id], catalog).found;
-  const approved = await humanConfirms(
-    ctx,
-    confirmMessage(
-      'Issue a Boarding Pass for this session? This creates a real pass on the Compass pass service.',
-      targets,
-    ),
-  );
-  if (!approved) {
-    return nothing('No pass was issued, because you did not confirm.');
-  }
-  return issueFor(ctx, [id], schedule, catalog, targets);
+  return issueFor(ctx, [id], schedule, catalog, describeTargets([id], catalog).found);
 }

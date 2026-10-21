@@ -93,32 +93,32 @@ Every command here names the exact version of this package. Pinning it is delibe
 
 ## The tools
 
-| Tool                        | Class        | What it does                                                                                 |
-| --------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
-| `sign_in`                   | local action | Signs you in with your AWS Builder ID. Opens your browser.                                   |
-| `sign_out`                  | local action | Revokes your sign-in and clears the stored tokens.                                           |
-| `refresh_catalog`           | read         | Loads the session catalog into a private local cache.                                        |
-| `find_sessions`             | read         | Searches and filters the cached catalog.                                                     |
-| `scan_repo`                 | read         | Scans a folder (or a dev folder of repos) read-only for AWS services and tech.               |
-| `show_my_tech`              | read         | Lists your tech list on this machine: AWS services first, then other technology.             |
-| `find_sessions_by_tech`     | read         | Finds catalog sessions on a technology, or on the tech you use the most.                     |
-| `connect_github`            | local action | Connects the read-only Compass GitHub App. Shows a code to enter on GitHub.                  |
-| `scan_github`               | read         | Reads your GitHub repositories, read-only, after you confirm the list.                       |
-| `disconnect_github`         | local action | Deletes the GitHub sign-in on this machine.                                                  |
-| `check_itinerary`           | read         | Runs the guardrail over proposed sessions. Writes nothing.                                   |
-| `show_schedule`             | read         | Lists your reservations, standby list and layovers with their ids. Writes nothing.           |
-| `plan_week`                 | local action | Plans a week and writes it as a Kiro spec in the workspace, after you confirm.               |
-| `export_calendar`           | local action | Writes an `.ics` calendar file of your schedule.                                             |
-| `reserve_with_guardrails`   | write        | Reserves 1 to 10 sessions after the guardrail passes. Changes your real schedule.            |
-| `cancel_reservation`        | write        | Cancels a reservation, with the safe swap rule. Changes your real schedule.                  |
-| `add_standby`               | write        | Favourites sessions as backups. Changes your real schedule.                                  |
-| `remove_standby`            | write        | Removes a favourite. Changes your real schedule.                                             |
-| `add_layover`               | write        | Creates, changes or deletes personal time. Changes your real schedule.                       |
-| `issue_all_boarding_passes` | write        | Creates unofficial Boarding Passes for all your reserved sessions, after one confirmation.   |
-| `issue_boarding_pass`       | write        | Creates one Boarding Pass for a session you hold; without a session it asks which.           |
-| `send_to_phone`             | write        | Makes a 15-minute link for your passes: shown as a link, a QR code in your browser, or both. |
-| `sync_passes`               | write        | Makes the passes match your schedule. It can void passes.                                    |
-| `forget_me`                 | write        | Deletes your pass data on the server and on this machine.                                    |
+| Tool                        | Class        | What it does                                                                                                   |
+| --------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
+| `sign_in`                   | local action | Signs you in with your AWS Builder ID. Opens your browser.                                                     |
+| `sign_out`                  | local action | Revokes your sign-in and clears the stored tokens.                                                             |
+| `refresh_catalog`           | read         | Loads the session catalog into a private local cache.                                                          |
+| `find_sessions`             | read         | Searches and filters the cached catalog.                                                                       |
+| `scan_repo`                 | read         | Scans a folder (or a dev folder of repos) read-only for AWS services and tech.                                 |
+| `show_my_tech`              | read         | Lists your tech list on this machine: AWS services first, then other technology.                               |
+| `find_sessions_by_tech`     | read         | Finds catalog sessions on a technology, or on the tech you use the most.                                       |
+| `connect_github`            | local action | Connects the read-only Compass GitHub App. Shows a code to enter on GitHub.                                    |
+| `scan_github`               | read         | Reads your GitHub repositories, read-only, after you confirm the list.                                         |
+| `disconnect_github`         | local action | Deletes the GitHub sign-in on this machine.                                                                    |
+| `check_itinerary`           | read         | Runs the guardrail over proposed sessions. Writes nothing.                                                     |
+| `show_schedule`             | read         | Lists your reservations, standby list and layovers with their ids. Writes nothing.                             |
+| `plan_week`                 | local action | Plans a week and writes it as a Kiro spec in the workspace, after you confirm.                                 |
+| `export_calendar`           | local action | Writes an `.ics` calendar file of your schedule.                                                               |
+| `reserve_with_guardrails`   | write        | Reserves 1 to 10 sessions after the guardrail passes. Changes your real schedule.                              |
+| `cancel_reservation`        | write        | Cancels a reservation, with the safe swap rule. Changes your real schedule.                                    |
+| `add_standby`               | write        | Favourites sessions as backups. Changes your real schedule.                                                    |
+| `remove_standby`            | write        | Removes a favourite. Changes your real schedule.                                                               |
+| `add_layover`               | write        | Creates, changes or deletes personal time. Changes your real schedule.                                         |
+| `issue_all_boarding_passes` | write        | Creates unofficial Boarding Passes for all your reserved sessions; approving the call is the one confirmation. |
+| `issue_boarding_pass`       | write        | Creates one Boarding Pass for a session you hold; without a session it asks which.                             |
+| `send_to_phone`             | write        | Makes a 15-minute link for your passes: shown as a link, a QR code in your browser, or both.                   |
+| `sync_passes`               | write        | Makes the passes match your schedule. It can void passes.                                                      |
+| `forget_me`                 | write        | Deletes your pass data on the server and on this machine.                                                      |
 
 ## Approvals
 

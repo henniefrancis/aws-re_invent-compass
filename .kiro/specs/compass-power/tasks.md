@@ -619,6 +619,12 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
   - _Requirements: P4.1, P4.2, P4.3, P4.4_
 
+- [x] 52. One confirmation for issuing passes: the client's approval (owner rule of 21 October, design "One confirmation for passes")
+  - Remove `humanConfirms` from `issue_all_boarding_passes` and `issue_boarding_pass`; keep the pick list; the descriptions, the Power and the plan-my-week skill say the client's approval is the one confirmation
+  - Tests: neither tool asks a confirmation through elicitation; the pick list is the only question without an id; over MCP with an elicitation client the only question is the pick list; 100 percent coverage
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
+  - _Requirements: P4.5_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

@@ -39,7 +39,8 @@ const answering =
 
 // Feature: compass-power, P4.1: every reserved session after one confirmation.
 describe('issue_all_boarding_passes', () => {
-  test('issues every reserved session after one confirmation that lists them all', async () => {
+  // P4.5: the client's approval is the one confirmation, so Compass asks nothing itself.
+  test('issues every reserved session in one call, asking nothing of its own', async () => {
     const questions: string[] = [];
     const { fake, ctx } = setup((question) => {
       questions.push(question.message);
@@ -53,10 +54,7 @@ describe('issue_all_boarding_passes', () => {
       issued: [TRIPLE.aRepeat, TRIPLE.b],
       serials: ['serial-1', 'serial-2'],
     });
-    expect(questions).toHaveLength(1);
-    expect(questions[0]).toContain('Issue Boarding Passes for all 2 of your reserved sessions?');
-    expect(questions[0]).toContain(`(id ${TRIPLE.aRepeat})`);
-    expect(questions[0]).toContain(`(id ${TRIPLE.b})`);
+    expect(questions).toEqual([]);
     expect(fake.events.callsTo('getSession').map((c) => c.args[0])).toEqual([
       TRIPLE.aRepeat,
       TRIPLE.b,
@@ -73,7 +71,7 @@ describe('issue_all_boarding_passes', () => {
     expect(outcome.ok && outcome.structured).toEqual({ issued: [TRIPLE.a], serials: ['serial-1'] });
   });
 
-  test('nothing reserved asks nothing and issues nothing; a decline issues nothing', async () => {
+  test('nothing reserved issues nothing; a client that would decline is never asked', async () => {
     const questions: string[] = [];
     const empty = setup((question) => {
       questions.push(question.message);
@@ -86,10 +84,8 @@ describe('issue_all_boarding_passes', () => {
 
     const declined = setup(answering('decline'));
     declined.fake.events.schedule.reserved.push(TRIPLE.a);
-    const refused = await issueAllBoardingPasses({}, declined.ctx);
-    expect(refused.ok && refused.text).toContain('did not confirm');
-    expect(refused.ok && refused.structured).toEqual({ issued: [], serials: [] });
-    expect(declined.fake.passes.writeCalls).toEqual([]);
+    const issued = await issueAllBoardingPasses({}, declined.ctx);
+    expect(issued.ok && issued.structured).toEqual({ issued: [TRIPLE.a], serials: ['serial-1'] });
 
     const signedOut = setup();
     signedOut.fake.events.signedIn = false;
@@ -176,7 +172,7 @@ describe('issue_boarding_pass', () => {
     expect(fake.passes.writeCalls).toEqual([]);
   });
 
-  test('nothing reserved asks nothing; a declined confirmation issues nothing', async () => {
+  test('nothing reserved asks nothing; a named session is issued without a question of its own', async () => {
     const empty = withChoice('first');
     const outcome = await issueBoardingPass({}, empty.ctx);
     expect(outcome.ok && outcome.text).toBe(NOTHING_RESERVED);
@@ -184,18 +180,19 @@ describe('issue_boarding_pass', () => {
 
     const declined = setup(answering('decline'));
     declined.fake.events.schedule.reserved.push(TRIPLE.a);
-    const refused = await issueBoardingPass({ sessionId: TRIPLE.a }, declined.ctx);
-    expect(refused.ok && refused.text).toContain('did not confirm');
-    expect(declined.fake.passes.writeCalls).toEqual([]);
+    const issued = await issueBoardingPass({ sessionId: TRIPLE.a }, declined.ctx);
+    expect(issued.ok && issued.structured).toEqual({ issued: [TRIPLE.a], serials: ['serial-1'] });
   });
 
-  test('over MCP the server asks the pick list, then the confirmation, and issues the pick', async () => {
+  test('over MCP the only question is the pick list, and the pick is issued', async () => {
     const fake = createFakeRuntime({ catalog: syntheticCatalogView() });
     fake.events.schedule.reserved.push(TRIPLE.a);
     const connection = await connect(fake.runtime, { elicit: 'accept' });
+    const all = await connection.call('issue_all_boarding_passes', {});
+    expect(connection.questions).toEqual([]);
+    expect(all.structuredContent).toMatchObject({ issued: [TRIPLE.a] });
     const result = await connection.call('issue_boarding_pass', {});
-    expect(connection.questions[0]).toBe(WHICH_SESSION);
-    expect(connection.questions[1]).toContain('Issue a Boarding Pass for this session?');
+    expect(connection.questions).toEqual([WHICH_SESSION]);
     expect(result.structuredContent).toMatchObject({ issued: [TRIPLE.a] });
     await connection.close();
   });

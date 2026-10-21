@@ -511,3 +511,5 @@ P4.2. **One pass.** THE Compass_Server SHALL offer a Write_Tool `issue_boarding_
 P4.3. **The old tool goes.** `issue_boarding_passes` SHALL be removed from the contract, the server, the hooks, the descriptions, the Power and the docs. There are twenty-four tools. Both new tools are Write_Tools and SHALL never be auto-approved.
 
 P4.4. **Time to answer.** A confirmation or choice asked through elicitation SHALL wait up to five minutes. IF the attendee does not answer in that time, THEN the tool SHALL change nothing and SHALL say that the confirmation timed out, not that the attendee declined.
+
+P4.5. **One confirmation, from the client.** The owner's rule: "when multiple passes are issued, only 1 confirm, when single passes are issued, each confirm". The client's approval of the tool call (Kiro always asks, because these Write_Tools are never auto-approved) is that confirmation, so `issue_all_boarding_passes` and `issue_boarding_pass` SHALL NOT ask a second confirmation of their own. This takes precedence over "after one confirmation" in P4.1 and P4.2. `issue_boarding_pass` without a `sessionId` still asks which session through the pick list.
