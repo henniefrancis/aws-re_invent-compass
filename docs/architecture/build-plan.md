@@ -329,7 +329,7 @@ The old Spec 5 `pass-signer-infra` is split into S5 (code) and S6 (Terraform), s
 
 ### 8.1 MCP tools (S3) and API use
 
-Tools: `sign_in`, `sign_out`, `refresh_catalog`, `find_sessions`, `scan_repo`, `plan_week`, `check_itinerary`, `reserve_with_guardrails`, `cancel_reservation` (including the safe swap), `add_standby`, `remove_standby`, `add_layover` (create, update, delete), `issue_boarding_passes`, `send_to_phone` (hand-off QR), `sync_passes`, `export_calendar`, `forget_me`. Read tools may be auto-approved; write tools never are.
+Tools (24, compass-power tasks 33, 41 to 47, 48 and 51): `sign_in`, `sign_out`, `refresh_catalog`, `find_sessions`, `scan_repo`, `plan_week`, `check_itinerary`, `show_schedule`, `reserve_with_guardrails`, `cancel_reservation` (including the safe swap), `add_standby`, `remove_standby`, `add_layover` (create, update, delete), `issue_all_boarding_passes`, `issue_boarding_pass`, `send_to_phone` (a link, a QR code on a browser page, or both), `sync_passes`, `export_calendar`, `forget_me`, `show_my_tech`, `find_sessions_by_tech`, `connect_github`, `scan_github`, `disconnect_github`. Read tools may be auto-approved; write tools never are.
 
 All 12 operations are used:
 
