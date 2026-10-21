@@ -12,6 +12,7 @@ import type { RulesPort } from './rules-port.js';
 import type { SnapshotStore } from '../state/schedule-snapshot.js';
 import type { TechProfileStore } from '../state/tech-profile.js';
 import type { GitHubPort } from './github-port.js';
+import type { QrPagePort } from './qr-page-port.js';
 
 /** The ports and settings behind every tool handler. */
 export interface Runtime {
@@ -39,4 +40,9 @@ export interface Runtime {
   techProfile: TechProfileStore;
   /** GitHub, read-only (task 45). Left out in simulated mode, so no GitHub request is possible. */
   github?: GitHubPort;
+  /**
+   * The QR page in the browser (task 48). When it is left out, send_to_phone shows the QR code in
+   * the chat instead.
+   */
+  qrPage?: QrPagePort;
 }

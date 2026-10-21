@@ -96,6 +96,17 @@ describe('Feature: foundation-contracts, MCP tool session id bounds', () => {
     const eightyOne = Array.from({ length: 81 }, (_unused, i) => `s${i}`);
     expect(mcpTools.send_to_phone.input.safeParse({ sessionIds: eighty }).success).toBe(true);
     expect(mcpTools.send_to_phone.input.safeParse({ sessionIds: eightyOne }).success).toBe(false);
+    // foundation-contracts task 21: show is link, qr or both, and nothing else.
+    for (const show of ['link', 'qr', 'both']) {
+      expect(mcpTools.send_to_phone.input.safeParse({ show }).success).toBe(true);
+    }
+    expect(mcpTools.send_to_phone.input.safeParse({ show: 'email' }).success).toBe(false);
+    expect(
+      mcpTools.send_to_phone.output.safeParse({
+        handoffUrl: 'https://example/board',
+        expiresAt: '2026-12-01T00:15:00Z',
+      }).success,
+    ).toBe(true);
   });
 
   test('F: sync_passes accepts up to 80 session ids and rejects 81', () => {

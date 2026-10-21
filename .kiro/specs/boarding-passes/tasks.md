@@ -203,6 +203,12 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
   - [x] 12.1 Replace "boarding pass" and "boarding passes" in user-facing text with "Boarding Pass" and "Boarding Passes": the MCP tool descriptions and titles, confirmations, replies, error messages, the post-write hook and the demo (`packages/mcp-server/src`), the spec renderer's next actions (`packages/core/src/spec/render.ts`), the Power (`power/POWER.md`, `power/plugin.json`, `power/skills/plan-my-week/SKILL.md`) and the package READMEs (`packages/mcp-server/README.md`, `packages/pass-service/README.md`). Identifiers stay: the `issue_boarding_passes` tool, this spec folder, the `/board` route and code names. Fence exception (like task 10): these files are outside `packages/core/src/passes/**`, because the wording follows the pass across the product
   - [x] 12.2 Tests that assert the old wording follow; commit after the full gate passes, scoped `boarding-passes`
 
+- [x] 13. Render the hand-off QR code as SVG too (owner request of 21 October, design "Owner change: SVG QR code for a browser page")
+  - [x] 13.1 `HandoffRenders` gains `svg`, made with `QRCode.toString` from the same href, error correction and quiet zone; the QR failure path covers it
+    - Tests: the SVG is an `<svg` document with path data, it does not contain the link or the hand-off id as text, and a failing render gives `handoff.qr_failed`
+    - _Requirements: 5.6_
+  - [x] 13.2 Commit with compass-power task 48 (scoped `compass-power`)
+
 ## Notes
 
 - Tasks are executed sequentially in numeric order, one at a time, directly in this chat session, never delegated to a subagent, with files saved after each step.

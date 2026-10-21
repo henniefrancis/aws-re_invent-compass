@@ -93,31 +93,31 @@ Every command here names the exact version of this package. Pinning it is delibe
 
 ## The tools
 
-| Tool                      | Class        | What it does                                                                       |
-| ------------------------- | ------------ | ---------------------------------------------------------------------------------- |
-| `sign_in`                 | local action | Signs you in with your AWS Builder ID. Opens your browser.                         |
-| `sign_out`                | local action | Revokes your sign-in and clears the stored tokens.                                 |
-| `refresh_catalog`         | read         | Loads the session catalog into a private local cache.                              |
-| `find_sessions`           | read         | Searches and filters the cached catalog.                                           |
-| `scan_repo`               | read         | Scans a folder (or a dev folder of repos) read-only for AWS services and tech.     |
-| `show_my_tech`            | read         | Lists your tech list on this machine: AWS services first, then other technology.   |
-| `find_sessions_by_tech`   | read         | Finds catalog sessions on a technology, or on the tech you use the most.           |
-| `connect_github`          | local action | Connects the read-only Compass GitHub App. Shows a code to enter on GitHub.        |
-| `scan_github`             | read         | Reads your GitHub repositories, read-only, after you confirm the list.             |
-| `disconnect_github`       | local action | Deletes the GitHub sign-in on this machine.                                        |
-| `check_itinerary`         | read         | Runs the guardrail over proposed sessions. Writes nothing.                         |
-| `show_schedule`           | read         | Lists your reservations, standby list and layovers with their ids. Writes nothing. |
-| `plan_week`               | local action | Plans a week and writes it as a Kiro spec in the workspace, after you confirm.     |
-| `export_calendar`         | local action | Writes an `.ics` calendar file of your schedule.                                   |
-| `reserve_with_guardrails` | write        | Reserves 1 to 10 sessions after the guardrail passes. Changes your real schedule.  |
-| `cancel_reservation`      | write        | Cancels a reservation, with the safe swap rule. Changes your real schedule.        |
-| `add_standby`             | write        | Favourites sessions as backups. Changes your real schedule.                        |
-| `remove_standby`          | write        | Removes a favourite. Changes your real schedule.                                   |
-| `add_layover`             | write        | Creates, changes or deletes personal time. Changes your real schedule.             |
-| `issue_boarding_passes`   | write        | Creates unofficial Boarding Passes for sessions you hold.                          |
-| `send_to_phone`           | write        | Makes a 15-minute link and QR code for your passes.                                |
-| `sync_passes`             | write        | Makes the passes match your schedule. It can void passes.                          |
-| `forget_me`               | write        | Deletes your pass data on the server and on this machine.                          |
+| Tool                      | Class        | What it does                                                                                 |
+| ------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
+| `sign_in`                 | local action | Signs you in with your AWS Builder ID. Opens your browser.                                   |
+| `sign_out`                | local action | Revokes your sign-in and clears the stored tokens.                                           |
+| `refresh_catalog`         | read         | Loads the session catalog into a private local cache.                                        |
+| `find_sessions`           | read         | Searches and filters the cached catalog.                                                     |
+| `scan_repo`               | read         | Scans a folder (or a dev folder of repos) read-only for AWS services and tech.               |
+| `show_my_tech`            | read         | Lists your tech list on this machine: AWS services first, then other technology.             |
+| `find_sessions_by_tech`   | read         | Finds catalog sessions on a technology, or on the tech you use the most.                     |
+| `connect_github`          | local action | Connects the read-only Compass GitHub App. Shows a code to enter on GitHub.                  |
+| `scan_github`             | read         | Reads your GitHub repositories, read-only, after you confirm the list.                       |
+| `disconnect_github`       | local action | Deletes the GitHub sign-in on this machine.                                                  |
+| `check_itinerary`         | read         | Runs the guardrail over proposed sessions. Writes nothing.                                   |
+| `show_schedule`           | read         | Lists your reservations, standby list and layovers with their ids. Writes nothing.           |
+| `plan_week`               | local action | Plans a week and writes it as a Kiro spec in the workspace, after you confirm.               |
+| `export_calendar`         | local action | Writes an `.ics` calendar file of your schedule.                                             |
+| `reserve_with_guardrails` | write        | Reserves 1 to 10 sessions after the guardrail passes. Changes your real schedule.            |
+| `cancel_reservation`      | write        | Cancels a reservation, with the safe swap rule. Changes your real schedule.                  |
+| `add_standby`             | write        | Favourites sessions as backups. Changes your real schedule.                                  |
+| `remove_standby`          | write        | Removes a favourite. Changes your real schedule.                                             |
+| `add_layover`             | write        | Creates, changes or deletes personal time. Changes your real schedule.                       |
+| `issue_boarding_passes`   | write        | Creates unofficial Boarding Passes for sessions you hold.                                    |
+| `send_to_phone`           | write        | Makes a 15-minute link for your passes: shown as a link, a QR code in your browser, or both. |
+| `sync_passes`             | write        | Makes the passes match your schedule. It can void passes.                                    |
+| `forget_me`               | write        | Deletes your pass data on the server and on this machine.                                    |
 
 ## Approvals
 
@@ -152,6 +152,10 @@ To let Compass make changes, each one still confirmed by you first, set `COMPASS
 ```
 
 Simulated mode never calls the Events API, so its made-up bookings work without the setting.
+
+## Passes on your phone
+
+`send_to_phone` takes `show`: `link` gives a 15-minute link in the chat, `qr` opens a page with a QR code in your browser for your phone camera to scan (the chat then shows no link), and `both` does both. Without `show` it creates nothing and asks, and the Power tells your assistant to ask "Link or QR code?" first. The QR page is a static file in a new private folder in your temp folder (file mode 0600 on macOS and Linux; on Windows your own `%TEMP%` folder protects it), with no script and nothing loaded from outside. Compass deletes it when the link expires, when it shows a newer one, when `forget_me` runs and when the server stops, and clears out any page a crashed server left behind. If the browser cannot be opened, the QR code comes back in the chat instead. If no page appears, ask for a link.
 
 ## Simulated mode and the demo
 

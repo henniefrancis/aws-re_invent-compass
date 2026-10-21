@@ -592,6 +592,13 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage), then commit scoped `compass-power` on develop
   - _Requirements: P2.8_
 
+- [x] 48. Let the attendee choose a link or a QR code on a browser page (owner request of 21 October, design "Owner change: link or QR code")
+  - Contract (foundation-contracts task 21) and the SVG render (boarding-passes task 13) land in the same commit
+  - `src/adapters/qr-page.ts` and `createLocalPageOpener`; `send_to_phone` takes `show` and asks when it is missing; `forget_me` clears the page; the descriptions, the Power, the plan-my-week skill, the demo and the mcp-server README follow
+  - Tests: a missing `show` creates no hand-off and calls nothing; `link` has no QR; `qr` opens the page and prints no link; `both`; the fallback to the chat QR when the page cannot be shown; the page is written with mode 0600 in a new `compass-qr-` folder, carries the CSP and no script, is deleted at expiry, on replacement, on `clear()`, on exit and on the stop signals; old pages are swept; overlapping calls run one at a time; an opener that never returns times out; the link and the path are never logged; 100 percent coverage
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage), a security review of the page and the temporary file, then commit scoped `compass-power` on develop
+  - _Requirements: P3.1, P3.2, P3.3, P3.4, P3.5, P3.6_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

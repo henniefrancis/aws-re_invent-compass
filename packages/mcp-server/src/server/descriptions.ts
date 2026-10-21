@@ -42,7 +42,7 @@ export const DESCRIPTIONS: Record<McpToolName, string> = {
   remove_standby: `Remove one session from your standby list. ${SCHEDULE_WRITE_SENTENCE}`,
   add_layover: `Create, change or delete a layover, a block of your own time for a meal or rest (action create, update or delete). ${SCHEDULE_WRITE_SENTENCE}`,
   issue_boarding_passes: `Issue unofficial Boarding Passes for your reserved sessions. ${ISSUE_SENTENCE}`,
-  send_to_phone: `Open a short-lived link and QR code that puts your passes on your phone. ${HANDOFF_SENTENCE}`,
+  send_to_phone: `Put your passes on your phone with a short-lived link, a QR code shown on a page in your browser, or both (show: link, qr or both). Ask the attendee which before calling it; without show it creates nothing. ${HANDOFF_SENTENCE}`,
   sync_passes: `Bring your Boarding Passes in line with your confirmed schedule. ${SYNC_SENTENCE}`,
   export_calendar:
     'Build a calendar file. With no input it reads your live schedule; pass commitments only to export a proposed itinerary. Nothing is booked.',

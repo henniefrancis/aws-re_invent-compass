@@ -40,6 +40,8 @@ export interface PassesPort {
     terminalQr: string;
     chatText: string;
     chatPng: Uint8Array;
+    /** The same QR code as an SVG document, for the QR page (task 48). */
+    svg: string;
   }>;
   /** What a sync would do, with no side effects. */
   previewSync(scope: SyncScope): Promise<SyncPlan>;

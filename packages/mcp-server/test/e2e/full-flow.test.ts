@@ -100,7 +100,7 @@ describe('the full flow over the real simulated stack (S1 simulated transport, S
     );
 
     // 11: the phone link.
-    const phone = await ok('send_to_phone');
+    const phone = await ok('send_to_phone', { show: 'link' });
     const structuredLink = (phone.structuredContent as { handoffUrl: string }).handoffUrl;
     expect(structuredLink).not.toContain('#');
     const link = /https:\/\/compass\.invalid\/board#h=\S+/.exec(textOf(phone))?.[0] ?? '';

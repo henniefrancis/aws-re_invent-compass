@@ -36,11 +36,15 @@ import type { GitHubFetch, GitHubTokenStore } from '@compass/core/github';
 import { createNodeScanFs, scanInWorker, ScanWorkerError } from '@compass/core/scanner';
 import { createFsFixtureLoader } from '@compass/core/simulated';
 import { createNodeSpecFs } from '@compass/core/spec';
-import { readFile } from 'node:fs/promises';
+import { rmSync } from 'node:fs';
+import { lstat, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { createFetchTransport } from '../adapters/fetch-transport.js';
 import { defaultEventsFetch } from '../adapters/default-fetch.js';
 import { createEventsAdapter } from '../adapters/events-adapter.js';
 import { createGitHubAdapter } from '../adapters/github-adapter.js';
+import { createQrPage } from '../adapters/qr-page.js';
+import type { QrPageFs } from '../adapters/qr-page.js';
 import { readGitHubAppConfig } from '../config/github.js';
 import { readOnlyEvents } from '../adapters/read-only-events.js';
 import type { AuthPort } from '../adapters/events-adapter.js';
@@ -61,7 +65,8 @@ import {
 } from '../simulated/simulated-runtime.js';
 import { createSnapshotStore } from '../state/schedule-snapshot.js';
 import { createTechProfileStore } from '../state/tech-profile.js';
-import { createBrowserOpener } from './browser-opener.js';
+import { createBrowserOpener, createLocalPageOpener } from './browser-opener.js';
+import { onProcessEnd, processUid } from './exit-hooks.js';
 import { realBind } from './real-bind.js';
 import { abortableSleep, sleep } from './sleep.js';
 import { expiryOf } from './token-expiry.js';
@@ -95,6 +100,11 @@ export interface RuntimeEnvironment {
   bind?: (expectedState: string, timeoutMs: number) => Promise<LoopbackServer>;
   githubStore?: GitHubTokenStore;
   githubFetch?: GitHubFetch;
+  /** The QR page's file system and temp folder (task 48). Production uses node:fs and the OS temp folder. */
+  qrPageFs?: QrPageFs;
+  tempRoot?: string;
+  /** Registers the QR page's exit clean-up. Production uses onProcessEnd (exit and stop signals). */
+  onExit?: (fn: () => void) => void;
 }
 
 /** Options a command can set for one run. */
@@ -245,7 +255,7 @@ export async function createRuntime(
 
   if (simulated) {
     // Simulated mode never calls the Events API, so it is never read-only (task 37).
-    const { runtime } = await createSimulatedRuntime({
+    const { runtime: simulatedRuntime } = await createSimulatedRuntime({
       version: environment.version,
       cwd,
       logger,
@@ -258,7 +268,7 @@ export async function createRuntime(
       fs: createNodeAppFileSystem(),
       ...scanRunner,
     });
-    return runtime;
+    return { ...simulatedRuntime, qrPage: qrPageFor(environment, nowMs) };
   }
   return {
     mode: 'live',
@@ -278,8 +288,44 @@ export async function createRuntime(
     cwd,
     techProfile: createTechProfileStore(root, 'live', createNodeAppFileSystem()),
     github: liveGitHub(environment, env, { redacting, nowMs, notify: writeLine }),
+    qrPage: qrPageFor(environment, nowMs),
     ...scanRunner,
   };
+}
+
+const nodeQrPageFs: QrPageFs = {
+  mkdtemp: (prefix) => mkdtemp(prefix),
+  writeFile: (path, data, options) => writeFile(path, data, options),
+  rm: (path, options) => rm(path, options),
+  rmSync: (path, options) => {
+    rmSync(path, options);
+  },
+  readdir: (path) => readdir(path),
+  lstat: (path) => lstat(path),
+};
+
+/** The QR page (task 48): a private page in the temp folder, opened without a shell. */
+function qrPageFor(environment: RuntimeEnvironment, nowMs: () => number) {
+  return createQrPage({
+    fs: environment.qrPageFs ?? nodeQrPageFs,
+    tempRoot: environment.tempRoot ?? tmpdir(),
+    open: createLocalPageOpener({ platform: environment.platform, execFile: environment.execFile }),
+    now: nowMs,
+    wallNow: () => Date.now(),
+    schedule: (fn, ms) => {
+      const timer = setTimeout(fn, ms);
+      timer.unref();
+      return () => {
+        clearTimeout(timer);
+      };
+    },
+    onExit:
+      environment.onExit ??
+      ((fn) => {
+        onProcessEnd(fn);
+      }),
+    uid: processUid(),
+  });
 }
 
 /** The one line printed when another GitHub App is named (security review L6). */

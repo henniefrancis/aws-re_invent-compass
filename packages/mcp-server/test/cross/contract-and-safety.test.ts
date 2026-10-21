@@ -420,7 +420,7 @@ describe('Property 37: no secret reaches logs or errors', () => {
       new CompassError('PassError', { summary: `issue failed ${NEEDLES[2]}` }),
     );
     const issue = await connection.call('issue_boarding_passes', { sessionIds: [TRIPLE.a] });
-    const handoff = await connection.call('send_to_phone', {});
+    const handoff = await connection.call('send_to_phone', { show: 'link' });
     for (const result of [reserve, issue]) {
       for (const piece of SECRET_PIECES) expect(JSON.stringify(result)).not.toContain(piece);
     }
@@ -449,7 +449,7 @@ describe('the server writes nothing to stdout', () => {
       ['remove_standby', { sessionId: TRIPLE.b }],
       ['add_layover', layover(12, true)],
       ['issue_boarding_passes', { sessionIds: [TRIPLE.aRepeat] }],
-      ['send_to_phone', {}],
+      ['send_to_phone', { show: 'both' }],
       ['sync_passes', {}],
       ['export_calendar', {}],
       ['sign_out', {}],

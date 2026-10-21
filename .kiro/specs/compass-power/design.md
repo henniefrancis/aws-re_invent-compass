@@ -1659,3 +1659,24 @@ Accepted: **L1** (the project ids are unsalted hashes, so someone who already ha
 ### Tool count and contracts
 
 Twenty-three tools: `show_my_tech`, `find_sessions_by_tech`, `connect_github`, `scan_github` and `disconnect_github` join the eighteen. Classes: the first two `read`; `connect_github` and `disconnect_github` `local action`; `scan_github` `read` (it reads the attendee's code and asks first, like `scan_repo`). The contracts come from foundation-contracts task 20 and land in the same commit as the handlers.
+
+## Owner change: link or QR code (21 October 2026, task 48)
+
+Requirements P3.1 to P3.6. In Kiro the attendee saw the link but no QR code: Kiro does not render the PNG image content a tool returns, and the text QR (two characters per module, about 98 columns) wraps in the chat until it cannot be scanned.
+
+- **The choice.** `send_to_phone` takes `show: 'link' | 'qr' | 'both'`. Without it the handler stops after the identifier check and replies "Link or QR code?" with no hand-off, no sign-in check and no network call, so a missing choice costs nothing. The Power tells the agent to ask first.
+- **The QR page (`src/adapters/qr-page.ts`, `QrPagePort`).** `show({ svg, expiresAt })` deletes any earlier page, makes a new folder with `mkdtemp` under the OS temp folder (`compass-qr-` prefix), writes `board-qr.html` with flag `wx` and mode `0o600`, and opens it through `createLocalPageOpener` in `src/runtime/browser-opener.ts`: the same platform commands as the sign-in opener, run with `execFile`, given the `file:` URL of that one path. It returns `true` only when the opener reports success. A timer (unref'd, so it never keeps the server alive) deletes the folder at `expiresAt`; `clear()` deletes it at once and is called by `forget_me` and on process exit. Nothing is logged. The page is built from the SVG the Handoff_Builder renders (boarding-passes Requirement 5.6), so the board link itself never appears as text in the page.
+- **The page.** A static HTML document: `Content-Security-Policy` `default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'`, `referrer` `no-referrer`, a heading "Scan with your phone camera", the SVG at a fixed size on a white background with its quiet zone, "This code works until HH:MM UTC.", the sharing note and "Unofficial. Your badge is your ticket." No script, font, image or link.
+- **Replies.** `link`: the link and expiry, the sharing note and the disclaimer. `qr`: "Scan the QR code in your browser with your phone camera before ..."; no link. `both`: the link and the browser line. When the page could not be shown (no `qrPage` in the runtime, or `show` returned `false`), the reply says so and carries the text QR and the PNG, as before. The structured output adds `shownAs` and, when a QR code was asked for, `qrShownIn` (`browser` or `chat`).
+- **Wiring.** `createRuntime` builds the QR page in both modes (simulated passes still have a QR code, of a link that never resolves). Tests inject the file system, the opener and the timer.
+
+### Security review of the QR page (21 October 2026)
+
+No Critical or High finding. Fixed:
+
+- **M1, an open that hangs or fails silently.** `createLocalPageOpener` gives the command 5 seconds; a command that never returns (an `xdg-open` that waits for the browser) counts as failed, so the QR code goes to the chat. Because `rundll32` can report success without showing anything, the browser line ends with "If no page opened in your browser, ask for a link instead."
+- **M2, a page left by a stopped process.** `onProcessEnd` (`src/runtime/exit-hooks.ts`) runs the clean-up on `exit` and on SIGTERM, SIGINT and SIGHUP, once, then raises the signal again when nothing else listens for it, so the process still stops. A killed process cannot clean up, so the first page a server shows sweeps `compass-qr-` folders in the temp folder that are real folders (not links), belong to this user on POSIX, and are older than 20 minutes, longer than a hand-off lives. Folder ages use the real time, not the runtime clock, which simulated mode pins to the event week.
+- **M3, overlapping calls.** `show` and `clear` (and the expiry timer) run one at a time, so two calls cannot orphan a folder.
+- **L1, a blacklist SVG check.** `isPlainSvg` is now an allowlist of the exact shape the QR library makes (one `svg` with the SVG namespace and a numeric viewBox, holding only `path` elements with a hex fill or stroke and path data), and the CSP adds `base-uri 'none'; form-action 'none'`.
+
+Accepted: on Windows the file mode is not enforced, and the protection is the per-user `%TEMP%` folder (L2; the README says so). Deleting the page does not revoke the hand-off, which lives its 15 minutes on the service (L3). The .html handler may not be a browser (L4), which the hint covers.

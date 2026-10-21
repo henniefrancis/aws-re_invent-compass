@@ -28,6 +28,7 @@ export class FakePasses implements PassesPort {
     terminalQr: '##\n##',
     chatText: 'QR-TEXT',
     chatPng: new Uint8Array([137, 80, 78, 71]),
+    svg: '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h1"/></svg>',
   };
   /** Sessions that stay voided after a sync, for tests that read the result. */
   voidedSerials: string[] = [];

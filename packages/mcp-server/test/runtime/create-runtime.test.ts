@@ -1,4 +1,7 @@
 import { existsSync } from 'node:fs';
+import { mkdir, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { createTokenStore } from '@compass/core/auth';
@@ -73,6 +76,15 @@ describe('simulated composition', () => {
   });
 });
 
+/** An SVG in the shape the QR library makes. */
+const QR_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 9"><path d="M4 4.5h1"/></svg>';
+
+/** An expiry ten minutes after the runtime clock, as a hand-off would have. */
+function soon(runtime: { clock: { now(): Date } }): string {
+  return new Date(runtime.clock.now().getTime() + 600_000).toISOString();
+}
+
 describe('simulated passes and sign-in', () => {
   test('sign-in and sign-out never leave the machine; passes are issued through the in-process service', async () => {
     const env = await testEnvironment();
@@ -108,6 +120,73 @@ describe('simulated passes and sign-in', () => {
     expect(await runtime.passes.forgetMe()).toBeDefined();
     await conn.close();
     expect(guard.attempts).toEqual([]);
+  });
+
+  // Feature: compass-power, task 48: the QR page is wired in, written to the temp folder, opened
+  // without a shell and removed by forget_me and on exit.
+  test('send_to_phone with qr opens a private page from the temp folder; forget_me and exit remove it', async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), 'compass-qr-runtime-'));
+    const exits: (() => void)[] = [];
+    const env = await testEnvironment({ tempRoot, onExit: (fn) => exits.push(fn) });
+    const runtime = await createRuntime(env.environment, { COMPASS_MODE: 'simulated' });
+    expect(runtime.qrPage).toBeDefined();
+    const conn = await connect(runtime, { elicit: 'accept' });
+    await conn.call('refresh_catalog');
+    const catalog = await runtime.events.catalog();
+    const session = [...catalog.byId.values()]
+      .map((entry) => entry.session)
+      .find((s) => s.isReservable && s.seatAvailability !== 'unavailable' && s.venue);
+    const id = session?.sessionId ?? '';
+    await conn.call('reserve_with_guardrails', { sessionIds: [id] });
+    await conn.call('issue_boarding_passes', { sessionIds: [id] });
+
+    const phone = await conn.call('send_to_phone', { show: 'qr' });
+    expect(phone.isError).not.toBe(true);
+    expect(textOf(phone)).toContain('Scan the QR code in your browser');
+    expect(textOf(phone)).not.toContain('/board#h=');
+    const launch = env.launched.at(-1);
+    expect(launch?.file).toBe('xdg-open');
+    const folders = await readdir(tempRoot);
+    expect(folders).toHaveLength(1);
+    expect(folders[0]?.startsWith('compass-qr-')).toBe(true);
+    const page = join(tempRoot, folders[0] ?? '', 'board-qr.html');
+    expect(launch?.args).toEqual([pathToFileURL(page).href]);
+    expect(await readFile(page, 'utf8')).toContain('<svg');
+    expect(env.stderr.join('')).not.toContain('board');
+
+    await conn.call('forget_me', { confirm: true });
+    expect(await readdir(tempRoot)).toEqual([]);
+
+    // A page shown again is removed when the process exits.
+    await runtime.qrPage?.show({ svg: QR_SVG, expiresAt: soon(runtime) });
+    expect(await readdir(tempRoot)).toHaveLength(1);
+    expect(exits).toHaveLength(1);
+    exits[0]?.();
+    expect(await readdir(tempRoot)).toEqual([]);
+    await conn.close();
+    await rm(tempRoot, { recursive: true, force: true });
+    expect(guard.attempts).toEqual([]);
+  });
+
+  test('without an exit seam the page registers one exit and one listener per stop signal, once', async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), 'compass-qr-exit-'));
+    // A page folder another server is still using: the sweep reads it and keeps it (too new).
+    await mkdir(join(tempRoot, 'compass-qr-leftover'));
+    const env = await testEnvironment({ tempRoot });
+    const runtime = await createRuntime(env.environment, { COMPASS_MODE: 'simulated' });
+    const events = ['exit', 'SIGTERM', 'SIGINT', 'SIGHUP'] as const;
+    const before = events.map((event) => process.listeners(event).length);
+    await runtime.qrPage?.show({ svg: QR_SVG, expiresAt: soon(runtime) });
+    await runtime.qrPage?.show({ svg: QR_SVG, expiresAt: soon(runtime) });
+    for (const [index, event] of events.entries()) {
+      const added = process.listeners(event).slice(before[index]);
+      expect(added).toHaveLength(1);
+      // Leave the test worker as it was.
+      for (const listener of added) process.removeListener(event, listener);
+    }
+    await runtime.qrPage?.clear();
+    expect(await readdir(tempRoot)).toEqual(['compass-qr-leftover']);
+    await rm(tempRoot, { recursive: true, force: true });
   });
 });
 

@@ -321,6 +321,11 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
     - _Requirements: 4.11_
   - [x] 20.2 Commit in the same commit as compass-power tasks 41 to 45 (scoped `compass-power`), so the registry and the contract never disagree. Do not push
 
+- [x] 21. Add the link-or-QR choice to the send_to_phone contract (owner request of 21 October, design "Owner change: send_to_phone show")
+  - [x] 21.1 `SendToPhoneInput` gains optional `show` (`link`, `qr` or `both`); `SendToPhoneOutput` gains optional `shownAs` and `qrShownIn` (`browser` or `chat`), so older outputs still parse. Accept and strip cases in `schemas-accept-strip.test.ts`, and an unknown `show` is rejected
+    - _Requirements: 4.11_
+  - [x] 21.2 Commit with compass-power task 48 (scoped `compass-power`). Do not push
+
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.
 - Each top-level task (1 through 14) ends with a commit sub-task. Commit locally only after that task's tests pass, using Conventional Commits with `foundation-contracts` as the scope. The first commit (1.6) also includes `.kiro/specs/foundation-contracts/`. Never push, merge, tag or open a PR: the integrator does that after review.

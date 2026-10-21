@@ -1,10 +1,10 @@
 // Handoff_Builder for the pass side (boarding-passes, S4, Requirement 5).
 //
 // Creates a hand-off through the Compass_Client and renders the returned Board_URL as a QR
-// code three ways: for the terminal (Unicode half blocks, black on white by ANSI colour so
+// code four ways: for the terminal (Unicode half blocks, black on white by ANSI colour so
 // it scans in any terminal theme), as plain text for chat (Unicode full blocks, two columns
-// per module) and as a PNG for chat. All three come from the same QR symbol of the same
-// string, so they encode the same data.
+// per module), as a PNG for chat and as an SVG for a page in the browser (task 13). All four
+// come from the same string with the same settings, so they encode the same data.
 //
 // The Board_URL carries the hand-off id in its URL fragment, so it is a secret: it is never
 // written to a log line or an error. Before anything is encoded the URL is held to the exact
@@ -41,7 +41,7 @@ const FULL_BLOCK = '\u{2588}';
 const UPPER_HALF = '\u{2580}';
 const LOWER_HALF = '\u{2584}';
 
-/** The three renders of one Board_URL. */
+/** The renders of one Board_URL. */
 export interface HandoffRenders {
   /** Terminal QR: Unicode block characters wrapped in ANSI colour. */
   terminalQr: string;
@@ -49,6 +49,8 @@ export interface HandoffRenders {
   chatText: string;
   /** Chat QR as a PNG image. */
   chatPng: Uint8Array;
+  /** QR as an SVG document for a page on the attendee's computer: path data only, no text. */
+  svg: string;
 }
 
 /** The Handoff_Builder. */
@@ -156,10 +158,16 @@ export function createHandoffBuilder(deps: HandoffBuilderDeps): HandoffBuilder {
           scale: PNG_SCALE,
           type: 'png',
         });
+        const svg = await QRCode.toString(href, {
+          errorCorrectionLevel: ERROR_CORRECTION,
+          margin: QUIET_ZONE,
+          type: 'svg',
+        });
         return {
           terminalQr: renderTerminalQr(symbol.modules),
           chatText: renderChatText(symbol.modules),
           chatPng: new Uint8Array(png),
+          svg,
         };
       } catch {
         throw passError(

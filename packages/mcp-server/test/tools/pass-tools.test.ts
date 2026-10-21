@@ -6,7 +6,13 @@ import { CompassError } from '../../src/ports/errors.js';
 import { exportCalendar } from '../../src/tools/export-calendar.js';
 import { issueBoardingPasses } from '../../src/tools/issue-boarding-passes.js';
 import { PASS_DISCLAIMER } from '../../src/tools/pass-text.js';
-import { sendToPhone } from '../../src/tools/send-to-phone.js';
+import {
+  ASK_SHOW_MESSAGE,
+  NO_PAGE_HINT,
+  QR_IN_BROWSER,
+  QR_PAGE_FAILED,
+  sendToPhone,
+} from '../../src/tools/send-to-phone.js';
 import { syncPasses } from '../../src/tools/sync-passes.js';
 import type { ToolContext } from '../../src/server/types.js';
 import { connect } from '../support/connect.js';
@@ -109,34 +115,72 @@ describe('Property 35: passes are issued only for confirmed reservations', () =>
 });
 
 describe('send_to_phone', () => {
-  test('hands off all issued passes with the URL, expiry, text QR and a PNG image', async () => {
-    const { fake, ctx } = setup();
-    fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
-    fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
+  /** A QR page that records what it was asked to show and answers `opens`. */
+  function qrPageAnswering(opens: boolean) {
+    const shown: { svg: string; expiresAt: string }[] = [];
+    let cleared = 0;
+    return {
+      shown,
+      cleared: () => cleared,
+      port: {
+        show: (page: { svg: string; expiresAt: string }) => {
+          shown.push(page);
+          return Promise.resolve(opens);
+        },
+        clear: () => {
+          cleared += 1;
+          return Promise.resolve();
+        },
+      },
+    };
+  }
+
+  function seeded(elicit?: ToolContext['elicit']) {
+    const made = setup(elicit);
+    made.fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
+    made.fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
+    return made;
+  }
+
+  // Feature: compass-power, P3.1: without a choice nothing is created and nothing is called.
+  test('without show it asks and creates nothing, before any sign-in or service call', async () => {
+    const { fake, ctx } = seeded();
+    fake.events.signedIn = false;
     const outcome = await sendToPhone({}, ctx);
+    expect(outcome).toEqual({ ok: false, message: ASK_SHOW_MESSAGE });
+    expect(fake.passes.calls).toEqual([]);
+    expect(fake.events.calls).toEqual([]);
+  });
+
+  // Feature: compass-power, P3.2: a link and no QR code.
+  test('link gives the link and expiry, no QR code and no page', async () => {
+    const { fake, ctx } = seeded();
+    const page = qrPageAnswering(true);
+    fake.runtime.qrPage = page.port;
+    const outcome = await sendToPhone({ show: 'link' }, ctx);
     // The capability is in the link's fragment: the structured result has the link without it, and
     // the full link is only in the text (security L1).
     const full = fake.passes.handoffResult.boardUrl;
-    expect(outcome.ok && outcome.structured).toEqual({
+    expect(outcome.ok && mcpTools.send_to_phone.output.parse(outcome.structured)).toEqual({
       handoffUrl: full.split('#')[0],
       expiresAt: fake.passes.handoffResult.expiresAt,
+      shownAs: 'link',
     });
     expect(full).toContain('#');
     expect(JSON.stringify(outcome.ok && outcome.structured)).not.toContain(
       full.split('#')[1] ?? '#',
     );
-    expect(outcome.ok && outcome.text).toContain(full);
-    expect(outcome.ok && outcome.text).toContain(
+    const text = outcome.ok ? outcome.text : '';
+    expect(text).toContain(
+      `Open this link on your phone before ${fake.passes.handoffResult.expiresAt}: ${full}`,
+    );
+    expect(text).toContain(
       'Do not share this link or the QR code. Anyone who has it can see these passes until it expires.',
     );
-    // The QR is printed once, as plain text without escape codes (QA low).
-    expect(outcome.ok && outcome.text).not.toContain('##');
-    const text = outcome.ok ? outcome.text : '';
-    expect(text.split('QR-TEXT')).toHaveLength(2);
-    expect(text).not.toContain(String.fromCharCode(0x1b));
-    expect(outcome.ok && outcome.extra).toEqual([
-      { type: 'image', data: 'iVBORw==', mimeType: 'image/png' },
-    ]);
+    expect(text).toContain(PASS_DISCLAIMER);
+    expect(text).not.toContain('QR-TEXT');
+    expect(outcome.ok && outcome.extra).toBeUndefined();
+    expect(page.shown).toEqual([]);
     expect(fake.passes.calls.find((c) => c.method === 'handoff')?.args[0]).toEqual([
       'serial-1',
       'serial-2',
@@ -144,35 +188,106 @@ describe('send_to_phone', () => {
     expect(fake.stderr.join('')).not.toContain('compass.invalid');
   });
 
+  // Feature: compass-power, P3.3: the QR code on a browser page, and no link in the chat.
+  test('qr opens the page with the SVG and expiry, and prints no link', async () => {
+    const { fake, ctx } = seeded();
+    const page = qrPageAnswering(true);
+    fake.runtime.qrPage = page.port;
+    const outcome = await sendToPhone({ show: 'qr' }, ctx);
+    const { boardUrl, expiresAt, svg } = fake.passes.handoffResult;
+    expect(page.shown).toEqual([{ svg, expiresAt }]);
+    expect(outcome.ok && outcome.structured).toMatchObject({ shownAs: 'qr', qrShownIn: 'browser' });
+    const text = outcome.ok ? outcome.text : '';
+    expect(text).toContain(`${QR_IN_BROWSER} before ${expiresAt}. ${NO_PAGE_HINT}`);
+    expect(text).not.toContain(boardUrl);
+    expect(text).not.toContain(boardUrl.split('#')[1] ?? '#');
+    expect(text).not.toContain('QR-TEXT');
+    expect(outcome.ok && outcome.extra).toBeUndefined();
+    expect(fake.stderr.join('')).not.toContain('compass.invalid');
+  });
+
+  test('both gives the link and opens the page', async () => {
+    const { fake, ctx } = seeded();
+    const page = qrPageAnswering(true);
+    fake.runtime.qrPage = page.port;
+    const outcome = await sendToPhone({ show: 'both' }, ctx);
+    const text = outcome.ok ? outcome.text : '';
+    expect(text).toContain(fake.passes.handoffResult.boardUrl);
+    expect(text).toContain(QR_IN_BROWSER);
+    expect(page.shown).toHaveLength(1);
+    expect(outcome.ok && outcome.structured).toMatchObject({
+      shownAs: 'both',
+      qrShownIn: 'browser',
+    });
+  });
+
+  // Feature: compass-power, P3.4: the fallback when the page cannot be shown.
+  test('when the page cannot be shown, the text QR and the PNG go in the chat, once', async () => {
+    for (const qrPage of [qrPageAnswering(false).port, undefined]) {
+      const { fake, ctx } = seeded();
+      if (qrPage !== undefined) fake.runtime.qrPage = qrPage;
+      const outcome = await sendToPhone({ show: 'qr' }, ctx);
+      const text = outcome.ok ? outcome.text : '';
+      expect(text).toContain(QR_PAGE_FAILED);
+      expect(text.split('QR-TEXT')).toHaveLength(2);
+      expect(text).not.toContain('##');
+      expect(text).not.toContain(String.fromCharCode(0x1b));
+      expect(text).not.toContain(fake.passes.handoffResult.boardUrl);
+      expect(outcome.ok && outcome.extra).toEqual([
+        { type: 'image', data: 'iVBORw==', mimeType: 'image/png' },
+      ]);
+      expect(outcome.ok && outcome.structured).toMatchObject({ shownAs: 'qr', qrShownIn: 'chat' });
+    }
+  });
+
+  test('the confirmation says how the passes will be shown', async () => {
+    const questions: string[] = [];
+    const { fake, ctx } = seeded((question) => {
+      questions.push(question.message);
+      return Promise.resolve('accept');
+    });
+    fake.runtime.qrPage = qrPageAnswering(true).port;
+    for (const show of ['link', 'qr', 'both'] as const) await sendToPhone({ show }, ctx);
+    expect(questions[0]).toContain('shown as a link?');
+    expect(questions[1]).toContain('shown as a QR code in your browser?');
+    expect(questions[2]).toContain('shown as a link and a QR code in your browser?');
+  });
+
   test('narrows to the chosen sessions and refuses when none were issued', async () => {
-    const { fake, ctx } = setup();
-    fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
-    fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
-    await sendToPhone({ sessionIds: [TRIPLE.b] }, ctx);
+    const { fake, ctx } = seeded();
+    await sendToPhone({ sessionIds: [TRIPLE.b], show: 'link' }, ctx);
     expect(fake.passes.calls.find((c) => c.method === 'handoff')?.args[0]).toEqual(['serial-2']);
-    await expect(sendToPhone({ sessionIds: [TRIPLE.aRepeat] }, ctx)).rejects.toMatchObject({
+    await expect(
+      sendToPhone({ sessionIds: [TRIPLE.aRepeat], show: 'link' }, ctx),
+    ).rejects.toMatchObject({
       code: 'NoPassesIssued',
     });
     const empty = setup();
-    await expect(sendToPhone({}, empty.ctx)).rejects.toMatchObject({ code: 'NoPassesIssued' });
+    await expect(sendToPhone({ show: 'link' }, empty.ctx)).rejects.toMatchObject({
+      code: 'NoPassesIssued',
+    });
     expect(empty.fake.passes.writeCalls).toEqual([]);
   });
 
-  test('a decline creates no link; bad ids, unknown sessions and sign-out are refused', async () => {
-    const declined = setup(answering('cancel'));
-    declined.fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
-    const outcome = await sendToPhone({}, declined.ctx);
+  test('a decline creates no link or page; bad ids, unknown sessions and sign-out are refused', async () => {
+    const declined = seeded(answering('cancel'));
+    const page = qrPageAnswering(true);
+    declined.fake.runtime.qrPage = page.port;
+    const outcome = await sendToPhone({ show: 'qr' }, declined.ctx);
     expect(outcome.ok).toBe(false);
     expect(declined.fake.passes.writeCalls).toEqual([]);
+    expect(page.shown).toEqual([]);
     const { fake, ctx } = setup();
     await expect(sendToPhone({ sessionIds: ['..'] }, ctx)).rejects.toMatchObject({
       code: 'IdentifierRejected',
     });
-    await expect(sendToPhone({ sessionIds: ['ghost'] }, ctx)).rejects.toMatchObject({
+    await expect(sendToPhone({ sessionIds: ['ghost'], show: 'link' }, ctx)).rejects.toMatchObject({
       code: 'UnknownSession',
     });
     fake.events.signedIn = false;
-    await expect(sendToPhone({}, ctx)).rejects.toMatchObject({ code: 'NotSignedIn' });
+    await expect(sendToPhone({ show: 'link' }, ctx)).rejects.toMatchObject({
+      code: 'NotSignedIn',
+    });
   });
 });
 

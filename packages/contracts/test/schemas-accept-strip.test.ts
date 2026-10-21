@@ -687,8 +687,13 @@ const toolSamples: Record<
     output: { issued: ['s1'], serials: ['serial-1'] },
   },
   send_to_phone: {
-    input: { sessionIds: ['s1'] },
-    output: { handoffUrl: 'https://example/handoff', expiresAt: '2026-12-01T00:15:00-08:00' },
+    input: { sessionIds: ['s1'], show: 'qr' },
+    output: {
+      handoffUrl: 'https://example/handoff',
+      expiresAt: '2026-12-01T00:15:00-08:00',
+      shownAs: 'both',
+      qrShownIn: 'browser',
+    },
   },
   sync_passes: {
     input: { sessionIds: ['s1'] },

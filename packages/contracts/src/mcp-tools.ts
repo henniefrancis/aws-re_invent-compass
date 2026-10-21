@@ -284,15 +284,20 @@ const IssueBoardingPassesOutput = z.object({
 });
 
 // send_to_phone: open a 15-minute hand-off to the phone. sessionIds optionally
-// narrows the hand-off to specific passes. The output carries the hand-off url (the
-// capability lives in the url fragment, typed here as a plain string) and its
-// expiry.
+// narrows the hand-off to specific passes. show picks a link, a QR code on a browser
+// page, or both (foundation-contracts task 21); without it the server asks and creates
+// nothing. The output carries the hand-off url (the capability lives in the url
+// fragment, typed here as a plain string), its expiry, what was shown and where the QR
+// code went. The two new output fields are optional, so older outputs still parse.
 const SendToPhoneInput = z.object({
   sessionIds: z.array(z.string()).max(80).optional(),
+  show: z.enum(['link', 'qr', 'both']).optional(),
 });
 const SendToPhoneOutput = z.object({
   handoffUrl: z.string(),
   expiresAt: z.string(),
+  shownAs: z.enum(['link', 'qr', 'both']).optional(),
+  qrShownIn: z.enum(['browser', 'chat']).optional(),
 });
 
 // sync_passes: reconcile issued passes against the live schedule. sessionIds

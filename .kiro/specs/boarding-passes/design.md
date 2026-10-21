@@ -883,3 +883,7 @@ The Pass_Builder used to send an empty room whenever the normalised room was ove
 ## Post-SP3 change: Boarding Pass name (20 October 2026, task 12)
 
 Owner decision: the Apple pass becomes an event ticket under the hood (pass-service task 42), but users still read "Boarding Pass", written as a name with capitals: "Boarding Pass" and "Boarding Passes". The wording changes wherever users read it: the MCP tool descriptions and titles, confirmations, replies, error messages, the post-write hook, the demo, the week spec's last task, the Power and the package READMEs. The compass-power design and requirements quote some of these sentences and follow. Identifiers stay as they are (`issue_boarding_passes`, this spec folder, the `/board` route, code names), and search keywords stay lower case. The site's demo and board pages and the Google pass title are changed by the streams that own them.
+
+## Owner change: SVG QR code for a browser page (21 October 2026, task 13)
+
+The Handoff_Builder returns a fourth render, `svg`: `QRCode.toString` of the same normalised href with type `svg`, the same error correction and quiet zone. compass-power task 48 puts it on a page in the attendee's browser, because Kiro does not show the PNG and the text QR wraps in the chat. The SVG holds only path data, never the link as text.

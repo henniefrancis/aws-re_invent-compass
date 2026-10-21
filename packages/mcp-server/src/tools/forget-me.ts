@@ -1,8 +1,8 @@
 // forget_me (Requirement 16): deletes everything Compass holds about the attendee. It runs the S4
 // forget-me orchestrator (which voids the passes on the Compass service and removes the local
 // pass record, calendar and itinerary page) and only on its success deletes the Schedule_Snapshot,
-// the Tech_Profile and the GitHub tokens (tasks 42 and 45), and clears the in-memory scan result and
-// Pending_Swaps. On failure nothing local is touched
+// the Tech_Profile, the GitHub tokens (tasks 42 and 45) and any QR page (task 48), and clears the
+// in-memory scan result and Pending_Swaps. On failure nothing local is touched
 // and the text says so. The copy never claims a pass was deleted from a phone: a voided pass
 // expires in the wallet but stays there until the attendee removes it.
 
@@ -41,6 +41,7 @@ export async function forgetMe(
   await snapshot.remove();
   await ctx.runtime.techProfile.remove();
   ctx.runtime.github?.disconnect();
+  await ctx.runtime.qrPage?.clear();
   ctx.state.lastScan = undefined;
   ctx.state.swaps.clearAll();
   return {

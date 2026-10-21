@@ -479,3 +479,19 @@ P2.8. **GitHub, read-only, with consent.** THE Compass_Server SHALL offer `conne
 P2.9. **GitHub data stays on the device.** Repository archives SHALL be read in memory inside the scan worker, under a hard time and size budget per repository, and SHALL never be written to disk. Only the Tech_Profile entry of each repository is kept. The GitHub tokens SHALL live in the OS keychain (memory only if there is none), SHALL be sent only to `github.com` and `api.github.com`, and SHALL never be logged. An archive download SHALL follow a redirect only to `codeload.github.com` and SHALL not send the token there. `disconnect_github` and `forget_me` SHALL delete the tokens and say where to revoke the app on GitHub.
 
 P2.10. **Approval and modes.** `show_my_tech` and `find_sessions_by_tech` read nothing of the attendee beyond the local profile and the cached catalog, but the profile is the attendee's data, so neither SHALL be in the recommended `autoApprove` list, which stays at three. `connect_github`, `scan_github` and `disconnect_github` SHALL be approved per call. In simulated mode the GitHub tools SHALL say that GitHub is not used and make no request. None of these tools writes to the Events API, so the read-only default (P1, task 37) is unchanged.
+
+## Owner amendments: link or QR code (21 October 2026)
+
+The owner asked that the attendee choose how passes reach the phone: a link, a QR code, or both. Kiro does not show the PNG image a tool returns, and the text QR wraps until it cannot be scanned, so the QR code is shown on a page in the attendee's browser instead. These take precedence over Requirement 15.4 where they differ.
+
+P3.1. **Ask first.** `send_to_phone` SHALL take an optional `show` of `link`, `qr` or `both`. WHEN `show` is missing, THE Compass_Server SHALL create no hand-off, make no Events API or Compass API call, and reply asking the attendee to choose a link, a QR code or both.
+
+P3.2. **Link.** WHEN `show` is `link`, THE reply SHALL give the board link and its expiry and SHALL NOT carry a QR code.
+
+P3.3. **QR code on a browser page.** WHEN `show` is `qr` or `both`, THE Compass_Server SHALL write a self-contained page holding the QR code as inline SVG, the expiry and the disclaimer into a new private temporary folder (file mode 0600), and SHALL open it in the default browser through the browser opener (`execFile`, never a shell). The page SHALL carry the Content-Security-Policy `default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'`, no script and no external resource. WHEN `show` is `qr`, THE reply SHALL NOT print the link; it SHALL say to scan the QR code in the browser.
+
+P3.4. **Fallback.** IF the page cannot be written or the browser cannot be opened, THEN THE reply SHALL carry the text QR code and the PNG QR code instead and SHALL say the browser could not be opened.
+
+P3.5. **Lifetime.** THE page SHALL be deleted when its link expires, when a newer page replaces it, when the server exits or is stopped by SIGTERM, SIGINT or SIGHUP, and by `forget_me`; a page left behind by a killed server SHALL be removed the next time a page is shown. The link and the page's path SHALL never be written to a log.
+
+P3.6. **The Power asks.** THE Power SHALL tell the agent to ask "Link or QR code?" before calling `send_to_phone`, unless the attendee already said which.

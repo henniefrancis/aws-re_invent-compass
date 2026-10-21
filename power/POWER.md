@@ -42,6 +42,10 @@ Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` a
 
 Compass reads your real schedule and the live catalog but never changes your re:Invent schedule unless you turn writes on yourself. Until then, every booking tool answers what it would do instead of doing it, and you make the change in the re:Invent app. Passes still work. How to turn writes on is in the MCP server README, "Read-only by default".
 
+## Passes on your phone
+
+Before `send_to_phone`, ask the attendee "Link or QR code?" unless they already said, and pass their answer as `show` (`link`, `qr` or `both`). A QR code opens on a page in their browser on this computer, for their phone camera to scan; the chat then shows no link. If the browser cannot open, the QR code comes back in the chat instead. Without `show`, `send_to_phone` creates nothing and asks.
+
 ## Try it without an account
 
 Run `npx --yes reinvent-compass@0.0.0 demo` to see the whole flow on made-up data, with no network and no sign-in.

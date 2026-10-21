@@ -672,3 +672,7 @@ Deviation from "no push trigger" (ADR-018, build plan 11.1): `check.yml` now als
 - `scan_github`: input `{ owners?: string[], includeForks?: boolean, maxRepositories?: number }`; output `{ scanned: number, skipped: number, technologies: string[], services: string[] }`.
 - `disconnect_github`: input `{}`; output `{ disconnected: boolean }`.
 - `ScanRepoOutput` gains an optional `technologies: { technology, score }[]`, so older outputs still parse.
+
+## Owner change: send_to_phone show (21 October 2026, task 21)
+
+`send_to_phone` input: `{ sessionIds?: string[], show?: 'link' | 'qr' | 'both' }`. Output: `{ handoffUrl, expiresAt, shownAs?: 'link' | 'qr' | 'both', qrShownIn?: 'browser' | 'chat' }`. The new output fields are optional so older outputs still parse. compass-power task 48 implements it.
