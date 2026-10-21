@@ -4,7 +4,7 @@
 //
 // The logo (site/public/artwork/logo.svg) is fitted to the slot height and left-aligned on a
 // transparent canvas; the icon (site/public/artwork/favicon.svg) is fitted and centred on a
-// transparent square; the owner's Pass Designer background (site/public/artwork/pass-background.png) covers the
+// transparent square; the owner's Pass Designer background (packages/pass-service/artwork/pass-background.png) covers the
 // event ticket background, cropped and centred (task 44, the owner's Pass Designer design).
 // Chromium from Playwright (a dev dependency) rasterises them, so no image library is added.
 // Sizes follow Apple's Wallet Human Interface Guidelines: icon 38 points and logo up to 160 by
@@ -15,9 +15,11 @@ import { chromium } from 'playwright';
 import { ARTWORK_FILES, artworkModuleSource } from '../src/artwork/render.ts';
 
 const artworkDir = new URL('../../../site/public/artwork/', import.meta.url);
+// The pass background is a pass-only source, kept out of the site's public folder (task 44).
+const passArtworkDir = new URL('../artwork/', import.meta.url);
 const MIME = { '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.png': 'image/png' };
 const dataUrl = (name) =>
-  `data:${MIME[name.slice(name.lastIndexOf('.'))]};base64,${readFileSync(new URL(name, artworkDir)).toString('base64')}`;
+  `data:${MIME[name.slice(name.lastIndexOf('.'))]};base64,${readFileSync(new URL(name, name.endsWith('.png') ? passArtworkDir : artworkDir)).toString('base64')}`;
 
 const JOBS = {
   'icon.png': { source: 'favicon.svg', width: 38, height: 38, align: 'centre' },
