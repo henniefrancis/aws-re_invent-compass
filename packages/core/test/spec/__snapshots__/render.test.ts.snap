@@ -94,7 +94,7 @@ Each task changes your real re:Invent schedule or passes, so you approve it firs
 - [ ] 3. Reserve "DAT100" (session id "syn-4") with \`reserve_with_guardrails\`
 - [ ] 4. Add "ANT163-R" (session id "syn-1r") to standby with \`add_standby\`
 - [ ] 5. Add the layover on Tue 1 Dec 12:00 to Tue 1 Dec 12:30 with \`add_layover\`
-- [ ] 6. Issue Boarding Passes with \`issue_boarding_passes\`
+- [ ] 6. Issue Boarding Passes with \`issue_all_boarding_passes\`
 ",
 }
 `;

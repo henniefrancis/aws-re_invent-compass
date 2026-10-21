@@ -84,7 +84,7 @@ describe('Property 38: hook tool names resolve whatever the server prefix', () =
   test('the tool groups have the documented sizes and sync_passes is a write tool', () => {
     expect(AWSEVENTS_WRITE_TOOLS).toHaveLength(7);
     expect(SCHEDULE_WRITE_TOOLS).toHaveLength(5);
-    expect(COMPASS_WRITE_TOOLS).toHaveLength(9);
+    expect(COMPASS_WRITE_TOOLS).toHaveLength(10);
     expect(COMPASS_WRITE_TOOLS).toContain('sync_passes');
   });
 });

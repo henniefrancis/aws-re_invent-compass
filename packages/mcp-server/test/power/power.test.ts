@@ -264,8 +264,8 @@ describe('hook template', () => {
     expect(new RegExp(template.hooks[0]?.matcher ?? '').test('mcp_awsevents_getevent')).toBe(false);
   });
 
-  test('the Compass write tools are the nine of the design and the awsevents ones are seven', () => {
-    expect(COMPASS_WRITE_TOOLS).toHaveLength(9);
+  test('the Compass write tools are the ten of the design and the awsevents ones are seven', () => {
+    expect(COMPASS_WRITE_TOOLS).toHaveLength(10);
     expect(AWSEVENTS_WRITE_TOOLS).toHaveLength(7);
   });
 });

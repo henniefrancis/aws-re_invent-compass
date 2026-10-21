@@ -16,7 +16,7 @@ describe('the package README', () => {
     expect(text).toContain('not affiliated with, endorsed by or sponsored by AWS or Amazon');
   });
 
-  test('lists all twenty-three tools with the class the registry gives them', async () => {
+  test('lists all twenty-four tools with the class the registry gives them', async () => {
     const text = await readme;
     const classes = { read: 'read', localAction: 'local action', write: 'write' } as const;
     for (const name of names) {
@@ -24,7 +24,7 @@ describe('the package README', () => {
       expect(row, name).toBeDefined();
       expect(row?.split('|')[2]?.trim()).toBe(classes[TOOL_SPECS[name].class]);
     }
-    expect(names).toHaveLength(23);
+    expect(names).toHaveLength(24);
   });
 
   test('allows only the three read tools that read nothing of yours to be auto-approved and says write tools never are', async () => {

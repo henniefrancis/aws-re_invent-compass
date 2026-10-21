@@ -326,6 +326,11 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
     - _Requirements: 4.11_
   - [x] 21.2 Commit with compass-power task 48 (scoped `compass-power`). Do not push
 
+- [x] 22. Replace the issue_boarding_passes contract with issue_all_boarding_passes and issue_boarding_pass (owner decision of 21 October, design "Owner change: issue all passes or one")
+  - [x] 22.1 `issue_all_boarding_passes`: input `{}`; `issue_boarding_pass`: input `{ sessionId?: string }`; both output `{ issued: string[], serials?: string[] }`. Remove `issue_boarding_passes`; twenty-four tools. Accept and strip cases follow
+    - _Requirements: 4.11_
+  - [x] 22.2 Commit with compass-power task 51 (scoped `compass-power`). Do not push
+
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.
 - Each top-level task (1 through 14) ends with a commit sub-task. Commit locally only after that task's tests pass, using Conventional Commits with `foundation-contracts` as the scope. The first commit (1.6) also includes `.kiro/specs/foundation-contracts/`. Never push, merge, tag or open a PR: the integrator does that after review.

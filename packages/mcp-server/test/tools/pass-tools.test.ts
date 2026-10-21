@@ -4,7 +4,13 @@ import { mcpTools } from '@compass/contracts';
 import type { Commitment } from '@compass/contracts';
 import { CompassError } from '../../src/ports/errors.js';
 import { exportCalendar } from '../../src/tools/export-calendar.js';
-import { issueBoardingPasses } from '../../src/tools/issue-boarding-passes.js';
+import {
+  issueAllBoardingPasses,
+  issueBoardingPass,
+  NAME_ONE,
+  NOTHING_RESERVED,
+  WHICH_SESSION,
+} from '../../src/tools/issue-boarding-passes.js';
 import { PASS_DISCLAIMER } from '../../src/tools/pass-text.js';
 import {
   ASK_SHOW_MESSAGE,
@@ -31,15 +37,26 @@ const answering =
   () =>
     Promise.resolve(answer);
 
-describe('issue_boarding_passes', () => {
-  test('issues for reserved sessions after refreshing each one, with the disclaimer', async () => {
-    const { fake, ctx } = setup();
+// Feature: compass-power, P4.1: every reserved session after one confirmation.
+describe('issue_all_boarding_passes', () => {
+  test('issues every reserved session after one confirmation that lists them all', async () => {
+    const questions: string[] = [];
+    const { fake, ctx } = setup((question) => {
+      questions.push(question.message);
+      return Promise.resolve('accept');
+    });
     fake.events.schedule.reserved.push(TRIPLE.aRepeat, TRIPLE.b);
-    const outcome = await issueBoardingPasses({ sessionIds: [TRIPLE.aRepeat, TRIPLE.b] }, ctx);
-    expect(outcome.ok && mcpTools.issue_boarding_passes.output.parse(outcome.structured)).toEqual({
+    const outcome = await issueAllBoardingPasses({}, ctx);
+    expect(
+      outcome.ok && mcpTools.issue_all_boarding_passes.output.parse(outcome.structured),
+    ).toEqual({
       issued: [TRIPLE.aRepeat, TRIPLE.b],
       serials: ['serial-1', 'serial-2'],
     });
+    expect(questions).toHaveLength(1);
+    expect(questions[0]).toContain('Issue Boarding Passes for all 2 of your reserved sessions?');
+    expect(questions[0]).toContain(`(id ${TRIPLE.aRepeat})`);
+    expect(questions[0]).toContain(`(id ${TRIPLE.b})`);
     expect(fake.events.callsTo('getSession').map((c) => c.args[0])).toEqual([
       TRIPLE.aRepeat,
       TRIPLE.b,
@@ -49,66 +66,181 @@ describe('issue_boarding_passes', () => {
     expect(outcome.ok && outcome.text).not.toMatch(/delet/i);
   });
 
-  test('sessions that are not reserved are refused with no pass call', async () => {
+  test('reserved ids the catalog does not know are skipped', async () => {
     const { fake, ctx } = setup();
-    fake.events.schedule.reserved.push(TRIPLE.aRepeat);
-    const outcome = await issueBoardingPasses({ sessionIds: [TRIPLE.aRepeat, TRIPLE.b] }, ctx);
-    expect(outcome.ok && outcome.structured).toEqual({
-      issued: [TRIPLE.aRepeat],
-      serials: ['serial-1'],
-    });
-    expect(outcome.ok && outcome.text).toContain('refused because they are not reserved');
-    const none = setup();
-    const refused = await issueBoardingPasses({ sessionIds: [TRIPLE.b] }, none.ctx);
-    expect(refused.ok && refused.structured).toEqual({ issued: [], serials: [] });
-    expect(none.fake.passes.writeCalls).toEqual([]);
-    expect(none.fake.events.callsTo('getSession')).toEqual([]);
+    fake.events.schedule.reserved.push(TRIPLE.a, 'not-in-catalog');
+    const outcome = await issueAllBoardingPasses({}, ctx);
+    expect(outcome.ok && outcome.structured).toEqual({ issued: [TRIPLE.a], serials: ['serial-1'] });
   });
 
-  test('a decline issues nothing; bad ids, unknown sessions and sign-out are refused', async () => {
+  test('nothing reserved asks nothing and issues nothing; a decline issues nothing', async () => {
+    const questions: string[] = [];
+    const empty = setup((question) => {
+      questions.push(question.message);
+      return Promise.resolve('accept');
+    });
+    const outcome = await issueAllBoardingPasses({}, empty.ctx);
+    expect(outcome.ok && outcome.text).toBe(NOTHING_RESERVED);
+    expect(questions).toEqual([]);
+    expect(empty.fake.passes.writeCalls).toEqual([]);
+
     const declined = setup(answering('decline'));
     declined.fake.events.schedule.reserved.push(TRIPLE.a);
-    const outcome = await issueBoardingPasses({ sessionIds: [TRIPLE.a] }, declined.ctx);
-    expect(outcome.ok && outcome.text).toContain('did not confirm');
+    const refused = await issueAllBoardingPasses({}, declined.ctx);
+    expect(refused.ok && refused.text).toContain('did not confirm');
+    expect(refused.ok && refused.structured).toEqual({ issued: [], serials: [] });
     expect(declined.fake.passes.writeCalls).toEqual([]);
+
+    const signedOut = setup();
+    signedOut.fake.events.signedIn = false;
+    await expect(issueAllBoardingPasses({}, signedOut.ctx)).rejects.toMatchObject({
+      code: 'NotSignedIn',
+    });
+  });
+});
+
+// Feature: compass-power, P4.2: one pass, named or picked.
+describe('issue_boarding_pass', () => {
+  function withChoice(answer: { value: string } | 'decline' | 'cancel' | 'first') {
+    const made = setup(answering('accept'));
+    const asked: { message: string; options: readonly { value: string; label: string }[] }[] = [];
+    made.ctx.choose = (question) => {
+      asked.push(question);
+      return Promise.resolve(
+        answer === 'first' ? { value: question.options[0]?.value ?? '' } : answer,
+      );
+    };
+    return { ...made, asked };
+  }
+
+  test('with an id it issues that reserved session after one confirmation', async () => {
     const { fake, ctx } = setup();
-    await expect(issueBoardingPasses({ sessionIds: ['a/b'] }, ctx)).rejects.toMatchObject({
+    fake.events.schedule.reserved.push(TRIPLE.a, TRIPLE.b);
+    const outcome = await issueBoardingPass({ sessionId: TRIPLE.b }, ctx);
+    expect(outcome.ok && mcpTools.issue_boarding_pass.output.parse(outcome.structured)).toEqual({
+      issued: [TRIPLE.b],
+      serials: ['serial-1'],
+    });
+    expect(fake.events.callsTo('getSession').map((c) => c.args[0])).toEqual([TRIPLE.b]);
+  });
+
+  test('an id that is not reserved is refused with no pass call', async () => {
+    const { fake, ctx } = setup();
+    fake.events.schedule.reserved.push(TRIPLE.a);
+    const outcome = await issueBoardingPass({ sessionId: TRIPLE.b }, ctx);
+    expect(outcome.ok && outcome.structured).toEqual({ issued: [], serials: [] });
+    expect(outcome.ok && outcome.text).toContain('that session is not reserved');
+    expect(fake.passes.writeCalls).toEqual([]);
+    expect(fake.events.callsTo('getSession')).toEqual([]);
+  });
+
+  test('without an id it offers the reserved sessions and issues the one picked', async () => {
+    const { fake, ctx, asked } = withChoice({ value: TRIPLE.b });
+    fake.events.schedule.reserved.push(TRIPLE.a, TRIPLE.b, 'not-in-catalog');
+    const outcome = await issueBoardingPass({}, ctx);
+    expect(asked).toHaveLength(1);
+    expect(asked[0]?.message).toBe(WHICH_SESSION);
+    const a = syntheticCatalogView().byId.get(TRIPLE.a)?.session;
+    expect(asked[0]?.options).toHaveLength(2);
+    expect(asked[0]?.options[0]).toEqual({ value: TRIPLE.a, label: `${a?.code} ${a?.title}` });
+    expect(outcome.ok && outcome.structured).toEqual({ issued: [TRIPLE.b], serials: ['serial-1'] });
+  });
+
+  test('two sessions that read the same get the id added to the second label', async () => {
+    const { fake, ctx, asked } = withChoice('first');
+    // A session reserved twice in the list reads the same; the label must still be unique.
+    fake.events.schedule.reserved.push(TRIPLE.a, TRIPLE.a);
+    await issueBoardingPass({}, ctx);
+    const labels = asked[0]?.options.map((o) => o.label) ?? [];
+    expect(new Set(labels).size).toBe(2);
+    expect(labels[1]).toContain(`(id ${TRIPLE.a})`);
+  });
+
+  test('a declined or cancelled pick issues nothing', async () => {
+    for (const answer of ['decline', 'cancel'] as const) {
+      const { fake, ctx } = withChoice(answer);
+      fake.events.schedule.reserved.push(TRIPLE.a);
+      const outcome = await issueBoardingPass({}, ctx);
+      expect(outcome.ok && outcome.text).toContain('did not choose a session');
+      expect(fake.passes.writeCalls).toEqual([]);
+    }
+  });
+
+  test('a client that cannot ask gets the reserved sessions and nothing is issued', async () => {
+    const { fake, ctx } = setup();
+    fake.events.schedule.reserved.push(TRIPLE.a);
+    const outcome = await issueBoardingPass({}, ctx);
+    const text = outcome.ok ? outcome.text : '';
+    expect(text).toContain(NAME_ONE);
+    expect(text).toContain(TRIPLE.a);
+    expect(fake.passes.writeCalls).toEqual([]);
+  });
+
+  test('nothing reserved asks nothing; a declined confirmation issues nothing', async () => {
+    const empty = withChoice('first');
+    const outcome = await issueBoardingPass({}, empty.ctx);
+    expect(outcome.ok && outcome.text).toBe(NOTHING_RESERVED);
+    expect(empty.asked).toEqual([]);
+
+    const declined = setup(answering('decline'));
+    declined.fake.events.schedule.reserved.push(TRIPLE.a);
+    const refused = await issueBoardingPass({ sessionId: TRIPLE.a }, declined.ctx);
+    expect(refused.ok && refused.text).toContain('did not confirm');
+    expect(declined.fake.passes.writeCalls).toEqual([]);
+  });
+
+  test('over MCP the server asks the pick list, then the confirmation, and issues the pick', async () => {
+    const fake = createFakeRuntime({ catalog: syntheticCatalogView() });
+    fake.events.schedule.reserved.push(TRIPLE.a);
+    const connection = await connect(fake.runtime, { elicit: 'accept' });
+    const result = await connection.call('issue_boarding_pass', {});
+    expect(connection.questions[0]).toBe(WHICH_SESSION);
+    expect(connection.questions[1]).toContain('Issue a Boarding Pass for this session?');
+    expect(result.structuredContent).toMatchObject({ issued: [TRIPLE.a] });
+    await connection.close();
+  });
+
+  test('bad ids, unknown sessions and sign-out are refused before any pass call', async () => {
+    const { fake, ctx } = setup();
+    await expect(issueBoardingPass({ sessionId: 'a/b' }, ctx)).rejects.toMatchObject({
       code: 'IdentifierRejected',
     });
     expect(fake.events.calls).toEqual([]);
-    await expect(issueBoardingPasses({ sessionIds: ['ghost'] }, ctx)).rejects.toMatchObject({
+    await expect(issueBoardingPass({ sessionId: 'ghost' }, ctx)).rejects.toMatchObject({
       code: 'UnknownSession',
     });
     fake.events.signedIn = false;
-    await expect(issueBoardingPasses({ sessionIds: [TRIPLE.a] }, ctx)).rejects.toMatchObject({
+    await expect(issueBoardingPass({ sessionId: TRIPLE.a }, ctx)).rejects.toMatchObject({
       code: 'NotSignedIn',
     });
+    expect(fake.passes.writeCalls).toEqual([]);
   });
 });
 
 // Feature: compass-power, Property 35: Passes are issued only for confirmed reservations
 describe('Property 35: passes are issued only for confirmed reservations', () => {
   const IDS = [TRIPLE.a, TRIPLE.aRepeat, TRIPLE.b];
-  test('the passes port receives exactly the requested sessions the schedule lists as reserved', async () => {
+  test('issue_all issues exactly the reserved sessions; issue_boarding_pass only a reserved one', async () => {
     await fc.assert(
-      fc.asyncProperty(
-        fc.subarray(IDS, { minLength: 1 }),
-        fc.subarray(IDS),
-        async (requested, reserved) => {
-          const { fake, ctx } = setup();
-          fake.events.schedule.reserved.push(...reserved);
-          const outcome = await issueBoardingPasses({ sessionIds: requested }, ctx);
-          const expected = requested.filter((id) => reserved.includes(id));
-          const issueCalls = fake.passes.calls.filter((c) => c.method === 'issue');
-          if (expected.length === 0) {
-            expect(issueCalls).toEqual([]);
-          } else {
-            expect(issueCalls).toHaveLength(1);
-            expect(issueCalls[0]?.args[0]).toEqual(expected);
-          }
-          expect(outcome.ok && outcome.structured).toMatchObject({ issued: expected });
-        },
-      ),
+      fc.asyncProperty(fc.constantFrom(...IDS), fc.subarray(IDS), async (requested, reserved) => {
+        const all = setup();
+        all.fake.events.schedule.reserved.push(...reserved);
+        const outcome = await issueAllBoardingPasses({}, all.ctx);
+        const issueCalls = all.fake.passes.calls.filter((c) => c.method === 'issue');
+        if (reserved.length === 0) {
+          expect(issueCalls).toEqual([]);
+        } else {
+          expect(issueCalls).toHaveLength(1);
+          expect(issueCalls[0]?.args[0]).toEqual(reserved);
+        }
+        expect(outcome.ok && outcome.structured).toMatchObject({ issued: reserved });
+
+        const one = setup();
+        one.fake.events.schedule.reserved.push(...reserved);
+        await issueBoardingPass({ sessionId: requested }, one.ctx);
+        const oneCalls = one.fake.passes.calls.filter((c) => c.method === 'issue');
+        expect(oneCalls).toHaveLength(reserved.includes(requested) ? 1 : 0);
+      }),
       { numRuns: 100 },
     );
   });
@@ -551,8 +683,9 @@ describe('pass tool errors', () => {
       }),
     );
     const connection = await connect(fake.runtime);
-    const result = await connection.call('issue_boarding_passes', { sessionIds: [TRIPLE.a] });
+    const result = await connection.call('issue_boarding_pass', { sessionId: TRIPLE.a });
     expect(result.isError).toBe(true);
+    expect(JSON.stringify(result)).toContain('The pass service said no');
     expect(JSON.stringify(result)).not.toContain('person@example.com');
     await connection.close();
   });

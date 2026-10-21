@@ -676,3 +676,7 @@ Deviation from "no push trigger" (ADR-018, build plan 11.1): `check.yml` now als
 ## Owner change: send_to_phone show (21 October 2026, task 21)
 
 `send_to_phone` input: `{ sessionIds?: string[], show?: 'link' | 'qr' | 'both' }`. Output: `{ handoffUrl, expiresAt, shownAs?: 'link' | 'qr' | 'both', qrShownIn?: 'browser' | 'chat' }`. The new output fields are optional so older outputs still parse. compass-power task 48 implements it.
+
+## Owner change: issue all passes or one (21 October 2026, task 22)
+
+`issue_boarding_passes` (1 to 10 `sessionIds`) is replaced by `issue_all_boarding_passes` (input `{}`) and `issue_boarding_pass` (input `{ sessionId?: string }`), both with the output `{ issued: string[], serials?: string[] }`. `mcpTools` has twenty-four entries. compass-power task 51 implements them.

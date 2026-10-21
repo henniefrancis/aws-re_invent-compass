@@ -36,13 +36,15 @@ The `compass` server starts with `npx --yes reinvent-compass@0.0.0`; the version
 
 ## Approvals
 
-Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. `scan_repo` reads a folder of yours, so approve each scan. `show_my_tech` and `find_sessions_by_tech` read your tech list, and `connect_github`, `scan_github` and `disconnect_github` touch your GitHub account, so approve each call; `scan_github` also asks you to confirm the repositories first. `show_schedule` reads your schedule, so approve each call: it takes no input and lists your reserved sessions, standby list and layovers with the ids the write tools take. Never auto-approve a write tool: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`, `issue_boarding_passes`, `send_to_phone`, `sync_passes` or `forget_me`. `sync_passes` can void passes, so it is a write tool. `add_layover` takes an `action` of `create`, `update` or `delete` (the last two need the `personalTimeId` that `show_schedule` lists), and each one asks you to confirm.
+Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. `scan_repo` reads a folder of yours, so approve each scan. `show_my_tech` and `find_sessions_by_tech` read your tech list, and `connect_github`, `scan_github` and `disconnect_github` touch your GitHub account, so approve each call; `scan_github` also asks you to confirm the repositories first. `show_schedule` reads your schedule, so approve each call: it takes no input and lists your reserved sessions, standby list and layovers with the ids the write tools take. Never auto-approve a write tool: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`, `issue_all_boarding_passes`, `issue_boarding_pass`, `send_to_phone`, `sync_passes` or `forget_me`. `sync_passes` can void passes, so it is a write tool. `add_layover` takes an `action` of `create`, `update` or `delete` (the last two need the `personalTimeId` that `show_schedule` lists), and each one asks you to confirm.
 
 ## Read-only by default
 
 Compass reads your real schedule and the live catalog but never changes your re:Invent schedule unless you turn writes on yourself. Until then, every booking tool answers what it would do instead of doing it, and you make the change in the re:Invent app. Passes still work. How to turn writes on is in the MCP server README, "Read-only by default".
 
 ## Passes on your phone
+
+When the attendee asks for passes for their sessions, or all their passes, call `issue_all_boarding_passes` once: it asks one confirmation for every reserved session. Never call it once per session. For one session, call `issue_boarding_pass` with its id or code; without one, Compass asks which reserved session.
 
 Before `send_to_phone`, ask the attendee "Link or QR code?" unless they already said, and pass their answer as `show` (`link`, `qr` or `both`). A QR code opens on a page in their browser on this computer, for their phone camera to scan; the chat then shows no link. If the browser cannot open, the QR code comes back in the chat instead. Without `show`, `send_to_phone` creates nothing and asks.
 

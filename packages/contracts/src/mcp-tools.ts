@@ -273,12 +273,16 @@ const AddLayoverOutput = z.object({
   personalTimeId: z.string().optional(),
 });
 
-// issue_boarding_passes: issue passes for 1 to 10 reserved sessions. The output
-// lists the session ids issued and their serials. No secret material is returned.
-const IssueBoardingPassesInput = z.object({
-  sessionIds: SessionIdBatch,
+// issue_all_boarding_passes and issue_boarding_pass (foundation-contracts task 22) replace
+// issue_boarding_passes. The first takes no input and issues a pass for every reserved
+// session after one confirmation; the second issues one, for the given sessionId or, without
+// one, for the reserved session the attendee picks. Both list the session ids issued and their
+// serials. No secret material is returned.
+const IssueAllBoardingPassesInput = z.object({});
+const IssueBoardingPassInput = z.object({
+  sessionId: z.string().optional(),
 });
-const IssueBoardingPassesOutput = z.object({
+const IssuedPassesOutput = z.object({
   issued: z.array(z.string()),
   serials: z.array(z.string()).optional(),
 });
@@ -331,8 +335,9 @@ const ForgetMeOutput = z.object({
 });
 
 /**
- * The twenty-three MCP tools (build plan section 8.1, plus show_schedule from SP3 and the five
- * tech and GitHub tools of task 20), each with its input and output zod object schema. S3 iterates this record by key to register the
+ * The twenty-four MCP tools (build plan section 8.1, plus show_schedule from SP3, the five
+ * tech and GitHub tools of task 20, and the two pass-issuing tools of task 22 that replace
+ * issue_boarding_passes), each with its input and output zod object schema. S3 iterates this record by key to register the
  * tools. The record is frozen with `as const` so the key set is fixed and McpToolName is
  * exact.
  */
@@ -356,10 +361,8 @@ export const mcpTools = {
   add_standby: { input: AddStandbyInput, output: AddStandbyOutput },
   remove_standby: { input: RemoveStandbyInput, output: RemoveStandbyOutput },
   add_layover: { input: AddLayoverInput, output: AddLayoverOutput },
-  issue_boarding_passes: {
-    input: IssueBoardingPassesInput,
-    output: IssueBoardingPassesOutput,
-  },
+  issue_all_boarding_passes: { input: IssueAllBoardingPassesInput, output: IssuedPassesOutput },
+  issue_boarding_pass: { input: IssueBoardingPassInput, output: IssuedPassesOutput },
   send_to_phone: { input: SendToPhoneInput, output: SendToPhoneOutput },
   sync_passes: { input: SyncPassesInput, output: SyncPassesOutput },
   export_calendar: { input: ExportCalendarInput, output: ExportCalendarOutput },

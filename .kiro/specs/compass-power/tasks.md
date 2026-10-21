@@ -612,6 +612,13 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
   - _Requirements: P3.8_
 
+- [x] 51. Replace issue_boarding_passes with issue_all_boarding_passes and issue_boarding_pass (owner decision of 21 October, design "Owner change: issue all passes or one")
+  - Contract (foundation-contracts task 22) in the same commit; registry, hook write-tool list, descriptions and titles, `NoPassesIssued`, the spec renderer's next action (`packages/core/src/spec/render.ts`), the demo, the Power, the plan-my-week skill and the mcp-server README follow
+  - `ctx.choose` for a single-choice elicitation; `elicitInput` waits five minutes and a timeout is `ConfirmTimedOut`
+  - Tests: all passes after one confirmation; nothing reserved asks nothing; an id or a code issues one reserved pass and refuses one not reserved without a pass call; without an id the pick list issues the chosen one, a decline or an unknown label issues nothing, and a client without elicitation gets the list and nothing is issued; the timeout says it timed out and writes nothing; the prompt-injection and stdout cross tests cover both tools; 100 percent coverage
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
+  - _Requirements: P4.1, P4.2, P4.3, P4.4_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

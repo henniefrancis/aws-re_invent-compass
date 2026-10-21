@@ -499,3 +499,15 @@ P3.6. **The Power asks.** THE Power SHALL tell the agent to ask "Link or QR code
 P3.7. **Branded page.** THE QR page SHALL carry the title "re:Invent Compass Boarding Pass", the owner's icon (`site/public/artwork/favicon.svg`) as its favicon and the owner's full logo (`site/public/artwork/logo.svg`) above "Scan with your phone camera", in the pass colours. Both images SHALL be inline `data:image/svg+xml` URLs inside the existing Content-Security-Policy, so the page still loads nothing from outside itself and runs no script (owner request of 21 October 2026, task 49).
 
 P3.8. **Expired link on the page.** WHEN the link expires while the QR page is open, THE page SHALL hide the QR code and the scan text and SHALL show a red banner saying the link has expired and to ask Compass for a new one, without any script (the page keeps its Content Security Policy).
+
+## Owner amendments: one confirmation for all passes (21 October 2026)
+
+In the dev test, Kiro called `issue_boarding_passes` once per session, so the owner confirmed once per pass, and the tool took at most ten sessions a call. The owner decided to replace it with two tools. These take precedence over Requirement 15.1 to 15.3 and over the tool list of Requirement 2 where they differ.
+
+P4.1. **All passes at once.** THE Compass_Server SHALL offer a Write_Tool `issue_all_boarding_passes` with no input. It SHALL read the fresh confirmed schedule and issue a Boarding Pass for every reserved session the catalog knows, after one confirmation that lists them all. WHEN nothing is reserved, it SHALL issue nothing, ask nothing and say so.
+
+P4.2. **One pass.** THE Compass_Server SHALL offer a Write_Tool `issue_boarding_pass` with an optional `sessionId` (a catalog id or a session code). WITH a `sessionId`, it SHALL issue that session's pass after one confirmation only WHEN the fresh schedule lists it as reserved, and otherwise refuse without a pass call. WITHOUT a `sessionId`, WHERE the client supports elicitation, it SHALL ask which reserved session with a single-choice list and issue that one; WHERE it does not, it SHALL return the reserved sessions as labelled catalog data and ask the attendee to name one, issuing nothing.
+
+P4.3. **The old tool goes.** `issue_boarding_passes` SHALL be removed from the contract, the server, the hooks, the descriptions, the Power and the docs. There are twenty-four tools. Both new tools are Write_Tools and SHALL never be auto-approved.
+
+P4.4. **Time to answer.** A confirmation or choice asked through elicitation SHALL wait up to five minutes. IF the attendee does not answer in that time, THEN the tool SHALL change nothing and SHALL say that the confirmation timed out, not that the attendee declined.

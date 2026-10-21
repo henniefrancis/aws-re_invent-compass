@@ -115,7 +115,7 @@ describe('simulated passes and sign-in', () => {
     const ids = (pair ?? []).map((s) => s.sessionId);
     const reserved = await conn.call('reserve_with_guardrails', { sessionIds: ids });
     expect(JSON.stringify(reserved)).toContain('2 of 2');
-    const issued = await conn.call('issue_boarding_passes', { sessionIds: ids });
+    const issued = await conn.call('issue_all_boarding_passes');
     expect(issued.isError).not.toBe(true);
     expect(await runtime.passes.forgetMe()).toBeDefined();
     await conn.close();
@@ -138,7 +138,7 @@ describe('simulated passes and sign-in', () => {
       .find((s) => s.isReservable && s.seatAvailability !== 'unavailable' && s.venue);
     const id = session?.sessionId ?? '';
     await conn.call('reserve_with_guardrails', { sessionIds: [id] });
-    await conn.call('issue_boarding_passes', { sessionIds: [id] });
+    await conn.call('issue_boarding_pass', { sessionId: id });
 
     const phone = await conn.call('send_to_phone', { show: 'qr' });
     expect(phone.isError).not.toBe(true);

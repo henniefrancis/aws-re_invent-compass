@@ -214,7 +214,7 @@ describe('renderWeekSpec', () => {
     );
     expect(files.designMd).toContain('No sessions were planned.');
     expect(files.tasksMd.trimEnd().split('\n').pop()).toBe(
-      '- [ ] 1. Issue Boarding Passes with `issue_boarding_passes`',
+      '- [ ] 1. Issue Boarding Passes with `issue_all_boarding_passes`',
     );
   });
 
@@ -352,7 +352,7 @@ describe('Property 20: spec tasks match the API actions, ending with issue', () 
           expect(layover).toHaveLength(layovers);
           expect(tasks).toHaveLength(reserve.length + standby.length + layover.length + 1);
           expect(tasks[tasks.length - 1]).toMatch(
-            /Issue Boarding Passes with `issue_boarding_passes`$/,
+            /Issue Boarding Passes with `issue_all_boarding_passes`$/,
           );
           tasks.forEach((task, index) => {
             expect(task.startsWith(`- [ ] ${index + 1}. `)).toBe(true);

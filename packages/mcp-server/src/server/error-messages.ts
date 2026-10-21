@@ -39,7 +39,7 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
   LayoverInvalid:
     'The layover times are not valid. Give a start and an end with time zone offsets, on 5 minute steps, inside the event dates, with the end after the start.',
   LimitInvalid: 'limit must be a whole number from 0 to 50.',
-  NoPassesIssued: 'No Boarding Passes have been issued yet. Run issue_boarding_passes first.',
+  NoPassesIssued: 'No Boarding Passes have been issued yet. Run issue_all_boarding_passes first.',
   BulkVoidRefused:
     'This sync would void every pass or more than five passes. Compass needs your explicit confirmation for that, and this client cannot ask. Name fewer sessions in sessionIds, or use a client that supports confirmation.',
   Network: 'Compass could not reach the service. Check your connection, then try again.',
@@ -55,6 +55,8 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
     'Compass is not connected to GitHub, or the connection has ended. Run connect_github, then try again.',
   GitHubConfirmationNeeded:
     'Compass reads your GitHub repositories only after you confirm the list, and this client cannot ask. Use a client that can ask you to confirm.',
+  ConfirmTimedOut:
+    'Nothing was changed, because the confirmation was not answered within 5 minutes. Ask again when you are ready.',
   Internal: INTERNAL_MESSAGE,
 };
 

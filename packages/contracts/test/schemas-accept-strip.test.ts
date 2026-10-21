@@ -682,8 +682,12 @@ const toolSamples: Record<
     input: { action: 'create', personalTime: personalTimeInputSample },
     output: { action: 'create', done: true, personalTimeId: 'pt1' },
   },
-  issue_boarding_passes: {
-    input: { sessionIds: ['AIM101'] },
+  issue_all_boarding_passes: {
+    input: {},
+    output: { issued: ['s1', 's2'], serials: ['serial-1', 'serial-2'] },
+  },
+  issue_boarding_pass: {
+    input: { sessionId: 'AIM101' },
     output: { issued: ['s1'], serials: ['serial-1'] },
   },
   send_to_phone: {

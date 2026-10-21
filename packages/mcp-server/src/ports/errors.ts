@@ -39,6 +39,7 @@ export type CompassErrorCode =
   | 'ReadOnly'
   | 'GitHubNotConnected'
   | 'GitHubConfirmationNeeded'
+  | 'ConfirmTimedOut'
   | 'Internal';
 
 /** Optional, non-sensitive details a code may carry. */

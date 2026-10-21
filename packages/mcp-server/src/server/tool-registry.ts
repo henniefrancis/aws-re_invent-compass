@@ -13,7 +13,7 @@ import { findSessions } from '../tools/find-sessions.js';
 import { findSessionsByTech } from '../tools/find-sessions-by-tech.js';
 import { forgetMe } from '../tools/forget-me.js';
 import { connectGithub, disconnectGithub, scanGithub } from '../tools/github.js';
-import { issueBoardingPasses } from '../tools/issue-boarding-passes.js';
+import { issueAllBoardingPasses, issueBoardingPass } from '../tools/issue-boarding-passes.js';
 import { planWeekTool } from '../tools/plan-week.js';
 import { refreshCatalog } from '../tools/refresh-catalog.js';
 import { removeStandby } from '../tools/remove-standby.js';
@@ -59,7 +59,13 @@ export const TOOL_SPECS: { [K in McpToolName]: ToolSpec<K> } = {
   add_standby: spec('add_standby', 'write', true, addStandby),
   remove_standby: spec('remove_standby', 'write', true, removeStandby),
   add_layover: spec('add_layover', 'write', true, addLayover),
-  issue_boarding_passes: spec('issue_boarding_passes', 'write', false, issueBoardingPasses),
+  issue_all_boarding_passes: spec(
+    'issue_all_boarding_passes',
+    'write',
+    false,
+    issueAllBoardingPasses,
+  ),
+  issue_boarding_pass: spec('issue_boarding_pass', 'write', false, issueBoardingPass),
   send_to_phone: spec('send_to_phone', 'write', false, sendToPhone),
   sync_passes: spec('sync_passes', 'write', false, syncPasses),
   export_calendar: spec('export_calendar', 'localAction', false, exportCalendar),

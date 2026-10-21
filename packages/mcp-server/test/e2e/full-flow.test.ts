@@ -93,7 +93,7 @@ describe('the full flow over the real simulated stack (S1 simulated transport, S
     expect(reserveCalls).toEqual([[TRIPLE.a], [TRIPLE.aRepeat], [TRIPLE.b]]);
 
     // 10: issue passes for A-R and B only.
-    const issued = await ok('issue_boarding_passes', { sessionIds: [TRIPLE.aRepeat, TRIPLE.b] });
+    const issued = await ok('issue_all_boarding_passes');
     expect(issued.structuredContent).toMatchObject({ issued: [TRIPLE.aRepeat, TRIPLE.b] });
     expect((await runtime.passes.issuedRecord()).map((p) => p.sessionCode).sort()).toEqual(
       [TRIPLE.codes.aRepeat, TRIPLE.codes.b].sort(),

@@ -23,7 +23,8 @@ import { registrationSchema } from './output-schema.js';
 import { failureResult, toCallToolResult } from './results.js';
 import { TOOL_SPECS, annotationsFor } from './tool-registry.js';
 import { resolveSessionCodes } from './session-codes.js';
-import type { ElicitQuestion, ToolContext, ToolOutcome } from './types.js';
+import { chooseWith, confirmWith } from './elicitation.js';
+import type { ToolContext, ToolOutcome } from './types.js';
 
 function register<K extends McpToolName>(
   server: McpServer,
@@ -48,33 +49,8 @@ function register<K extends McpToolName>(
     async (args: unknown): Promise<CallToolResult> => {
       const ctx: ToolContext = { runtime, state };
       if (server.server.getClientCapabilities()?.elicitation !== undefined) {
-        ctx.elicit = async (question: ElicitQuestion) => {
-          try {
-            const answer = await server.server.elicitInput({
-              message: question.message,
-              requestedSchema: {
-                type: 'object',
-                properties: {
-                  confirm: {
-                    type: 'boolean',
-                    title: 'Confirm',
-                    description: 'Tick to confirm, or decline to stop.',
-                  },
-                },
-                required: ['confirm'],
-              },
-            });
-            // Only a ticked box is a yes (QA M1, security L2): an accepted form with confirm missing,
-            // false or not a boolean true counts as a decline.
-            return answer.action === 'accept' && answer.content?.confirm !== true
-              ? 'decline'
-              : answer.action;
-          } catch {
-            // A form the client could not answer properly (an invalid answer, a closed
-            // connection) is not a yes, so no write follows.
-            return 'cancel';
-          }
-        };
+        ctx.elicit = confirmWith(server.server);
+        ctx.choose = chooseWith(server.server);
       }
       try {
         // Codes such as SVS339 are accepted wherever a session id is (task 38).

@@ -3,7 +3,7 @@ import { createPassFieldsSchema, mcpTools } from '../src/index.js';
 
 // Unit tests for the small contract tightenings (foundation-contracts, S0):
 //   - PassFields walkFromPrevious.minutes and nextConnection.walkMinutes are integers.
-//   - SessionIdBatch (reserve_with_guardrails, add_standby, issue_boarding_passes)
+//   - SessionIdBatch (reserve_with_guardrails, add_standby)
 //     rejects duplicate ids with a clear message.
 //   - send_to_phone and sync_passes session id lists are capped at 80.
 
@@ -79,15 +79,20 @@ describe('Feature: foundation-contracts, MCP tool session id bounds', () => {
     ).toBe(true);
   });
 
-  test('F: add_standby and issue_boarding_passes also reject duplicate session ids', () => {
+  test('F: add_standby also rejects duplicate session ids', () => {
     expect(mcpTools.add_standby.input.safeParse({ sessionIds: ['X', 'X'] }).success).toBe(false);
-    expect(mcpTools.issue_boarding_passes.input.safeParse({ sessionIds: ['X', 'X'] }).success).toBe(
-      false,
-    );
     expect(mcpTools.add_standby.input.safeParse({ sessionIds: ['X', 'Y'] }).success).toBe(true);
-    expect(mcpTools.issue_boarding_passes.input.safeParse({ sessionIds: ['X', 'Y'] }).success).toBe(
-      true,
-    );
+  });
+
+  // foundation-contracts task 22: issue_all_boarding_passes takes nothing, issue_boarding_pass
+  // an optional session id, and the old batch tool is gone.
+  test('F: the pass-issuing tools take no batch', () => {
+    expect(mcpTools.issue_all_boarding_passes.input.parse({ sessionIds: ['X'] })).toEqual({});
+    expect(mcpTools.issue_boarding_pass.input.safeParse({}).success).toBe(true);
+    expect(mcpTools.issue_boarding_pass.input.safeParse({ sessionId: 'X' }).success).toBe(true);
+    expect(mcpTools.issue_boarding_pass.input.safeParse({ sessionId: 7 }).success).toBe(false);
+    expect(Object.keys(mcpTools)).not.toContain('issue_boarding_passes');
+    expect(Object.keys(mcpTools)).toHaveLength(24);
   });
 
   // F: send_to_phone and sync_passes session id lists are capped at 80.

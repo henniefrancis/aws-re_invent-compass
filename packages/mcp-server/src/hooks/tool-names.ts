@@ -35,7 +35,8 @@ export const SCHEDULE_WRITE_TOOLS = [
 /** Every Compass Write_Tool (CTO review H1 adds sync_passes). */
 export const COMPASS_WRITE_TOOLS = [
   ...SCHEDULE_WRITE_TOOLS,
-  'issue_boarding_passes',
+  'issue_all_boarding_passes',
+  'issue_boarding_pass',
   'send_to_phone',
   'sync_passes',
   'forget_me',
