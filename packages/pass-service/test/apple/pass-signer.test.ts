@@ -52,7 +52,7 @@ function checkPass(pkpass: Uint8Array): Record<string, unknown> {
     'icon.png',
     'icon@2x.png',
     'icon@3x.png',
-    'background@2x.png',
+    'background.png',
   ]) {
     expect(files.has(name), name).toBe(true);
   }

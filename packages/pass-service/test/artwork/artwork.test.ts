@@ -14,11 +14,11 @@ const SIZES: Record<string, [number, number]> = {
   'logo.png': [160, 50],
   'logo@2x.png': [320, 100],
   'logo@3x.png': [480, 150],
-  'background@2x.png': [686, 1006],
+  'background.png': [343, 503],
 };
 
 /** The images drawn on a transparent canvas: every one but the full-bleed background. */
-const TRANSPARENT = ARTWORK_FILES.filter((name) => name !== 'background@2x.png');
+const TRANSPARENT = ARTWORK_FILES.filter((name) => name !== 'background.png');
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -105,7 +105,7 @@ describe("Feature: pass-service, the owner's artwork (tasks 38, 42 and 44)", () 
   });
 
   test("the background is the owner's picture, opaque edge to edge (task 44)", () => {
-    const art = image('background@2x.png');
+    const art = image('background.png');
     for (const [x, y] of [
       [0, 0],
       [art.width - 1, 0],
@@ -142,7 +142,7 @@ describe("Feature: pass-service, the owner's artwork (tasks 38, 42 and 44)", () 
     expect(source).toContain('export const ARTWORK');
     expect(source).toContain('logo.svg');
     expect(source).toContain('favicon.svg');
-    expect(source).toContain('pass-background.jpg');
+    expect(source).toContain('pass-background.png');
     expect(source.endsWith('\n')).toBe(true);
     for (const name of ARTWORK_FILES) {
       expect(source).toContain(`'${name}':

@@ -4,7 +4,7 @@
 //
 // The logo (site/public/artwork/logo.svg) is fitted to the slot height and left-aligned on a
 // transparent canvas; the icon (site/public/artwork/favicon.svg) is fitted and centred on a
-// transparent square; the owner's picture (site/public/artwork/pass-background.jpg) covers the
+// transparent square; the owner's Pass Designer background (site/public/artwork/pass-background.png) covers the
 // event ticket background, cropped and centred (task 44, the owner's Pass Designer design).
 // Chromium from Playwright (a dev dependency) rasterises them, so no image library is added.
 // Sizes follow Apple's Wallet Human Interface Guidelines: icon 38 points and logo up to 160 by
@@ -15,7 +15,7 @@ import { chromium } from 'playwright';
 import { ARTWORK_FILES, artworkModuleSource } from '../src/artwork/render.ts';
 
 const artworkDir = new URL('../../../site/public/artwork/', import.meta.url);
-const MIME = { '.svg': 'image/svg+xml', '.jpg': 'image/jpeg' };
+const MIME = { '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.png': 'image/png' };
 const dataUrl = (name) =>
   `data:${MIME[name.slice(name.lastIndexOf('.'))]};base64,${readFileSync(new URL(name, artworkDir)).toString('base64')}`;
 
@@ -26,7 +26,7 @@ const JOBS = {
   'logo.png': { source: 'logo.svg', width: 160, height: 50, align: 'left' },
   'logo@2x.png': { source: 'logo.svg', width: 320, height: 100, align: 'left' },
   'logo@3x.png': { source: 'logo.svg', width: 480, height: 150, align: 'left' },
-  'background@2x.png': { source: 'pass-background.jpg', width: 686, height: 1006, align: 'cover' },
+  'background.png': { source: 'pass-background.png', width: 343, height: 503, align: 'cover' },
 };
 
 const browser = await chromium.launch();
@@ -50,6 +50,12 @@ try {
         const context = canvas.getContext('2d');
         context.imageSmoothingQuality = 'high';
         const x = align === 'left' ? 0 : (width - w) / 2;
+        if (align === 'cover') {
+          // A full-bleed background is opaque: the Pass Designer image has faintly transparent
+          // edges, so it sits on the pass background colour, black (task 44).
+          context.fillStyle = '#000000';
+          context.fillRect(0, 0, width, height);
+        }
         context.drawImage(image, x, (height - h) / 2, w, h);
         return canvas.toDataURL('image/png').split(',')[1];
       },

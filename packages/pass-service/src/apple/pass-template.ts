@@ -236,7 +236,7 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
     ...(input.status === 'voided' ? { voided: true as const } : {}),
     relevantDates: [relevantInterval(fields)],
     semantics: passSemantics(fields),
-    // The owner's Pass Designer layout (task 44), over the owner's picture (background@2x.png):
+    // The owner's Pass Designer layout (task 44), over the owner's Pass Designer gradient (background.png):
     // the logo and the session code; the flight name; terminal, arrow and gate; then the date
     // and boarding closes. The alignments are the design's.
     eventTicket: {
