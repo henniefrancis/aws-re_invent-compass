@@ -8,7 +8,7 @@
   @if (vm().actions.length > 0) {
     <ul class="board-actions">
       @for (action of vm().actions; track action.href) {
-        <li>
+        <li [class]="'board-action board-action--' + action.kind">
           @if (action.kind === 'apple') {
             <a class="wallet-badge" [href]="action.href" type="application/vnd.apple.pkpasses"
               ><img

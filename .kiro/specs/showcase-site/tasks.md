@@ -426,6 +426,9 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 29.2 Local e2e runs use two workers: with more, axe in Firefox could pass the 30 s timeout while seven profiles shared the CPU. CI keeps its default. The one root unit test that failed once on 21 October could not be reproduced in seven runs, two of them under load; it ran while another session was editing the same checkout
   - [x] 29.3 The board actions are badges: the official "Add to Apple Wallet" badge (US English, downloaded by the owner under the Apple Wallet Marketing Artwork License Agreement), the official two-line "Add to Google Wallet" badge (from the Google Wallet brand guidelines, downloaded with the owner's go) and the owner's "Add to Calendar" button, each shown unchanged at one height with its label as the image's alt text; several Apple bundles get a visible "Bundle N of M" caption. The Google and calendar labels follow the badges ("Add to Google Wallet", "Add to Calendar"). ARTWORK.md lists the two vendor badges, and the artwork name rule allows Apple and Google only in them
 
+- [x] 30. Wallet badges side by side with the calendar below (owner request of 21 October, design "Post-SP3 change: board page and local e2e workers")
+  - [x] 30.1 The Apple and Google badges share one row, top-aligned, and the calendar button takes the row below; the badges scale down a little on narrow screens (2.5rem to 3.25rem high) so both fit side by side on a phone; board, accessibility and layout e2e tests; commit scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

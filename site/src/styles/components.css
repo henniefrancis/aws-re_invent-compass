@@ -451,10 +451,27 @@ a.site-nav__link:hover {
 
 /* The official Apple and Google badges and the owner's calendar button (task 29). The badges
    are shown as supplied, never redrawn or recoloured, at one height. */
+/* The wallet badges sit side by side and the calendar button gets its own row below (task 30). */
+.board-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-3) var(--space-4);
+}
+
 .board-actions li {
   display: grid;
   justify-items: center;
   gap: var(--space-1);
+}
+
+.board-actions li + li {
+  margin-block-start: 0;
+}
+
+.board-action--calendar {
+  flex-basis: 100%;
 }
 
 .wallet-badge {
@@ -469,7 +486,7 @@ a.site-nav__link:hover {
 .wallet-badge__image {
   display: block;
   inline-size: auto;
-  block-size: 3.25rem;
+  block-size: clamp(2.5rem, 9vw, 3.25rem);
 }
 
 .wallet-badge__caption {
