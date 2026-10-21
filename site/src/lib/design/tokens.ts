@@ -1,6 +1,7 @@
 // Design tokens for the showcase site (showcase-site, Component 16).
 //
-// The palette is original: deep teal, warm paper and plum. It uses no AWS brand colour (the
+// The palette follows the Compass pass and QR page (task 25): a dark card over the owner's
+// Pass Designer gradient, white text and the pass's orange. It uses no AWS brand colour (the
 // denylist lives in the site tests). styles/tokens.css declares these exact values as CSS
 // custom properties, and a test keeps the two in step.
 //
@@ -10,27 +11,37 @@
 import type { ContrastPair, Gradient, Hex } from './contrast';
 
 export const TOKENS: Readonly<Record<string, Hex>> = {
-  paper: '#f7f4ec',
-  surface: '#ffffff',
-  tint: '#e6efec',
-  ink: '#1c2526',
-  inkMuted: '#445152',
-  brand: '#0f5257',
-  brandStrong: '#0a3b3f',
-  onBrand: '#ffffff',
-  accent: '#6b2d5c',
-  border: '#5f6e6f',
-  focus: '#8a1c7c',
-  ok: '#1b6b3a',
-  warn: '#7a4f00',
-  block: '#a31d2a',
+  paper: '#0c0d26',
+  surface: '#15173a',
+  tint: '#22265c',
+  ink: '#ffffff',
+  inkMuted: '#c8cae8',
+  brand: '#f09740',
+  brandStrong: '#ffb36b',
+  onBrand: '#0c0d26',
+  onHero: '#ffffff',
+  accent: '#c79bff',
+  border: '#8f93c9',
+  focus: '#ffd84d',
+  ok: '#6fdc9a',
+  warn: '#ffcc55',
+  block: '#ff8a94',
 };
 
 export const GRADIENTS: Readonly<Record<string, Gradient>> = {
   hero: {
     stops: [
-      { colour: '#0f5257', at: 0 },
-      { colour: '#0a3b3f', at: 1 },
+      { colour: '#05052e', at: 0 },
+      { colour: '#2236f0', at: 1 },
+    ],
+  },
+  /** The page backdrop: the pass gradient. Decorative only; no text sits on it directly. */
+  page: {
+    stops: [
+      { colour: '#05052e', at: 0 },
+      { colour: '#2236f0', at: 0.4 },
+      { colour: '#e61ee8', at: 0.8 },
+      { colour: '#ff6a20', at: 1 },
     ],
   },
 };
@@ -102,8 +113,8 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     kind: 'text',
   },
   {
-    name: 'onBrand text on the hero gradient',
-    foreground: token('onBrand'),
+    name: 'onHero text on the hero gradient',
+    foreground: token('onHero'),
     background: hero,
     kind: 'text',
   },

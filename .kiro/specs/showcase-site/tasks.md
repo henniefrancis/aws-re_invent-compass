@@ -397,6 +397,13 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 24.2 The three acts are Plan, Boarding and Fly: the home heading, the act title, `CONCEPT.md` "Act 2: Boarding" (the act cites it) and `site/README.md`; the act line and `site/ARTWORK.md` say "Boarding Pass" (the metaphor row keeps the airline term "Boarding pass" it quotes from product steering). The demo and board pages are out of scope (another stream is changing them)
   - [x] 24.3 Tests follow the new wording; site unit tests and the site build pass; commit after the full gate passes, scoped `showcase-site`
 
+- [x] 25. Give the site the QR page's look (owner request of 21 October, design "Post-SP3 change: the QR page look", Requirement 4.7 added, 11.2 colours follow the Pass Designer pass)
+  - [x] 25.1 New token values (dark card, white ink, orange brand, a new `onHero` token) and a `page` gradient (the pass gradient) behind the page; `color-scheme: dark`; `.site-main` is the card; the hero is navy to blue
+  - [x] 25.2 The sample pass is black with orange labels, as the owner's pass; the home timeline image uses the new palette
+  - [x] 25.4 The owner asked for a modern, slick front page that works on every browser and device: the hero shows the Boarding Pass beside the promise (on narrow screens below it), built by `SamplePassComponent` from `HERO_PASS` (`src/lib/content/hero-pass.ts`), which a test proves equal to the demo's own pass for BWP213; the sample pass card is a dark navy-to-blue gradient; a larger type scale with tight display tracking; pill buttons; lighter one-pixel card borders; a rounded table whose terms never break mid-word on a phone; and system colours for the new orange and muted text in forced colour mode
+  - [x] 25.5 The e2e tests that still expected the pre-task-22 pass wording ("Boarding pass for", "Gate: MGM Grand", "Seat released at 12:50 PM") and a pass with no image now expect the final wording and the owner's logo; the Install page keeps the space after each option label
+  - [x] 25.3 Contrast, token and denylist tests pass with the new palette; site unit tests, the site build and a visual check of every page; commit after the full gate passes, scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

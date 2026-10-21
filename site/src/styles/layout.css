@@ -6,8 +6,8 @@
 }
 
 .site-header {
-  background: var(--color-surface);
-  border-block-end: 2px solid var(--color-border);
+  background: var(--color-paper);
+  border-block-end: 1px solid var(--color-tint);
 }
 
 .site-header__bar {
@@ -30,13 +30,28 @@
 
 .site-main {
   display: block;
+  inline-size: calc(100% - 2 * var(--space-3));
+  margin-block: var(--space-4) var(--space-6);
   padding-block: var(--space-4) var(--space-7);
+  border-radius: 1.25rem;
+  background: var(--color-paper);
+}
+
+@media (min-width: 48rem) {
+  .site-main {
+    margin-block: var(--space-6) var(--space-7);
+    padding: var(--space-6) var(--space-6) var(--space-7);
+  }
+}
+
+.site-main > section + section {
+  margin-block-start: var(--space-7);
 }
 
 .site-footer {
   padding-block: var(--space-5);
-  border-block-start: 2px solid var(--color-border);
-  background: var(--color-surface);
+  border-block-start: 1px solid var(--color-tint);
+  background: var(--color-paper);
 }
 
 .stack > * + * {

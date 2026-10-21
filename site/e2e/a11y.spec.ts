@@ -74,7 +74,7 @@ test.describe('axe on the demo states', () => {
     await expectNoAxeViolations(page);
 
     await page.getByRole('button', { name: /Show sample pass for BWP213/ }).click();
-    await expect(page.getByRole('img', { name: /Boarding pass for BWP213/ })).toBeVisible();
+    await expect(page.getByRole('img', { name: /Boarding pass. Session BWP213./ })).toBeVisible();
     await expectNoAxeViolations(page);
   });
 

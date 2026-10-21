@@ -1,16 +1,17 @@
-<section class="hero stack" aria-labelledby="home-title">
-  <h1 id="home-title" tabindex="-1">{{ productName }}</h1>
-  <p class="hero__tagline">{{ tagline }}</p>
-  <p>{{ intro }}</p>
-</section>
-
-<section class="stack" aria-labelledby="home-actions">
-  <h2 id="home-actions">Try it, then install it</h2>
-  <p class="measure">{{ tryIt }}</p>
-  <div class="cluster">
-    <a class="button" routerLink="/demo">Try the demo</a>
-    <a class="button button--secondary" routerLink="/install">Install Compass</a>
+<section class="hero" aria-labelledby="home-title">
+  <div class="hero__copy">
+    <h1 id="home-title" class="hero__title" tabindex="-1">{{ productName }}</h1>
+    <p class="hero__tagline">{{ tagline }}</p>
+    <p class="hero__intro">{{ intro }}</p>
+    <div class="cluster hero__actions">
+      <a class="button" routerLink="/demo">Try the demo</a>
+      <a class="button button--secondary" routerLink="/install">Install Compass</a>
+    </div>
+    <p class="hero__note">{{ tryIt }}</p>
   </div>
+  <figure class="hero__pass">
+    <app-sample-pass [pass]="heroPass" />
+  </figure>
 </section>
 
 <section class="stack" aria-labelledby="home-seat">

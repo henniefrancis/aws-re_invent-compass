@@ -10,15 +10,16 @@ import type { SamplePass } from './sample-pass';
 
 export const PASS_WIDTH = 360;
 /**
- * The card colours of the final Apple pass: background #232F3F and white values. The real pass
- * uses the label colour #A166FF by owner decision; the site promises WCAG 2.2 AA and #A166FF is
- * only about 3.8:1 on this background, so the sample uses #BE9BFF (about 6.0:1). The same values
- * are written in the .pass rules of components.css.
+ * The card colours of the owner's Pass Designer pass (task 25): a dark gradient card from the
+ * navy and blue end of the owner's gradient (#05052E to #1D2390), white values and orange labels
+ * (#F09740, at least about 5.4:1 on the lighter end, above WCAG 2.2 AA). The same values are
+ * written in the sample pass template and the .pass rules of components.css.
  */
 export const PASS_COLOURS = {
-  background: '#232F3F',
+  background: '#05052E',
+  backgroundEnd: '#1D2390',
   value: '#FFFFFF',
-  label: '#BE9BFF',
+  label: '#F09740',
 } as const;
 const LEFT = 16;
 const RIGHT = PASS_WIDTH - 16;

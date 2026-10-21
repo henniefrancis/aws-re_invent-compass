@@ -228,10 +228,12 @@ describe('shortRoom and the label colour', () => {
   });
 
   test('the label colour reaches 4.5:1 on the card and the value is white', () => {
-    expect(contrastRatio(PASS_COLOURS.label, PASS_COLOURS.background)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(PASS_COLOURS.value, PASS_COLOURS.background)).toBeGreaterThanOrEqual(4.5);
+    for (const card of [PASS_COLOURS.background, PASS_COLOURS.backgroundEnd]) {
+      expect(contrastRatio(PASS_COLOURS.label, card)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(PASS_COLOURS.value, card)).toBeGreaterThanOrEqual(4.5);
+    }
     expect(PASS_COLOURS.value).toBe('#FFFFFF');
-    expect(PASS_COLOURS.background).toBe('#232F3F');
+    expect(PASS_COLOURS.background).toBe('#05052E');
   });
 });
 

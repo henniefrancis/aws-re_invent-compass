@@ -67,12 +67,12 @@ test.describe('the demo', () => {
   }) => {
     await loadSample(page);
     await page.getByRole('button', { name: /Show sample pass for BWP213/ }).click();
-    const pass = page.getByRole('img', { name: /Boarding pass for BWP213/ });
+    const pass = page.getByRole('img', { name: /Boarding pass. Session BWP213./ });
     await expect(pass).toBeVisible();
     const name = (await pass.getAttribute('aria-label')) ?? '';
     for (const part of [
-      'Gate: MGM Grand',
-      'Seat released at 12:50 PM',
+      'Terminal: MGM Grand',
+      'Boarding closes: 12:50',
       'Sample pass. Made-up session.',
       'Unofficial. Your badge is your ticket.',
     ]) {
@@ -81,7 +81,10 @@ test.describe('the demo', () => {
     await expect(
       pass.locator('text', { hasText: 'Unofficial. Your badge is your ticket.' }),
     ).toBeVisible();
-    await expect(page.locator('svg.pass image, svg.pass foreignObject')).toHaveCount(0);
+    // The only image on the pass is the owner's logo (task 21); nothing is embedded as HTML.
+    await expect(page.locator('svg.pass foreignObject')).toHaveCount(0);
+    await expect(page.locator('svg.pass image')).toHaveCount(1);
+    await expect(page.locator('svg.pass image')).toHaveAttribute('href', 'artwork/logo.svg');
   });
 
   test('downloads a calendar that ical.js can read, with one event per commitment', async ({

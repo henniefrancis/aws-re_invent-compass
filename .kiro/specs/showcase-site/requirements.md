@@ -102,6 +102,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 4. WHEN the user navigates to a page within the Site, THE Shell SHALL set the document title to `<page name> | re:Invent Compass` and SHALL move keyboard focus to the page's single `<h1>` heading.
 5. THE Shell SHALL NOT use fixed or sticky positioned elements, or menus that open over content.
 6. THE Site SHALL set `lang="en"` on the `<html>` element and SHALL include `<meta name="referrer" content="no-referrer">` in the document head.
+7. THE Site SHALL use the look of the Compass QR page and pass: the owner's Pass Designer gradient behind the page, the main content on a dark card, white text and the pass's orange for links and buttons, with every text and graphic pairing meeting WCAG 2.2 AA and no AWS brand colour (owner request of 21 October 2026, task 25).
 
 ### Requirement 5: Home page story
 
