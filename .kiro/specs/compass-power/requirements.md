@@ -497,3 +497,5 @@ P3.5. **Lifetime.** THE page SHALL be deleted when its link expires, when a newe
 P3.6. **The Power asks.** THE Power SHALL tell the agent to ask "Link or QR code?" before calling `send_to_phone`, unless the attendee already said which.
 
 P3.7. **Branded page.** THE QR page SHALL carry the title "re:Invent Compass Boarding Pass", the owner's icon (`site/public/artwork/favicon.svg`) as its favicon and the owner's full logo (`site/public/artwork/logo.svg`) above "Scan with your phone camera", in the pass colours. Both images SHALL be inline `data:image/svg+xml` URLs inside the existing Content-Security-Policy, so the page still loads nothing from outside itself and runs no script (owner request of 21 October 2026, task 49).
+
+P3.8. **Expired link on the page.** WHEN the link expires while the QR page is open, THE page SHALL hide the QR code and the scan text and SHALL show a red banner saying the link has expired and to ask Compass for a new one, without any script (the page keeps its Content Security Policy).

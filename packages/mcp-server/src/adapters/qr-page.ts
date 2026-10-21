@@ -73,6 +73,14 @@ const SHARING_NOTE =
   'Do not share this QR code. Anyone who has it can see these passes until it expires.';
 const DISCLAIMER = 'Unofficial. Your badge is your ticket.';
 
+/** The banner shown in place of the QR code once the link has expired (P3.8). */
+export const EXPIRED_BANNER = 'This link has expired. Ask Compass for a new link or QR code.';
+
+/** Whole seconds until the expiry, rounded up and never negative: the delay of the banner. */
+export function expirySeconds(expiresInMs: number): number {
+  return Math.max(0, Math.ceil(expiresInMs / 1000));
+}
+
 /** The text of the page's expiry line: the expiry as HH:MM in UTC. */
 export function expiryLine(expiresAt: string): string {
   return `This code works until ${new Date(expiresAt).toISOString().slice(11, 16)} UTC.`;
@@ -103,7 +111,8 @@ export function svgDataUrl(base64: string): string {
  * The page: static HTML with the SVG QR code inline, branded with the owner's icon and logo
  * (task 49) in the colours of the Apple pass.
  */
-export function qrPageHtml(page: { svg: string; expiresAt: string }): string {
+export function qrPageHtml(page: { svg: string; expiresAt: string; expiresInMs: number }): string {
+  const delay = `${String(expirySeconds(page.expiresInMs))}s`;
   return [
     '<!doctype html>',
     '<html lang="en">',
@@ -122,15 +131,24 @@ export function qrPageHtml(page: { svg: string; expiresAt: string }): string {
     '.qr{background:#fff;display:inline-block;padding:8px;border-radius:8px}',
     '.qr svg{width:min(360px,80vw);height:auto;display:block}',
     'p{margin:12px 0}',
+    // At the expiry the scan block hides and the red banner shows, by CSS alone (task 50).
+    '.expired{visibility:hidden;max-height:0;overflow:hidden;margin:0;padding:0 16px;background:#c4161c;color:#fff;font-weight:700;border-radius:8px}',
+    `.expired{animation:compass-expired 0s ${delay} forwards}`,
+    `.live{animation:compass-live-ended 0s ${delay} forwards}`,
+    '@keyframes compass-expired{to{visibility:visible;max-height:20em;margin:8px 0 16px;padding:12px 16px}}',
+    '@keyframes compass-live-ended{to{visibility:hidden;max-height:0;overflow:hidden}}',
     '</style>',
     '</head>',
     '<body>',
     '<main>',
     `<img class="logo" src="${svgDataUrl(QR_BRAND_LOGO)}" alt="re:Invent Compass">`,
+    `<p class="expired" role="alert">${EXPIRED_BANNER}</p>`,
+    '<div class="live">',
     '<h1>Scan with your phone camera</h1>',
     `<div class="qr">${page.svg}</div>`,
     `<p>${expiryLine(page.expiresAt)}</p>`,
     `<p>${SHARING_NOTE}</p>`,
+    '</div>',
     `<p>${DISCLAIMER}</p>`,
     '</main>',
     '</body>',
@@ -234,7 +252,10 @@ export function createQrPage(deps: QrPageDeps): QrPagePort {
     current = { folder, cancel };
     const path = join(folder, QR_PAGE_FILE);
     try {
-      await deps.fs.writeFile(path, qrPageHtml(page), { mode: 0o600, flag: 'wx' });
+      await deps.fs.writeFile(path, qrPageHtml({ ...page, expiresInMs: lifetime }), {
+        mode: 0o600,
+        flag: 'wx',
+      });
     } catch {
       await removeNow();
       return false;

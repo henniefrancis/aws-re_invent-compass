@@ -12,6 +12,8 @@ import {
   QR_PAGE_PREFIX,
   QR_PAGE_TITLE,
   qrPageHtml,
+  EXPIRED_BANNER,
+  expirySeconds,
   STALE_PAGE_MS,
   svgDataUrl,
 } from '../../src/adapters/qr-page.js';
@@ -127,7 +129,7 @@ function harness(
 
 describe('the QR page HTML', () => {
   test('is static: the CSP, no script, no link, the SVG, the expiry and the notices', () => {
-    const html = qrPageHtml({ svg: SVG, expiresAt: EXPIRES });
+    const html = qrPageHtml({ svg: SVG, expiresAt: EXPIRES, expiresInMs: 15 * 60 * 1000 });
     expect(html).toContain(`<meta http-equiv="Content-Security-Policy" content="${QR_PAGE_CSP}">`);
     expect(QR_PAGE_CSP).toBe(
       "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'",
@@ -151,7 +153,7 @@ describe('the QR page HTML', () => {
   });
 
   test('is branded: the title, the favicon and the full logo above the heading (task 49)', () => {
-    const html = qrPageHtml({ svg: SVG, expiresAt: EXPIRES });
+    const html = qrPageHtml({ svg: SVG, expiresAt: EXPIRES, expiresInMs: 15 * 60 * 1000 });
     expect(QR_PAGE_TITLE).toBe('re:Invent Compass Boarding Pass');
     expect(html).toContain('<title>re:Invent Compass Boarding Pass</title>');
     expect(html.indexOf('<img class="logo"')).toBeGreaterThan(html.indexOf('<main>'));
@@ -170,6 +172,38 @@ describe('the QR page HTML', () => {
       const svg = Buffer.from(encoded, 'base64').toString('utf8');
       expect(svg).not.toMatch(/<script|<foreignObject|\son[a-z]+=|href="(?!#)/i);
     }
+  });
+
+  // Feature: compass-power, P3.8 (task 50): at the expiry the QR code hides and a red banner shows.
+  test('the expired banner starts hidden and both switch at the expiry, by CSS alone', () => {
+    const html = qrPageHtml({ svg: SVG, expiresAt: EXPIRES, expiresInMs: 899_001 });
+    expect(html).toContain(`<p class="expired" role="alert">${EXPIRED_BANNER}</p>`);
+    expect(EXPIRED_BANNER).toBe('This link has expired. Ask Compass for a new link or QR code.');
+    expect(html).toContain('.expired{visibility:hidden;max-height:0;');
+    expect(html).toContain('.expired{animation:compass-expired 0s 900s forwards}');
+    expect(html).toContain('.live{animation:compass-live-ended 0s 900s forwards}');
+    expect(html).toContain('@keyframes compass-expired{to{visibility:visible;');
+    expect(html).toContain('@keyframes compass-live-ended{to{visibility:hidden;');
+    // The heading, the QR code, the expiry line and the sharing note are all in the block that hides.
+    const start = html.indexOf('<div class="live">');
+    const live = html.slice(start, html.indexOf('</div>\n', html.indexOf('Do not share', start)));
+    expect(start).toBeGreaterThan(html.indexOf(EXPIRED_BANNER));
+    for (const part of [
+      'Scan with your phone camera',
+      SVG,
+      'This code works until',
+      'Do not share this QR code.',
+    ]) {
+      expect(live).toContain(part);
+    }
+    expect(html).not.toMatch(/<script/i);
+  });
+
+  test('the banner delay is whole seconds, rounded up, never negative', () => {
+    expect(expirySeconds(900_000)).toBe(900);
+    expect(expirySeconds(1)).toBe(1);
+    expect(expirySeconds(0)).toBe(0);
+    expect(expirySeconds(-5000)).toBe(0);
   });
 
   test('the expiry line is HH:MM in UTC', () => {
@@ -214,7 +248,9 @@ describe('createQrPage', () => {
     expect(folder?.startsWith(join(tmpdir(), 'qr-root', QR_PAGE_PREFIX))).toBe(true);
     const path = join(folder ?? '', QR_PAGE_FILE);
     expect(h.memory.files.get(path)).toMatchObject({ mode: 0o600, flag: 'wx' });
-    expect(h.memory.files.get(path)?.data).toBe(qrPageHtml({ svg: SVG, expiresAt: EXPIRES }));
+    expect(h.memory.files.get(path)?.data).toBe(
+      qrPageHtml({ svg: SVG, expiresAt: EXPIRES, expiresInMs: 15 * 60 * 1000 }),
+    );
     expect(h.opened).toEqual([path]);
     expect(h.timers).toHaveLength(1);
     expect(h.timers[0]?.ms).toBe(15 * 60 * 1000);

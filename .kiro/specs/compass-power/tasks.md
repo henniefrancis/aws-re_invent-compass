@@ -606,6 +606,12 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
   - _Requirements: P3.3, P3.7_
 
+- [x] 50. Hide the QR code and show a red expired banner when the link expires (owner request of 21 October, design "Expired link banner")
+  - `qrPageHtml` takes the milliseconds left; the `.live` block and the `.expired` banner switch with a CSS animation delayed to the expiry; no script, the CSP is unchanged
+  - Tests: the banner is in the page and hidden at first, the delay is the seconds left rounded up (never negative), the scan text and QR code sit in the block that hides, and the page still has no script; a check of the page in a browser
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
+  - _Requirements: P3.8_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.
