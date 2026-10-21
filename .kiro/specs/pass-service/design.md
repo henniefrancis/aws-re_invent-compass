@@ -1365,3 +1365,17 @@ Apple's poster generic pass (iOS and watchOS 27) has no event or NFC requirement
 | `eventTicket` (fallback)  | SESSION | FLIGHT NAME                            | TERMINAL, GATE | DATE, BOARDING CLOSES         |
 
 The arrow is a primary field with an empty label and the value U+2192, where the boarding pass drew its transit arrow. How Wallet arranges four poster primary fields is not documented, so the owner checks the order on the device; the fields are listed in the owner's reading order. The picture is the owner's choice: replace `site/public/artwork/pass-background.jpg` and rerun `node packages/pass-service/scripts/make-artwork.mjs`. The legacy fallback shows no picture: Wallet always blurs an event ticket background, and a background would push a 10-pass bundle past the artwork budget. `preferredStyleSchemes` is dropped (the poster event ticket needs NFC); the semantic tags stay for Siri and the system.
+
+## Post-SP3 change: Pass Designer event ticket (21 October 2026, task 44)
+
+The task 43 poster generic pass showed on iOS 27, but Wallet placed its primary fields at the bottom in its own fonts and caps a poster's primary logo at 30 points. The owner then designed the pass in Apple's Pass Designer, which previews passes as Wallet renders them, and shared the signed result as `docs/previews/compass.pkpass` (the owner's file, not committed by the agents). Only its `pass.json` layout and texts were read; its signature and identifiers are not used, and the server keeps signing with the Secrets Manager key.
+
+| Section   | Fields (key, label, alignment)                                                                            |
+| --------- | --------------------------------------------------------------------------------------------------------- |
+| Header    | `session` SESSION, natural                                                                                |
+| Primary   | `title` FLIGHT NAME, natural                                                                              |
+| Secondary | `terminal` TERMINAL, left; `arrow` (no label, U+2192), centre; `gate` GATE, right                         |
+| Auxiliary | `date` DATE, left; `boardingCloses` BOARDING CLOSES, natural                                              |
+| Back      | about, unofficial, seatRule, then roomFull, walk, next and name when known, then timezone, plans, privacy |
+
+Owner decisions on the import (21 October): keep the organization name "AWS Community South Africa" and the black, white and orange colours (orange labels measure about 9.2:1 on black, above WCAG AA; their closeness to the AWS colours is an accepted deviation, recorded with TM1); keep ABOUT and drop the design's DISCLAIMER NOTICE, which repeated it in older wording; add the per-pass ROOM, WALK FROM PREVIOUS and NEXT SESSION back fields. The design's images are replaced by renders of the same owner artwork at Apple's sizes: its logos were 8423 by 3645 pixels (656 KB each) and its footer images apply to airline boarding passes only. The background ships at 2x only, as in the design, so the set stays at 395 KB. Wallet may blur an event ticket background; the picture is a smooth gradient, so it reads the same either way. The Google object follows the black background. The showcase site sample pass (SD1) still shows the earlier design and is a follow-up.

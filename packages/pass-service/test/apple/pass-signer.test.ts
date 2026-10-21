@@ -52,9 +52,7 @@ function checkPass(pkpass: Uint8Array): Record<string, unknown> {
     'icon.png',
     'icon@2x.png',
     'icon@3x.png',
-    'primaryLogo@2x.png',
-    'primaryLogo@3x.png',
-    'artwork@2x.png',
+    'background@2x.png',
   ]) {
     expect(files.has(name), name).toBe(true);
   }
@@ -107,25 +105,25 @@ describe('Feature: pass-service, pass signer', () => {
       { startDate: '2026-12-02T17:20:00.000Z', endDate: '2026-12-02T19:00:00.000Z' },
     ]);
     expect(json.voided).toBeUndefined();
-    // Task 43: both styles and the semantics survive passkit-generator.
+    // Task 44: the owner's Pass Designer event ticket survives passkit-generator, the arrow
+    // without a label included.
     expect(json.boardingPass).toBeUndefined();
+    expect(json.posterGeneric).toBeUndefined();
     expect(json.preferredStyleSchemes).toBeUndefined();
-    const poster = json.posterGeneric as Record<string, { key: string }[]>;
-    expect(poster.headerFields?.map((f) => f.key)).toEqual(['session']);
-    expect(poster.primaryFields?.map((f) => f.key)).toEqual(['title', 'terminal', 'arrow', 'gate']);
-    expect(poster.footerFields?.map((f) => f.key)).toEqual(['date', 'boardingCloses']);
+    expect(json.organizationName).toBe('AWS Community South Africa');
     expect(json.semantics).toMatchObject({
       eventType: 'PKEventTypeGeneric',
       venueRegionName: 'Las Vegas',
       eventStartDate: '2026-12-02T18:00:00.000Z',
     });
-    const ticket = json.eventTicket as Record<string, { key: string }[]>;
-    expect(ticket.additionalInfoFields?.map((f) => f.key)).toEqual([
-      'boardingClosesInfo',
-      'disclaimerInfo',
-    ]);
+    const ticket = json.eventTicket as Record<string, { key: string; label?: string }[]>;
+    expect(ticket.headerFields?.map((f) => f.key)).toEqual(['session']);
     expect(ticket.primaryFields?.map((f) => f.key)).toEqual(['title']);
-    expect(ticket.secondaryFields?.map((f) => f.key)).toEqual(['terminal', 'gate']);
+    expect(ticket.secondaryFields?.map((f) => f.key)).toEqual(['terminal', 'arrow', 'gate']);
+    expect(ticket.secondaryFields?.[1]?.label).toBeUndefined();
+    expect(ticket.auxiliaryFields?.map((f) => f.key)).toEqual(['date', 'boardingCloses']);
+    // passkit-generator always writes the list for an event ticket; ours is empty.
+    expect(ticket.additionalInfoFields ?? []).toEqual([]);
   });
 
   test('a voided pass keeps voided true and a past expiration date', async () => {

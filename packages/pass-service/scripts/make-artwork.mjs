@@ -3,13 +3,13 @@
 //   node packages/pass-service/scripts/make-artwork.mjs
 //
 // The logo (site/public/artwork/logo.svg) is fitted to the slot height and left-aligned on a
-// transparent canvas, for the legacy logo and the poster's primary logo; the icon
-// (site/public/artwork/favicon.svg) is fitted and centred on a transparent square; the owner's
-// picture (site/public/artwork/pass-background.jpg) covers the poster artwork, cropped and
-// centred (task 42). Chromium from Playwright (a dev dependency) rasterises them, so no image
-// library is added. Sizes follow Apple's Wallet Human Interface Guidelines: icon 38 points and
-// logo up to 160 by 50 points at 1x, 2x and 3x; primary logo up to 126 by 30 points at 2x and
-// 3x; artwork 358 by 448 points at 2x only (src/artwork/render.ts says why).
+// transparent canvas; the icon (site/public/artwork/favicon.svg) is fitted and centred on a
+// transparent square; the owner's picture (site/public/artwork/pass-background.jpg) covers the
+// event ticket background, cropped and centred (task 44, the owner's Pass Designer design).
+// Chromium from Playwright (a dev dependency) rasterises them, so no image library is added.
+// Sizes follow Apple's Wallet Human Interface Guidelines: icon 38 points and logo up to 160 by
+// 50 points at 1x, 2x and 3x; background 343 by 503 points (src/artwork/render.ts says which
+// scales ship).
 import { readFileSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { ARTWORK_FILES, artworkModuleSource } from '../src/artwork/render.ts';
@@ -26,9 +26,7 @@ const JOBS = {
   'logo.png': { source: 'logo.svg', width: 160, height: 50, align: 'left' },
   'logo@2x.png': { source: 'logo.svg', width: 320, height: 100, align: 'left' },
   'logo@3x.png': { source: 'logo.svg', width: 480, height: 150, align: 'left' },
-  'primaryLogo@2x.png': { source: 'logo.svg', width: 252, height: 60, align: 'left' },
-  'primaryLogo@3x.png': { source: 'logo.svg', width: 378, height: 90, align: 'left' },
-  'artwork@2x.png': { source: 'pass-background.jpg', width: 716, height: 896, align: 'cover' },
+  'background@2x.png': { source: 'pass-background.jpg', width: 686, height: 1006, align: 'cover' },
 };
 
 const browser = await chromium.launch();

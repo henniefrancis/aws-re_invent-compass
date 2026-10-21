@@ -14,13 +14,11 @@ const SIZES: Record<string, [number, number]> = {
   'logo.png': [160, 50],
   'logo@2x.png': [320, 100],
   'logo@3x.png': [480, 150],
-  'primaryLogo@2x.png': [252, 60],
-  'primaryLogo@3x.png': [378, 90],
-  'artwork@2x.png': [716, 896],
+  'background@2x.png': [686, 1006],
 };
 
-/** The images drawn on a transparent canvas: every one but the poster's full-bleed artwork. */
-const TRANSPARENT = ARTWORK_FILES.filter((name) => name !== 'artwork@2x.png');
+/** The images drawn on a transparent canvas: every one but the full-bleed background. */
+const TRANSPARENT = ARTWORK_FILES.filter((name) => name !== 'background@2x.png');
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -77,8 +75,8 @@ const image = (name: string) => decode(Buffer.from(ARTWORK[name] ?? '', 'base64'
 const alphaAt = (img: { width: number; rgba: Buffer }, x: number, y: number) =>
   img.rgba[(y * img.width + x) * 4 + 3] ?? 0;
 
-describe("Feature: pass-service, the owner's artwork (tasks 38 and 42)", () => {
-  test('the nine images are RGBA PNGs of the documented sizes', () => {
+describe("Feature: pass-service, the owner's artwork (tasks 38, 42 and 44)", () => {
+  test('the seven images are RGBA PNGs of the documented sizes', () => {
     expect(Object.keys(ARTWORK).sort()).toEqual([...ARTWORK_FILES].sort());
     for (const name of ARTWORK_FILES) {
       const decoded = image(name);
@@ -96,8 +94,8 @@ describe("Feature: pass-service, the owner's artwork (tasks 38 and 42)", () => {
     }
   });
 
-  test('the logo and the primary logo are left-aligned and leave the right of their slot empty', () => {
-    for (const name of ['logo@3x.png', 'primaryLogo@3x.png']) {
+  test('the logo is left-aligned and leaves the right of its slot empty', () => {
+    for (const name of ['logo@3x.png']) {
       const logo = image(name);
       const column = (x: number) =>
         Array.from({ length: logo.height }, (_, y) => alphaAt(logo, x, y)).some((a) => a > 0);
@@ -106,8 +104,8 @@ describe("Feature: pass-service, the owner's artwork (tasks 38 and 42)", () => {
     }
   });
 
-  test("the poster artwork is the owner's picture, opaque edge to edge (task 42)", () => {
-    const art = image('artwork@2x.png');
+  test("the background is the owner's picture, opaque edge to edge (task 44)", () => {
+    const art = image('background@2x.png');
     for (const [x, y] of [
       [0, 0],
       [art.width - 1, 0],

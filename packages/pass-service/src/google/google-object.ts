@@ -15,8 +15,8 @@ import {
   shortRoom,
 } from '../apple/pass-template.js';
 
-/** The Apple pass background (PASS_COLOURS, rgb(35, 47, 63)) as Google hex (task 40). */
-export const GOOGLE_BACKGROUND = '#232F3F';
+/** The Apple pass background (PASS_COLOURS, rgb(0, 0, 0)) as Google hex (tasks 40 and 44). */
+export const GOOGLE_BACKGROUND = '#000000';
 
 export type GoogleObjectState = 'ACTIVE' | 'INACTIVE';
 
