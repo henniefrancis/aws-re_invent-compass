@@ -176,17 +176,14 @@ describe('artwork', () => {
     }
   });
 
-  test('public holds only svg, txt and ico files, and the one listed jpg picture', () => {
+  test('public holds only svg, txt and ico files', () => {
     for (const file of publicFiles) {
-      expect(file.path, file.path).toMatch(
-        /\.(svg|txt|ico)$|^public\/artwork\/pass-background\.jpg$/,
-      );
+      expect(file.path, file.path).toMatch(/\.(svg|txt|ico)$/);
     }
   });
 
   test('no text artwork names an AWS mark', () => {
-    // The JPEG is binary, so only the text formats are read for names.
-    for (const file of publicFiles.filter((f) => !f.path.endsWith('.jpg'))) {
+    for (const file of publicFiles) {
       expect(file.text.toLowerCase(), file.path).not.toMatch(/aws|amazon|apple|google/);
     }
   });

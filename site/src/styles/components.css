@@ -423,21 +423,14 @@ a.site-nav__link:hover {
   background: var(--color-surface);
 }
 
+/* The hand-off panel (task 29): centred in the page card, with its state heading centred. */
 .board-panel {
   max-inline-size: var(--measure);
+  margin-inline: auto;
 }
 
-/* The owner's artwork above the hand-off panel (showcase-site task 20). Decorative; the
-   text stays on the panel, so no contrast depends on it. The crop keeps the glow line. */
-.board-art {
-  display: block;
-  inline-size: 100%;
-  max-inline-size: var(--measure);
-  block-size: 10rem;
-  margin-block-end: var(--space-4);
-  border-radius: var(--radius);
-  object-fit: cover;
-  object-position: center 55%;
+.board-panel > h1 {
+  text-align: center;
 }
 
 .board-note {

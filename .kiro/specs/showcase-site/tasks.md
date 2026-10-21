@@ -421,6 +421,11 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 28.3 The pages at `/inspiration`, `/documentation`, `/disclaimer` and `/copyright`, prerendered and in the build output check
   - [x] 28.4 Tests (groups, provenance, addresses, the build check) and the e2e page list; site unit tests, the build, screenshots and the e2e suite on all seven profiles; commit after the full gate passes, scoped `showcase-site`
 
+- [x] 29. A plainer Board_Page and steadier local e2e runs (owner request of 21 October, design "Post-SP3 change: board page and local e2e workers")
+  - [x] 29.1 The banner picture above the Board_Page heading is removed, with its test and `public/artwork/pass-background.jpg` (nothing else used it); the hand-off panel is centred in the page card and its state heading is centred
+  - [x] 29.2 Local e2e runs use two workers: with more, axe in Firefox could pass the 30 s timeout while seven profiles shared the CPU. CI keeps its default. The one root unit test that failed once on 21 October could not be reproduced in seven runs, two of them under load; it ran while another session was editing the same checkout
+  - [ ] 29.3 Official "Add to Apple Wallet" and "Add to Google Wallet" badges on the Board_Page (waits on the owner: Apple's badges need the Wallet Marketing Artwork License Agreement accepted by the developer account; Google's need the owner's go to download)
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.
