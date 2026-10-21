@@ -1033,3 +1033,9 @@ The owner asked for a more impressive, professional menu with categories, the fo
 ## Post-SP3 change: compact footer (21 October 2026, task 27)
 
 The footer links repeated the Project group of the main navigation, so the footer now carries only the Notice under a small "Disclaimer Notice" heading, both centred, with a narrow gap between them so they read as a heading and its text. The footer is shorter (less padding, smaller text) and the Notice keeps its exact wording, which a test compares with README.md.
+
+## Post-SP3 change: About, Legal and Documentation (21 October 2026, task 28)
+
+The navigation grows to four groups. Project adds Documentation, a page of links into the repository (README, build plan, decision records, runbooks, Kiro specs) built from the repository address, so the site holds no other absolute address. About holds The Inspiration ("What inspired the project direction", a placeholder the owner completes, summarising the seat rule and the airline metaphor from the product steering) and The Creator (the renamed About page). A new Legal group holds Privacy, Disclaimer and "Copyright and licence".
+
+The Disclaimer page gathers what the site already says in pieces: the Notice, the unofficial pass, that the official re:Invent app is the source of truth, the Apache License "as is" clause and the trademark line from NOTICE. The Copyright page states the NOTICE copyright line and explains Apache-2.0 in plain English: anyone may use, change and share the code if they keep the copyright notice, the licence and NOTICE and mark their changes, while the name and logo are not licensed (Apache-2.0 section 6), so a fork must be renamed. A licence cannot stop all copying; it makes the original author's credit a condition of reuse, which is what the owner asked for ("can't be claimed as someone else's"). NOTICE and LICENSE become content sources so the provenance test checks the quotes.

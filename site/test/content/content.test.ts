@@ -1,4 +1,11 @@
 import { ABOUT_BUILT_BY, ABOUT_COMING_SOON } from '../../src/lib/content/about';
+import { INSPIRATION_BLOCKS } from '../../src/lib/content/inspiration';
+import {
+  COPYRIGHT_BLOCKS,
+  COPYRIGHT_LINE,
+  DISCLAIMER_BLOCKS,
+  licenceLinks,
+} from '../../src/lib/content/legal';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
@@ -22,6 +29,7 @@ import {
 } from '../../src/lib/content/install';
 import {
   COMING_SOON,
+  documentationLinks,
   navGroups,
   SITE_LINKS,
   privateReportingUrl,
@@ -52,6 +60,10 @@ const storyBlocks: readonly ContentBlock[] = [
   story.TRY_IT,
   ABOUT_BUILT_BY,
   ABOUT_COMING_SOON,
+  ...INSPIRATION_BLOCKS,
+  ...DISCLAIMER_BLOCKS,
+  COPYRIGHT_LINE,
+  ...COPYRIGHT_BLOCKS,
 ];
 
 const installBlocks: readonly ContentBlock[] = [
@@ -250,13 +262,13 @@ describe('links and footer', () => {
 
   test('an unknown address becomes coming soon text with no link, a known one a link', () => {
     const project = (links: typeof SITE_LINKS) => navGroups(links)[1]?.items ?? [];
-    expect(project(SITE_LINKS)[1]).toEqual({
+    expect(project(SITE_LINKS)[2]).toEqual({
       kind: 'pending',
       label: 'Builder Center post',
       text: `Builder Center post (${COMING_SOON})`,
       description: 'How Compass was built with Kiro',
     });
-    expect(project(known)[1]).toEqual({
+    expect(project(known)[2]).toEqual({
       kind: 'external',
       label: 'Builder Center post',
       href: 'https://example.invalid/post',
@@ -269,25 +281,59 @@ describe('links and footer', () => {
     });
   });
 
-  test('the navigation has Product, Project and About, each item described (task 26)', () => {
+  test('the navigation has Product, Project, About and Legal, each item described (task 28)', () => {
     const groups = navGroups(SITE_LINKS);
     expect(groups.map((g) => [g.label, g.items.map((i) => i.label)])).toEqual([
       ['Product', ['Try the demo', 'Install']],
-      ['Project', ['Repository', 'Builder Center post', 'Video']],
-      ['About', ['About the creator', 'Privacy']],
+      ['Project', ['Repository', 'Documentation', 'Builder Center post', 'Video']],
+      ['About', ['The Inspiration', 'The Creator']],
+      ['Legal', ['Privacy', 'Disclaimer', 'Copyright and licence']],
     ]);
+    expect(groups[2]?.items[0]?.description).toBe('What inspired the project direction');
     for (const item of groups.flatMap((g) => g.items)) {
       expect(item.description.length, item.label).toBeGreaterThan(0);
     }
     // Unknown addresses stay plain text; known ones become links.
     const project = (links: typeof SITE_LINKS) => navGroups(links)[1]?.items ?? [];
-    expect(project(SITE_LINKS).map((i) => i.kind)).toEqual(['external', 'pending', 'pending']);
+    expect(project(SITE_LINKS).map((i) => i.kind)).toEqual([
+      'external',
+      'internal',
+      'pending',
+      'pending',
+    ]);
     const known = {
       ...SITE_LINKS,
       builderCenterPost: 'https://example.invalid/post',
       video: 'https://example.invalid/video',
     };
-    expect(project(known).map((i) => i.kind)).toEqual(['external', 'external', 'external']);
+    expect(project(known).map((i) => i.kind)).toEqual([
+      'external',
+      'internal',
+      'external',
+      'external',
+    ]);
+  });
+
+  test('documentation and licence links all point into the repository (tasks 28)', () => {
+    const docs = documentationLinks(SITE_LINKS);
+    expect(docs.map((d) => d.label)).toEqual([
+      'README',
+      'Build plan',
+      'Architecture decision records',
+      'Runbooks',
+      'Kiro specs',
+    ]);
+    for (const link of [...docs, ...licenceLinks(SITE_LINKS)]) {
+      expect(link.href.startsWith(SITE_LINKS.repository), link.label).toBe(true);
+    }
+    for (const doc of docs) {
+      expect(doc.description.length, doc.label).toBeGreaterThan(0);
+    }
+    expect(licenceLinks(SITE_LINKS).map((l) => l.href)).toEqual([
+      `${SITE_LINKS.repository}/blob/main/LICENSE`,
+      `${SITE_LINKS.repository}/blob/main/NOTICE`,
+    ]);
+    expect(COPYRIGHT_LINE.text).toBe('Copyright 2026 Hennie Francis');
   });
 });
 

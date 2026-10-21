@@ -415,6 +415,12 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 27.1 The footer shows the heading and the Notice only; `footerItems` goes, its link item type stays as the type of the navigation items, and its tests move to the navigation test
   - [x] 27.2 e2e tests check the heading and the Notice in every footer and the repository link in the Project group; site unit tests, the build, a screenshot and the e2e suite on all seven profiles; commit after the full gate passes, scoped `showcase-site`
 
+- [x] 28. About and Legal groups, Documentation, The Inspiration, Disclaimer and Copyright pages (owner request of 21 October, design "Post-SP3 change: About, Legal and Documentation", Requirements 4.1 and 18.1 amended, 19 to 21 added)
+  - [x] 28.1 `navGroups`: Project gains Documentation; About is The Inspiration and The Creator; a Legal group holds Privacy, Disclaimer, and Copyright and licence
+  - [x] 28.2 Content blocks with their sources for the four pages (NOTICE and LICENSE become content sources); `documentationLinks(links)` builds the repository addresses
+  - [x] 28.3 The pages at `/inspiration`, `/documentation`, `/disclaimer` and `/copyright`, prerendered and in the build output check
+  - [x] 28.4 Tests (groups, provenance, addresses, the build check) and the e2e page list; site unit tests, the build, screenshots and the e2e suite on all seven profiles; commit after the full gate passes, scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

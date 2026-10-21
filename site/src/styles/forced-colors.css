@@ -19,6 +19,8 @@
   .notice,
   .source-note,
   .board-note,
+  .doc-list p,
+  .site-nav__description,
   .hero__note,
   .hero__intro {
     color: CanvasText;

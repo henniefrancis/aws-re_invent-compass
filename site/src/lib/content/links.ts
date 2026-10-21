@@ -47,12 +47,12 @@ export type NavItem = LinkItem & { readonly description: string };
 
 /** A group of the main navigation (task 26, Requirement 4.1). */
 export interface NavGroup {
-  readonly id: 'product' | 'project' | 'about';
+  readonly id: 'product' | 'project' | 'about' | 'legal';
   readonly label: string;
   readonly items: readonly NavItem[];
 }
 
-/** The main navigation: three groups, in order. Unknown addresses stay plain "coming soon" text. */
+/** The main navigation: four groups, in order. Unknown addresses stay plain "coming soon" text. */
 export function navGroups(links: SiteLinks): readonly NavGroup[] {
   return [
     {
@@ -84,6 +84,12 @@ export function navGroups(links: SiteLinks): readonly NavGroup[] {
           description: 'The source code on GitHub',
         },
         {
+          kind: 'internal',
+          label: 'Documentation',
+          path: '/documentation',
+          description: 'How Compass is built and run',
+        },
+        {
           ...externalOrPending('Builder Center post', links.builderCenterPost),
           description: 'How Compass was built with Kiro',
         },
@@ -96,17 +102,75 @@ export function navGroups(links: SiteLinks): readonly NavGroup[] {
       items: [
         {
           kind: 'internal',
-          label: 'About the creator',
+          label: 'The Inspiration',
+          path: '/inspiration',
+          description: 'What inspired the project direction',
+        },
+        {
+          kind: 'internal',
+          label: 'The Creator',
           path: '/about',
           description: 'Who built re:Invent Compass',
         },
+      ],
+    },
+    {
+      id: 'legal',
+      label: 'Legal',
+      items: [
         {
           kind: 'internal',
           label: 'Privacy',
           path: '/privacy',
           description: 'What leaves your machine, and what does not',
         },
+        {
+          kind: 'internal',
+          label: 'Disclaimer',
+          path: '/disclaimer',
+          description: 'What Compass is, and what it is not',
+        },
+        {
+          kind: 'internal',
+          label: 'Copyright and licence',
+          path: '/copyright',
+          description: 'Who owns Compass and how you may reuse it',
+        },
       ],
+    },
+  ];
+}
+
+/** The Documentation_Page links (Requirement 20), all inside the repository. */
+export function documentationLinks(
+  links: SiteLinks,
+): readonly { readonly label: string; readonly href: string; readonly description: string }[] {
+  const tree = `${links.repository}/tree/main`;
+  return [
+    {
+      label: 'README',
+      href: `${links.repository}#readme`,
+      description: 'What Compass does, how to install it and how to run it',
+    },
+    {
+      label: 'Build plan',
+      href: `${links.repository}/blob/main/docs/architecture/build-plan.md`,
+      description: 'The architecture, the streams and how they fit together',
+    },
+    {
+      label: 'Architecture decision records',
+      href: `${tree}/docs/decisions`,
+      description: 'Every design decision, with the reason for it',
+    },
+    {
+      label: 'Runbooks',
+      href: `${tree}/docs/runbooks`,
+      description: 'How to deploy, release, roll back and tear down',
+    },
+    {
+      label: 'Kiro specs',
+      href: `${tree}/.kiro/specs`,
+      description: 'The requirements, design and tasks each part was built from',
     },
   ];
 }

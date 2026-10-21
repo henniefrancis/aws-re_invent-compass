@@ -13,6 +13,8 @@ export type SourceDocument =
   | 'KIRO-SPEC-PROMPTS.md'
   | '.kiro/specs/showcase-site/requirements.md'
   | 'packages/mcp-server/README.md'
+  | 'NOTICE'
+  | 'LICENSE'
   | 'kiro.dev/docs/powers/installation';
 
 export interface ContentBlock {
@@ -35,6 +37,8 @@ export const FILE_SOURCES: readonly SourceDocument[] = [
   'KIRO-SPEC-PROMPTS.md',
   '.kiro/specs/showcase-site/requirements.md',
   'packages/mcp-server/README.md',
+  'NOTICE',
+  'LICENSE',
 ];
 
 /** A block whose text appears exactly in its source. */

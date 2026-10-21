@@ -99,7 +99,15 @@ export const PAGES = [
   { path: '/', h1: 're:Invent Compass', title: 'Home | re:Invent Compass' },
   { path: '/demo', h1: 'Demo', title: 'Demo | re:Invent Compass' },
   { path: '/install', h1: 'Install', title: 'Install | re:Invent Compass' },
-  { path: '/about', h1: 'About the creator', title: 'About the creator | re:Invent Compass' },
+  { path: '/about', h1: 'The Creator', title: 'The Creator | re:Invent Compass' },
+  { path: '/inspiration', h1: 'The Inspiration', title: 'The Inspiration | re:Invent Compass' },
+  { path: '/documentation', h1: 'Documentation', title: 'Documentation | re:Invent Compass' },
+  { path: '/disclaimer', h1: 'Disclaimer', title: 'Disclaimer | re:Invent Compass' },
+  {
+    path: '/copyright',
+    h1: 'Copyright and licence',
+    title: 'Copyright and licence | re:Invent Compass',
+  },
   {
     path: '/privacy',
     h1: 'Privacy: what leaves your machine',

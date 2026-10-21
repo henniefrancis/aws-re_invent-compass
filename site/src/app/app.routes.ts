@@ -25,8 +25,32 @@ export const routes: Routes = [
   },
   {
     path: 'about',
-    title: 'About the creator',
+    title: 'The Creator',
     loadComponent: () => import('./pages/about/about-page.component').then((m) => m.AboutPage),
+  },
+  {
+    path: 'inspiration',
+    title: 'The Inspiration',
+    loadComponent: () =>
+      import('./pages/inspiration/inspiration-page.component').then((m) => m.InspirationPage),
+  },
+  {
+    path: 'documentation',
+    title: 'Documentation',
+    loadComponent: () =>
+      import('./pages/documentation/documentation-page.component').then((m) => m.DocumentationPage),
+  },
+  {
+    path: 'disclaimer',
+    title: 'Disclaimer',
+    loadComponent: () =>
+      import('./pages/disclaimer/disclaimer-page.component').then((m) => m.DisclaimerPage),
+  },
+  {
+    path: 'copyright',
+    title: 'Copyright and licence',
+    loadComponent: () =>
+      import('./pages/copyright/copyright-page.component').then((m) => m.CopyrightPage),
   },
   {
     path: 'board',

@@ -3,7 +3,7 @@
 
 import { summary, type ContentBlock } from './content-block';
 
-export const ABOUT_TITLE = 'About the creator';
+export const ABOUT_TITLE = 'The Creator';
 
 export const ABOUT_BUILT_BY: ContentBlock = summary(
   'about-built-by',

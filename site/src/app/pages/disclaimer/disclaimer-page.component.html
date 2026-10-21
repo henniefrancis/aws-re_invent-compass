@@ -1,0 +1,5 @@
+<h1 tabindex="-1">{{ title }}</h1>
+<p class="measure lead">{{ notice }}</p>
+@for (block of blocks; track block.id) {
+  <p class="measure">{{ block.text }}</p>
+}

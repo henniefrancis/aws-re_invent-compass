@@ -7,5 +7,9 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'install', renderMode: RenderMode.Prerender },
   { path: 'privacy', renderMode: RenderMode.Prerender },
   { path: 'about', renderMode: RenderMode.Prerender },
+  { path: 'inspiration', renderMode: RenderMode.Prerender },
+  { path: 'documentation', renderMode: RenderMode.Prerender },
+  { path: 'disclaimer', renderMode: RenderMode.Prerender },
+  { path: 'copyright', renderMode: RenderMode.Prerender },
   { path: 'board', renderMode: RenderMode.Prerender },
 ];

@@ -1,3 +1,10 @@
+/* The page is a full-height column, so the footer sits at the bottom of a short page. */
+app-root {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100vh;
+}
+
 .container {
   inline-size: 100%;
   max-inline-size: var(--page-width);
@@ -30,6 +37,7 @@
 
 .site-main {
   display: block;
+  flex: 1 0 auto;
   inline-size: calc(100% - 2 * var(--space-3));
   margin-block: var(--space-4) var(--space-6);
   padding-block: var(--space-4) var(--space-7);

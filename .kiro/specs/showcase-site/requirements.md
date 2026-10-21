@@ -96,7 +96,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 
 #### Acceptance Criteria
 
-1. THE Shell SHALL render on every page a skip link to the main content as the first focusable element, a header with the product logo as the link home, a main navigation of three groups (Product: Try the demo and Install; Project: Repository, Builder Center post and Video; About: About the creator and Privacy, each item with a one-line description) and a "Try the demo" button, exactly one `<main>` landmark, and a footer (amended 21 October 2026 by owner decision, task 26).
+1. THE Shell SHALL render on every page a skip link to the main content as the first focusable element, a header with the product logo as the link home, a main navigation of four groups (Product: Try the demo and Install; Project: Repository, Documentation, Builder Center post and Video; About: The Inspiration and The Creator; Legal: Privacy, Disclaimer, and Copyright and licence; each item with a one-line description) and a "Try the demo" button, exactly one `<main>` landmark, and a footer (amended 21 October 2026 by owner decisions, tasks 26 and 28).
 2. THE Shell footer SHALL show on every page, centred and compact, the heading "Disclaimer Notice" with the Notice exactly as written under it, and no links: the repository, the Builder Center post and the video are in the Project group of the main navigation (amended 21 October 2026 by owner decision, task 27).
 3. WHERE the Builder Center post URL or the video URL is not yet configured, THE Shell SHALL show that item as plain text saying it is coming soon, and SHALL NOT render a link to an unknown address.
 4. WHEN the user navigates to a page within the Site, THE Shell SHALL set the document title to `<page name> | re:Invent Compass` and SHALL move keyboard focus to the page's single `<h1>` heading.
@@ -384,5 +384,33 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 
 #### Acceptance Criteria
 
-1. THE Site SHALL have an About_Page at `/about`, titled "About the creator", reached from the About group of the main navigation.
+1. THE Site SHALL have an About_Page at `/about`, titled "The Creator", reached from the About group of the main navigation (renamed by the owner on 21 October 2026, task 28).
 2. THE About_Page SHALL say that re:Invent Compass was built by Hennie Francis, an AWS Community Builder, as an entry in the re:Invent Catalog API Builder Challenge, and that more about Hennie is coming soon. The owner adds the full page later (owner decision of 21 October 2026, task 26).
+
+### Requirement 19: The Inspiration
+
+**User Story:** As a visitor, I want to know what inspired Compass, so that I understand why it works the way it does.
+
+#### Acceptance Criteria
+
+1. THE Site SHALL have an Inspiration_Page at `/inspiration`, titled "The Inspiration", reached from the About group with the description "What inspired the project direction".
+2. THE Inspiration_Page SHALL say that the project started from a first-time attendee's worry: a reserved seat is only held until 10 minutes before the session starts, and re:Invent already works like an airline, so Compass plans the week like a spec and boards it like a flight. The owner adds the full story later (owner decision of 21 October 2026, task 28).
+
+### Requirement 20: Documentation
+
+**User Story:** As a builder, I want one place that points to the project's documentation, so that I can read how Compass is built and run.
+
+#### Acceptance Criteria
+
+1. THE Site SHALL have a Documentation_Page at `/documentation`, titled "Documentation", reached from the Project group.
+2. THE Documentation_Page SHALL link, in the repository, to the README, the build plan, the architecture decision records, the runbooks and the Kiro specs, each with a one-line description, and SHALL build every address from the repository address in `links.ts`.
+
+### Requirement 21: Legal pages
+
+**User Story:** As a visitor, I want the disclaimer and the copyright terms written out, so that I know what Compass is, what it is not and who owns it.
+
+#### Acceptance Criteria
+
+1. THE Site SHALL have a Disclaimer_Page at `/disclaimer` and a Copyright_Page at `/copyright`, reached with Privacy from the Legal group of the main navigation.
+2. THE Disclaimer_Page SHALL state the Notice exactly as written; that a Compass pass is unofficial and is not a ticket, and the badge is the ticket; that session details come from the AWS Events API and can change, so the official re:Invent app is the source of truth; that the software is provided "as is", without warranties, as the Apache License 2.0 says; and that AWS and re:Invent are trademarks of Amazon.com, Inc. or its affiliates, and Apple Wallet and Google Wallet of their owners, used only to describe compatibility.
+3. THE Copyright_Page SHALL state "Copyright 2026 Hennie Francis"; that the code is licensed under the Apache License 2.0, which lets anyone use, change and share it as long as they keep the copyright notice, the licence and the NOTICE file and say what they changed; that the name "re:Invent Compass" and its logo identify the original project and are not licensed for derivative works, so a fork must use a different name; and SHALL link to the LICENSE and NOTICE files in the repository.

@@ -23,6 +23,10 @@ export function expectedRouteFiles() {
     'install/index.html',
     'privacy/index.html',
     'about/index.html',
+    'inspiration/index.html',
+    'documentation/index.html',
+    'disclaimer/index.html',
+    'copyright/index.html',
     'board/index.html',
   ];
 }
