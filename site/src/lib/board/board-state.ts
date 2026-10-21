@@ -34,7 +34,10 @@ export type BoardEvent =
 export interface BoardAction {
   readonly kind: 'apple' | 'google' | 'calendar';
   readonly href: string;
+  /** The accessible name of the badge link (the badge image's alt text). */
   readonly label: string;
+  /** A short visible line under the badge, "Bundle 1 of 3", when there are several bundles. */
+  readonly caption: string | null;
 }
 
 export interface BoardRow {
@@ -79,8 +82,8 @@ export const MESSAGES = {
   deviceHint:
     'Apple Wallet is for iPhone. Google Wallet is for Android. The calendar file works on an iPad or any other device.',
   appleLabel: 'Add to Apple Wallet',
-  googleLabel: 'Save to Google Wallet',
-  calendarLabel: 'Download calendar',
+  googleLabel: 'Add to Google Wallet',
+  calendarLabel: 'Add to Calendar',
   retryLabel: 'Try again',
 } as const;
 
@@ -135,6 +138,11 @@ export function reduceBoard(state: BoardState, event: BoardEvent): BoardState {
     : state;
 }
 
+/** The visible caption of one Apple bundle: none when there is one, "Bundle N of M" when there are more. */
+export function bundleCaption(bundle: AppleBundle): string | null {
+  return bundle.of === 1 ? null : `Bundle ${String(bundle.number)} of ${String(bundle.of)}`;
+}
+
 /** The label of one Apple bundle: plain when there is one, "bundle N of M" when there are more. */
 export function bundleLabel(bundle: AppleBundle): string {
   return bundle.of === 1
@@ -158,12 +166,23 @@ function actionsOf(handoff: ValidatedHandoff): BoardAction[] {
     kind: 'apple',
     href: bundle.path,
     label: bundleLabel(bundle),
+    caption: bundleCaption(bundle),
   }));
   if (handoff.googleSaveUrl !== null) {
-    actions.push({ kind: 'google', href: handoff.googleSaveUrl, label: MESSAGES.googleLabel });
+    actions.push({
+      kind: 'google',
+      href: handoff.googleSaveUrl,
+      label: MESSAGES.googleLabel,
+      caption: null,
+    });
   }
   if (handoff.calendarPath !== null) {
-    actions.push({ kind: 'calendar', href: handoff.calendarPath, label: MESSAGES.calendarLabel });
+    actions.push({
+      kind: 'calendar',
+      href: handoff.calendarPath,
+      label: MESSAGES.calendarLabel,
+      caption: null,
+    });
   }
   return actions;
 }

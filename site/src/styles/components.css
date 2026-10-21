@@ -449,8 +449,32 @@ a.site-nav__link:hover {
   margin-block-start: var(--space-3);
 }
 
-.board-actions .button {
-  inline-size: 100%;
+/* The official Apple and Google badges and the owner's calendar button (task 29). The badges
+   are shown as supplied, never redrawn or recoloured, at one height. */
+.board-actions li {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+}
+
+.wallet-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--target);
+  min-inline-size: var(--target);
+  border-radius: 0.75rem;
+}
+
+.wallet-badge__image {
+  display: block;
+  inline-size: auto;
+  block-size: 3.25rem;
+}
+
+.wallet-badge__caption {
+  color: var(--color-ink-muted);
+  font-size: 0.875rem;
 }
 
 .board-sessions li {

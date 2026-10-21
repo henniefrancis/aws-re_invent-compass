@@ -18,11 +18,11 @@ test.describe('board states from the fixtures', () => {
       'href',
       `/api/v1/handoffs/${HANDOFF_ID}/apple/0`,
     );
-    await expect(page.getByRole('link', { name: 'Save to Google Wallet' })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'Add to Google Wallet' })).toHaveAttribute(
       'href',
       /^https:\/\/pay\.google\.com\/gp\/v\/save\//,
     );
-    await expect(page.getByRole('link', { name: 'Download calendar' })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'Add to Calendar' })).toHaveAttribute(
       'href',
       `/api/v1/handoffs/${HANDOFF_ID}/calendar.ics`,
     );
@@ -35,10 +35,18 @@ test.describe('board states from the fixtures', () => {
   test('three bundles are labelled bundle N of 3', async ({ page }) => {
     await mockHandoff(page, 'ready-three-bundles');
     await openBoard(page);
-    await expect(page.getByRole('link', { name: /^Add to Apple Wallet/ })).toHaveText([
-      'Add to Apple Wallet (bundle 1 of 3)',
-      'Add to Apple Wallet (bundle 2 of 3)',
-      'Add to Apple Wallet (bundle 3 of 3)',
+    // Each bundle is the official badge, named by its alt text, with a caption under it.
+    const badges = page.getByRole('link', { name: /^Add to Apple Wallet/ });
+    await expect(badges).toHaveCount(3);
+    for (const [index, n] of [1, 2, 3].entries()) {
+      await expect(badges.nth(index)).toHaveAccessibleName(
+        `Add to Apple Wallet (bundle ${String(n)} of 3)`,
+      );
+    }
+    await expect(page.locator('.wallet-badge__caption')).toHaveText([
+      'Bundle 1 of 3',
+      'Bundle 2 of 3',
+      'Bundle 3 of 3',
     ]);
     await expect(page.locator('.board-sessions li')).toHaveCount(24);
   });
@@ -47,8 +55,8 @@ test.describe('board states from the fixtures', () => {
     await mockHandoff(page, 'ready-apple-only');
     await openBoard(page);
     await expect(page.getByRole('link', { name: 'Add to Apple Wallet' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Save to Google Wallet' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Download calendar' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Add to Google Wallet' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Add to Calendar' })).toHaveCount(0);
   });
 
   test('404 is the expired state with one message and no retry', async ({ page }) => {

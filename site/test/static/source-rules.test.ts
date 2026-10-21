@@ -182,9 +182,20 @@ describe('artwork', () => {
     }
   });
 
-  test('no text artwork names an AWS mark', () => {
+  // The official Apple and Google badges are the one exception for their own names (task 29).
+  const VENDOR_BADGES = new Set([
+    'public/artwork/apple-wallet.svg',
+    'public/artwork/google-wallet.svg',
+  ]);
+
+  test('no text artwork names an AWS mark, and only the vendor badges name Apple or Google', () => {
+    expect(publicFiles.filter((f) => VENDOR_BADGES.has(f.path))).toHaveLength(2);
     for (const file of publicFiles) {
-      expect(file.text.toLowerCase(), file.path).not.toMatch(/aws|amazon|apple|google/);
+      const text = file.text.toLowerCase();
+      expect(text, file.path).not.toMatch(/aws|amazon/);
+      if (!VENDOR_BADGES.has(file.path)) {
+        expect(text, file.path).not.toMatch(/apple|google/);
+      }
     }
   });
 });

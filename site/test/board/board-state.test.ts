@@ -132,8 +132,8 @@ describe('toBoardViewModel examples', () => {
     expect(vm.heading).toBe('Your boarding passes are ready');
     expect(vm.actions.map((a) => [a.kind, a.label])).toEqual([
       ['apple', 'Add to Apple Wallet'],
-      ['google', 'Save to Google Wallet'],
-      ['calendar', 'Download calendar'],
+      ['google', 'Add to Google Wallet'],
+      ['calendar', 'Add to Calendar'],
     ]);
     expect(vm.sessions[0]).toEqual({
       code: 'DAT302',

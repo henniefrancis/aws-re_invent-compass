@@ -10,13 +10,35 @@
       @for (action of vm().actions; track action.href) {
         <li>
           @if (action.kind === 'apple') {
-            <a class="button" [href]="action.href" type="application/vnd.apple.pkpasses">{{
-              action.label
-            }}</a>
+            <a class="wallet-badge" [href]="action.href" type="application/vnd.apple.pkpasses"
+              ><img
+                class="wallet-badge__image"
+                src="artwork/apple-wallet.svg"
+                width="111"
+                height="35"
+                [alt]="action.label"
+            /></a>
           } @else if (action.kind === 'google') {
-            <a class="button" [href]="action.href" rel="noopener noreferrer">{{ action.label }}</a>
+            <a class="wallet-badge" [href]="action.href" rel="noopener noreferrer"
+              ><img
+                class="wallet-badge__image"
+                src="artwork/google-wallet.svg"
+                width="199"
+                height="55"
+                [alt]="action.label"
+            /></a>
           } @else {
-            <a class="button button--secondary" [href]="action.href" download>{{ action.label }}</a>
+            <a class="wallet-badge" [href]="action.href" download
+              ><img
+                class="wallet-badge__image"
+                src="artwork/calendar.svg"
+                width="1341"
+                height="493"
+                [alt]="action.label"
+            /></a>
+          }
+          @if (action.caption !== null) {
+            <span class="wallet-badge__caption">{{ action.caption }}</span>
           }
         </li>
       }

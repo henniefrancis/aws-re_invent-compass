@@ -66,7 +66,7 @@ export const ACTS: readonly Act[] = [
       ),
       summary(
         'act-board-phone',
-        'A QR code on your computer opens a 15-minute page on your phone, where you choose Add to Apple Wallet, Save to Google Wallet or download the calendar file.',
+        'A QR code on your computer opens a 15-minute page on your phone, where you choose Add to Apple Wallet, Add to Google Wallet or Add to Calendar.',
         '.kiro/steering/product.md',
         'Core features, 5',
       ),

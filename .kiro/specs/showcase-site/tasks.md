@@ -424,7 +424,7 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 29. A plainer Board_Page and steadier local e2e runs (owner request of 21 October, design "Post-SP3 change: board page and local e2e workers")
   - [x] 29.1 The banner picture above the Board_Page heading is removed, with its test and `public/artwork/pass-background.jpg` (nothing else used it); the hand-off panel is centred in the page card and its state heading is centred
   - [x] 29.2 Local e2e runs use two workers: with more, axe in Firefox could pass the 30 s timeout while seven profiles shared the CPU. CI keeps its default. The one root unit test that failed once on 21 October could not be reproduced in seven runs, two of them under load; it ran while another session was editing the same checkout
-  - [ ] 29.3 Official "Add to Apple Wallet" and "Add to Google Wallet" badges on the Board_Page (waits on the owner: Apple's badges need the Wallet Marketing Artwork License Agreement accepted by the developer account; Google's need the owner's go to download)
+  - [x] 29.3 The board actions are badges: the official "Add to Apple Wallet" badge (US English, downloaded by the owner under the Apple Wallet Marketing Artwork License Agreement), the official two-line "Add to Google Wallet" badge (from the Google Wallet brand guidelines, downloaded with the owner's go) and the owner's "Add to Calendar" button, each shown unchanged at one height with its label as the image's alt text; several Apple bundles get a visible "Bundle N of M" caption. The Google and calendar labels follow the badges ("Add to Google Wallet", "Add to Calendar"). ARTWORK.md lists the two vendor badges, and the artwork name rule allows Apple and Google only in them
 
 ## Notes
 
