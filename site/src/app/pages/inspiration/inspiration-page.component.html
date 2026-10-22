@@ -1,4 +1,16 @@
 <h1 tabindex="-1">{{ title }}</h1>
-@for (block of blocks; track block.id; let first = $first) {
-  <p [class.lead]="first">{{ block.text }}</p>
+<figure class="story-quote">
+  <blockquote>
+    <p>{{ keyLine }}</p>
+  </blockquote>
+  <figcaption>Hennie Francis, the creator</figcaption>
+</figure>
+@for (section of sections; track section.id) {
+  <section class="story-section" [attr.aria-labelledby]="'story-' + section.id">
+    <h2 [id]="'story-' + section.id">{{ section.heading }}</h2>
+    @for (block of section.blocks; track block.id) {
+      <p>{{ block.text }}</p>
+    }
+  </section>
 }
+<p class="page-next"><a routerLink="/about">Meet the creator</a></p>

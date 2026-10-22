@@ -1,3 +1,30 @@
 <h1 tabindex="-1">{{ title }}</h1>
-<p class="lead">{{ builtBy }}</p>
-<p>{{ comingSoon }}</p>
+<div class="creator">
+  <img
+    class="creator__photo"
+    [src]="photo.src"
+    [alt]="photo.alt"
+    [width]="photo.size"
+    [height]="photo.size"
+    decoding="async"
+  />
+  <div>
+    <p class="lead">{{ builtBy }}</p>
+    @for (block of bio; track block.id) {
+      <p>{{ block.text }}</p>
+    }
+  </div>
+</div>
+<section aria-labelledby="creator-links">
+  <h2 id="creator-links">Find Hennie online</h2>
+  <ul class="creator-links">
+    @for (link of links; track link.href) {
+      <li>
+        <a class="button button--secondary" [href]="link.href" rel="noopener noreferrer">{{
+          link.label
+        }}</a>
+      </li>
+    }
+  </ul>
+</section>
+<p class="page-next"><a routerLink="/inspiration">Read the story behind Compass</a></p>

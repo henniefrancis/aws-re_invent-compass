@@ -218,6 +218,7 @@ test('release.sh exits non-zero when the apply, the sync or the invalidation fai
   const source = readOwned('scripts/release.sh');
   assert.match(source, /terraform apply -input=false tfplan \|\| fail/);
   assert.match(source, /aws s3 sync .* \|\| fail/);
+  assert.match(source, /aws s3 cp .*--include "\*\.webp" --content-type image\/webp .*\|\| fail/);
   assert.match(source, /aws cloudfront create-invalidation .* \|\| fail/);
 });
 

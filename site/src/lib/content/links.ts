@@ -208,3 +208,12 @@ export function documentationLinks(
     },
   ];
 }
+
+/** The creator's own pages (task 34), shown on The Creator page. */
+export const CREATOR_LINKS: readonly { readonly label: string; readonly href: string }[] = [
+  { label: 'Website', href: 'https://henniefrancis.tech/' },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/henniefrancis/' },
+  { label: 'GitHub', href: 'https://github.com/henniefrancis' },
+  { label: 'AWS Community South Africa', href: 'https://www.awscommunity.co.za/' },
+  { label: 'AWS Builder Center', href: 'https://builder.aws.com/community/@henniefrancis' },
+];

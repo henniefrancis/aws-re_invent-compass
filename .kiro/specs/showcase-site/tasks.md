@@ -442,6 +442,13 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 33.2 Centre page headings (`h1`, `h2`) and the line under a page title on every page; the home hero keeps its own layout
   - [x] 33.3 Site tests, the e2e layout, reflow and a11y suites, and a look at the pages in the browser; commit scoped `showcase-site`
 
+- [x] 34. The Creator and The Inspiration pages written in full (owner request of 22 October, tracker ABT1, design "Post-SP3 change: The Creator and The Inspiration", Requirements 24.2 and 25.2 amended)
+  - [x] 34.1 Record the owner's answers and the biography excerpts in `docs/story/creator-and-inspiration.md`, a new content source
+  - [x] 34.2 The Inspiration_Page: the story in sections with headings, quoted from the source
+  - [x] 34.3 The About_Page: introduction, biography, the creator links (in `links.ts`) and a link to the Inspiration_Page
+  - [x] 34.4 The owner's full photo, not cropped, in `public/artwork` (one named raster exception to the svg, txt and ico rule and to the no-AWS-marks rule, because the owner may use the Community Builder logo; listed in ARTWORK.md), with a text alternative
+  - [x] 34.5 Tests, the e2e suite and a look at both pages in the browser; commit scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

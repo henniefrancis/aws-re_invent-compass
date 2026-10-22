@@ -631,3 +631,68 @@ a.site-nav__link:hover {
 .data-table--wrap {
   overflow-wrap: anywhere;
 }
+
+/* The Creator page (task 34): the owner's photo beside the biography on wide screens. */
+.creator {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (min-width: 48rem) {
+  .creator {
+    grid-template-columns: minmax(12rem, 18rem) 1fr;
+  }
+}
+
+.creator__photo {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 18rem;
+  block-size: auto;
+  margin-inline: auto;
+  border: 1px solid var(--color-tint);
+  border-radius: 1rem;
+}
+
+.creator-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.creator + section,
+.story-section + .story-section {
+  margin-block-start: var(--space-6);
+}
+
+/* The Inspiration page (task 34): the line to remember, under the title. */
+.story-quote {
+  margin: var(--space-4) 0 var(--space-6);
+  text-align: center;
+}
+
+.story-quote blockquote {
+  margin: 0;
+  font-size: clamp(1.25rem, 3vw, 1.625rem);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.story-quote blockquote p {
+  margin: 0;
+}
+
+.story-quote figcaption {
+  margin-block-start: var(--space-2);
+  color: var(--color-ink-muted);
+}
+
+.page-next {
+  margin-block-start: var(--space-6);
+  text-align: center;
+}

@@ -385,7 +385,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 #### Acceptance Criteria
 
 1. THE Site SHALL have an About_Page at `/about`, titled "The Creator", reached from the About group of the main navigation (renamed by the owner on 21 October 2026, task 28).
-2. THE About_Page SHALL say that re:Invent Compass was built by Hennie Francis, an AWS Community Builder, as an entry in the re:Invent Catalog API Builder Challenge, and that more about Hennie is coming soon. The owner adds the full page later (owner decision of 21 October 2026, task 26).
+2. THE About_Page SHALL say that re:Invent Compass was built by Hennie Francis, founder of AWS Community South Africa and an AWS Community Builder, as an entry in the re:Invent Catalog API Builder Challenge, then introduce Hennie from the owner's biography (cloud and technology strategist, community work, speaking, aviation and conference swag), show the owner's photo with a text alternative, link to the owner's website, LinkedIn, GitHub, AWS Community South Africa and AWS Builder Center profile, and link to the Inspiration_Page (owner answers of 22 October 2026, task 34, recorded in `docs/story/creator-and-inspiration.md`).
 
 ### Requirement 25: The Inspiration
 
@@ -394,7 +394,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 #### Acceptance Criteria
 
 1. THE Site SHALL have an Inspiration_Page at `/inspiration`, titled "The Inspiration", reached from the About group with the description "What inspired the project direction".
-2. THE Inspiration_Page SHALL say that the project started from a first-time attendee's worry: a reserved seat is only held until 10 minutes before the session starts, and re:Invent already works like an airline, so Compass plans the week like a spec and boards it like a flight. The owner adds the full story later (owner decision of 21 October 2026, task 28).
+2. THE Inspiration_Page SHALL say that the project started from a first-time attendee's worry: a reserved seat is only held until 10 minutes before the session starts, and re:Invent already works like an airline, so Compass plans the week like a spec and boards it like a flight. The page SHALL tell the owner's story in the owner's words, as recorded in `docs/story/creator-and-inspiration.md` (owner answers of 22 October 2026, task 34): the campus map and walking times, the aviation geek's eye, planning like a spec with Kiro, representing South Africa, how the project grew, and who it is for.
 
 ### Requirement 26: Documentation
 

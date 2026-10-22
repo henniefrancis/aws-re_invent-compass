@@ -1,4 +1,4 @@
-import { ABOUT_BUILT_BY, ABOUT_COMING_SOON } from '../../src/lib/content/about';
+import { ABOUT_BIO, ABOUT_BUILT_BY } from '../../src/lib/content/about';
 import { INSPIRATION_BLOCKS } from '../../src/lib/content/inspiration';
 import {
   ACCESSIBILITY_BLOCKS,
@@ -64,7 +64,7 @@ const storyBlocks: readonly ContentBlock[] = [
   story.UNOFFICIAL_STATEMENT,
   story.TRY_IT,
   ABOUT_BUILT_BY,
-  ABOUT_COMING_SOON,
+  ...ABOUT_BIO,
   ...INSPIRATION_BLOCKS,
   ...DISCLAIMER_BLOCKS,
   COPYRIGHT_LINE,

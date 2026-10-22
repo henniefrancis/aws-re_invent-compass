@@ -272,6 +272,8 @@ site_bucket="$(terraform output -raw site_bucket_name)" || fail "could not read 
 echo "syncing the site (uses your own AWS SSO session)"
 aws sts get-caller-identity --region "${AWS_REGION}" >/dev/null 2>&1 || fail "no AWS session; run aws sso login first"
 aws s3 sync --region "${AWS_REGION}" "${site_dir}" "s3://${site_bucket}" --delete --only-show-errors || fail "the site sync failed"
+# The CLI may not know .webp, so the photo is uploaded again with its type stated (showcase-site task 34).
+aws s3 cp --region "${AWS_REGION}" "${site_dir}" "s3://${site_bucket}" --recursive --exclude "*" --include "*.webp" --content-type image/webp --only-show-errors || fail "the photo upload failed"
 
 echo "invalidating the CloudFront cache"
 aws cloudfront create-invalidation --region "${AWS_REGION}" --distribution-id "${distribution_id}" --paths "/*" >/dev/null || fail "the cache invalidation failed"

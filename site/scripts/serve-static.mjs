@@ -38,6 +38,7 @@ const TYPES = Object.freeze({
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
   '.jpg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.json': 'application/json; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
 });
