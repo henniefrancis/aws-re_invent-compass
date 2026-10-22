@@ -1,6 +1,6 @@
 # ADR-027 Accepted residual risks from the stream security reviews
 
-Status: Accepted, 2026-10-17 (owner decisions during the stream review gates).
+Status: Accepted, 2026-10-17 (owner decisions during the stream review gates). Item 7 added 2026-10-22.
 
 ## Context
 
@@ -16,6 +16,7 @@ The owner accepts these residual risks:
 4. **Simulated mode for judges and contributors (S1 re-review N2; corrected 2026-10-18).** The server defaults to live mode; simulated mode is selected by `COMPASS_MODE=simulated`, which `npx reinvent-compass demo`, the test suite and the contributor `.env.example` use. Judges and new users run the product without signing in. Mitigation: the simulated transport is marked, the composition root logs a warning, every simulated result is labelled, and simulated mode is refused when `NODE_ENV=production` unless explicitly allowed.
 5. **Estimated walking times (S2 QA H1).** AWS publishes no per-pair walking times, so `data/venues.json` holds researched, sourced estimates with a 30 minute floor. An impossible connection based on an estimate warns and never blocks.
 6. **Resolved (2026-10-18, ADR-031).** ~~The CloudFront default certificate allows TLS 1.0 for viewers (S6 review L3).~~ The site, `/board` and the API now use the custom domain `reinvent-compass.vegas` with an ACM certificate and `TLSv1.2_2021`. The CloudFront default domain stays reachable only for the release health check, and where a custom domain is not set (the fallback), the default certificate still applies.
+7. **The product name uses the "re:Invent" trademark (pre-release TAM review H2, owner decision 2026-10-22, tracker TM1).** "AWS" and "re:Invent" are trademarks of Amazon.com, Inc. or its affiliates. The product is named "re:Invent Compass", and the name appears in the logo wordmark, the site and page titles, the Kiro Power display name, the GitHub App name (`re-invent-compass-unofficial`), the npm package (`reinvent-compass`) and the domain (`reinvent-compass.vegas`). That is use as part of a brand, not only to describe compatibility. The owner considered renaming to "Compass" with "for AWS re:Invent" as a descriptor and chose to keep the name. Reasons: the entry is for AWS's own re:Invent Catalog API Builder Challenge and only makes sense with re:Invent; the name says what the tool is for; and the mitigations below make the unofficial status plain. Mitigation: the NOTICE, README, site footer and Disclaimer page say Compass is an independent community project, not affiliated with, endorsed by or sponsored by AWS; every pass says "Unofficial. Your badge is your ticket."; no AWS logo, AWS colour or AWS artwork is used; the NOTICE grants no rights in the name and logo. Trigger to revisit: any request from AWS or the challenge organisers, or a decision to keep Compass running after the challenge, in which case the rename to "Compass for AWS re:Invent" is the planned fallback. The logo designer briefed on 22 October draws the "re:Invent Compass" wordmark.
 
 ## Consequences
 
