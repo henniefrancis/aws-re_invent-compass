@@ -5,9 +5,9 @@
 //
 // Google fetches an image by its public HTTPS URL, so the images are files, not part of the
 // bundle: scripts/make-artwork.mjs renders them into packages/pass-service/artwork/google/, and
-// the site module of infra uploads them under wallet/ in the site bucket (infra task 24), served
-// at <PUBLIC_BASE_URL>/wallet/<file>. Google caches an image by URL, so a changed picture gets a
-// new version in its name.
+// scripts/release.sh adds them to the built site under wallet/, so the site sync uploads them
+// (infra task 25) and the distribution serves them at <PUBLIC_BASE_URL>/wallet/<file>. Google
+// caches an image by URL, so a changed picture gets a new version in its name.
 
 export const GOOGLE_IMAGES = {
   /** The icon alone, 1280 by 400 pixels, transparent and left-aligned. */

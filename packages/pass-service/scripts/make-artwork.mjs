@@ -72,7 +72,7 @@ try {
   writeFileSync(target, artworkModuleSource(files));
   console.log('wrote src/apple/artwork.ts');
 
-  // The Google Wallet images (task 47), served from <PUBLIC_BASE_URL>/wallet/ (infra task 24):
+  // The Google Wallet images (task 47), served from <PUBLIC_BASE_URL>/wallet/ (infra task 25):
   // the icon alone as the wide logo (1280 by 400, transparent, left-aligned), and the hero
   // (1032 by 812): the Pass Designer gradient, cover-cropped and centred, with the full logo
   // centred on it over a soft white glow so its purple text reads on the blue.
