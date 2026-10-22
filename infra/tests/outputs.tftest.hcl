@@ -37,6 +37,7 @@ variables {
   api_key_value       = "abcdefghijklmnopqrstuvwxyz0123456789"
   api_lambda_zip      = "modules/api/tests/fixtures/api.zip"
   passkit_lambda_zip  = "modules/api/tests/fixtures/passkit.zip"
+  wallet_images_dir   = "modules/site/tests/fixtures/wallet"
   event_timezone      = "America/Los_Angeles"
   event_window_start  = "2026-11-30T08:00:00-08:00"
   event_window_end    = "2026-12-04T20:00:00-08:00"

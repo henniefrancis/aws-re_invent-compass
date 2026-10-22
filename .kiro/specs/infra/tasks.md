@@ -316,6 +316,11 @@ The build order lays the shared foundation first (version pins, provider, tags, 
   - [x] 23.1 In `scripts/release.sh`, check `aws sts get-caller-identity` before the build, and after `terraform init` check with `aws s3api head-bucket` (which needs `s3:ListBucket`, like the sync) that the session can reach the site bucket from the last apply; a first deploy has no bucket yet and skips the bucket check. The message names `AWS_PROFILE` and `aws sso login` and says nothing was applied; it prints no bucket name or account id
   - [x] 23.2 Static test for the two checks and their order; update the release runbook; shellcheck, the static tests and commit scoped `infra`
 
+- [x] 24. Serve the Google Wallet pass images (design item 42, pass-service task 47)
+  - [x] 24.1 In `infra/modules/site`, add `wallet_images_dir` and one `aws_s3_object` per listed image (`wide-logo-v1.png`, `hero-v1.png`) under `wallet/` in the site bucket: `image/png`, `public, max-age=31536000, immutable`, `etag` from `filemd5`. Both roots pass `wallet_images_dir` (default `../../build/wallet`)
+  - [x] 24.2 In `scripts/release.sh`, copy `packages/pass-service/artwork/google/*.png` to `infra/build/wallet/` next to the Lambda zips, add `--exclude "wallet/*"` to the site sync, and allow `aws_s3_object` in the plan check (not retained)
+  - [x] 24.3 Native tests (the two objects, their keys, type, cache header and bucket), the composition tests with a fixture folder, a static test that the module's names match the files in `packages/pass-service/artwork/google/` and the release steps; update the release runbook; fmt, validate, the module tests, `infra/tests`, the static tests and commit scoped `infra`
+
 ## Notes
 
 - The implementation language is Terraform/HCL, Bash, and Node.js (`.mjs`), fixed by the design and tech steering (Terraform only, no CDK/CloudFormation/SAM).

@@ -93,3 +93,19 @@ resource "aws_s3_bucket_policy" "this" {
     ]
   })
 }
+
+# The Google Wallet pass images (pass-service task 47, design item 42). Google fetches
+# an image by its public HTTPS URL, so these are served by the distribution at
+# /wallet/<name> through the same OAC. The names are listed, not globbed, so a missing
+# file fails the plan instead of deleting a live image; a changed picture gets a new
+# versioned name, since Google caches images by URL. The release sync excludes wallet/.
+resource "aws_s3_object" "wallet_image" {
+  for_each = local.wallet_images
+
+  bucket        = aws_s3_bucket.this.id
+  key           = "wallet/${each.key}"
+  source        = "${var.wallet_images_dir}/${each.key}"
+  etag          = filemd5("${var.wallet_images_dir}/${each.key}")
+  content_type  = "image/png"
+  cache_control = "public, max-age=31536000, immutable"
+}

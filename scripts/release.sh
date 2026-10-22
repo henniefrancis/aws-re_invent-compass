@@ -60,6 +60,7 @@ ALLOWED_TYPES=(
   aws_s3_bucket_public_access_block
   aws_s3_bucket_server_side_encryption_configuration
   aws_s3_bucket_versioning
+  aws_s3_object
   aws_secretsmanager_secret
   aws_sns_topic
   aws_sns_topic_subscription
@@ -161,6 +162,15 @@ for name in api passkit; do
   source_zip="${repo_root}/packages/pass-service/dist/lambda/${name}.zip"
   [ -f "${source_zip}" ] || fail "the Lambda build did not produce ${name}.zip"
   cp "${source_zip}" "${build_dir}/${name}-lambda.zip"
+done
+
+# The Google Wallet pass images travel with the HCP upload of infra/, like the
+# zips; the site module uploads them under wallet/ (pass-service task 47).
+mkdir -p "${build_dir}/wallet"
+for name in wide-logo-v1.png hero-v1.png; do
+  source_image="${repo_root}/packages/pass-service/artwork/google/${name}"
+  [ -f "${source_image}" ] || fail "the Google Wallet image ${name} is missing"
+  cp "${source_image}" "${build_dir}/wallet/${name}"
 done
 
 echo "building the site"
@@ -271,7 +281,9 @@ site_bucket="$(terraform output -raw site_bucket_name)" || fail "could not read 
 
 echo "syncing the site (uses your own AWS SSO session)"
 aws sts get-caller-identity --region "${AWS_REGION}" >/dev/null 2>&1 || fail "no AWS session; run aws sso login first"
-aws s3 sync --region "${AWS_REGION}" "${site_dir}" "s3://${site_bucket}" --delete --only-show-errors || fail "the site sync failed"
+# wallet/ holds the Google Wallet images, which Terraform owns; an excluded key is
+# also kept from --delete.
+aws s3 sync --region "${AWS_REGION}" "${site_dir}" "s3://${site_bucket}" --delete --exclude "wallet/*" --only-show-errors || fail "the site sync failed"
 # The CLI may not know .webp, so the photo is uploaded again with its type stated (showcase-site task 34).
 aws s3 cp --region "${AWS_REGION}" "${site_dir}" "s3://${site_bucket}" --recursive --exclude "*" --include "*.webp" --content-type image/webp --only-show-errors || fail "the photo upload failed"
 

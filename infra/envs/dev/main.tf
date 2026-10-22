@@ -61,6 +61,7 @@ module "site" {
   bucket_name_prefix = local.site_bucket_name_prefix
   force_destroy      = var.site_force_destroy
   distribution_arn   = module.edge.distribution_arn
+  wallet_images_dir  = var.wallet_images_dir
 }
 
 # The origin-verify and API key values come from sensitive variables (HCP

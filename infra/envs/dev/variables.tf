@@ -94,6 +94,12 @@ variable "passkit_lambda_zip" {
   default     = "../../build/passkit-lambda.zip"
 }
 
+variable "wallet_images_dir" {
+  description = "Folder holding the Google Wallet pass images, relative to this directory. scripts/release.sh copies them into infra/build/wallet."
+  type        = string
+  default     = "../../build/wallet"
+}
+
 variable "public_base_url" {
   description = "Public base URL, https://<distribution>.cloudfront.net with no trailing slash. The distribution depends on the API Lambdas, so this is known only after the first apply: set it from the cloudfront_domain_name output and apply again. Empty omits PUBLIC_BASE_URL."
   type        = string
