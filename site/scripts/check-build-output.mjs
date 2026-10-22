@@ -27,6 +27,10 @@ export function expectedRouteFiles() {
     'documentation/index.html',
     'disclaimer/index.html',
     'copyright/index.html',
+    'terms/index.html',
+    'security/index.html',
+    'accessibility/index.html',
+    'credits/index.html',
     'board/index.html',
   ];
 }

@@ -404,10 +404,10 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 25.5 The e2e tests that still expected the pre-task-22 pass wording ("Boarding pass for", "Gate: MGM Grand", "Seat released at 12:50 PM") and a pass with no image now expect the final wording and the owner's logo; the Install page keeps the space after each option label
   - [x] 25.3 Contrast, token and denylist tests pass with the new palette; site unit tests, the site build and a visual check of every page; commit after the full gate passes, scoped `showcase-site`
 
-- [x] 26. A grouped main menu, an About page, wider content and one disclaimer line (owner request of 21 October, design "Post-SP3 change: grouped menu and About page", Requirements 4.1 and 4.5 amended, 18 added)
+- [x] 26. A grouped main menu, an About page, wider content and one disclaimer line (owner request of 21 October, design "Post-SP3 change: grouped menu and About page", Requirements 4.1 and 4.5 amended, 24 added)
   - [x] 26.1 `navGroups(links)` in `src/lib/content/links.ts` gives the three groups and their described items (the Builder Center post and the video stay plain "coming soon" text until their addresses are known); `src/lib/shell/menu.ts` holds the open and close rules; both are unit tested
   - [x] 26.2 The header shows the groups as disclosure buttons with panels, a "Try the demo" button and, on narrow screens, a "Menu" button; panels close on a second press, Escape, a click outside and navigation
-  - [x] 26.3 The About_Page at `/about` (prerendered, in the build output check) with the placeholder text of Requirement 18
+  - [x] 26.3 The About_Page at `/about` (prerendered, in the build output check) with the placeholder text of Requirement 24
   - [x] 26.4 The page card is about 70 percent of a wide window (at least the old 64rem), and the home page says the disclaimer once
   - [x] 26.5 e2e tests open the Product group before choosing Install; site unit tests, the build, screenshots at phone and desktop widths and the e2e suite on all seven profiles; commit after the full gate passes, scoped `showcase-site`
 
@@ -415,7 +415,7 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 27.1 The footer shows the heading and the Notice only; `footerItems` goes, its link item type stays as the type of the navigation items, and its tests move to the navigation test
   - [x] 27.2 e2e tests check the heading and the Notice in every footer and the repository link in the Project group; site unit tests, the build, a screenshot and the e2e suite on all seven profiles; commit after the full gate passes, scoped `showcase-site`
 
-- [x] 28. About and Legal groups, Documentation, The Inspiration, Disclaimer and Copyright pages (owner request of 21 October, design "Post-SP3 change: About, Legal and Documentation", Requirements 4.1 and 18.1 amended, 19 to 21 added)
+- [x] 28. About and Legal groups, Documentation, The Inspiration, Disclaimer and Copyright pages (owner request of 21 October, design "Post-SP3 change: About, Legal and Documentation", Requirements 4.1 and 24.1 amended, 25 to 27 added)
   - [x] 28.1 `navGroups`: Project gains Documentation; About is The Inspiration and The Creator; a Legal group holds Privacy, Disclaimer, and Copyright and licence
   - [x] 28.2 Content blocks with their sources for the four pages (NOTICE and LICENSE become content sources); `documentationLinks(links)` builds the repository addresses
   - [x] 28.3 The pages at `/inspiration`, `/documentation`, `/disclaimer` and `/copyright`, prerendered and in the build output check
@@ -431,6 +431,11 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 
 - [x] 31. Higher-quality badges at one size (owner request of 21 October, design "Post-SP3 change: board page and local e2e workers")
   - [x] 31.1 `apple-wallet.svg`, `google-wallet.svg` and `calendar.svg` are the owner's higher-quality files from `docs/previews` at one size (680 by 216, 701 by 217 and 681 by 230). The wallet badges are still Apple's and Google's official badges (the owner confirmed), so no licence risk is open. The Apple file's four linked shadow images, which it named but did not include and a browser would not load, are removed; tests and commit scoped `showcase-site`
+
+- [x] 32. Terms of use, Accessibility, Security and Open-source credits pages (owner request of 22 October, tracker LEG1, design "Post-SP3 change: more legal pages", Requirement 28 added; the requirements added on 21 October are renumbered 24 to 27, because 18 to 21 already existed)
+  - [x] 32.1 Content with sources (SECURITY.md becomes a content source); `issuesUrl` and `securityPolicyUrl` in `links.ts`; the credits list with a test against the installed packages
+  - [x] 32.2 The four pages, the Legal group in the order of 28.1, prerendering and the build output check
+  - [x] 32.3 Tests, the e2e page list, screenshots and the e2e suite; commit after the full gate passes, scoped `showcase-site`
 
 ## Notes
 

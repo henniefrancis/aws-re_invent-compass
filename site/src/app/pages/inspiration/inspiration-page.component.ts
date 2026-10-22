@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { INSPIRATION_BLOCKS, INSPIRATION_TITLE } from '../../../lib/content/inspiration';
 
-/** The Inspiration_Page (Requirement 19). */
+/** The Inspiration_Page (Requirement 25). */
 @Component({
   selector: 'app-inspiration-page',
   templateUrl: './inspiration-page.component.html',

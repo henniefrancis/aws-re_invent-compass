@@ -1,4 +1,4 @@
-// The Inspiration_Page (showcase-site task 28, Requirement 19). A placeholder until the owner
+// The Inspiration_Page (showcase-site task 28, Requirement 25). A placeholder until the owner
 // writes the full story.
 
 import { summary, type ContentBlock } from './content-block';
@@ -22,6 +22,6 @@ export const INSPIRATION_BLOCKS: readonly ContentBlock[] = [
     'inspiration-more',
     'The full story is coming soon.',
     '.kiro/specs/showcase-site/requirements.md',
-    '19.2',
+    '25.2',
   ),
 ];

@@ -1,6 +1,11 @@
 import { ABOUT_BUILT_BY, ABOUT_COMING_SOON } from '../../src/lib/content/about';
 import { INSPIRATION_BLOCKS } from '../../src/lib/content/inspiration';
 import {
+  ACCESSIBILITY_BLOCKS,
+  SECURITY_BLOCKS,
+  TERMS_BLOCKS,
+} from '../../src/lib/content/more-legal';
+import {
   COPYRIGHT_BLOCKS,
   COPYRIGHT_LINE,
   DISCLAIMER_BLOCKS,
@@ -64,6 +69,9 @@ const storyBlocks: readonly ContentBlock[] = [
   ...DISCLAIMER_BLOCKS,
   COPYRIGHT_LINE,
   ...COPYRIGHT_BLOCKS,
+  ...TERMS_BLOCKS,
+  ...ACCESSIBILITY_BLOCKS,
+  ...SECURITY_BLOCKS,
 ];
 
 const installBlocks: readonly ContentBlock[] = [
@@ -287,7 +295,18 @@ describe('links and footer', () => {
       ['Product', ['Try the demo', 'Install']],
       ['Project', ['Repository', 'Documentation', 'Builder Center post', 'Video']],
       ['About', ['The Inspiration', 'The Creator']],
-      ['Legal', ['Privacy', 'Disclaimer', 'Copyright and licence']],
+      [
+        'Legal',
+        [
+          'Terms of use',
+          'Privacy',
+          'Disclaimer',
+          'Copyright and licence',
+          'Security',
+          'Accessibility',
+          'Open-source credits',
+        ],
+      ],
     ]);
     expect(groups[2]?.items[0]?.description).toBe('What inspired the project direction');
     for (const item of groups.flatMap((g) => g.items)) {

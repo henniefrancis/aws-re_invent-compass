@@ -15,6 +15,7 @@ export type SourceDocument =
   | 'packages/mcp-server/README.md'
   | 'NOTICE'
   | 'LICENSE'
+  | 'SECURITY.md'
   | 'kiro.dev/docs/powers/installation';
 
 export interface ContentBlock {
@@ -39,6 +40,7 @@ export const FILE_SOURCES: readonly SourceDocument[] = [
   'packages/mcp-server/README.md',
   'NOTICE',
   'LICENSE',
+  'SECURITY.md',
 ];
 
 /** A block whose text appears exactly in its source. */

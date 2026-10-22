@@ -378,7 +378,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 4. THE stream SHALL provide `site/README.md` covering the build, the tests, the output folder for the release script, the Required_CSP, the content sources and the artwork manifest.
 5. THE stream SHALL save two or three screenshots of the Site working (the Home_Page, the blocked clash in the demo on a phone profile, and the Board_Page Ready state with mocked data) to `docs/article/screenshots/showcase-site/` for the Builder Center post.
 
-### Requirement 18: About the creator
+### Requirement 24: About the creator
 
 **User Story:** As a visitor, I want to know who built Compass, so that I know it is a community project with a real person behind it.
 
@@ -387,7 +387,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 1. THE Site SHALL have an About_Page at `/about`, titled "The Creator", reached from the About group of the main navigation (renamed by the owner on 21 October 2026, task 28).
 2. THE About_Page SHALL say that re:Invent Compass was built by Hennie Francis, an AWS Community Builder, as an entry in the re:Invent Catalog API Builder Challenge, and that more about Hennie is coming soon. The owner adds the full page later (owner decision of 21 October 2026, task 26).
 
-### Requirement 19: The Inspiration
+### Requirement 25: The Inspiration
 
 **User Story:** As a visitor, I want to know what inspired Compass, so that I understand why it works the way it does.
 
@@ -396,7 +396,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 1. THE Site SHALL have an Inspiration_Page at `/inspiration`, titled "The Inspiration", reached from the About group with the description "What inspired the project direction".
 2. THE Inspiration_Page SHALL say that the project started from a first-time attendee's worry: a reserved seat is only held until 10 minutes before the session starts, and re:Invent already works like an airline, so Compass plans the week like a spec and boards it like a flight. The owner adds the full story later (owner decision of 21 October 2026, task 28).
 
-### Requirement 20: Documentation
+### Requirement 26: Documentation
 
 **User Story:** As a builder, I want one place that points to the project's documentation, so that I can read how Compass is built and run.
 
@@ -405,7 +405,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 1. THE Site SHALL have a Documentation_Page at `/documentation`, titled "Documentation", reached from the Project group.
 2. THE Documentation_Page SHALL link, in the repository, to the README, the build plan, the architecture decision records, the runbooks and the Kiro specs, each with a one-line description, and SHALL build every address from the repository address in `links.ts`.
 
-### Requirement 21: Legal pages
+### Requirement 27: Legal pages
 
 **User Story:** As a visitor, I want the disclaimer and the copyright terms written out, so that I know what Compass is, what it is not and who owns it.
 
@@ -414,3 +414,15 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 1. THE Site SHALL have a Disclaimer_Page at `/disclaimer` and a Copyright_Page at `/copyright`, reached with Privacy from the Legal group of the main navigation.
 2. THE Disclaimer_Page SHALL state the Notice exactly as written; that a Compass pass is unofficial and is not a ticket, and the badge is the ticket; that session details come from the AWS Events API and can change, so the official re:Invent app is the source of truth; that the software is provided "as is", without warranties, as the Apache License 2.0 says; and that AWS and re:Invent are trademarks of Amazon.com, Inc. or its affiliates, and Apple Wallet and Google Wallet of their owners, used only to describe compatibility.
 3. THE Copyright_Page SHALL state "Copyright 2026 Hennie Francis"; that the code is licensed under the Apache License 2.0, which lets anyone use, change and share it as long as they keep the copyright notice, the licence and the NOTICE file and say what they changed; that the name "re:Invent Compass" and its logo identify the original project and are not licensed for derivative works, so a fork must use a different name; and SHALL link to the LICENSE and NOTICE files in the repository.
+
+### Requirement 28: More legal pages
+
+**User Story:** As a visitor, I want the terms, the accessibility promise, the security policy and the open-source credits written out, so that I know the rules, what to expect and who to thank.
+
+#### Acceptance Criteria
+
+1. THE Legal group of the main navigation SHALL hold, in order, Terms of use (`/terms`), Privacy, Disclaimer, Copyright and licence, Security (`/security`), Accessibility (`/accessibility`) and Open-source credits (`/credits`), each prerendered.
+2. THE Terms_Page SHALL say, in plain English and dated 22 October 2026: the terms cover the website, the Compass MCP server and the Kiro Power; Compass is free and open source, provided as is under the Apache License 2.0 and used at your own risk; Compass does not guarantee a seat, because AWS re:Invent decides seats, sessions and times and the official re:Invent app is the source of truth; Compass passes are unofficial and are not tickets, and your badge is your ticket; a hand-off link and its QR code work for 15 minutes and give access to your passes, so do not share them; do not misuse the pass service (no automated mass requests, no attempts to read other people's passes, no attempts to break its security) and report security problems privately; you are responsible for your AWS Builder ID and for what you approve, and by default Compass does not change your re:Invent schedule; and the terms may change, with the date showing the last change.
+3. THE Accessibility_Page SHALL state the WCAG 2.2 AA aim of Requirement 19, what it means for a visitor, how the site is tested (Requirement 22.3), that the passes themselves are drawn by Apple Wallet and Google Wallet, and how to report a barrier through the repository's issues.
+4. THE Security_Page SHALL summarise SECURITY.md (private reporting, what to include, the acknowledgement, scope, secrets) and the read-only default and labelled catalog data, and SHALL link to the private reporting form and to SECURITY.md.
+5. THE Credits_Page SHALL list the main open-source libraries Compass runs on and is tested with, each with what it does and its licence; a test SHALL check every licence against the installed package.

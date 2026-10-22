@@ -1,0 +1,6 @@
+<h1 tabindex="-1">{{ title }}</h1>
+@for (block of blocks; track block.id; let first = $first) {
+  <p class="measure" [class.lead]="first">{{ block.text }}</p>
+}
+<p class="measure">Something not working for you? Tell us, and we will fix it.</p>
+<p><a [href]="issues" rel="noopener noreferrer">Report a barrier</a></p>

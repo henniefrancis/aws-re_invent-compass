@@ -626,3 +626,8 @@ a.site-nav__link:hover {
   margin: 0;
   color: var(--color-ink-muted);
 }
+
+/* A table of names that may be long tokens (the credits): words may break so it fits 320 px. */
+.data-table--wrap {
+  overflow-wrap: anywhere;
+}

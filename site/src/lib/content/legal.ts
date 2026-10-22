@@ -1,4 +1,4 @@
-// The Disclaimer_Page and the Copyright_Page (showcase-site task 28, Requirement 21).
+// The Disclaimer_Page and the Copyright_Page (showcase-site task 28, Requirement 27).
 
 import { quoted, summary, type ContentBlock } from './content-block';
 import type { SiteLinks } from './links';
@@ -18,7 +18,7 @@ export const DISCLAIMER_BLOCKS: readonly ContentBlock[] = [
     'disclaimer-data',
     'Session details come from the AWS Events API and can change at any time. The official re:Invent app is the source of truth for your schedule.',
     '.kiro/specs/showcase-site/requirements.md',
-    '21.2',
+    '27.2',
   ),
   summary(
     'disclaimer-warranty',

@@ -7,7 +7,7 @@ import {
 } from '../../../lib/content/legal';
 import { SITE_LINKS } from '../../../lib/content/links';
 
-/** The Copyright_Page (Requirement 21.3). */
+/** The Copyright_Page (Requirement 27.3). */
 @Component({
   selector: 'app-copyright-page',
   templateUrl: './copyright-page.component.html',

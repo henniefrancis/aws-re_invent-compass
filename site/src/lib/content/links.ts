@@ -120,6 +120,12 @@ export function navGroups(links: SiteLinks): readonly NavGroup[] {
       items: [
         {
           kind: 'internal',
+          label: 'Terms of use',
+          path: '/terms',
+          description: 'The rules for using Compass and this site',
+        },
+        {
+          kind: 'internal',
           label: 'Privacy',
           path: '/privacy',
           description: 'What leaves your machine, and what does not',
@@ -136,12 +142,40 @@ export function navGroups(links: SiteLinks): readonly NavGroup[] {
           path: '/copyright',
           description: 'Who owns Compass and how you may reuse it',
         },
+        {
+          kind: 'internal',
+          label: 'Security',
+          path: '/security',
+          description: 'How Compass protects you, and how to report a problem',
+        },
+        {
+          kind: 'internal',
+          label: 'Accessibility',
+          path: '/accessibility',
+          description: 'Built for keyboards, screen readers and every screen',
+        },
+        {
+          kind: 'internal',
+          label: 'Open-source credits',
+          path: '/credits',
+          description: 'The libraries Compass is built on',
+        },
       ],
     },
   ];
 }
 
-/** The Documentation_Page links (Requirement 20), all inside the repository. */
+/** The repository's issue tracker, for reporting an accessibility barrier (Requirement 28.3). */
+export function issuesUrl(links: SiteLinks): string {
+  return `${links.repository}/issues`;
+}
+
+/** The repository's security policy (Requirement 28.4). */
+export function securityPolicyUrl(links: SiteLinks): string {
+  return `${links.repository}/blob/main/SECURITY.md`;
+}
+
+/** The Documentation_Page links (Requirement 26), all inside the repository. */
 export function documentationLinks(
   links: SiteLinks,
 ): readonly { readonly label: string; readonly href: string; readonly description: string }[] {
