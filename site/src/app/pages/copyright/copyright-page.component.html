@@ -1,11 +1,11 @@
 <h1 tabindex="-1">{{ title }}</h1>
-<p class="measure lead">
+<p class="lead">
   <strong>{{ line }}</strong>
 </p>
 @for (block of blocks; track block.id) {
-  <p class="measure">{{ block.text }}</p>
+  <p>{{ block.text }}</p>
 }
-<ul class="measure">
+<ul>
   @for (file of files; track file.href) {
     <li>
       <a [href]="file.href" rel="noopener noreferrer">{{ file.label }}</a>

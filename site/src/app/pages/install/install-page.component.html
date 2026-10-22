@@ -1,12 +1,12 @@
 <h1 tabindex="-1">Install</h1>
 
-<section class="stack measure" aria-labelledby="install-devices">
+<section class="stack" aria-labelledby="install-devices">
   <h2 id="install-devices">Plan on a computer, board on any device</h2>
   <p>{{ planOnComputer }}</p>
   <p>{{ boardOnAnyDevice }}</p>
 </section>
 
-<section class="stack measure" aria-labelledby="install-kiro">
+<section class="stack" aria-labelledby="install-kiro">
   <h2 id="install-kiro">Add the Kiro Power</h2>
   @if (kiroListing !== null) {
     <p>{{ kiroAddButton }}</p>
@@ -31,7 +31,7 @@
   <p>{{ hooksNote }}</p>
 </section>
 
-<section class="stack measure" aria-labelledby="install-npx">
+<section class="stack" aria-labelledby="install-npx">
   <h2 id="install-npx">Run it with npx</h2>
   <p>{{ nodeRequirement }}</p>
   @for (command of commands; track command.id) {
@@ -53,7 +53,7 @@
 </section>
 
 @if (otherClients.length > 0) {
-  <section class="stack measure" aria-labelledby="install-clients">
+  <section class="stack" aria-labelledby="install-clients">
     <h2 id="install-clients">Other MCP clients</h2>
     @for (block of otherClients; track block.id) {
       <p>{{ block.text }}</p>

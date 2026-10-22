@@ -437,6 +437,11 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 32.2 The four pages, the Legal group in the order of 28.1, prerendering and the build output check
   - [x] 32.3 Tests, the e2e page list, screenshots and the e2e suite; commit after the full gate passes, scoped `showcase-site`
 
+- [x] 33. Text fills the page card, headings centred (owner request of 22 October, design "Post-SP3 change: full-width text and centred headings")
+  - [x] 33.1 Remove the 40rem `.measure` cap so running text, lists and tables use the card's full width inside its equal left and right padding; text stays left-aligned
+  - [x] 33.2 Centre page headings (`h1`, `h2`) and the line under a page title on every page; the home hero keeps its own layout
+  - [x] 33.3 Site tests, the e2e layout, reflow and a11y suites, and a look at the pages in the browser; commit scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

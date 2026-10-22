@@ -97,6 +97,13 @@ app-root {
   align-items: center;
 }
 
-.measure {
-  max-inline-size: var(--measure);
+/* Text fills the page card; page headings and the line under a page title are centred (task 33). */
+.site-main h1,
+.site-main h2,
+.site-main h1 + .source-note {
+  text-align: center;
+}
+
+.site-main .hero__title {
+  text-align: start;
 }
