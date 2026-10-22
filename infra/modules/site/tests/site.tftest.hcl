@@ -13,7 +13,6 @@ mock_provider "aws" {
 variables {
   bucket_name_prefix = "compass-dev-site-"
   distribution_arn   = "arn:aws:cloudfront::example:distribution/EEXAMPLE"
-  wallet_images_dir  = "tests/fixtures/wallet"
 }
 
 run "bucket_hardening" {
@@ -125,34 +124,5 @@ run "source_scan" {
   assert {
     condition     = length(regexall("trivy:ignore", file("${path.module}/main.tf"))) == 1 && can(regex("trivy:ignore:AVD-AWS-0132[^\n]*Requirement 3[.]2[^\n]*\nresource[[:space:]]+\"aws_s3_bucket_server_side_encryption_configuration\"", file("${path.module}/main.tf")))
     error_message = "Only the documented AVD-AWS-0132 suppression is allowed, directly above the encryption block."
-  }
-}
-
-# Pass-service task 47, design item 42: the Google Wallet images are public through the
-# distribution under wallet/, as long-cached PNGs, in the site bucket.
-run "wallet_images" {
-  command = plan
-
-  assert {
-    condition     = toset(keys(aws_s3_object.wallet_image)) == toset(["wide-logo-v1.png", "hero-v1.png"])
-    error_message = "The site module must upload exactly the two Google Wallet images."
-  }
-
-  assert {
-    condition = alltrue([
-      for name, image in aws_s3_object.wallet_image :
-      image.key == "wallet/${name}" && image.content_type == "image/png" && image.cache_control == "public, max-age=31536000, immutable"
-    ])
-    error_message = "Each image must live under wallet/ as image/png with a one-year immutable cache header."
-  }
-
-  assert {
-    condition     = alltrue([for image in aws_s3_object.wallet_image : image.etag == filemd5("tests/fixtures/wallet/${trimprefix(image.key, "wallet/")}")])
-    error_message = "Each image etag must be the MD5 of its file, so a changed file is uploaded again."
-  }
-
-  assert {
-    condition     = output.wallet_image_keys == tolist(["wallet/hero-v1.png", "wallet/wide-logo-v1.png"])
-    error_message = "The module must output the two image keys."
   }
 }

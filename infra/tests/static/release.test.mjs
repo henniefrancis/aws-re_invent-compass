@@ -30,14 +30,11 @@ test('the allow list names every resource type the roots can create, and no budg
   assert.deepEqual(missing, []);
 });
 
-test('the Google Wallet images have one set of names everywhere (pass-service task 47, design item 42)', async () => {
+test('the Google Wallet images have one set of names everywhere (pass-service task 47, infra task 25)', async () => {
   const { GOOGLE_IMAGES } = await import(
     pathToFileURL(`${repoRoot}/packages/pass-service/src/google/google-layout.ts`).href
   );
   const expected = Object.values(GOOGLE_IMAGES).sort();
-  const locals = readOwned('infra/modules/site/locals.tf');
-  const listed = /wallet_images\s*=\s*toset\(\[([^\]]*)\]\)/.exec(locals)?.[1] ?? '';
-  assert.deepEqual([...listed.matchAll(/"([^"]+)"/g)].map((m) => m[1]).sort(), expected);
   const release = readOwned('scripts/release.sh');
   const copied = /for name in ([^;]+); do\n\s+source_image=/.exec(release)?.[1] ?? '';
   assert.deepEqual(copied.split(/\s+/).sort(), expected);
@@ -45,11 +42,14 @@ test('the Google Wallet images have one set of names everywhere (pass-service ta
   assert.deepEqual(files, expected);
 });
 
-test('release.sh stages the Google Wallet images before the plan and keeps wallet/ out of the sync', () => {
+test('release.sh adds the Google Wallet images to the built site before the sync (infra task 25)', () => {
   const source = readOwned('scripts/release.sh');
-  const copyAt = source.indexOf('cp "${source_image}" "${build_dir}/wallet/${name}"');
-  const planAt = source.indexOf('terraform plan -input=false -out=tfplan');
-  assert.ok(copyAt > 0 && planAt > copyAt, 'the images must be in infra/build before the plan');
-  assert.match(source, /aws s3 sync [^\n]*--delete --exclude "wallet\/\*"/);
+  const buildAt = source.indexOf('bash -c "${site_build_cmd}"');
+  const copyAt = source.indexOf('cp "${source_image}" "${site_dir}/wallet/${name}"');
+  const syncAt = source.indexOf('aws s3 sync');
+  assert.ok(buildAt > 0 && copyAt > buildAt, 'the images go in after the site build');
+  assert.ok(syncAt > copyAt, 'the sync uploads them');
   assert.match(source, /\[ -f "\$\{source_image\}" \] \|\| fail/);
+  assert.doesNotMatch(source, /--exclude "wallet/, 'nothing keeps wallet/ out of the sync');
+  assert.doesNotMatch(source, /build_dir\}\/wallet/);
 });

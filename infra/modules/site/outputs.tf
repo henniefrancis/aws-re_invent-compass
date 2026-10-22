@@ -17,8 +17,3 @@ output "oac_id" {
   description = "ID of the CloudFront origin access control."
   value       = aws_cloudfront_origin_access_control.this.id
 }
-
-output "wallet_image_keys" {
-  description = "Object keys of the Google Wallet pass images in the site bucket."
-  value       = sort([for image in aws_s3_object.wallet_image : image.key])
-}

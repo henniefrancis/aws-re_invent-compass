@@ -23,8 +23,3 @@ variable "force_destroy" {
   type        = bool
   default     = false
 }
-
-variable "wallet_images_dir" {
-  description = "Folder holding the Google Wallet pass images, relative to the root directory. scripts/release.sh copies them into infra/build/wallet."
-  type        = string
-}

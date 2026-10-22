@@ -321,6 +321,11 @@ The build order lays the shared foundation first (version pins, provider, tags, 
   - [x] 24.2 In `scripts/release.sh`, copy `packages/pass-service/artwork/google/*.png` to `infra/build/wallet/` next to the Lambda zips, add `--exclude "wallet/*"` to the site sync, and allow `aws_s3_object` in the plan check (not retained)
   - [x] 24.3 Native tests (the two objects, their keys, type, cache header and bucket), the composition tests with a fixture folder, a static test that the module's names match the files in `packages/pass-service/artwork/google/` and the release steps; update the release runbook; fmt, validate, the module tests, `infra/tests`, the static tests and commit scoped `infra`
 
+- [x] 25. Ship the Google Wallet images with the site sync (design item 43, owner decision of 22 October after the first dev release of task 24 failed)
+  - [x] 25.1 Remove the `aws_s3_object` resources, `wallet_images_dir` (module and both roots), the `wallet_image_keys` output, the native test run and fixtures, the root test variables, the `infra/build/wallet` copy, the `--exclude "wallet/*"` on the sync and `aws_s3_object` in the allowed types
+  - [x] 25.2 In `scripts/release.sh`, after the site build check, copy `packages/pass-service/artwork/google/*.png` (the names in `google-layout.ts`) into `<site output>/wallet/`, failing when one is missing, so the sync uploads them
+  - [x] 25.3 Static tests (the names match the layout and the files; the copy sits after the site build and before the sync; no wallet exclude); update the release runbook and the pass-service design note; fmt, validate, the module tests, `infra/tests`, the static tests, shellcheck and commit scoped `infra`. Owner: `scripts/release.sh dev` again
+
 ## Notes
 
 - The implementation language is Terraform/HCL, Bash, and Node.js (`.mjs`), fixed by the design and tech steering (Terraform only, no CDK/CloudFormation/SAM).
