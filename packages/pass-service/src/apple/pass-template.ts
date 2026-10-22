@@ -154,10 +154,10 @@ export function shortRoom(room: string): string {
 /**
  * The back, in the owner's Pass Designer order (task 44): about, unofficial pass and the seat
  * rule; then the per-pass room, walk, next session and name when there is data; then the times,
- * what to do when plans change, and privacy.
+ * what to do when plans change, and privacy. The Google object shows the same texts in its
+ * details (task 47).
  */
-function backFields(input: PassTemplateInput): PassField[] {
-  const { fields, timezone } = input;
+export function backFields(fields: PassFields, timezone: string): PassField[] {
   const back: PassField[] = [
     field('about', 'ABOUT', INDEPENDENT_NOTICE),
     field('unofficial', 'UNOFFICIAL PASS', UNOFFICIAL_NOTICE),
@@ -256,7 +256,7 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
         ),
         field('boardingCloses', 'BOARDING CLOSES', closes, 'PKTextAlignmentNatural'),
       ],
-      backFields: backFields(input),
+      backFields: backFields(fields, timezone),
     },
   };
 }

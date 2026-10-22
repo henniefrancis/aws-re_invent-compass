@@ -23,6 +23,11 @@
 import { createSign } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+// Node 24 loads the TypeScript layout with type stripping; it has no imports of its own.
+import {
+  GOOGLE_DETAIL_MODULES,
+  GOOGLE_FRONT_ROWS,
+} from '../packages/pass-service/src/google/google-layout.ts';
 
 const WALLET_API = 'https://walletobjects.googleapis.com/walletobjects/v1';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -30,11 +35,50 @@ const WALLET_SCOPE = 'https://www.googleapis.com/auth/wallet_object.issuer';
 const DEFAULT_ISSUER_NAME = 'Compass';
 const REQUEST_TIMEOUT_MS = 30_000;
 
-// Fields the class must carry besides its id. Kept minimal on purpose: the pass
-// content lives in the objects the api Lambda creates, not in the class.
-const DESIRED_CLASS_FIELDS = Object.freeze({
+// One template item showing a text module of the object, with its header as the label.
+function textModuleItem(id) {
+  return { firstValue: { fields: [{ fieldPath: `object.textModulesData['${id}']` }] } };
+}
+
+// Fields the class must carry besides its id. The pass content lives in the objects
+// the api Lambda creates; the class only says where the text modules go (pass-service
+// task 47): two front rows of two items, then the details in order.
+// https://developers.google.com/wallet/generic/resources/template
+export const DESIRED_CLASS_FIELDS = Object.freeze({
   viewUnlockRequirement: 'UNLOCK_NOT_REQUIRED',
+  classTemplateInfo: {
+    cardTemplateOverride: {
+      cardRowTemplateInfos: GOOGLE_FRONT_ROWS.map(([start, end]) => ({
+        twoItems: { startItem: textModuleItem(start), endItem: textModuleItem(end) },
+      })),
+    },
+    detailsTemplateOverride: {
+      detailsItemInfos: GOOGLE_DETAIL_MODULES.map((id) => ({ item: textModuleItem(id) })),
+    },
+  },
 });
+
+// True when the class Google returns already carries the desired value. Objects match
+// when every key the desired value names matches (Google may add keys of its own);
+// lists match item by item, in order and with the same length.
+export function matchesDesired(desired, current) {
+  if (Array.isArray(desired)) {
+    return (
+      Array.isArray(current) &&
+      current.length === desired.length &&
+      desired.every((value, index) => matchesDesired(value, current[index]))
+    );
+  }
+  if (desired !== null && typeof desired === 'object') {
+    return (
+      current !== null &&
+      typeof current === 'object' &&
+      !Array.isArray(current) &&
+      Object.entries(desired).every(([key, value]) => matchesDesired(value, current[key]))
+    );
+  }
+  return desired === current;
+}
 
 class UsageError extends Error {}
 class ApiError extends Error {}
@@ -158,10 +202,7 @@ async function ensureClass(token, classId) {
   }
   if (!found.ok) throw new ApiError(`reading the class failed with HTTP ${found.status}`);
   const current = await readJson(found, 'reading the class');
-  const differs = Object.entries(DESIRED_CLASS_FIELDS).some(
-    ([key, value]) => current[key] !== value,
-  );
-  if (!differs) {
+  if (matchesDesired(DESIRED_CLASS_FIELDS, current)) {
     process.stdout.write('class: exists, left unchanged\n');
     return;
   }

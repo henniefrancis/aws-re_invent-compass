@@ -10,13 +10,16 @@
 // Sizes follow Apple's Wallet Human Interface Guidelines: icon 38 points and logo up to 160 by
 // 50 points at 1x, 2x and 3x; background 343 by 503 points (src/artwork/render.ts says which
 // scales ship).
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { ARTWORK_FILES, artworkModuleSource } from '../src/artwork/render.ts';
+import { GOOGLE_IMAGES } from '../src/google/google-layout.ts';
 
 const artworkDir = new URL('../../../site/public/artwork/', import.meta.url);
 // The pass background is a pass-only source, kept out of the site's public folder (task 44).
 const passArtworkDir = new URL('../artwork/', import.meta.url);
+// The Google Wallet images are files, not a module: Google fetches them by URL (task 47).
+const googleDir = new URL('../artwork/google/', import.meta.url);
 const MIME = { '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.png': 'image/png' };
 const dataUrl = (name) =>
   `data:${MIME[name.slice(name.lastIndexOf('.'))]};base64,${readFileSync(new URL(name, name.endsWith('.png') ? passArtworkDir : artworkDir)).toString('base64')}`;
@@ -68,6 +71,72 @@ try {
   const target = new URL('../src/apple/artwork.ts', import.meta.url);
   writeFileSync(target, artworkModuleSource(files));
   console.log('wrote src/apple/artwork.ts');
+
+  // The Google Wallet images (task 47), served from <PUBLIC_BASE_URL>/wallet/ (infra task 24):
+  // the icon alone as the wide logo (1280 by 400, transparent, left-aligned), and the hero
+  // (1032 by 812): the Pass Designer gradient, cover-cropped and centred, with the full logo
+  // centred on it over a soft white glow so its purple text reads on the blue.
+  mkdirSync(googleDir, { recursive: true });
+  const google = {
+    [GOOGLE_IMAGES.wideLogo]: await page.evaluate(
+      async ({ icon }) => {
+        const image = new Image();
+        image.src = icon;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = 1280;
+        canvas.height = 400;
+        const context = canvas.getContext('2d');
+        context.imageSmoothingQuality = 'high';
+        const scale = 400 / image.naturalHeight;
+        context.drawImage(image, 0, 0, image.naturalWidth * scale, 400);
+        return canvas.toDataURL('image/png').split(',')[1];
+      },
+      { icon: dataUrl('favicon.svg') },
+    ),
+    [GOOGLE_IMAGES.hero]: await page.evaluate(
+      async ({ background, logo }) => {
+        const load = async (src) => {
+          const image = new Image();
+          image.src = src;
+          await image.decode();
+          return image;
+        };
+        const [gradient, lockup] = [await load(background), await load(logo)];
+        const width = 1032;
+        const height = 812;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        context.imageSmoothingQuality = 'high';
+        context.fillStyle = '#000000';
+        context.fillRect(0, 0, width, height);
+        const cover = Math.max(width / gradient.naturalWidth, height / gradient.naturalHeight);
+        const gw = gradient.naturalWidth * cover;
+        const gh = gradient.naturalHeight * cover;
+        context.drawImage(gradient, (width - gw) / 2, (height - gh) / 2, gw, gh);
+        const lw = width * 0.72;
+        const lh = (lockup.naturalHeight / lockup.naturalWidth) * lw;
+        const lx = (width - lw) / 2;
+        const ly = (height - lh) / 2;
+        // The glow is the logo's own white shadow, drawn twice for strength, then the logo.
+        context.shadowColor = 'rgba(255, 255, 255, 0.9)';
+        context.shadowBlur = 36;
+        context.drawImage(lockup, lx, ly, lw, lh);
+        context.drawImage(lockup, lx, ly, lw, lh);
+        context.shadowColor = 'transparent';
+        context.shadowBlur = 0;
+        context.drawImage(lockup, lx, ly, lw, lh);
+        return canvas.toDataURL('image/png').split(',')[1];
+      },
+      { background: dataUrl('pass-background.png'), logo: dataUrl('logo.svg') },
+    ),
+  };
+  for (const [name, base64] of Object.entries(google)) {
+    writeFileSync(new URL(name, googleDir), Buffer.from(base64, 'base64'));
+    console.log(`wrote artwork/google/${name}`);
+  }
 } finally {
   await browser.close();
 }

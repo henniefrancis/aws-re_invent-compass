@@ -448,3 +448,57 @@ test('google-wallet-class.mjs parses its arguments strictly and signs an RS256 a
   verifier.update(`${header}.${payload}`);
   assert.equal(verifier.verify(publicKey, Buffer.from(signature, 'base64url')), true);
 });
+
+test('google-wallet-class.mjs puts the pass layout ids in the class template (pass-service task 47)', async () => {
+  const mod = await import(pathToFileURL(`${repoRoot}/scripts/google-wallet-class.mjs`).href);
+  const layout = await import(
+    pathToFileURL(`${repoRoot}/packages/pass-service/src/google/google-layout.ts`).href
+  );
+  const path = (item) => item.firstValue.fields.map((field) => field.fieldPath);
+  const { classTemplateInfo, viewUnlockRequirement } = mod.DESIRED_CLASS_FIELDS;
+  assert.equal(viewUnlockRequirement, 'UNLOCK_NOT_REQUIRED');
+  const rows = classTemplateInfo.cardTemplateOverride.cardRowTemplateInfos;
+  assert.equal(rows.length, 2, 'Google recommends at most two front rows');
+  assert.deepEqual(
+    rows.map((row) => [path(row.twoItems.startItem), path(row.twoItems.endItem)]),
+    layout.GOOGLE_FRONT_ROWS.map((ids) => ids.map((id) => [`object.textModulesData['${id}']`])),
+  );
+  assert.deepEqual(
+    classTemplateInfo.detailsTemplateOverride.detailsItemInfos.map((info) => path(info.item)),
+    layout.GOOGLE_DETAIL_MODULES.map((id) => [`object.textModulesData['${id}']`]),
+  );
+  assert.ok(!layout.GOOGLE_DETAIL_MODULES.includes('name'), 'the attendee name stays off Google');
+});
+
+test('google-wallet-class.mjs compares nested class fields, so an unchanged class is left alone', async () => {
+  const { DESIRED_CLASS_FIELDS: desired, matchesDesired } = await import(
+    pathToFileURL(`${repoRoot}/scripts/google-wallet-class.mjs`).href
+  );
+  const copy = () => JSON.parse(JSON.stringify(desired));
+  // Google answers with the class id and keys of its own; the desired fields still match.
+  assert.equal(
+    matchesDesired(desired, { ...copy(), id: '1.compass-dev', reviewStatus: 'APPROVED' }),
+    true,
+  );
+  const extraNested = copy();
+  extraNested.classTemplateInfo.cardTemplateOverride.kind = 'walletobjects#cardTemplateOverride';
+  assert.equal(matchesDesired(desired, extraNested), true);
+  // The class of today has no template: the script patches it.
+  assert.equal(matchesDesired(desired, { viewUnlockRequirement: 'UNLOCK_NOT_REQUIRED' }), false);
+  const swapped = copy();
+  swapped.classTemplateInfo.detailsTemplateOverride.detailsItemInfos.reverse();
+  assert.equal(matchesDesired(desired, swapped), false, 'a new order is a change');
+  const shorter = copy();
+  shorter.classTemplateInfo.detailsTemplateOverride.detailsItemInfos.pop();
+  assert.equal(matchesDesired(desired, shorter), false, 'a missing detail is a change');
+  const changedPath = copy();
+  changedPath.classTemplateInfo.cardTemplateOverride.cardRowTemplateInfos[0].twoItems.endItem.firstValue.fields[0].fieldPath =
+    "object.textModulesData['room']";
+  assert.equal(matchesDesired(desired, changedPath), false);
+  const notAList = copy();
+  notAList.classTemplateInfo.cardTemplateOverride.cardRowTemplateInfos = {};
+  assert.equal(matchesDesired(desired, notAList), false);
+  assert.equal(matchesDesired(desired, { ...copy(), classTemplateInfo: null }), false);
+  assert.equal(matchesDesired(desired, { ...copy(), classTemplateInfo: [] }), false);
+  assert.equal(matchesDesired({ a: 1 }, { a: '1' }), false);
+});

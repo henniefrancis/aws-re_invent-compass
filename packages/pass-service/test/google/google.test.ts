@@ -1,9 +1,10 @@
 import { verify } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { JWT } from 'google-auth-library';
 import fc from 'fast-check';
 import { describe, expect, test, vi } from 'vitest';
 import { formatEventDate, formatEventTime24 } from '../../src/apple/format-time.js';
-import { PASS_COLOURS, boardingClosesAt, shortRoom } from '../../src/apple/pass-template.js';
+import { backFields, boardingClosesAt, shortRoom } from '../../src/apple/pass-template.js';
 import {
   GENERIC_OBJECT_URL,
   createGoogleWalletClient,
@@ -13,6 +14,11 @@ import {
   buildGenericObject,
   googleObjectId,
 } from '../../src/google/google-object.js';
+import {
+  GOOGLE_DETAIL_MODULES,
+  GOOGLE_FRONT_ROWS,
+  GOOGLE_IMAGES,
+} from '../../src/google/google-layout.js';
 import { SAVE_URL_PREFIX, saveLink, signSaveJwt } from '../../src/google/save-jwt.js';
 import { WALLET_SCOPE, createGoogleTokenSource } from '../../src/google/token-source.js';
 import { createFakeSecrets } from '../helpers/fake-secrets.js';
@@ -66,6 +72,8 @@ const tokens = { accessToken: () => Promise.resolve('fake-access-token') };
 // Property tests do real work (signing, TLS, many records) and the machine may be busy.
 vi.setConfig({ testTimeout: 120_000 });
 
+const BASE = 'https://compass.example.test';
+
 describe('Feature: pass-service, Google generic object', () => {
   // Feature: pass-service, Property 21: Google objects follow the fixed mapping
   test('Property 21: objects follow the fixed mapping', () => {
@@ -79,7 +87,7 @@ describe('Feature: pass-service, Google generic object', () => {
           const serial = '33333333-3333-4333-8333-333333333333';
           const obj = buildGenericObject(
             { serialNumber: serial, fields, state, timezone: TZ },
-            { issuerId, classSuffix },
+            { issuerId, classSuffix, publicBaseUrl: BASE },
           );
           expect(obj.id).toBe(`${issuerId}.${serial}`);
           expect(obj.id).toBe(googleObjectId(issuerId, serial));
@@ -89,15 +97,26 @@ describe('Feature: pass-service, Google generic object', () => {
           expect(obj.header.defaultValue.value).toBe(fields.title);
           expect(obj.subheader.defaultValue.value).toBe(fields.sessionCode);
           expect(obj.cardTitle.defaultValue.value).toBe('Compass boarding pass');
-          // The same fields and formats as the final Apple pass (task 40).
-          expect(obj.textModulesData.map((m) => m.header)).toEqual([
-            'TERMINAL',
-            'GATE',
-            'DATE',
-            'BOARDING CLOSES',
-            ...(fields.room === '' ? [] : ['ROOM']),
-            'NOTICE',
+          // The front rows first, in reading order, then the Apple back in the template's
+          // detail order, without the name (task 47).
+          const back = backFields(fields, TZ);
+          const details = GOOGLE_DETAIL_MODULES.filter((id) => back.some((f) => f.key === id));
+          expect(obj.textModulesData.map((m) => m.id)).toEqual([
+            ...GOOGLE_FRONT_ROWS.flat(),
+            ...details,
           ]);
+          for (const module of obj.textModulesData.slice(GOOGLE_FRONT_ROWS.flat().length)) {
+            const field = back.find((f) => f.key === module.id);
+            expect(module).toEqual({ id: field?.key, header: field?.label, body: field?.value });
+          }
+          expect(obj.textModulesData.some((m) => m.id === 'roomFull')).toBe(fields.room !== '');
+          expect(obj.textModulesData.some((m) => m.id === 'walk')).toBe(
+            fields.walkFromPrevious !== undefined,
+          );
+          expect(obj.textModulesData.some((m) => m.id === 'next')).toBe(
+            fields.nextConnection !== undefined,
+          );
+          expect(obj.textModulesData.map((m) => m.header)).not.toContain('NAME');
           const bodies = Object.fromEntries(obj.textModulesData.map((m) => [m.id, m.body]));
           expect(bodies.terminal).toBe(fields.venue === '' ? 'Venue not published' : fields.venue);
           expect(bodies.gate).toBe(
@@ -109,11 +128,13 @@ describe('Feature: pass-service, Google generic object', () => {
           expect(bodies.boardingCloses).toBe(
             formatEventTime24(boardingClosesAt(fields.startsAt), TZ),
           );
-          expect(bodies.room).toBe(fields.room === '' ? undefined : fields.room);
-          expect(bodies.notice).toBe('Unofficial. Your badge is your ticket.');
+          expect(obj.wideLogo.sourceUri.uri).toBe(`${BASE}/wallet/wide-logo-v1.png`);
+          expect(obj.heroImage.sourceUri.uri).toBe(`${BASE}/wallet/hero-v1.png`);
+          expect(obj.wideLogo.contentDescription.defaultValue.value).toBe('Compass icon');
+          expect(obj.heroImage.contentDescription.defaultValue.value).toMatch(/logo/);
           expect(obj.hexBackgroundColor).toBe(GOOGLE_BACKGROUND);
           expect(obj.validTimeInterval).toEqual({ end: { date: fields.endsAt } });
-          expect(JSON.stringify(obj)).not.toMatch(/barcode|logo/i);
+          expect(JSON.stringify(obj)).not.toMatch(/barcode/i);
         },
       ),
       { numRuns: 200 },
@@ -121,13 +142,74 @@ describe('Feature: pass-service, Google generic object', () => {
   });
 });
 
-test('the Google background is the Apple pass background in hex (task 40)', () => {
-  const hex = PASS_COLOURS.background
-    .match(/\d+/g)
-    ?.map((channel) => Number(channel).toString(16).padStart(2, '0'))
-    .join('')
-    .toUpperCase();
-  expect(GOOGLE_BACKGROUND).toBe(`#${hex ?? ''}`);
+test('a pass with every detail writes every detail module in the template order, without the name (task 47)', () => {
+  const fields = samplePassFields();
+  const full = {
+    ...fields,
+    room: 'Venetian, Murano 3201',
+    walkFromPrevious: { minutes: 12, fromVenue: 'MGM Grand' },
+    nextConnection: {
+      sessionCode: 'SVS302',
+      startsAt: fields.endsAt,
+      venue: 'Wynn',
+      walkMinutes: 15,
+    },
+    attendeeName: 'Sample Attendee',
+  };
+  const obj = buildGenericObject(
+    {
+      serialNumber: '55555555-5555-4555-8555-555555555555',
+      fields: full,
+      state: 'ACTIVE',
+      timezone: TZ,
+    },
+    { issuerId: '3388000000099999999', classSuffix: 'compass', publicBaseUrl: BASE },
+  );
+  expect(obj.textModulesData.map((m) => m.id)).toEqual([
+    ...GOOGLE_FRONT_ROWS.flat(),
+    ...GOOGLE_DETAIL_MODULES,
+  ]);
+  expect(obj.textModulesData.map((m) => m.header)).toEqual([
+    'TERMINAL',
+    'GATE',
+    'DATE',
+    'BOARDING CLOSES',
+    'ROOM',
+    'ABOUT',
+    'UNOFFICIAL PASS',
+    'BOARDING CLOSES',
+    'WALK FROM PREVIOUS',
+    'NEXT SESSION',
+    'TIMES',
+    'IF YOUR PLANS CHANGE',
+    'PRIVACY',
+  ]);
+  expect(JSON.stringify(obj)).not.toContain('Sample Attendee');
+});
+
+test('the Google card is the blue at the top of the hero, and white text reads on it (task 47)', () => {
+  expect(GOOGLE_BACKGROUND).toBe('#2035E2');
+  const linear = (hex: string): number => {
+    const c = Number.parseInt(hex, 16) / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const [r, g, b] = [1, 3, 5].map((i) => linear(GOOGLE_BACKGROUND.slice(i, i + 2))) as [
+    number,
+    number,
+    number,
+  ];
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  expect(1.05 / (luminance + 0.05)).toBeGreaterThan(7);
+});
+
+test('the Google images are PNGs at the sizes Google recommends (task 47)', () => {
+  const size = (name: string): number[] => {
+    const png = readFileSync(new URL(`../../artwork/google/${name}`, import.meta.url));
+    expect(png.subarray(1, 4).toString('ascii')).toBe('PNG');
+    return [png.readUInt32BE(16), png.readUInt32BE(20)];
+  };
+  expect(size(GOOGLE_IMAGES.wideLogo)).toEqual([1280, 400]);
+  expect(size(GOOGLE_IMAGES.hero)).toEqual([1032, 812]);
 });
 
 describe('Feature: pass-service, Google REST client', () => {
@@ -138,7 +220,7 @@ describe('Feature: pass-service, Google REST client', () => {
       state: 'ACTIVE',
       timezone: TZ,
     },
-    { issuerId: '3388000000099999999', classSuffix: 'compass' },
+    { issuerId: '3388000000099999999', classSuffix: 'compass', publicBaseUrl: BASE },
   );
 
   // Feature: pass-service, Property 22: Google REST calls use the documented endpoints

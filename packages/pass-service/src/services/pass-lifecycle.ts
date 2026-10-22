@@ -139,7 +139,7 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
           state: 'ACTIVE',
           timezone: config.eventWindow.timezone,
         },
-        { issuerId, classSuffix },
+        { issuerId, classSuffix, publicBaseUrl: config.publicBaseUrl },
       );
       return deps.google.patch(object.id, object);
     });
@@ -156,7 +156,7 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
             state: 'ACTIVE',
             timezone: config.eventWindow.timezone,
           },
-          { issuerId, classSuffix },
+          { issuerId, classSuffix, publicBaseUrl: config.publicBaseUrl },
         ),
       ),
     );
