@@ -13,14 +13,14 @@ The class id is `<issuer id>.<suffix>`. The suffix defaults to `compass-<env>`, 
 ## Preconditions
 
 - The Google Pay and Wallet console issuer account exists and you have its numeric issuer id.
-- A service account with the Wallet Objects issuer role, and its downloaded key file, held locally. The same key is loaded into `compass/<env>/google-wallet` by `scripts/load-secrets.sh` (see `secrets.md`).
+- A service account with **Developer** access under **Users** in the Google Wallet console (it needs no Google Cloud IAM role), and its downloaded key file, held locally. The same key is loaded into `compass/<env>/google-wallet` by `scripts/load-secrets.sh` (see `secrets.md`).
 - Node.js 24 or later. The script has no dependencies.
 
 ## Steps
 
 1. Run the command above for `dev`.
 2. Read the two lines it prints: one for the issuer and one for the class.
-3. Repeat for `prod` after dev has been verified.
+3. Repeat for `prod` after dev has been verified. The dev class was created on 18 October 2026. Prod runs on the prod deploy day with a fresh key, in the order set out in `google-wallet-setup.md` "Prod key and prod class".
 
 ## Expected success outcome
 

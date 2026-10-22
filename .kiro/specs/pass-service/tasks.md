@@ -601,6 +601,15 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 44.3 Tests (layout, alignments, the unlabelled arrow, the back order with and without per-pass data, colours and contrast, image sizes and budget, a signed pass keeps the design) and commit after the full gate passes, scoped `pass-service`. Owner check on the iPhone: remove the old dev pass, reissue, and compare with the Pass Designer preview
   - [x] 44.4 Owner check of 21 October: the layout matches the design, but the background was the older photo. The background is now the design's own gradient (`packages/pass-service/artwork/pass-background.png`, kept out of the site's public folder, taken from `docs/previews/compass.pkpass`) as `background.png` at 1x (343 by 503 pixels): at 2x the gradient weighs 538 KB, over the budget, and Wallet blurs an event ticket background, so 1x looks the same. The set is 222 KB
 
+- [x] 45. Google Wallet publishing access outcome (tracker P05, decision date 28 October, build plan SP4 fallback and risk R4, ADR-010)
+  - [x] 45.1 Record what Google's page asks for (a complete business profile and one class, both done) and how the owner reads the status in `docs/runbooks/google-wallet-setup.md` (22 October)
+  - [x] 45.2 Record the outcome: approved on 21 October 2026 (Google's approval mail to the Admin account), confirmed by a read-only console check on 22 October (no Get publishing access box, business profile Approved, `compass-dev` Active, `compass-wallet` Developer). The "beta, test users" fallback is not needed: no code, infrastructure or wording change, `google_wallet_enabled` stays `true`, no test accounts. The owner's Android save on 22 October shows no "[TEST ONLY]" mark
+
+- [ ] 46. Prod Google key, prod Google class and the Apple certificate check (tracker PK1, TAM M3 of 20 October, part of release gate G03)
+  - [x] 46.1 Order the owner-run steps against `docs/runbooks/release.md` "First-time setup of an environment" and record them, with dates, in `docs/runbooks/google-wallet-setup.md` (22 October). Correct the `google-class.md` precondition: the service account needs no Cloud IAM role, only Developer access under Users in the Wallet console
+  - [ ] 46.2 Owner, any day before the deploy: confirm the Pass Type ID certificate expiry (14 November 2027) in the Apple developer portal and record the date it was checked
+  - [ ] 46.3 Owner, on the prod deploy day after `scripts/release.sh prod` has created the secret containers: create a fresh `compass-wallet` JSON key, `scripts/load-secrets.sh prod google`, `scripts/check-secrets.sh prod`, `scripts/google-wallet-class.mjs --env prod` with the same key, then shred the key file. Record the results in the runbook
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.
