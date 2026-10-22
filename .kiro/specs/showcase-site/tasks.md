@@ -449,6 +449,12 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 34.4 The owner's full photo, not cropped, in `public/artwork` (one named raster exception to the svg, txt and ico rule and to the no-AWS-marks rule, because the owner may use the Community Builder logo; listed in ARTWORK.md), with a text alternative
   - [x] 34.5 Tests, the e2e suite and a look at both pages in the browser; commit scoped `showcase-site`
 
+- [x] 35. Owner review of The Creator and The Inspiration (owner request of 22 October, design "Post-SP3 change: owner review of The Creator and The Inspiration", Requirement 24.2 amended)
+  - [x] 35.1 The Inspiration_Page: the line to remember in normal weight, no caption under it, no "Meet the creator" link, and the story as plain paragraphs without section headings
+  - [x] 35.2 The About_Page: on wide screens the photo column takes 30 percent of the card and the text 70 percent, the photo filling its column; the opening line without the roles, no "Find Hennie online" section and no story link; a "Connect with Hennie" heading at half the `h2` size under the photo, over the five owner-supplied link icons from `docs/previews` (cropped by the owner to the icon only), side by side in one row, each opening in a new tab with a title naming its site, converted to WebP and listed in ARTWORK.md
+  - [x] 35.3 The Project menu's outside links (Repository, and the Builder Center post and Video once their addresses are known) open in a new tab, with hidden text "(opens in a new tab)" for screen readers
+  - [x] 35.4 Site tests, the e2e suite and the local preview for the owner's review before any push; commit scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

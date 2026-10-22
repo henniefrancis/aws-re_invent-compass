@@ -632,7 +632,9 @@ a.site-nav__link:hover {
   overflow-wrap: anywhere;
 }
 
-/* The Creator page (task 34): the owner's photo beside the biography on wide screens. */
+/* The Creator page (tasks 34 and 35): on wide screens the photo column takes 30 percent of the
+   card and the biography 70 percent, and the photo sits half the card padding from the edge,
+   with the same space between it and the text. */
 .creator {
   display: grid;
   gap: var(--space-5);
@@ -641,7 +643,13 @@ a.site-nav__link:hover {
 
 @media (min-width: 48rem) {
   .creator {
-    grid-template-columns: minmax(12rem, 18rem) 1fr;
+    grid-template-columns: 3fr 7fr;
+    gap: calc(var(--space-6) / 2);
+    margin-inline-start: calc(var(--space-6) / -2);
+  }
+
+  .creator .creator__photo {
+    max-inline-size: none;
   }
 }
 
@@ -655,44 +663,45 @@ a.site-nav__link:hover {
   border-radius: 1rem;
 }
 
-.creator-links {
+/* "Connect with Hennie" under the photo (task 35): a small heading over the owner's link images. */
+.connect {
+  margin-block-start: var(--space-4);
+}
+
+.connect__title {
+  margin-block: 0 var(--space-2);
+  font-size: clamp(0.75rem, 2.25vw, 1.0625rem);
+}
+
+.connect__list {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.creator + section,
-.story-section + .story-section {
-  margin-block-start: var(--space-6);
+.connect__link {
+  display: block;
+  border-radius: 0.5rem;
 }
 
-/* The Inspiration page (task 34): the line to remember, under the title. */
+.connect__link img {
+  display: block;
+  inline-size: auto;
+  block-size: 2.75rem;
+}
+
+/* The Inspiration page (tasks 34 and 35): the line to remember, under the title. */
 .story-quote {
   margin: var(--space-4) 0 var(--space-6);
-  text-align: center;
-}
-
-.story-quote blockquote {
-  margin: 0;
   font-size: clamp(1.25rem, 3vw, 1.625rem);
-  font-weight: 700;
   line-height: 1.35;
-}
-
-.story-quote blockquote p {
-  margin: 0;
-}
-
-.story-quote figcaption {
-  margin-block-start: var(--space-2);
-  color: var(--color-ink-muted);
-}
-
-.page-next {
-  margin-block-start: var(--space-6);
   text-align: center;
+}
+
+.story-quote p {
+  margin: 0;
 }

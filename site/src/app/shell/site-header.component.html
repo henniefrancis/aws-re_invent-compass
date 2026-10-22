@@ -48,8 +48,14 @@
                         ><span class="site-nav__description">{{ item.description }}</span></a
                       >
                     } @else if (item.kind === 'external') {
-                      <a class="site-nav__link" [href]="item.href" rel="noopener noreferrer"
-                        ><span class="site-nav__label">{{ item.label }}</span
+                      <a
+                        class="site-nav__link"
+                        [href]="item.href"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        ><span class="site-nav__label"
+                          >{{ item.label
+                          }}<span class="visually-hidden"> (opens in a new tab)</span></span
                         ><span class="site-nav__description">{{ item.description }}</span></a
                       >
                     } @else {

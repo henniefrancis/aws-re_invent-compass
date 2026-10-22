@@ -176,13 +176,21 @@ describe('artwork', () => {
     }
   });
 
-  // The owner's photo on The Creator page is the one raster image (task 34). It shows the AWS
-  // Community Builder logo, which the owner is allowed to use, so the text checks skip it.
-  const OWNER_PHOTO = 'public/artwork/hennie-francis.webp';
+  // The Creator page's owner-supplied images are the only raster files (tasks 34 and 35): the
+  // photo, which shows the AWS Community Builder logo, and the five link images. The owner may
+  // use these marks, so the text checks skip them.
+  const OWNER_IMAGES = new Set([
+    'public/artwork/hennie-francis.webp',
+    'public/artwork/connect-website.webp',
+    'public/artwork/connect-linkedin.webp',
+    'public/artwork/connect-github.webp',
+    'public/artwork/connect-awscommza.webp',
+    'public/artwork/connect-builder-center.webp',
+  ]);
 
-  test('public holds only svg, txt and ico files, plus the owner photo', () => {
-    expect(publicFiles.map((f) => f.path)).toContain(OWNER_PHOTO);
-    for (const file of publicFiles.filter((f) => f.path !== OWNER_PHOTO)) {
+  test('public holds only svg, txt and ico files, plus the owner images', () => {
+    expect(publicFiles.filter((f) => OWNER_IMAGES.has(f.path))).toHaveLength(OWNER_IMAGES.size);
+    for (const file of publicFiles.filter((f) => !OWNER_IMAGES.has(f.path))) {
       expect(file.path, file.path).toMatch(/\.(svg|txt|ico)$/);
     }
   });
@@ -195,7 +203,7 @@ describe('artwork', () => {
 
   test('no text artwork names an AWS mark, and only the vendor badges name Apple or Google', () => {
     expect(publicFiles.filter((f) => VENDOR_BADGES.has(f.path))).toHaveLength(2);
-    for (const file of publicFiles.filter((f) => f.path !== OWNER_PHOTO)) {
+    for (const file of publicFiles.filter((f) => !OWNER_IMAGES.has(f.path))) {
       const text = file.text.toLowerCase();
       expect(text, file.path).not.toMatch(/aws|amazon/);
       if (!VENDOR_BADGES.has(file.path)) {

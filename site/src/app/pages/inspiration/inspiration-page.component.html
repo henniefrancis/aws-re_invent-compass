@@ -1,16 +1,7 @@
 <h1 tabindex="-1">{{ title }}</h1>
-<figure class="story-quote">
-  <blockquote>
-    <p>{{ keyLine }}</p>
-  </blockquote>
-  <figcaption>Hennie Francis, the creator</figcaption>
-</figure>
-@for (section of sections; track section.id) {
-  <section class="story-section" [attr.aria-labelledby]="'story-' + section.id">
-    <h2 [id]="'story-' + section.id">{{ section.heading }}</h2>
-    @for (block of section.blocks; track block.id) {
-      <p>{{ block.text }}</p>
-    }
-  </section>
+<blockquote class="story-quote">
+  <p>{{ keyLine }}</p>
+</blockquote>
+@for (block of paragraphs; track block.id) {
+  <p>{{ block.text }}</p>
 }
-<p class="page-next"><a routerLink="/about">Meet the creator</a></p>

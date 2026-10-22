@@ -23,8 +23,7 @@
   .wallet-badge__caption,
   .site-nav__description,
   .hero__note,
-  .hero__intro,
-  .story-quote figcaption {
+  .hero__intro {
     color: CanvasText;
   }
 

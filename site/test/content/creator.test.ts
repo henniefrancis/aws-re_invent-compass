@@ -1,4 +1,4 @@
-// Feature: showcase-site, task 34 (Requirements 24 and 25): The Creator and The Inspiration pages
+// Feature: showcase-site, tasks 34 and 35 (Requirements 24 and 25): The Creator and The Inspiration pages
 // quote the owner's recorded answers, and the photo and links match what the owner chose.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -9,11 +9,12 @@ import { CREATOR_LINKS } from '../../src/lib/content/links';
 import { SITE_ROOT } from '../support/source-files';
 
 const STORY = readFileSync(join(SITE_ROOT, '..', 'docs/story/creator-and-inspiration.md'), 'utf8');
+const ARTWORK = readFileSync(join(SITE_ROOT, 'ARTWORK.md'), 'utf8');
 
 describe('The Creator and The Inspiration (task 34)', () => {
-  test('the creator links are the five pages the owner chose, all https', () => {
+  test('the creator links are the five pages the owner chose, all https, each with its image', () => {
     expect(CREATOR_LINKS.map((l) => l.label)).toEqual([
-      'Website',
+      'Personal website',
       'LinkedIn',
       'GitHub',
       'AWS Community South Africa',
@@ -22,6 +23,9 @@ describe('The Creator and The Inspiration (task 34)', () => {
     for (const link of CREATOR_LINKS) {
       expect(link.href, link.label).toMatch(/^https:\/\//);
       expect(STORY, link.label).toContain(link.href);
+      const image = readFileSync(join(SITE_ROOT, 'public', link.image));
+      expect(image.subarray(8, 12).toString('ascii'), link.label).toBe('WEBP');
+      expect(ARTWORK, link.label).toContain('`public' + link.image + '`');
     }
   });
 

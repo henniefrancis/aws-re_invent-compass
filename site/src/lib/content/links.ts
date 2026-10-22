@@ -209,11 +209,39 @@ export function documentationLinks(
   ];
 }
 
-/** The creator's own pages (task 34), shown on The Creator page. */
-export const CREATOR_LINKS: readonly { readonly label: string; readonly href: string }[] = [
-  { label: 'Website', href: 'https://henniefrancis.tech/' },
-  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/henniefrancis/' },
-  { label: 'GitHub', href: 'https://github.com/henniefrancis' },
-  { label: 'AWS Community South Africa', href: 'https://www.awscommunity.co.za/' },
-  { label: 'AWS Builder Center', href: 'https://builder.aws.com/community/@henniefrancis' },
+/** One of the creator's own pages, shown as the owner's image for it (task 35). */
+export interface CreatorLink {
+  /** The link's name, also the image's text alternative. */
+  readonly label: string;
+  readonly href: string;
+  readonly image: string;
+}
+
+/** The creator's own pages, under the photo on The Creator page (tasks 34 and 35). */
+export const CREATOR_LINKS: readonly CreatorLink[] = [
+  {
+    label: 'Personal website',
+    href: 'https://henniefrancis.tech/',
+    image: '/artwork/connect-website.webp',
+  },
+  {
+    label: 'LinkedIn',
+    href: 'https://www.linkedin.com/in/henniefrancis/',
+    image: '/artwork/connect-linkedin.webp',
+  },
+  {
+    label: 'GitHub',
+    href: 'https://github.com/henniefrancis',
+    image: '/artwork/connect-github.webp',
+  },
+  {
+    label: 'AWS Community South Africa',
+    href: 'https://www.awscommunity.co.za/',
+    image: '/artwork/connect-awscommza.webp',
+  },
+  {
+    label: 'AWS Builder Center',
+    href: 'https://builder.aws.com/community/@henniefrancis',
+    image: '/artwork/connect-builder-center.webp',
+  },
 ];

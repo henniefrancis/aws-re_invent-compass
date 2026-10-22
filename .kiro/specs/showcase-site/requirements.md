@@ -385,7 +385,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 #### Acceptance Criteria
 
 1. THE Site SHALL have an About_Page at `/about`, titled "The Creator", reached from the About group of the main navigation (renamed by the owner on 21 October 2026, task 28).
-2. THE About_Page SHALL say that re:Invent Compass was built by Hennie Francis, founder of AWS Community South Africa and an AWS Community Builder, as an entry in the re:Invent Catalog API Builder Challenge, then introduce Hennie from the owner's biography (cloud and technology strategist, community work, speaking, aviation and conference swag), show the owner's photo with a text alternative, link to the owner's website, LinkedIn, GitHub, AWS Community South Africa and AWS Builder Center profile, and link to the Inspiration_Page (owner answers of 22 October 2026, task 34, recorded in `docs/story/creator-and-inspiration.md`).
+2. THE About_Page SHALL say that re:Invent Compass was built by Hennie Francis as an entry in the re:Invent Catalog API Builder Challenge, then introduce Hennie from the owner's biography (cloud and technology strategist, community work, speaking, aviation and conference swag), show the owner's photo with a text alternative and, under the photo, a small "Connect with Hennie" heading over image links to the owner's website, LinkedIn, GitHub, AWS Community South Africa and AWS Builder Center profile, each image named by its link text (owner answers of 22 October 2026, tasks 34 and 35, recorded in `docs/story/creator-and-inspiration.md`).
 
 ### Requirement 25: The Inspiration
 

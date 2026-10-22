@@ -35,6 +35,9 @@ test.describe('every page', () => {
     await expect(nav.locator('a[href^="https://github.com/henniefrancis/"]')).toContainText(
       'Repository',
     );
+    // Outside links open in a new tab and say so to screen readers (task 35).
+    await expect(nav.locator('a[href^="https://"]')).toHaveAttribute('target', '_blank');
+    await expect(nav.locator('a[href^="https://"]')).toContainText('(opens in a new tab)');
     await expect(nav.getByText('Builder Center post (coming soon)')).toBeVisible();
     await expect(nav.getByText('Video (coming soon)')).toBeVisible();
   });
