@@ -44,3 +44,19 @@ export const GOOGLE_DETAIL_MODULES = [
   'plans',
   'privacy',
 ] as const;
+
+/**
+ * The detail modules the class carries instead of each object (task 47.7): the texts that are the
+ * same on every pass. Google takes at most 10 text modules from the object and 10 from the class,
+ * so the object keeps only the front rows and the per-pass details (at most 8).
+ */
+export const GOOGLE_CLASS_MODULES = [
+  'about',
+  'unofficial',
+  'seatRule',
+  'plans',
+  'privacy',
+] as const;
+
+/** Google's limit of text modules from one object, and from one class. */
+export const GOOGLE_MAX_TEXT_MODULES = 10;

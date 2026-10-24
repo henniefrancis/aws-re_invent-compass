@@ -13,18 +13,17 @@ import {
   timezoneName,
 } from './format-time.js';
 
-export const DISCLAIMER = 'Unofficial. Your badge is your ticket.';
-/** The back of the pass, in the owner's words from the Pass Designer design (task 44). */
-export const UNOFFICIAL_NOTICE =
-  'This is not a ticket. Your re:Invent badge is your official ticket. Bring it to every session.';
-export const INDEPENDENT_NOTICE =
-  're:Invent Compass is an independent community project, not affiliated with AWS or AWS re:Invent. It is an entry in the re:Invent Catalog API Builder Challenge.';
-export const SEAT_RULE =
-  'Your reserved seat is held until 10 minutes before the session starts. After that, it can go to the walk-up line.';
-export const PLANS_NOTICE =
-  'Compass never changes your schedule. Make changes in the official re:Invent app. If you cancel a session, this pass is voided at the next sync.';
-export const PRIVACY_NOTICE =
-  'This pass holds only session details. Remove it from Wallet at any time. To delete everything Compass keeps, ask Compass to forget you.';
+import { STATIC_BACK, type StaticBackKey } from './pass-texts.js';
+
+// The fixed texts live in pass-texts.ts, shared with the Google class (task 47.7).
+export {
+  DISCLAIMER,
+  INDEPENDENT_NOTICE,
+  PLANS_NOTICE,
+  PRIVACY_NOTICE,
+  SEAT_RULE,
+  UNOFFICIAL_NOTICE,
+} from './pass-texts.js';
 /** The issuer Wallet names on the pass and the Lock Screen (owner decision, task 44). */
 export const ORGANIZATION_NAME = 'AWS Community South Africa';
 export const NO_VENUE = 'Venue not published';
@@ -158,11 +157,9 @@ export function shortRoom(room: string): string {
  * details (task 47).
  */
 export function backFields(fields: PassFields, timezone: string): PassField[] {
-  const back: PassField[] = [
-    field('about', 'ABOUT', INDEPENDENT_NOTICE),
-    field('unofficial', 'UNOFFICIAL PASS', UNOFFICIAL_NOTICE),
-    field('seatRule', 'BOARDING CLOSES', SEAT_RULE),
-  ];
+  const fixed = (key: StaticBackKey): PassField =>
+    field(key, STATIC_BACK[key].label, STATIC_BACK[key].value);
+  const back: PassField[] = [fixed('about'), fixed('unofficial'), fixed('seatRule')];
   if (fields.room !== '') {
     back.push(field('roomFull', 'ROOM', fields.room));
   }
@@ -191,8 +188,8 @@ export function backFields(fields: PassFields, timezone: string): PassField[] {
   }
   back.push(
     field('timezone', 'TIMES', `All times are ${timezoneName(fields.startsAt, timezone)}.`),
-    field('plans', 'IF YOUR PLANS CHANGE', PLANS_NOTICE),
-    field('privacy', 'PRIVACY', PRIVACY_NOTICE),
+    fixed('plans'),
+    fixed('privacy'),
   );
   return back;
 }

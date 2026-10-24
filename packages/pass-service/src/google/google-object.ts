@@ -16,7 +16,12 @@ import {
   boardingClosesAt,
   shortRoom,
 } from '../apple/pass-template.js';
-import { GOOGLE_DETAIL_MODULES, GOOGLE_IMAGES, GOOGLE_IMAGE_PATH } from './google-layout.js';
+import {
+  GOOGLE_CLASS_MODULES,
+  GOOGLE_DETAIL_MODULES,
+  GOOGLE_IMAGES,
+  GOOGLE_IMAGE_PATH,
+} from './google-layout.js';
 
 /**
  * The blue at the top of the hero image, so the card runs into the picture (task 47). White
@@ -83,7 +88,9 @@ export function buildGenericObject(
 ): GenericObject {
   const { fields, timezone } = input;
   const back = new Map(backFields(fields, timezone).map((field) => [field.key, field]));
-  const details = GOOGLE_DETAIL_MODULES.flatMap((id) => {
+  // The class carries the fixed texts (task 47.7), so the object stays within 10 modules.
+  const onClass = new Set<string>(GOOGLE_CLASS_MODULES);
+  const details = GOOGLE_DETAIL_MODULES.filter((id) => !onClass.has(id)).flatMap((id) => {
     const field = back.get(id);
     // Every back field has a label; only the unlabelled arrow is not a back field.
     return field === undefined ? [] : [{ id, header: field.label as string, body: field.value }];

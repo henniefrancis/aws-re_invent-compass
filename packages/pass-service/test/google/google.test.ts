@@ -15,9 +15,11 @@ import {
   googleObjectId,
 } from '../../src/google/google-object.js';
 import {
+  GOOGLE_CLASS_MODULES,
   GOOGLE_DETAIL_MODULES,
   GOOGLE_FRONT_ROWS,
   GOOGLE_IMAGES,
+  GOOGLE_MAX_TEXT_MODULES,
 } from '../../src/google/google-layout.js';
 import { SAVE_URL_PREFIX, saveLink, signSaveJwt } from '../../src/google/save-jwt.js';
 import { WALLET_SCOPE, createGoogleTokenSource } from '../../src/google/token-source.js';
@@ -100,7 +102,10 @@ describe('Feature: pass-service, Google generic object', () => {
           // The front rows first, in reading order, then the Apple back in the template's
           // detail order, without the name (task 47).
           const back = backFields(fields, TZ);
-          const details = GOOGLE_DETAIL_MODULES.filter((id) => back.some((f) => f.key === id));
+          const onClass = new Set<string>(GOOGLE_CLASS_MODULES);
+          const details = GOOGLE_DETAIL_MODULES.filter(
+            (id) => !onClass.has(id) && back.some((f) => f.key === id),
+          );
           expect(obj.textModulesData.map((m) => m.id)).toEqual([
             ...GOOGLE_FRONT_ROWS.flat(),
             ...details,
@@ -109,6 +114,9 @@ describe('Feature: pass-service, Google generic object', () => {
             const field = back.find((f) => f.key === module.id);
             expect(module).toEqual({ id: field?.key, header: field?.label, body: field?.value });
           }
+          // Google takes at most 10 text modules from an object (task 47.7).
+          expect(obj.textModulesData.length).toBeLessThanOrEqual(GOOGLE_MAX_TEXT_MODULES);
+          expect(obj.textModulesData.some((m) => onClass.has(m.id))).toBe(false);
           expect(obj.textModulesData.some((m) => m.id === 'roomFull')).toBe(fields.room !== '');
           expect(obj.textModulesData.some((m) => m.id === 'walk')).toBe(
             fields.walkFromPrevious !== undefined,
@@ -142,7 +150,7 @@ describe('Feature: pass-service, Google generic object', () => {
   });
 });
 
-test('a pass with every detail writes every detail module in the template order, without the name (task 47)', () => {
+test('a pass with every detail writes its per-pass modules in the template order, without the name (tasks 47 and 47.7)', () => {
   const fields = samplePassFields();
   const full = {
     ...fields,
@@ -165,9 +173,13 @@ test('a pass with every detail writes every detail module in the template order,
     },
     { issuerId: '3388000000099999999', classSuffix: 'compass', publicBaseUrl: BASE },
   );
+  // The fixed texts are on the class (task 47.7): the object keeps 8 of Google's 10.
   expect(obj.textModulesData.map((m) => m.id)).toEqual([
     ...GOOGLE_FRONT_ROWS.flat(),
-    ...GOOGLE_DETAIL_MODULES,
+    'roomFull',
+    'walk',
+    'next',
+    'timezone',
   ]);
   expect(obj.textModulesData.map((m) => m.header)).toEqual([
     'TERMINAL',
@@ -175,15 +187,13 @@ test('a pass with every detail writes every detail module in the template order,
     'DATE',
     'BOARDING CLOSES',
     'ROOM',
-    'ABOUT',
-    'UNOFFICIAL PASS',
-    'BOARDING CLOSES',
     'WALK FROM PREVIOUS',
     'NEXT SESSION',
     'TIMES',
-    'IF YOUR PLANS CHANGE',
-    'PRIVACY',
   ]);
+  expect(GOOGLE_DETAIL_MODULES.filter((id) => !GOOGLE_CLASS_MODULES.includes(id as never))).toEqual(
+    ['roomFull', 'walk', 'next', 'timezone'],
+  );
   expect(JSON.stringify(obj)).not.toContain('Sample Attendee');
 });
 

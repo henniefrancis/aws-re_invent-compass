@@ -463,11 +463,30 @@ test('google-wallet-class.mjs puts the pass layout ids in the class template (pa
     rows.map((row) => [path(row.twoItems.startItem), path(row.twoItems.endItem)]),
     layout.GOOGLE_FRONT_ROWS.map((ids) => ids.map((id) => [`object.textModulesData['${id}']`])),
   );
+  const owner = (id) => (layout.GOOGLE_CLASS_MODULES.includes(id) ? 'class' : 'object');
   assert.deepEqual(
     classTemplateInfo.detailsTemplateOverride.detailsItemInfos.map((info) => path(info.item)),
-    layout.GOOGLE_DETAIL_MODULES.map((id) => [`object.textModulesData['${id}']`]),
+    layout.GOOGLE_DETAIL_MODULES.map((id) => [`${owner(id)}.textModulesData['${id}']`]),
   );
   assert.ok(!layout.GOOGLE_DETAIL_MODULES.includes('name'), 'the attendee name stays off Google');
+  // Task 47.7: the class carries the fixed texts, the Apple back's words, within Google's 10.
+  const texts = await import(
+    pathToFileURL(`${repoRoot}/packages/pass-service/src/apple/pass-texts.ts`).href
+  );
+  const classModules = mod.DESIRED_CLASS_FIELDS.textModulesData;
+  assert.deepEqual(
+    classModules,
+    layout.GOOGLE_CLASS_MODULES.map((id) => ({
+      id,
+      header: texts.STATIC_BACK[id].label,
+      body: texts.STATIC_BACK[id].value,
+    })),
+  );
+  assert.ok(classModules.length <= layout.GOOGLE_MAX_TEXT_MODULES);
+  assert.ok(
+    layout.GOOGLE_CLASS_MODULES.every((id) => layout.GOOGLE_DETAIL_MODULES.includes(id)),
+    'every class module has a place in the details',
+  );
 });
 
 test('google-wallet-class.mjs compares nested class fields, so an unchanged class is left alone', async () => {
@@ -510,7 +529,13 @@ test('google-wallet-class.mjs names where the class differs without printing the
   const copy = () => JSON.parse(JSON.stringify(desired));
   assert.equal(firstDifference(desired, { ...copy(), id: '1.compass-dev' }), null);
   assert.deepEqual(firstDifference(desired, { viewUnlockRequirement: 'UNLOCK_NOT_REQUIRED' }), {
-    path: 'classTemplateInfo',
+    path: 'textModulesData',
+    found: 'missing',
+  });
+  const withoutTexts = copy();
+  delete withoutTexts.textModulesData;
+  assert.deepEqual(firstDifference(desired, withoutTexts), {
+    path: 'textModulesData',
     found: 'missing',
   });
   const changedPath = copy();

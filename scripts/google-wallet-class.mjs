@@ -24,7 +24,9 @@ import { createSign } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 // Node 24 loads the TypeScript layout with type stripping; it has no imports of its own.
+import { STATIC_BACK } from '../packages/pass-service/src/apple/pass-texts.ts';
 import {
+  GOOGLE_CLASS_MODULES,
   GOOGLE_DETAIL_MODULES,
   GOOGLE_FRONT_ROWS,
 } from '../packages/pass-service/src/google/google-layout.ts';
@@ -35,17 +37,27 @@ const WALLET_SCOPE = 'https://www.googleapis.com/auth/wallet_object.issuer';
 const DEFAULT_ISSUER_NAME = 'Compass';
 const REQUEST_TIMEOUT_MS = 30_000;
 
-// One template item showing a text module of the object, with its header as the label.
+// One template item showing a text module, with its header as the label. The fixed texts
+// are on the class, the rest on each object (task 47.7).
 function textModuleItem(id) {
-  return { firstValue: { fields: [{ fieldPath: `object.textModulesData['${id}']` }] } };
+  const owner = GOOGLE_CLASS_MODULES.includes(id) ? 'class' : 'object';
+  return { firstValue: { fields: [{ fieldPath: `${owner}.textModulesData['${id}']` }] } };
 }
 
-// Fields the class must carry besides its id. The pass content lives in the objects
-// the api Lambda creates; the class only says where the text modules go (pass-service
-// task 47): two front rows of two items, then the details in order.
+// Fields the class must carry besides its id. The per-pass content lives in the objects
+// the api Lambda creates; the class carries the fixed texts and says where the text
+// modules go (pass-service tasks 47 and 47.7): two front rows of two items, then the
+// details in order.
 // https://developers.google.com/wallet/generic/resources/template
 export const DESIRED_CLASS_FIELDS = Object.freeze({
   viewUnlockRequirement: 'UNLOCK_NOT_REQUIRED',
+  // The texts that are the same on every pass, the Apple back's words. Google takes at
+  // most 10 text modules from the class and 10 from each object.
+  textModulesData: GOOGLE_CLASS_MODULES.map((id) => ({
+    id,
+    header: STATIC_BACK[id].label,
+    body: STATIC_BACK[id].value,
+  })),
   classTemplateInfo: {
     cardTemplateOverride: {
       cardRowTemplateInfos: GOOGLE_FRONT_ROWS.map(([start, end]) => ({
