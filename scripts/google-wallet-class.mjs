@@ -59,17 +59,20 @@ export const DESIRED_CLASS_FIELDS = Object.freeze({
 });
 
 // What Google returned at a differing place, without its content: only the kind of
-// value, except a template field path or an enum constant (such as
-// UNLOCK_NOT_REQUIRED), which are layout and setting names, never a secret.
+// value, except a template field path, the unlock setting or an enum constant (such
+// as UNLOCK_NOT_REQUIRED), which are layout and setting names, never a secret. A
+// shown value is cut to 64 characters.
 function describe(value, path) {
   if (value === undefined) return 'missing';
   if (value === null) return 'null';
   if (Array.isArray(value)) return `a list of ${value.length}`;
   if (
     typeof value === 'string' &&
-    (path.endsWith('.fieldPath') || /^[A-Z][A-Z_]{0,63}$/.test(value))
+    (path.endsWith('.fieldPath') ||
+      path === 'viewUnlockRequirement' ||
+      /^[A-Z][A-Z_]{0,63}$/.test(value))
   )
-    return JSON.stringify(value);
+    return JSON.stringify(value.slice(0, 64));
   return typeof value === 'object' ? 'an object' : `a ${typeof value}`;
 }
 

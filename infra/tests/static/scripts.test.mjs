@@ -526,9 +526,20 @@ test('google-wallet-class.mjs names where the class differs without printing the
     path: 'classTemplateInfo.detailsTemplateOverride.detailsItemInfos',
     found: 'a list of 2',
   });
-  // Any other string is described by its kind only; an enum constant is named.
-  assert.deepEqual(firstDifference(desired, { ...copy(), viewUnlockRequirement: 'Secret value' }), {
+  // The unlock setting is always named, cut to 64 characters; other strings only by kind.
+  assert.deepEqual(
+    firstDifference(desired, { ...copy(), viewUnlockRequirement: 'unlockNotRequired' }),
+    {
+      path: 'viewUnlockRequirement',
+      found: '"unlockNotRequired"',
+    },
+  );
+  assert.deepEqual(firstDifference(desired, { ...copy(), viewUnlockRequirement: 'x'.repeat(80) }), {
     path: 'viewUnlockRequirement',
+    found: JSON.stringify('x'.repeat(64)),
+  });
+  assert.deepEqual(firstDifference({ other: 'A' }, { other: 'Secret value' }), {
+    path: 'other',
     found: 'a string',
   });
   assert.deepEqual(
