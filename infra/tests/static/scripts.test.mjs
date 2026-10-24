@@ -502,3 +502,40 @@ test('google-wallet-class.mjs compares nested class fields, so an unchanged clas
   assert.equal(matchesDesired(desired, { ...copy(), classTemplateInfo: [] }), false);
   assert.equal(matchesDesired({ a: 1 }, { a: '1' }), false);
 });
+
+test('google-wallet-class.mjs names where the class differs without printing the response (task 47.6)', async () => {
+  const { DESIRED_CLASS_FIELDS: desired, firstDifference } = await import(
+    pathToFileURL(`${repoRoot}/scripts/google-wallet-class.mjs`).href
+  );
+  const copy = () => JSON.parse(JSON.stringify(desired));
+  assert.equal(firstDifference(desired, { ...copy(), id: '1.compass-dev' }), null);
+  assert.deepEqual(firstDifference(desired, { viewUnlockRequirement: 'UNLOCK_NOT_REQUIRED' }), {
+    path: 'classTemplateInfo',
+    found: 'missing',
+  });
+  const changedPath = copy();
+  changedPath.classTemplateInfo.cardTemplateOverride.cardRowTemplateInfos[1].twoItems.endItem.firstValue.fields[0].fieldPath =
+    'object.textModulesData["boardingCloses"]';
+  assert.deepEqual(firstDifference(desired, changedPath), {
+    path: 'classTemplateInfo.cardTemplateOverride.cardRowTemplateInfos[1].twoItems.endItem.firstValue.fields[0].fieldPath',
+    found: '"object.textModulesData[\\"boardingCloses\\"]"',
+  });
+  const shorter = copy();
+  shorter.classTemplateInfo.detailsTemplateOverride.detailsItemInfos.splice(2);
+  assert.deepEqual(firstDifference(desired, shorter), {
+    path: 'classTemplateInfo.detailsTemplateOverride.detailsItemInfos',
+    found: 'a list of 2',
+  });
+  // Any other string is described by its kind only, never its value.
+  assert.deepEqual(firstDifference(desired, { ...copy(), viewUnlockRequirement: 'SECRET-ish' }), {
+    path: 'viewUnlockRequirement',
+    found: 'a string',
+  });
+  assert.deepEqual(firstDifference(desired, null), { path: '(the class)', found: 'null' });
+  assert.deepEqual(firstDifference({ a: [1] }, { a: { 0: 1 } }), { path: 'a', found: 'an object' });
+  const source = readOwned('scripts/google-wallet-class.mjs');
+  assert.match(
+    source,
+    /class: differs at \$\{difference\.path\} \(found \$\{difference\.found\}\)/,
+  );
+});

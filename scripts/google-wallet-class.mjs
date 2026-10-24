@@ -58,26 +58,44 @@ export const DESIRED_CLASS_FIELDS = Object.freeze({
   },
 });
 
-// True when the class Google returns already carries the desired value. Objects match
-// when every key the desired value names matches (Google may add keys of its own);
-// lists match item by item, in order and with the same length.
-export function matchesDesired(desired, current) {
+// What Google returned at a differing place, without its content: only the kind of
+// value, except a template field path, which is layout data and never a secret.
+function describe(value, path) {
+  if (value === undefined) return 'missing';
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return `a list of ${value.length}`;
+  if (typeof value === 'string' && path.endsWith('.fieldPath')) return JSON.stringify(value);
+  return typeof value === 'object' ? 'an object' : `a ${typeof value}`;
+}
+
+// The first place where the class Google returns does not carry the desired value,
+// as {path, found}, or null when it does. Objects match when every key the desired
+// value names matches (Google may add keys of its own); lists match item by item, in
+// order and with the same length (pass-service tasks 47.3 and 47.6).
+export function firstDifference(desired, current, path = '') {
+  const differs = { path: path === '' ? '(the class)' : path, found: describe(current, path) };
   if (Array.isArray(desired)) {
-    return (
-      Array.isArray(current) &&
-      current.length === desired.length &&
-      desired.every((value, index) => matchesDesired(value, current[index]))
-    );
+    if (!Array.isArray(current) || current.length !== desired.length) return differs;
+    for (const [index, value] of desired.entries()) {
+      const inner = firstDifference(value, current[index], `${path}[${index}]`);
+      if (inner !== null) return inner;
+    }
+    return null;
   }
   if (desired !== null && typeof desired === 'object') {
-    return (
-      current !== null &&
-      typeof current === 'object' &&
-      !Array.isArray(current) &&
-      Object.entries(desired).every(([key, value]) => matchesDesired(value, current[key]))
-    );
+    if (current === null || typeof current !== 'object' || Array.isArray(current)) return differs;
+    for (const [key, value] of Object.entries(desired)) {
+      const inner = firstDifference(value, current[key], path === '' ? key : `${path}.${key}`);
+      if (inner !== null) return inner;
+    }
+    return null;
   }
-  return desired === current;
+  return desired === current ? null : differs;
+}
+
+// True when the class Google returns already carries the desired value.
+export function matchesDesired(desired, current) {
+  return firstDifference(desired, current) === null;
 }
 
 class UsageError extends Error {}
@@ -202,10 +220,14 @@ async function ensureClass(token, classId) {
   }
   if (!found.ok) throw new ApiError(`reading the class failed with HTTP ${found.status}`);
   const current = await readJson(found, 'reading the class');
-  if (matchesDesired(DESIRED_CLASS_FIELDS, current)) {
+  const difference = firstDifference(DESIRED_CLASS_FIELDS, current);
+  if (difference === null) {
     process.stdout.write('class: exists, left unchanged\n');
     return;
   }
+  // Names where the class differed, so a class that never settles can be diagnosed
+  // without printing the response (task 47.6).
+  process.stdout.write(`class: differs at ${difference.path} (found ${difference.found})\n`);
   const patched = await call(
     token,
     'PATCH',
