@@ -31,7 +31,7 @@ The class id is `<issuer id>.<suffix>`. The suffix defaults to `compass-<env>`, 
 
 1. Run the command above for `dev`.
 2. Read the two lines it prints: one for the issuer and one for the class.
-3. Save a pass on Android and compare it with the Apple pass (task 47.5). Record the date and the result here.
+3. Save a pass on Android and compare it with the Apple pass (task 47.5). Done on dev on 25 October 2026: the owner approved the Google pass (icon top left, blue card, the two front rows, the hero with the logo, the details) and confirmed the Apple pass is unchanged. Getting there took two fixes: each object stays within 10 text modules (task 47.7), and Google refuses a `wideLogo` without a `logo` ("logo must be set if wide_logo is set", task 47.8). Google also fetches every image during the insert, so the images must be live (a release) before the class update and the first pass.
 4. Repeat for `prod` after dev has been verified. The dev class was created on 18 October 2026 and given the template on 24 October 2026 (`class: updated`, then `class: exists, left unchanged` on the next run, after task 47.6 taught the diff check that Google answers the unlock setting as `unlockNotRequired`). Prod runs on the prod deploy day with a fresh key, in the order set out in `google-wallet-setup.md` "Prod key and prod class".
 
 ## Expected success outcome
