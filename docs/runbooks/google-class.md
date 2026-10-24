@@ -11,7 +11,7 @@ Besides `viewUnlockRequirement`, the class now carries a template (`classTemplat
 
 The template names text module ids (`packages/pass-service/src/google/google-layout.ts`, the same ids the api Lambda writes on each object). The objects carry the rest: the icon as the wide logo, the gradient with the full logo as the hero image (both served from `<PUBLIC_BASE_URL>/wallet/`), and the card colour #2035E2.
 
-A class made before task 47 has no template. Run the script once per environment after a release that serves the images: it prints `class: updated`, and a second run prints `class: exists, left unchanged`. The template applies to every pass of the class at once. The images and the colour live on each object, so a pass issued before the release keeps the old ones until the api Lambda next patches it; reissue a pass to see the full new look.
+A class made before task 47 has no template. Run the script once per environment after a release that serves the images: it prints `class: differs at <path> (found ...)` and `class: updated`, and a second run prints `class: exists, left unchanged`. The differs line names where the class differed without printing Google's response (only a kind of value, a template field path or the unlock setting). The template applies to every pass of the class at once. The images and the colour live on each object, so a pass issued before the release keeps the old ones until the api Lambda next patches it; reissue a pass to see the full new look.
 
 ## Command
 
@@ -32,7 +32,7 @@ The class id is `<issuer id>.<suffix>`. The suffix defaults to `compass-<env>`, 
 1. Run the command above for `dev`.
 2. Read the two lines it prints: one for the issuer and one for the class.
 3. Save a pass on Android and compare it with the Apple pass (task 47.5). Record the date and the result here.
-4. Repeat for `prod` after dev has been verified. The dev class was created on 18 October 2026. Prod runs on the prod deploy day with a fresh key, in the order set out in `google-wallet-setup.md` "Prod key and prod class".
+4. Repeat for `prod` after dev has been verified. The dev class was created on 18 October 2026 and given the template on 24 October 2026 (`class: updated`, then `class: exists, left unchanged` on the next run, after task 47.6 taught the diff check that Google answers the unlock setting as `unlockNotRequired`). Prod runs on the prod deploy day with a fresh key, in the order set out in `google-wallet-setup.md` "Prod key and prod class".
 
 ## Expected success outcome
 
