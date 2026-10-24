@@ -1,7 +1,7 @@
 // The Google Wallet generic object built from PassFields (Requirement 14.1). Pure.
 //
 // Field names follow the GenericObject reference: `cardTitle`, `header` and `subheader` are
-// LocalizedString values, `textModulesData` holds TextModuleData entries, `wideLogo` and
+// LocalizedString values, `textModulesData` holds TextModuleData entries, `logo`, `wideLogo` and
 // `heroImage` are Image values, `validTimeInterval` is a TimeInterval of DateTime values. No
 // `barcode` is set. The class template (scripts/google-wallet-class.mjs) puts the terminal and
 // gate, then the date and boarding closes on the front and orders the details (task 47).
@@ -53,6 +53,7 @@ export interface GenericObject {
   cardTitle: LocalizedString;
   header: LocalizedString;
   subheader: LocalizedString;
+  logo: GoogleImage;
   wideLogo: GoogleImage;
   heroImage: GoogleImage;
   textModulesData: TextModule[];
@@ -102,6 +103,8 @@ export function buildGenericObject(
     cardTitle: localized('Compass boarding pass'),
     header: localized(fields.title),
     subheader: localized(fields.sessionCode),
+    // Google refuses a wide logo without a logo: "logo must be set if wide_logo is set" (task 47.8).
+    logo: image(google.publicBaseUrl, GOOGLE_IMAGES.logo, 'Compass icon'),
     wideLogo: image(google.publicBaseUrl, GOOGLE_IMAGES.wideLogo, 'Compass icon'),
     heroImage: image(
       google.publicBaseUrl,

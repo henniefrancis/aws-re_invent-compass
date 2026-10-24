@@ -72,12 +72,36 @@ try {
   writeFileSync(target, artworkModuleSource(files));
   console.log('wrote src/apple/artwork.ts');
 
-  // The Google Wallet images (task 47), served from <PUBLIC_BASE_URL>/wallet/ (infra task 25):
-  // the icon alone as the wide logo (1280 by 400, transparent, left-aligned), and the hero
+  // The Google Wallet images (tasks 47 and 47.8), served from <PUBLIC_BASE_URL>/wallet/ (infra
+  // task 25): the icon on the card blue as the round logo, the icon alone as the wide logo (1280 by 400, transparent, left-aligned), and the hero
   // (1032 by 812): the Pass Designer gradient, cover-cropped and centred, with the full logo
   // centred on it over a soft white glow so its purple text reads on the blue.
   mkdirSync(googleDir, { recursive: true });
   const google = {
+    // Google masks the logo into a circle: the icon sits on the card blue with a 15 percent
+    // margin on every side, as its brand guidelines ask (task 47.8).
+    [GOOGLE_IMAGES.logo]: await page.evaluate(
+      async ({ icon }) => {
+        const image = new Image();
+        image.src = icon;
+        await image.decode();
+        const size = 660;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const context = canvas.getContext('2d');
+        context.imageSmoothingQuality = 'high';
+        context.fillStyle = '#2035E2';
+        context.fillRect(0, 0, size, size);
+        const box = size * 0.7;
+        const scale = Math.min(box / image.naturalWidth, box / image.naturalHeight);
+        const w = image.naturalWidth * scale;
+        const h = image.naturalHeight * scale;
+        context.drawImage(image, (size - w) / 2, (size - h) / 2, w, h);
+        return canvas.toDataURL('image/png').split(',')[1];
+      },
+      { icon: dataUrl('favicon.svg') },
+    ),
     [GOOGLE_IMAGES.wideLogo]: await page.evaluate(
       async ({ icon }) => {
         const image = new Image();

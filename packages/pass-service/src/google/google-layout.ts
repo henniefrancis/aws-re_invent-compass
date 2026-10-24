@@ -10,6 +10,11 @@
 // caches an image by URL, so a changed picture gets a new version in its name.
 
 export const GOOGLE_IMAGES = {
+  /**
+   * The icon on the card blue, 660 by 660 pixels with a 15 percent margin. Google masks it into a
+   * circle where the wide logo does not fit, and refuses a wide logo without it (task 47.8).
+   */
+  logo: 'logo-v1.png',
   /** The icon alone, 1280 by 400 pixels, transparent and left-aligned. */
   wideLogo: 'wide-logo-v1.png',
   /** The Pass Designer gradient with the full logo over a soft glow, 1032 by 812 pixels. */

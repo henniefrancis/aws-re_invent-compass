@@ -171,7 +171,7 @@ bash -c "${site_build_cmd}" || fail "the site build failed"
 # <PUBLIC_BASE_URL>/wallet/ (pass-service task 47, infra task 25). They are added
 # after the site build and its output checks, so the sync uploads them with the site.
 mkdir -p "${site_dir}/wallet"
-for name in wide-logo-v1.png hero-v1.png; do
+for name in logo-v1.png wide-logo-v1.png hero-v1.png; do
   source_image="${repo_root}/packages/pass-service/artwork/google/${name}"
   [ -f "${source_image}" ] || fail "the Google Wallet image ${name} is missing"
   cp "${source_image}" "${site_dir}/wallet/${name}"

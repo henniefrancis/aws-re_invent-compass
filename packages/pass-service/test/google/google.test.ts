@@ -136,6 +136,9 @@ describe('Feature: pass-service, Google generic object', () => {
           expect(bodies.boardingCloses).toBe(
             formatEventTime24(boardingClosesAt(fields.startsAt), TZ),
           );
+          // Google refuses a wide logo without a logo (task 47.8).
+          expect(obj.logo.sourceUri.uri).toBe(`${BASE}/wallet/logo-v1.png`);
+          expect(obj.logo.contentDescription.defaultValue.value).toBe('Compass icon');
           expect(obj.wideLogo.sourceUri.uri).toBe(`${BASE}/wallet/wide-logo-v1.png`);
           expect(obj.heroImage.sourceUri.uri).toBe(`${BASE}/wallet/hero-v1.png`);
           expect(obj.wideLogo.contentDescription.defaultValue.value).toBe('Compass icon');
@@ -218,6 +221,7 @@ test('the Google images are PNGs at the sizes Google recommends (task 47)', () =
     expect(png.subarray(1, 4).toString('ascii')).toBe('PNG');
     return [png.readUInt32BE(16), png.readUInt32BE(20)];
   };
+  expect(size(GOOGLE_IMAGES.logo)).toEqual([660, 660]);
   expect(size(GOOGLE_IMAGES.wideLogo)).toEqual([1280, 400]);
   expect(size(GOOGLE_IMAGES.hero)).toEqual([1032, 812]);
 });
