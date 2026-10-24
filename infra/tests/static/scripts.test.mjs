@@ -526,11 +526,30 @@ test('google-wallet-class.mjs names where the class differs without printing the
     path: 'classTemplateInfo.detailsTemplateOverride.detailsItemInfos',
     found: 'a list of 2',
   });
-  // Any other string is described by its kind only, never its value.
-  assert.deepEqual(firstDifference(desired, { ...copy(), viewUnlockRequirement: 'SECRET-ish' }), {
+  // Any other string is described by its kind only; an enum constant is named.
+  assert.deepEqual(firstDifference(desired, { ...copy(), viewUnlockRequirement: 'Secret value' }), {
     path: 'viewUnlockRequirement',
     found: 'a string',
   });
+  assert.deepEqual(
+    firstDifference(desired, { ...copy(), viewUnlockRequirement: 'UNLOCK_REQUIRED_TO_VIEW' }),
+    { path: 'viewUnlockRequirement', found: '"UNLOCK_REQUIRED_TO_VIEW"' },
+  );
+  // Google returns its default for UNLOCK_NOT_REQUIRED; the docs say they are the same.
+  assert.equal(
+    firstDifference(desired, {
+      ...copy(),
+      viewUnlockRequirement: 'VIEW_UNLOCK_REQUIREMENT_UNSPECIFIED',
+    }),
+    null,
+  );
+  assert.deepEqual(
+    firstDifference({ other: 'A' }, { other: 'VIEW_UNLOCK_REQUIREMENT_UNSPECIFIED' }),
+    {
+      path: 'other',
+      found: '"VIEW_UNLOCK_REQUIREMENT_UNSPECIFIED"',
+    },
+  );
   assert.deepEqual(firstDifference(desired, null), { path: '(the class)', found: 'null' });
   assert.deepEqual(firstDifference({ a: [1] }, { a: { 0: 1 } }), { path: 'a', found: 'an object' });
   const source = readOwned('scripts/google-wallet-class.mjs');

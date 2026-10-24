@@ -59,13 +59,31 @@ export const DESIRED_CLASS_FIELDS = Object.freeze({
 });
 
 // What Google returned at a differing place, without its content: only the kind of
-// value, except a template field path, which is layout data and never a secret.
+// value, except a template field path or an enum constant (such as
+// UNLOCK_NOT_REQUIRED), which are layout and setting names, never a secret.
 function describe(value, path) {
   if (value === undefined) return 'missing';
   if (value === null) return 'null';
   if (Array.isArray(value)) return `a list of ${value.length}`;
-  if (typeof value === 'string' && path.endsWith('.fieldPath')) return JSON.stringify(value);
+  if (
+    typeof value === 'string' &&
+    (path.endsWith('.fieldPath') || /^[A-Z][A-Z_]{0,63}$/.test(value))
+  )
+    return JSON.stringify(value);
   return typeof value === 'object' ? 'an object' : `a ${typeof value}`;
+}
+
+// Values Google treats as the same setting. Google stores UNLOCK_NOT_REQUIRED and
+// returns its default, VIEW_UNLOCK_REQUIREMENT_UNSPECIFIED, "Default value, same as
+// UNLOCK_NOT_REQUIRED" (task 47.6, owner's dev run of 24 October).
+// https://developers.google.com/wallet/reference/rest/v1/ViewUnlockRequirement
+const SAME_SETTING = Object.freeze({
+  viewUnlockRequirement: ['UNLOCK_NOT_REQUIRED', 'VIEW_UNLOCK_REQUIREMENT_UNSPECIFIED'],
+});
+
+function sameValue(desired, current, path) {
+  const same = SAME_SETTING[path];
+  return desired === current || (same?.includes(desired) === true && same.includes(current));
 }
 
 // The first place where the class Google returns does not carry the desired value,
@@ -90,7 +108,7 @@ export function firstDifference(desired, current, path = '') {
     }
     return null;
   }
-  return desired === current ? null : differs;
+  return sameValue(desired, current, path) ? null : differs;
 }
 
 // True when the class Google returns already carries the desired value.
