@@ -23,7 +23,7 @@ Do these in one commit, in this order.
    - every `npx --yes reinvent-compass@X` example in `packages/mcp-server/README.md` and under `power/` (the power test checks that each one equals the package version)
 3. Set `COMPASS_API_BASE_URL` in `packages/mcp-server/src/config/compass-api.ts` to `https://reinvent-compass.vegas`, the production apex domain (ADR-031), with no trailing slash. The address is known before the prod apply, but tag only after prod answers `GET /api/v1/health` (see `release.md`). While the value is the `.invalid` placeholder, a live run fails loudly, so never tag before this step.
 4. Run `npx eslint .`, `npx prettier --check .`, `npx tsc -b` and `npx vitest run --coverage`. The pack smoke test builds, packs and runs the package from the unpacked archive.
-5. Check the file list by hand once: `npm pack --dry-run --workspace packages/mcp-server`. The listing must hold only `package.json`, `README.md`, `dist/bin.js`, `dist/scan-worker.js` and the `dist/data`, `dist/sample-repo` and `dist/fixtures` folders.
+5. Check the file list by hand once: `npm pack --dry-run --workspace packages/mcp-server`. The listing must hold only `package.json`, `README.md`, `dist/bin.js`, `dist/scan-worker.js`, `dist/github-scan-worker.js` and the `dist/data`, `dist/sample-repo` and `dist/fixtures` folders (60 files for 0.1.0, checked 25 October 2026).
 
 ## Tag order
 

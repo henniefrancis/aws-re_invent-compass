@@ -28,6 +28,6 @@ If the attendee also uses the official `awsevents` server, tell them to add it t
 
 ## Notes
 
-- The commands in the template run `npx --yes reinvent-compass@0.0.0 hook <name>`. The version is written into the template, and it matches the server in this Power.
+- The commands in the template run `npx --yes reinvent-compass@0.1.0 hook <name>`. The version is written into the template, and it matches the server in this Power.
 - A hook has a 30 second limit. A blocked call gives its reason to the agent, which should pass it on to the attendee in plain words.
 - If a hook cannot judge a call, it lets it through, and the server still checks it.

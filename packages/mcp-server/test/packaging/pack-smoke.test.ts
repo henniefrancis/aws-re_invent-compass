@@ -93,11 +93,14 @@ describe('the packed package (QA H2, security M1)', () => {
   test('declares only the native keyring as a dependency and bundles everything else', async () => {
     const manifest = JSON.parse(await readFile(join(built.extracted, 'package.json'), 'utf8')) as {
       dependencies: Record<string, string>;
-      private: boolean;
+      private?: boolean;
+      version: string;
       bin: Record<string, string>;
     };
     expect(manifest.dependencies).toEqual({ '@napi-rs/keyring': '2.1.1' });
-    expect(manifest.private).toBe(true);
+    // The 0.1.0 release commit removed the safety catch (task 53); only a v0.1.0 tag publishes.
+    expect(manifest.private).toBeUndefined();
+    expect(manifest.version).toBe('0.1.0');
     expect(manifest.bin).toEqual({ 'reinvent-compass': 'dist/bin.js' });
     for (const file of ['bin.js', 'scan-worker.js', 'github-scan-worker.js']) {
       const text = await readFile(join(built.extracted, 'dist', file), 'utf8');

@@ -4,7 +4,7 @@
     "compass": {
       "type": "stdio",
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@0.0.0"]
+      "args": ["--yes", "reinvent-compass@0.1.0"]
     }
   }
 }

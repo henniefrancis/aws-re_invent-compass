@@ -1,7 +1,6 @@
 {
   "name": "reinvent-compass",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
   "bin": {
     "reinvent-compass": "dist/bin.js"

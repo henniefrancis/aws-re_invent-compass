@@ -54,4 +54,4 @@ Never ask the attendee to approve several writes in one go. Ask for one, do it, 
 
 ## Trying it without a real account
 
-Running `npx --yes reinvent-compass@0.0.0 demo` shows the whole flow on made-up data, with no network and no sign-in.
+Running `npx --yes reinvent-compass@0.1.0 demo` shows the whole flow on made-up data, with no network and no sign-in.

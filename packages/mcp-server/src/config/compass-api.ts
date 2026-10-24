@@ -1,10 +1,9 @@
-// The single live Compass API base URL (task 1.2, Open Question 10).
+// The single live Compass API base URL (task 1.2, Open Question 10; task 53).
 //
-// The production CloudFront domain is known only after S6 deploys, so this is a
-// placeholder on the reserved .invalid domain (RFC 2606): it can never resolve, and a
-// live run with the placeholder fails loudly instead of reaching a wrong host. The
-// integrator sets the real value before 1.0.0. It is a build-time constant: COMPASS_API_URL can
-// override it only together with COMPASS_ALLOW_API_OVERRIDE=1 (see runtime-config.ts).
+// The production apex domain (ADR-031), set in the 0.1.0 release commit. It answers only
+// once prod is deployed, so the owner tags v0.1.0 only after GET /api/v1/health returns 200.
+// It is a build-time constant: COMPASS_API_URL can override it only together with
+// COMPASS_ALLOW_API_OVERRIDE=1 (see runtime-config.ts), which is how dev is tested.
 
 /** The live Compass API base URL, without a trailing slash. */
-export const COMPASS_API_BASE_URL = 'https://compass.invalid';
+export const COMPASS_API_BASE_URL = 'https://reinvent-compass.vegas';

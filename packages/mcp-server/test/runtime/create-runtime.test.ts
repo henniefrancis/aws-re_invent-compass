@@ -14,6 +14,7 @@ import {
   WRITES_ON_NOTICE,
   createRuntime,
 } from '../../src/runtime/create-runtime.js';
+import { COMPASS_API_BASE_URL } from '../../src/config/compass-api.js';
 import { SIMULATED_LABEL } from '../../src/server/results.js';
 import { connect, textOf } from '../support/connect.js';
 import { installNetworkGuard } from '../support/network-guard.js';
@@ -357,7 +358,7 @@ describe('live composition', () => {
     const runtime = await createRuntime(env.environment, {});
     await runtime.passes.forgetMe();
     expect(requests).toHaveLength(1);
-    expect(new URL(requests[0]?.url ?? '').host).toBe('compass.invalid');
+    expect(new URL(requests[0]?.url ?? '').host).toBe(new URL(COMPASS_API_BASE_URL).host);
     expect(JSON.stringify(requests[0]?.headers)).toContain('Bearer');
     await expect(runtime.events.getSchedule()).rejects.toBeDefined();
   });

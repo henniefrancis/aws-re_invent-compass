@@ -34,7 +34,9 @@ describe('the package manifest and the entry file', () => {
       'zod',
     ]);
     expect(manifest.engines).toEqual({ node: '>=24' });
-    expect(manifest.private).toBe(true);
+    // The safety catch came off in the 0.1.0 release commit (task 53); only a tag publishes.
+    expect(manifest.private).toBeUndefined();
+    expect(manifest.version).toBe('0.1.0');
   });
 
   test('bin.ts starts with the shebang line and only passes the process values to main', async () => {

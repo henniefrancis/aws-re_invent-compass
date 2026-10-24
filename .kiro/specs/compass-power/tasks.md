@@ -625,6 +625,13 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
   - _Requirements: P4.5_
 
+- [x] 53. The 0.1.0 release commit (owner go of 25 October, tracker REL1 and T1, TAM H1, design "Owner change: the 0.1.0 release commit", runbook `docs/runbooks/npm-release.md` "Prepare a release")
+  - Remove `"private": true` from `packages/mcp-server/package.json` and change the packaging test that expects it in the same commit
+  - Set the version to `0.1.0` in `packages/mcp-server/package.json`, `power/plugin.json`, `power/POWER.md`, `power/mcp.json`, the hook template and every `npx --yes reinvent-compass@X` example in `packages/mcp-server/README.md` and under `power/`
+  - Set `COMPASS_API_BASE_URL` in `packages/mcp-server/src/config/compass-api.ts` to `https://reinvent-compass.vegas` (ADR-031), with no trailing slash; the dev override (`COMPASS_API_URL` with `COMPASS_ALLOW_API_OVERRIDE=1`) keeps working
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`) and the file list check `npm pack --dry-run --workspace packages/mcp-server`; commit scoped `compass-power` on develop. No tag and no publish: the owner tags `v0.1.0` only after prod answers `GET /api/v1/health` (release gate G03)
+  - _Requirements: 20.1, 20.2, R2.3_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.
