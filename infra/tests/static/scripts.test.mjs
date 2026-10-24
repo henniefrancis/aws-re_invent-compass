@@ -528,16 +528,28 @@ test('google-wallet-class.mjs names where the class differs without printing the
   });
   // The unlock setting is always named, cut to 64 characters; other strings only by kind.
   assert.deepEqual(
-    firstDifference(desired, { ...copy(), viewUnlockRequirement: 'unlockNotRequired' }),
+    firstDifference(desired, { ...copy(), viewUnlockRequirement: 'unlockRequired' }),
     {
       path: 'viewUnlockRequirement',
-      found: '"unlockNotRequired"',
+      found: '"unlockRequired"',
     },
   );
-  assert.deepEqual(firstDifference(desired, { ...copy(), viewUnlockRequirement: 'x'.repeat(80) }), {
-    path: 'viewUnlockRequirement',
-    found: JSON.stringify('x'.repeat(64)),
-  });
+  // Google answers the setting in lowerCamelCase (owner's dev run of 24 October).
+  for (const answer of [
+    'unlockNotRequired',
+    'UNLOCK_NOT_REQUIRED',
+    'viewUnlockRequirementUnspecified',
+  ]) {
+    assert.equal(
+      firstDifference(desired, { ...copy(), viewUnlockRequirement: answer }),
+      null,
+      answer,
+    );
+  }
+  assert.notEqual(
+    firstDifference(desired, { ...copy(), viewUnlockRequirement: 'unlockRequiredToView' }),
+    null,
+  );
   assert.deepEqual(firstDifference({ other: 'A' }, { other: 'Secret value' }), {
     path: 'other',
     found: 'a string',
