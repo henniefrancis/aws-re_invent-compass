@@ -39,12 +39,12 @@ Status: **Met** (done and checked), **Open** (work left), **Owner** (only the ow
 
 The four criteria come from the rules; the 25 percent weight each was recorded at kickoff from the contest page.
 
-| Criterion                                       | Where it shows                                                                                                                               |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Creativity and novelty of the integration       | The airline metaphor: repo to agenda, the week as a Kiro spec, hooks as guardrails, and Wallet boarding passes that show "Seat released at". |
-| Utility for re:Invent attendees                 | First-timer focus: the 10-minute seat release, walking connections, clashes, meals and repeats, checked before every booking.                |
-| Technical depth and use of the API surface      | All 12 operations, PKCE sign-in on loopback, quota metering, a guardrail engine with 100 percent coverage, a serverless pass API on AWS.     |
-| Quality of the published Builder Center article | D02: outline, drafts and final by 31 Oct, with screenshots and the demo video.                                                               |
+| Criterion                                       | Where it shows                                                                                                                                                                                                      |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Creativity and novelty of the integration       | The airline metaphor: repo to agenda, the week as a Kiro spec, hooks as guardrails, and Wallet boarding passes that show "Boarding closes" (corrected 26 October 2026: the pass no longer says "Seat released at"). |
+| Utility for re:Invent attendees                 | First-timer focus: the 10-minute seat release, walking connections, clashes, meals and repeats, checked before every booking.                                                                                       |
+| Technical depth and use of the API surface      | All 12 operations, PKCE sign-in on loopback, quota metering, a guardrail engine with 100 percent coverage, a serverless pass API on AWS.                                                                            |
+| Quality of the published Builder Center article | D02: outline, drafts and final by 31 Oct, with screenshots and the demo video.                                                                                                                                      |
 
 ## Owner requirement: Kiro first (not a contest rule)
 

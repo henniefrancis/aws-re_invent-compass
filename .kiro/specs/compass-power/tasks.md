@@ -632,6 +632,12 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`) and the file list check `npm pack --dry-run --workspace packages/mcp-server`; commit scoped `compass-power` on develop. No tag and no publish: the owner tags `v0.1.0` only after prod answers `GET /api/v1/health` (release gate G03)
   - _Requirements: 20.1, 20.2, R2.3_
 
+- [x] 54. Refresh the read-only wording proposals (owner request of 26 October, tracker DOC2, design "Owner change: refreshed wording proposals")
+  - Rewrite `docs/proposals/read-only-wording.md` against the owner's current drafts (`README.md`, `docs/article/builder-center-draft.md`) and the code as of develop dcf0f1f: the tool count and table, read-only by default, the Boarding Pass fields, the tagline, the GitHub tech scan, link or QR, the site pages, Google Wallet publishing access, the 0.1.0 version and the production address, the hook, the runbooks and the requirements section for hackathon rules row 3
+  - Each item names the draft, the current line and text, and the replacement to paste; nothing is applied to the owner's drafts
+  - Check every fact against the code and docs, the dash check and prettier; commit scoped `compass-power` on develop
+  - _Requirements: 20.1, R2.3_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.
