@@ -142,7 +142,7 @@ Eight Kiro specs (S0 to S7) in the build plan, section 8. **Never cut:** the 12-
 | 21 Oct       | First dev deploy                                                        |
 | 25 Oct       | Real iPhone and Android checks                                          |
 | 28 Oct       | Feature freeze                                                          |
-| 29 Oct       | Site freeze, `release/1.0.0`, TAM and CTO reviews                       |
+| 29 Oct       | Site freeze, TAM and CTO reviews (0.1.0)                                |
 | 30 Oct       | Release gate and production release (owner runs it)                     |
 | 31 Oct       | Demo video, README and post final                                       |
 | **1 Nov**    | **Submit** (hackathon deadline 6 Nov stays as buffer)                   |

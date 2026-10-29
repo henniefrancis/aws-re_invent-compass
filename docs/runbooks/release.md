@@ -11,6 +11,39 @@ scripts/release.sh prod
 
 The script builds the two Lambda bundles and the site, saves a Terraform plan in HCP Terraform, refuses any plan that destroys or replaces a retained resource or touches an unexpected resource type, asks you to type `yes`, applies the saved plan, syncs the site, invalidates the CloudFront cache and checks `GET /api/v1/health`.
 
+## Deploy-day checklist (release 0.1.0)
+
+Owner-run, in this order. Do not skip a step or reorder them. The detail lives in the linked runbooks, so this list only gives the order. The release is cut from `main` as 0.1.0. There is no release branch.
+
+Before the day: the prod preconditions below are met, `secrets.md` steps 1 and 2 are done for prod (the edge values exist and the HCP variables are set), and `npm-release.md` "Prepare a release" is committed on `develop`.
+
+1. Open a PR from `develop` into `main`. Wait for CI to go green. Merge it.
+2. Check out `main` into a clean working tree (`git switch main`, `git pull`, `git status` shows nothing) and run `npm ci`.
+3. Rehearse on dev from that checkout: `scripts/release.sh dev`. It must end with `health check passed (HTTP 200)`.
+4. Run `scripts/release.sh prod`. Type `prod` when asked. The health check at the end fails by design, because the secrets are not loaded yet (first-time setup, step 7). That is not a failed deploy.
+5. Create a fresh Google service account key in the Google Cloud console and save it outside the repository (`google-wallet-setup.md`, "Prod key and prod class").
+6. Load the prod secrets in this order (`secrets.md`, "Commands"): `scripts/load-secrets.sh prod origin-verify --origin-verify-file <file>`, then `scripts/load-secrets.sh prod app`, then `scripts/load-secrets.sh prod apple --p12 <file> --wwdr <file> --pass-type-id <id> --team-id <id>`, then `scripts/load-secrets.sh prod google --service-account <key file> --issuer-id <id>`.
+7. Run `scripts/check-secrets.sh prod`. All seven values must report present.
+8. Create the Google class: `node scripts/google-wallet-class.mjs --service-account <key file> --issuer-id <id> --env prod` (`google-class.md`). Expect `class: created`.
+9. Shred the Google key, the `.p12` copy and the edge value files, and clear your shell history of anything that held a value (`secrets.md`, last step).
+10. Run `scripts/release.sh prod` again. The health check must pass (HTTP 200) and the plan must show zero changes apart from the one in-place api Lambda update that a new commit causes (see "What the script does", step 7).
+11. Confirm the prod alarm topic subscription: click the link AWS emailed to the alarm address (`alarms.md`).
+12. Check the apex domain yourself: `curl https://reinvent-compass.vegas/api/v1/health` must return HTTP 200.
+13. Smoke test prod on a real iPhone and a real Android phone: open the board page, issue a pass, add it to the wallet.
+14. Run the `e2e` workflow (`.github/workflows/e2e.yml`, started by hand from the Actions tab) on the `main` commit. It must be green.
+15. Tag and publish the package (`npm-release.md`, "Tag order"): create the tag `v0.1.0` on the `main` commit that prod now runs, push it, and approve the `npm-publish` environment when the publish job waits.
+
+After the package is published:
+
+16. On a clean machine, run `npx reinvent-compass@0.1.0 demo` and check that it starts.
+17. In Kiro, use "Import power from GitHub" on the repository and check that the Power loads.
+18. Set `packageVersion` to `'0.1.0'` in `site/src/lib/content/links.ts`, then release the site (`scripts/release.sh prod`). Proposal for the owner: change the status line in `README.md` from "built, not yet released" to the released state, with the live links, because the README is the owner's file.
+19. Deprecate the placeholder: `npm deprecate reinvent-compass@0.0.1 "Placeholder. Use 0.1.0 or later."`
+20. Merge `main` back into `develop` so the two branches match.
+21. Watch for 30 to 60 minutes: the five alarms (`alarms.md`) and the health check. If something breaks, use `rollback.md` to roll forward, or `kill-switch.md` to block traffic at the edge.
+
+Passes issued before a lost secret or custom domain cannot be repaired in bulk. See "Reissuing passes" in `rollback.md`. Notes from the first dev deploy are in `first-deploy-notes.md`.
+
 ## Preconditions
 
 1. The bootstrap has been applied once (see "First-time setup" below) and a second apply of `infra/bootstrap` shows no changes.
@@ -25,7 +58,7 @@ The script builds the two Lambda bundles and the site, saves a Terraform plan in
 4. You are signed in to AWS with your own SSO session (`aws sso login`) for the site sync and the cache invalidation, in the Compass account. If your shell's default identity belongs to another account, set `AWS_PROFILE` to your Compass profile first (for example `AWS_PROFILE=<profile> scripts/release.sh dev`). Terraform itself uses the HCP dynamic credentials.
 5. `terraform`, `jq`, `npm`, `aws` and `curl` are installed, and `npm ci` has been run.
 6. The pass-service Lambda build exists (`npm run build:lambda --workspace @compass/pass-service`, writing `packages/pass-service/dist/lambda/api.zip` and `passkit.zip`) and the site build works. Override either with `COMPASS_LAMBDA_BUILD_CMD` or `COMPASS_SITE_BUILD_CMD`, and the site folder with `COMPASS_SITE_DIR`.
-7. The provider lock files of the three roots are committed. Until they are, generate them once, with network access, in each of `infra/bootstrap`, `infra/envs/dev` and `infra/envs/prod`: `terraform providers lock -platform=linux_amd64 -platform=windows_amd64 -platform=darwin_arm64`, and commit the three `.terraform.lock.hcl` files. A lock made by a plain `terraform init` on one machine fails on the HCP runners.
+7. The provider lock files of the three roots are committed (`infra/bootstrap`, `infra/envs/dev` and `infra/envs/prod`). To regenerate one, run this with network access in that root: `terraform providers lock -platform=linux_amd64 -platform=windows_amd64 -platform=darwin_arm64`, and commit the file. A lock made by a plain `terraform init` on one machine fails on the HCP runners.
 8. Workspace hygiene that IAM cannot enforce: speculative plans from forks and VCS auto-apply stay disabled (the bootstrap sets `speculative_enabled = false` and `auto_apply = false`, with no VCS connection), and access to the workspace state is limited to you. API key values can be read by the plan role through `apigateway:GET`, because the key resource refresh needs it, so state access is what protects them.
 9. Reserved concurrency (api 20, passkit 10) is a deliberate cap. A new AWS account can have a Lambda concurrency quota too low to reserve any; if the first apply fails on reserved concurrency, request a Lambda concurrency quota increase in the Service Quotas console and keep the defaults, rather than setting `api_reserved_concurrency` and `passkit_reserved_concurrency` to `-1`. A value of `-1` removes the cap entirely, so a flood could run up Lambda cost with nothing but the WAF rate rules and the budget alarm in the way.
 10. The upload to HCP: the Terraform CLI is run from `infra/envs/<env>` and, because the workspace working directory is `envs/<env>`, uploads the tree one level up, the `infra/` directory (so `modules/` travels with it). The ignore file at `infra/.terraformignore` is therefore the upload root file, and the same file is kept in `infra/envs/dev` and `infra/envs/prod`. It excludes real tfvars, auto tfvars, `.env*`, `*.pem`, `*.p12`, state and plan files at every depth; `infra/build/` is deliberately uploaded because the remote run needs the Lambda zips. A static test applies these rules to every file under `infra/`.

@@ -12,7 +12,7 @@ These resources have `prevent_destroy`, and `release.sh` refuses any plan that r
 
 | Resource                | Roll-forward note                                                                                                                                |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| CloudFront distribution | If lost, issued passes stop updating; attendees reissue through `sync_passes --reissue-all`.                                                     |
+| CloudFront distribution | If lost, issued passes stop updating; attendees reissue with `forget_me`, then `issue_all_boarding_passes`.                                      |
 | DynamoDB table          | Deletion protection only. PITR is off (owner, 2026-10-17) so forget_me is a real erasure; the data is short-lived and attendees re-issue passes. |
 | Secrets (3)             | Restore inside the recovery window with an owner-run `restore-secret`, then `terraform import`.                                                  |
 | Site bucket             | Reproducible; retained only so a mistaken plan does not take the site down.                                                                      |

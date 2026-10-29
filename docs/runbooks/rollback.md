@@ -19,7 +19,7 @@ Each of the seven carries `prevent_destroy` in Terraform, and `scripts/release.s
 
 ### CloudFront distribution
 
-Passes and the npm package use the custom domain (ADR-031), not the CloudFront domain, so a replaced distribution keeps working once the Route 53 alias points at it; Terraform updates the alias in the same apply. If the custom domain itself is lost, issued passes stop updating and attendees reissue them with `sync_passes --reissue-all`. Do not replace it to fix a configuration problem: change the configuration in place.
+Passes and the npm package use the custom domain (ADR-031), not the CloudFront domain, so a replaced distribution keeps working once the Route 53 alias points at it; Terraform updates the alias in the same apply. If the custom domain itself is lost, issued passes stop updating and attendees reissue them. Each attendee runs `forget_me` and then `issue_all_boarding_passes` (see "Reissuing passes" below). Do not replace it to fix a configuration problem: change the configuration in place.
 
 ### DynamoDB table
 
@@ -44,6 +44,15 @@ Same restore path. If the value is lost, run `scripts/load-secrets.sh <env> edge
 ### Site bucket
 
 Reproducible: the site is rebuilt and synced by the release script. `prevent_destroy` only stops a mistaken plan from taking the live site down. If the bucket is lost, re-create it through Terraform and run `scripts/release.sh <env>` to sync the site again.
+
+## Reissuing passes
+
+There is no bulk reissue command and no `sync_passes` option for it. `sync_passes` only issues, updates or voids the passes that differ from the attendee's schedule. Each attendee reissues their own passes with two MCP tools, in this order:
+
+1. `forget_me`. It asks the attendee to confirm. It voids the passes on the Compass service (`DELETE /api/v1/me`) and removes the local pass record. Only when that succeeds does it also delete the local schedule snapshot, the tech profile, the GitHub tokens and any QR page, and clear the scan result and pending swaps. Passes already in a wallet stay on the phone until the attendee removes them, but they are voided and expire.
+2. `issue_all_boarding_passes`. It reads the attendee's schedule again and issues a new Boarding Pass for every reserved session the catalog knows.
+
+Tell attendees that `forget_me` also clears the other local Compass data listed above, so it is a heavier step than a refresh. Use it only after the loss cases above (a lost custom domain, table or pepper). For one wrong pass, use `issue_boarding_pass` or `sync_passes` instead.
 
 ## Never
 
