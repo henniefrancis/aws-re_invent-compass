@@ -240,9 +240,10 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 1. WHEN `add_standby` is called, THE Compass_Server SHALL send AssociateFavorites once through the Confirmed_Write, SHALL report per-session results, and SHALL state that standby is a backup and not a reservation.
 2. WHEN `remove_standby` is called, THE Compass_Server SHALL send DisassociateFavorite once through the Confirmed_Write and SHALL return `removed: true` only when the confirmed schedule no longer lists the favorite.
 3. WHEN `add_layover` is called with the action `create`, `update` or `delete`, THE Compass_Server SHALL send CreatePersonalTime, UpdatePersonalTime or DeletePersonalTime once through the Confirmed_Write, SHALL ask the human to confirm first where the client can ask, and SHALL report `done: true` only when the confirmed schedule shows the change (for `create` it SHALL return the `personalTimeId` of the new entry whose title, start and end match the request; `update` and `delete` SHALL check the `personalTimeId` with the Identifier_Check and SHALL change nothing for an id that is not on the schedule) (release gate, TAM B5).
-4. IF a layover's end is not after its start, or either time is outside the event window or lacks an offset, THEN THE Compass_Server SHALL refuse with a plain-English reason and SHALL NOT call S1.
+4. IF a layover's end is not after its start, or either time is outside the layover window (from 00:00 on the badge pickup day, the day before the event start, in the event time zone, to the event end; amended 29 October 2026, task 56) or lacks an offset, THEN THE Compass_Server SHALL refuse with a plain-English reason and SHALL NOT call S1.
 5. WHEN a requested layover overlaps a commitment, THE Compass_Server SHALL include a warning naming the overlap and SHALL still create the layover.
 6. THE Compass_Server SHALL treat a layover title as the attendee's own text and SHALL show it back only inside a Labelled_Data_Block.
+7. THE Compass_Server SHALL send and read layover times as wall-clock times in the event time zone, whatever the attendee's own time zone, because the live Events API keeps personal time that way (added 29 October 2026, task 55).
 
 ### Requirement 15: Boarding pass tools
 

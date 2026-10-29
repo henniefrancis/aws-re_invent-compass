@@ -638,6 +638,28 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Check every fact against the code and docs, the dash check and prettier; commit scoped `compass-power` on develop
   - _Requirements: 20.1, R2.3_
 
+- [x] 55. Layover times in re:Invent's own time zone (owner LW1 run of 29 October, tracker BUG1, design "Owner change: layover times and badge pickup day")
+  - The live Events API keeps personal time as a wall-clock time in the event's time zone, not in UTC as the OpenAPI document says: a layover sent for 07:00 PST as `15:00:00` showed at 15:00 in the re:Invent app
+  - Add `toZoneWallClock(instant, zone)` and `fromZoneWallClock(local, zone)` to `packages/core/src/catalog/session-time.ts`, with tests for PST, a daylight saving change, a bad zone and a bad value
+  - In `packages/mcp-server/src/adapters/events-adapter.ts`, send `startDateTime` and `endDateTime` as the wall-clock time in the event time zone (`eventWindow().timezone`), and read naive personal time back as that wall-clock time, so every reader still compares real instants
+  - Tests: 07:00-08:00 goes on the wire as `07:00:00`; a naive `07:00:00` reads back as `07:00:00-08:00`; the confirmation still matches the entry; the attendee's own time zone never changes either value
+  - Full gate, then commit scoped `compass-power` on develop
+  - _Requirements: 14.3, 14.4_
+
+- [x] 56. Layovers on badge pickup day, 29 November (owner LW1 run of 29 October, tracker BUG2, design "Owner change: layover times and badge pickup day")
+  - The live event window starts 30 November at 05:30 PST, so a layover on Sunday 29 November is refused, although badge pickup and registration open that day
+  - `add_layover` accepts a layover from 00:00 on the day before the event start, in the event time zone, to the event end; the window itself is still read from the API and never hard-coded
+  - Tests: 29 November 10:00 PST is accepted; 28 November 23:55 PST is refused; the event end is unchanged
+  - Amend Requirement 14.4 to name the badge pickup day; full gate, then commit scoped `compass-power` on develop
+  - _Requirements: 14.4_
+
+- [x] 57. Package metadata and licences (CTO final review of 29 October, findings 1 and 2, tracker CTO1)
+  - Add `description`, `license` (`Apache-2.0`), `repository` (`git+https://github.com/henniefrancis/aws-re_invent-compass.git`, directory `packages/mcp-server`), `homepage` (`https://reinvent-compass.vegas`) and `bugs` to `packages/mcp-server/package.json`; npm provenance needs `repository` to match the GitHub repository
+  - The build copies the repository `LICENSE` and `NOTICE` into the package and writes `THIRD-PARTY-NOTICES.txt` from the esbuild metafile: every bundled package with its name, version, licence and licence text, so the bundled libraries keep their notices
+  - Update `check-pack.mjs` (`REQUIRED_FILES`, `ALLOWED_FILE`), the packaging tests and the file count in `docs/runbooks/npm-release.md`
+  - Full gate and `npm pack --dry-run --workspace packages/mcp-server`, then commit scoped `compass-power` on develop
+  - _Requirements: 20.1, 20.2_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

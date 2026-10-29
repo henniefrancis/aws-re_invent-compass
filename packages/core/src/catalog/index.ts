@@ -17,7 +17,10 @@ export { normaliseSession } from './normalise.js';
 export { recoverVenue, parseVenues } from './venue-recovery.js';
 export {
   computeSessionInterval,
+  fromZoneWallClock,
   isValidTimeZone,
+  startOfDayBefore,
+  toZoneWallClock,
   MAX_CACHED_ZONES,
   type SessionInterval,
 } from './session-time.js';

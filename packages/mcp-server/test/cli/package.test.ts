@@ -21,7 +21,18 @@ describe('the package manifest and the entry file', () => {
       'dist/sample-repo',
       'dist/fixtures',
       'README.md',
+      'LICENSE',
+      'NOTICE',
+      'THIRD-PARTY-NOTICES.txt',
     ]);
+    // CTO final review findings 1 and 2 (task 57): provenance needs the repository, and the
+    // licence must be declared.
+    expect(manifest.license).toBe('Apache-2.0');
+    expect(manifest.repository).toEqual({
+      type: 'git',
+      url: 'git+https://github.com/henniefrancis/aws-re_invent-compass.git',
+      directory: 'packages/mcp-server',
+    });
     expect(manifest.scripts).toEqual({
       build: 'node scripts/build.mjs',
       prepack: 'node scripts/build.mjs',

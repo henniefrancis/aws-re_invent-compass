@@ -127,3 +127,16 @@ Found, not fixed here (follow-ups):
 - No screenshots or video were taken in this run.
 
 Fallback: not needed. Pushes work, so `APNS_ENABLED` stays `true`.
+
+## LW1: live writes on the owner's account (29 October 2026)
+
+The owner ran every write against the live Events API with `COMPASS_ALLOW_WRITES=1`, from Cape Town (UTC+2), through Kiro.
+
+Worked: reserve and cancel, standby add and remove, layover create and delete, issue a pass, send to phone, Add to Google Wallet, and `sync_passes` after the cancel.
+
+Two layover bugs:
+
+1. **Time zone.** A layover asked for at 07:00 to 07:30 PST on Monday 30 November was sent as `2026-11-30T07:00:00-08:00`. Compass turned it into `15:00:00` on the wire, as the OpenAPI document says (UTC with no suffix). The re:Invent app showed it at 15:00. The live service therefore keeps personal time as a wall-clock time in the event time zone, not in UTC, and the OpenAPI document is wrong on this point. Compass's own read-back matched, because it read the value back as UTC too. Fixed in compass-power task 55: Compass now writes and reads personal time as event time (America/Los_Angeles).
+2. **Badge pickup day.** The live event window starts at `2026-11-30T05:30:00.000-08:00`, so a layover on Sunday 29 November was refused, although badge pickup and registration open that day. Fixed in compass-power task 56: layovers may start from 00:00 on the day before the event, in the event time zone.
+
+The owner reruns the layover create on the next live run to confirm that 07:00 shows as 07:00 in the re:Invent app.

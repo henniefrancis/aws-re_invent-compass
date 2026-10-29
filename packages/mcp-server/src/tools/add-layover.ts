@@ -5,13 +5,16 @@
 // Validation happens before the write and, for the offsets and the order, before any call at
 // all: both times need an offset, the end must be after the start, and both must be inside the
 // event window (read from the Schedule_Snapshot, or from S1 only when there is none, never
-// guessed). Update and delete also check the personal time id with the Identifier_Check and
-// look the entry up in the fresh schedule, so the confirmation names what will change. An
+// guessed), widened to start at 00:00 on the badge pickup day, the day before the event, in the
+// event time zone (task 56). Update and delete also check the personal time id with the
+// Identifier_Check and look the entry up in the fresh schedule, so the confirmation names what
+// will change. An
 // overlap with a commitment is a warning; the layover is still written. Every action asks the
 // human to confirm (Schedule_Write_Tools). The title is the attendee's own text and is shown
 // only inside a Labelled_Data_Block.
 
 import type { PersonalTime, PersonalTimeInput, ScheduleWire } from '@compass/contracts';
+import { startOfDayBefore } from '@compass/core/catalog';
 import { CompassError } from '../ports/errors.js';
 import type { EventWindow } from '../ports/events-port.js';
 import { labelUntrusted } from '../safety/labelled-data.js';
@@ -65,7 +68,8 @@ async function validTimes(
     throw new CompassError('LayoverInvalid');
   }
   const window = await windowFor(ctx);
-  if (start < Date.parse(window.start) || end > Date.parse(window.end)) {
+  const opens = startOfDayBefore(window.start, window.timezone) ?? window.start;
+  if (start < Date.parse(opens) || end > Date.parse(window.end)) {
     throw new CompassError('LayoverInvalid');
   }
   return { start, end };

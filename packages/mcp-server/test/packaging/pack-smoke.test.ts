@@ -82,9 +82,12 @@ describe('the packed package (QA H2, security M1)', () => {
     expect(built.entries).toContain('dist/fixtures/synthetic/catalog.json');
     expect(built.entries).toContain('package.json');
     expect(built.entries).toContain('README.md');
+    expect(built.entries).toContain('LICENSE');
+    expect(built.entries).toContain('NOTICE');
+    expect(built.entries).toContain('THIRD-PARTY-NOTICES.txt');
     for (const entry of built.entries) {
       expect(entry, entry).toMatch(
-        /^(dist\/(bin\.js|scan-worker\.js|github-scan-worker\.js|data\/|sample-repo\/|fixtures\/)|package\.json$|README\.md$)/,
+        /^(dist\/(bin\.js|scan-worker\.js|github-scan-worker\.js|data\/|sample-repo\/|fixtures\/)|package\.json$|README\.md$|LICENSE$|NOTICE$|THIRD-PARTY-NOTICES\.txt$)/,
       );
       expect(entry).not.toMatch(/\.ts$|dist\/tsc|\/test\//);
     }
@@ -114,6 +117,40 @@ describe('the packed package (QA H2, security M1)', () => {
         );
       }
     }
+  });
+
+  test('the manifest names the repository, licence and support links (CTO H1)', async () => {
+    const manifest = JSON.parse(await readFile(join(built.extracted, 'package.json'), 'utf8')) as {
+      description: string;
+      license: string;
+      repository: { type: string; url: string; directory: string };
+      homepage: string;
+      bugs: { url: string };
+    };
+    expect(manifest.description.length).toBeGreaterThan(20);
+    expect(manifest.license).toBe('Apache-2.0');
+    expect(manifest.repository).toEqual({
+      type: 'git',
+      url: 'git+https://github.com/henniefrancis/aws-re_invent-compass.git',
+      directory: 'packages/mcp-server',
+    });
+    expect(manifest.homepage).toBe('https://reinvent-compass.vegas');
+    expect(manifest.bugs.url).toBe('https://github.com/henniefrancis/aws-re_invent-compass/issues');
+  });
+
+  test('ships the licence, the notice and the third-party notices of the bundled libraries (CTO H2)', async () => {
+    const root = repoRoot();
+    for (const name of ['LICENSE', 'NOTICE']) {
+      expect(await readFile(join(built.extracted, name), 'utf8')).toBe(
+        await readFile(join(root, name), 'utf8'),
+      );
+    }
+    const notices = await readFile(join(built.extracted, 'THIRD-PARTY-NOTICES.txt'), 'utf8');
+    expect(notices).toMatch(/^@modelcontextprotocol\/sdk \d+\.\d+\.\d+\nLicense: MIT\n\n/m);
+    expect(notices).toMatch(/^zod \d+\.\d+\.\d+\nLicense: MIT\n\n/m);
+    expect(notices).toContain('Permission is hereby granted, free of charge');
+    expect(notices).not.toContain('@compass/');
+    expect(notices).not.toContain('No licence file was shipped');
   });
 
   test('runs --version from the extracted folder', async () => {

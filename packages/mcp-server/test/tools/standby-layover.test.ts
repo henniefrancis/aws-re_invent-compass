@@ -209,6 +209,54 @@ describe('add_layover', () => {
     expect(fake.events.calls).toEqual([]);
   });
 
+  test('accepts the badge pickup day, the day before the event, in the event time zone (task 56)', async () => {
+    const liveWindow = {
+      start: '2026-11-30T05:30:00.000-08:00',
+      end: '2026-12-04T23:59:00.000-08:00',
+      timezone: 'America/Los_Angeles',
+    };
+    const remember = async (
+      fake: ReturnType<typeof setup>['fake'],
+      eventWindow: typeof liveWindow,
+    ): Promise<void> => {
+      await fake.runtime.snapshot.write({
+        version: 1,
+        mode: 'simulated',
+        fetchedAt: 'x',
+        eventWindow,
+        schedule: { reserved: [], favorites: [], personalTime: [] },
+      });
+    };
+    const sunday = layover({
+      startDateTime: '2026-11-29T10:00:00-08:00',
+      endDateTime: '2026-11-29T10:30:00-08:00',
+    });
+
+    const open = setup();
+    await remember(open.fake, liveWindow);
+    await expect(
+      addLayover(
+        layover({
+          startDateTime: '2026-11-28T23:55:00-08:00',
+          endDateTime: '2026-11-29T00:30:00-08:00',
+        }),
+        open.ctx,
+      ),
+    ).rejects.toMatchObject({ code: 'LayoverInvalid' });
+    await expect(
+      addLayover(layover({ endDateTime: '2026-12-05T00:05:00-08:00' }), open.ctx),
+    ).rejects.toMatchObject({ code: 'LayoverInvalid' });
+    // Checked last, because a confirmed write refreshes the snapshot.
+    expect((await addLayover(sunday, open.ctx)).structured).toMatchObject({ done: true });
+
+    // A window whose zone cannot be read opens at the event start, as before.
+    const unknownZone = setup();
+    await remember(unknownZone.fake, { ...liveWindow, timezone: 'Not/AZone' });
+    await expect(addLayover(sunday, unknownZone.ctx)).rejects.toMatchObject({
+      code: 'LayoverInvalid',
+    });
+  });
+
   test('reads the window from S1 only when there is no snapshot', async () => {
     const { fake, ctx } = setup();
     await addLayover(layover(), ctx);
