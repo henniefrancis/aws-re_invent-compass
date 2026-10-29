@@ -35,3 +35,7 @@ One record per architecture decision for re:Invent Compass, mirrored from the pr
 | [ADR-029](ADR-029-builders-after-kiro-credits.md)               | Builders after the Kiro credits ran out                  | Accepted    |
 | [ADR-030](ADR-030-api-key-at-api-gateway.md)                    | API key enforced at API Gateway                          | Accepted    |
 | [ADR-031](ADR-031-custom-domain.md)                             | Custom domain reinvent-compass.vegas                     | Accepted    |
+| [ADR-032](ADR-032-mcp-sdk-v1.md)                                | MCP TypeScript SDK stays on the v1 line for 0.1.0        | Accepted    |
+| [ADR-033](ADR-033-github-app.md)                                | Compass GitHub App for the technology scan               | Accepted    |
+| [ADR-034](ADR-034-pass-confirmation.md)                         | One confirmation for issuing passes                      | Accepted    |
+| [ADR-035](ADR-035-github-token-handling.md)                     | GitHub token handling                                    | Accepted    |

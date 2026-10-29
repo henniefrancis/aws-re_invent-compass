@@ -660,6 +660,14 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Full gate and `npm pack --dry-run --workspace packages/mcp-server`, then commit scoped `compass-power` on develop
   - _Requirements: 20.1, 20.2_
 
+- [x] 58. ADRs the final CTO review asked for (CTO findings 7 and 8 of 29 October)
+  - ADR-032: stay on the MCP TypeScript SDK v1 line for 0.1.0 (why not v2, what the v1 maintenance line means, when to move), and whether to take the 1.32.2 patch now
+  - ADR-033: the Compass GitHub App for the GitHub tech scan (why an App, the permissions it asks for, what it reads, what it never stores)
+  - ADR-034: the pass confirmation change (one confirmation through the client's approval, compass-power task 52, owner rule of 21 October)
+  - ADR-035: GitHub token handling (where the token lives, its lifetime, redaction, and what happens on sign-out and `forget_me`)
+  - Each ADR states only what the code and specs show, links its sources, and is listed in `docs/decisions/README.md`; dash check and prettier; commit scoped `compass-power`
+  - _Requirements: 20.1_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.
