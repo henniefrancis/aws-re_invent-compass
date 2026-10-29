@@ -1,9 +1,17 @@
-# npm publish workflow (foundation-contracts, S0).
+# npm publish workflow (foundation-contracts, S0; split in two jobs by infra task 27).
 #
 # Triggered only on a version tag (v*). It is never run on push to a branch, pull
 # request or a schedule. It publishes through npm trusted publishing with
 # provenance, which needs id-token: write; no npm token is stored. Every action is
 # pinned by commit SHA.
+#
+# Two jobs, so the job that holds the OIDC token runs no repository code:
+#   verify   installs, type checks, lints, tests, builds and packs. It has no id-token
+#            and no environment, so a compromised dependency or package script cannot
+#            mint a publish token. It uploads the packed tarball as an artifact.
+#   publish  needs verify, runs only on a v* tag, holds id-token: write and the
+#            npm-publish environment, and publishes the downloaded tarball. It runs no
+#            npm ci, no checkout and no package script.
 #
 # This file contains no em dash or en dash.
 name: publish
@@ -19,17 +27,13 @@ permissions:
   contents: read
 
 jobs:
-  publish:
-    name: build and publish with provenance
+  verify:
+    name: verify and pack
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # id-token: write is granted here, on the job, not the whole workflow.
+    # Read only: no id-token, no environment.
     permissions:
       contents: read
-      id-token: write
-    # The npm-publish environment gates publishing behind any required reviewers
-    # and protection rules configured on the repository.
-    environment: npm-publish
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -40,7 +44,6 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
           cache: npm
 
       - name: Install dependencies
@@ -70,5 +73,60 @@ jobs:
           npm pack --dry-run --json --workspace packages/mcp-server > pack.json
           node packages/mcp-server/scripts/check-pack.mjs pack.json
 
+      - name: Pack the tarball
+        run: |
+          mkdir -p "${RUNNER_TEMP}/pack"
+          npm pack --workspace packages/mcp-server --pack-destination "${RUNNER_TEMP}/pack"
+          ls -l "${RUNNER_TEMP}/pack"
+
+      - name: Upload the tarball
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-tarball
+          path: ${{ runner.temp }}/pack/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: publish with provenance
+    needs: verify
+    # Only a version tag publishes. The workflow trigger already limits runs to v* tags;
+    # this is a second guard on the job that holds the OIDC token.
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # id-token: write is granted here, on the job, not the whole workflow.
+    permissions:
+      contents: read
+      id-token: write
+    # The npm-publish environment gates publishing behind any required reviewers
+    # and protection rules configured on the repository.
+    environment: npm-publish
+    steps:
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or later. Fail rather than install a newer
+      # npm from the network while the OIDC token is available.
+      - name: Check the npm version supports trusted publishing
+        run: |
+          node -e "const [a,b,c]=process.argv[1].split('.').map(Number); if (a < 11 || (a === 11 && (b < 5 || (b === 5 && c < 1)))) { console.error('npm ' + process.argv[1] + ' is older than 11.5.1'); process.exit(1); }" "$(npm --version)"
+
+      - name: Download the tarball
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: npm-tarball
+          path: ${{ runner.temp }}/pack
+
       - name: Publish with provenance
-        run: npm publish --provenance --access public --workspace packages/mcp-server
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          tarball="${RUNNER_TEMP}/pack/reinvent-compass-${TAG#v}.tgz"
+          test -f "${tarball}"
+          test "$(find "${RUNNER_TEMP}/pack" -name '*.tgz' | wc -l)" -eq 1
+          npm publish "${tarball}" --provenance --access public

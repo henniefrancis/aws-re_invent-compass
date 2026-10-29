@@ -395,10 +395,11 @@ test('the HCP scripts pass the token on stdin, never on a command line, and chec
 
 test('google-wallet-class.mjs exits 0 on success, 1 on an API failure and 2 on bad usage', () => {
   const source = readOwned('scripts/google-wallet-class.mjs');
-  assert.match(source, /process\.exitCode = 0/);
-  assert.match(source, /error instanceof UsageError[\s\S]*process\.exitCode = 2/);
-  assert.match(source, /error instanceof ApiError[\s\S]*process\.exitCode = 1/);
-  assert.match(source, /unexpected failure[\s\S]*process\.exitCode = 1/);
+  assert.match(source, /process\.exitCode = await runCli\(/);
+  assert.match(source, /await ensureClass[\s\S]*return 0;/);
+  assert.match(source, /error instanceof UsageError[\s\S]*return 2;/);
+  assert.match(source, /error instanceof ApiError[\s\S]*return 1;/);
+  assert.match(source, /unexpected failure[\s\S]*return 1;/);
   assert.doesNotMatch(source, /Number\(/);
   assert.equal((source.match(/AbortSignal\.timeout\(REQUEST_TIMEOUT_MS\)/g) ?? []).length, 2);
   assert.doesNotMatch(source, /console\./);

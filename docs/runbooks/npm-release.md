@@ -35,7 +35,15 @@ Never tag before the prod domain is set in the source: a published package canno
 
 ## What the workflow does
 
-On the tag it runs lint, the type check and the tests with coverage, checks that the tag equals the package version, builds the workspace, builds the package, packs with `npm pack --dry-run --json` and asserts the file list with `packages/mcp-server/scripts/check-pack.mjs` (any missing or unexpected file stops the run), and publishes with provenance.
+Two jobs, so the job that holds the npm OIDC token runs none of the repository's code.
+
+1. `verify` has `contents: read` only: no `id-token` and no environment. On the tag it runs `npm ci`, the type check, lint and the tests with coverage, checks that the tag equals the package version, builds the workspace and the package, asserts the packed file list with `packages/mcp-server/scripts/check-pack.mjs` (any missing or unexpected file stops the run), packs the real tarball with `npm pack` and uploads it as the `npm-tarball` artifact.
+2. `publish` needs `verify` and runs only when the ref is a `v*` tag. It holds `id-token: write` and the `npm-publish` environment, so it waits for your approval. It runs no checkout, no `npm ci` and no package script: it sets up Node with the npm registry, checks that npm is 11.5.1 or later (trusted publishing needs it) and fails if not, downloads the tarball and runs `npm publish <tarball> --provenance --access public`. What is published is exactly the file `verify` built and checked.
+
+## Hardening (owner, in the npm and GitHub settings)
+
+- Keep two-factor authentication on for the npm account, including for publishing, so a stolen password alone cannot publish or change the trusted publisher.
+- In GitHub, open Settings, Environments, `npm-publish`, Deployment branches and tags, choose selected branches and tags, and add a tag rule `v*`. Only a `v*` tag can then deploy to the environment, whatever a workflow file says.
 
 ## If a publish fails
 

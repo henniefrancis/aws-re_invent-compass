@@ -332,11 +332,11 @@ The build order lays the shared foundation first (version pins, provider, tags, 
   - [x] 26.3 Bring stale references in line: `release/1.0.0` in `CONCEPT.md` and `docs/architecture/build-plan.md` (the release is cut from main, version 0.1.0), lock files described as pending, and "tag the merge commit only" where the runbooks now say otherwise; check every fact against the repo
   - [x] 26.4 Dash check and prettier; commit scoped `infra`
 
-- [ ] 27. Publish job split, site engines and the Google class script in the coverage gate (CTO findings 4, 9 and 12, design item 45)
-  - [ ] 27.1 Split `.github/workflows/publish.yml` into a `verify` job with no `id-token` (npm ci, tsc, lint, tests, the tag-equals-version check, build, pack, upload the tarball as an artifact) and a `publish` job that needs it, runs only when the ref is a `v*` tag, holds `id-token: write` and the `npm-publish` environment, runs no `npm ci` or package script, and publishes the downloaded tarball with `--provenance --access public`; every action pinned by commit SHA; update the static workflow tests and `docs/runbooks/npm-release.md`, including the advice to keep 2FA on the npm account and to limit the `npm-publish` environment to `v*` tags in GitHub settings (owner)
-  - [ ] 27.2 Set `site/package.json` `engines.node` to `^24.15.0` (Angular 22's floor), keeping the lock file in step
-  - [ ] 27.3 Bring `scripts/google-wallet-class.mjs` into the root coverage gate with unit tests at 100 percent, with every network and file call injected and no real Google call
-  - [ ] 27.4 Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent, `npm run test:site`, the infra static tests, actionlint if present); commit scoped `infra`
+- [x] 27. Publish job split, site engines and the Google class script in the coverage gate (CTO findings 4, 9 and 12, design item 45)
+  - [x] 27.1 Split `.github/workflows/publish.yml` into a `verify` job with no `id-token` (npm ci, tsc, lint, tests, the tag-equals-version check, build, pack, upload the tarball as an artifact) and a `publish` job that needs it, runs only when the ref is a `v*` tag, holds `id-token: write` and the `npm-publish` environment, runs no `npm ci` or package script, and publishes the downloaded tarball with `--provenance --access public`; every action pinned by commit SHA; update the static workflow tests and `docs/runbooks/npm-release.md`, including the advice to keep 2FA on the npm account and to limit the `npm-publish` environment to `v*` tags in GitHub settings (owner)
+  - [x] 27.2 Set `site/package.json` `engines.node` to `^24.15.0` (Angular 22's floor), keeping the lock file in step
+  - [x] 27.3 Bring `scripts/google-wallet-class.mjs` into the root coverage gate with unit tests at 100 percent, with every network and file call injected and no real Google call
+  - [x] 27.4 Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent, `npm run test:site`, the infra static tests, actionlint if present); commit scoped `infra`
 
 ## Notes
 

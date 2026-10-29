@@ -142,8 +142,8 @@ export function matchesDesired(desired, current) {
 class UsageError extends Error {}
 class ApiError extends Error {}
 
-function usage() {
-  process.stderr.write(
+function usage(deps) {
+  deps.stderr(
     'usage: node scripts/google-wallet-class.mjs --service-account FILE --issuer-id ID ' +
       '[--suffix SUFFIX] [--env dev|prod] [--issuer-name NAME]\n',
   );
@@ -191,13 +191,13 @@ export function signJwt(claims, privateKeyPem) {
   return `${header}.${payload}.${signer.sign(privateKeyPem).toString('base64url')}`;
 }
 
-async function getAccessToken(account) {
-  const now = Math.floor(Date.now() / 1000);
+async function getAccessToken(deps, account) {
+  const now = Math.floor(deps.now() / 1000);
   const assertion = signJwt(
     { iss: account.client_email, scope: WALLET_SCOPE, aud: TOKEN_URL, iat: now, exp: now + 3000 },
     account.private_key,
   );
-  const response = await fetch(TOKEN_URL, {
+  const response = await deps.fetch(TOKEN_URL, {
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
@@ -213,8 +213,8 @@ async function getAccessToken(account) {
   return body.access_token;
 }
 
-async function call(token, method, path, body) {
-  const response = await fetch(`${WALLET_API}/${path}`, {
+async function call(deps, token, method, path, body) {
+  const response = await deps.fetch(`${WALLET_API}/${path}`, {
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     method,
     headers: {
@@ -234,55 +234,56 @@ async function readJson(response, step) {
   }
 }
 
-async function ensureIssuer(token, issuerId, issuerName) {
-  const found = await call(token, 'GET', `issuer/${issuerId}`);
+async function ensureIssuer(deps, token, issuerId, issuerName) {
+  const found = await call(deps, token, 'GET', `issuer/${issuerId}`);
   if (found.ok) {
-    process.stdout.write('issuer: exists, left unchanged\n');
+    deps.stdout('issuer: exists, left unchanged\n');
     return;
   }
   if (found.status !== 404)
     throw new ApiError(`reading the issuer failed with HTTP ${found.status}`);
-  const created = await call(token, 'POST', 'issuer', {
+  const created = await call(deps, token, 'POST', 'issuer', {
     issuerId,
     name: issuerName,
   });
   if (!created.ok) throw new ApiError(`creating the issuer failed with HTTP ${created.status}`);
-  process.stdout.write('issuer: created\n');
+  deps.stdout('issuer: created\n');
 }
 
-async function ensureClass(token, classId) {
+async function ensureClass(deps, token, classId) {
   const desired = { id: classId, ...DESIRED_CLASS_FIELDS };
-  const found = await call(token, 'GET', `genericClass/${encodeURIComponent(classId)}`);
+  const found = await call(deps, token, 'GET', `genericClass/${encodeURIComponent(classId)}`);
   if (found.status === 404) {
-    const created = await call(token, 'POST', 'genericClass', desired);
+    const created = await call(deps, token, 'POST', 'genericClass', desired);
     if (!created.ok) throw new ApiError(`creating the class failed with HTTP ${created.status}`);
-    process.stdout.write('class: created\n');
+    deps.stdout('class: created\n');
     return;
   }
   if (!found.ok) throw new ApiError(`reading the class failed with HTTP ${found.status}`);
   const current = await readJson(found, 'reading the class');
   const difference = firstDifference(DESIRED_CLASS_FIELDS, current);
   if (difference === null) {
-    process.stdout.write('class: exists, left unchanged\n');
+    deps.stdout('class: exists, left unchanged\n');
     return;
   }
   // Names where the class differed, so a class that never settles can be diagnosed
   // without printing the response (task 47.6).
-  process.stdout.write(`class: differs at ${difference.path} (found ${difference.found})\n`);
+  deps.stdout(`class: differs at ${difference.path} (found ${difference.found})\n`);
   const patched = await call(
+    deps,
     token,
     'PATCH',
     `genericClass/${encodeURIComponent(classId)}`,
     DESIRED_CLASS_FIELDS,
   );
   if (!patched.ok) throw new ApiError(`updating the class failed with HTTP ${patched.status}`);
-  process.stdout.write('class: updated\n');
+  deps.stdout('class: updated\n');
 }
 
-function loadServiceAccount(path) {
+function loadServiceAccount(deps, path) {
   let raw;
   try {
-    raw = readFileSync(path, 'utf8');
+    raw = deps.readFile(path, 'utf8');
   } catch {
     throw new UsageError(`cannot read file: ${path}`);
   }
@@ -298,34 +299,52 @@ function loadServiceAccount(path) {
   return account;
 }
 
-async function main() {
-  const options = parseArgs(process.argv.slice(2));
-  const account = loadServiceAccount(options.serviceAccountPath);
-  const token = await getAccessToken(account);
-  await ensureIssuer(token, options.issuerId, options.issuerName);
-  await ensureClass(token, `${options.issuerId}.${options.suffix}`);
+// The real network, file, clock and output calls, built when the script runs; the unit
+// tests pass fakes in their place so no test reaches Google or reads a key file.
+export function defaultDeps() {
+  return {
+    fetch: (url, init) => fetch(url, init),
+    readFile: readFileSync,
+    now: () => Date.now(),
+    stdout: (text) => process.stdout.write(text),
+    stderr: (text) => process.stderr.write(text),
+    env: process.env,
+  };
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined && pathToFileURL(process.argv[1]).href === import.meta.url;
-
-if (invokedDirectly) {
-  main().then(
-    () => {
-      process.exitCode = 0;
-    },
-    (error) => {
-      if (error instanceof UsageError) {
-        process.stderr.write(`error: ${error.message}\n`);
-        usage();
-        process.exitCode = 2;
-      } else if (error instanceof ApiError) {
-        process.stderr.write(`error: ${error.message}\n`);
-        process.exitCode = 1;
-      } else {
-        process.stderr.write('error: unexpected failure\n');
-        process.exitCode = 1;
-      }
-    },
-  );
+// Runs the script and returns its exit status: 0 on success, 1 on a Google Wallet API
+// failure or an unexpected one, 2 on bad usage.
+export async function runCli(argv, deps) {
+  try {
+    const options = parseArgs(argv, deps.env);
+    const account = loadServiceAccount(deps, options.serviceAccountPath);
+    const token = await getAccessToken(deps, account);
+    await ensureIssuer(deps, token, options.issuerId, options.issuerName);
+    await ensureClass(deps, token, `${options.issuerId}.${options.suffix}`);
+    return 0;
+  } catch (error) {
+    if (error instanceof UsageError) {
+      deps.stderr(`error: ${error.message}\n`);
+      usage(deps);
+      return 2;
+    }
+    if (error instanceof ApiError) {
+      deps.stderr(`error: ${error.message}\n`);
+      return 1;
+    }
+    deps.stderr('error: unexpected failure\n');
+    return 1;
+  }
 }
+
+export async function main() {
+  process.exitCode = await runCli(process.argv.slice(2), defaultDeps());
+}
+
+// Calls run only when this file is the script node was started with.
+export function runIfDirect(entryPath, moduleUrl, run) {
+  if (entryPath !== undefined && pathToFileURL(entryPath).href === moduleUrl) return run();
+  return undefined;
+}
+
+runIfDirect(process.argv[1], import.meta.url, main);
