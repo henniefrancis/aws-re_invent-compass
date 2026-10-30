@@ -43,6 +43,13 @@ test.describe('with location allowed', () => {
     expect(asked).toBe(false);
   });
 
+  test('the page is served with a Permissions-Policy that allows the location for itself', async ({
+    page,
+  }) => {
+    const response = await page.goto('/board');
+    expect(response?.headers()['permissions-policy']).toContain('geolocation=(self)');
+  });
+
   test('shows the walk, the leave-by time and a Google Maps link, and sends nothing', async ({
     page,
     context,
@@ -54,8 +61,12 @@ test.describe('with location allowed', () => {
     // Forum to The Venetian is 329 m in a straight line: 8 minutes, plus 15 to get inside.
     await expect(walkArea(page).getByText('About 8 min walk.')).toBeVisible();
     await expect(walkArea(page).getByText('Leave by 8:07 AM.')).toBeVisible();
+    // The tap happened at 8:00 AM event time, and the page says so.
+    await expect(walkArea(page).getByText(/Worked out at 8:00 AM\./)).toBeVisible();
     await expect(walkArea(page).getByText(/This is an estimate\./)).toBeVisible();
-    const link = page.getByRole('link', { name: 'Directions to The Venetian in Google Maps' });
+    const link = page.getByRole('link', {
+      name: 'Directions to The Venetian in Google Maps (opens in a new tab)',
+    });
     await expect(link).toHaveAttribute(
       'href',
       'https://www.google.com/maps/dir/?api=1&destination=36.121912,-115.166229&travelmode=walking',
@@ -83,6 +94,29 @@ test.describe('with location allowed', () => {
     await expectNoAxeViolations(page);
   });
 
+  test('a prompt that is never answered times out, and the next tap works', async ({ page }) => {
+    await page.addInitScript(() => {
+      const original = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+      let calls = 0;
+      navigator.geolocation.getCurrentPosition = (...args) => {
+        calls += 1;
+        // The first prompt is dismissed with no answer, as Firefox "Not now" does.
+        if (calls > 1) {
+          original(...args);
+        }
+      };
+    });
+    await openReady(page);
+    await walkButton(page).click();
+    await expect(walkButton(page)).toHaveAttribute('aria-busy', 'true');
+    await expect(walkButton(page)).toHaveAttribute('aria-disabled', 'true');
+    await page.clock.fastForward('00:21');
+    await expect(walkArea(page).getByText(/could not find where you are/)).toBeVisible();
+    await expect(walkButton(page)).not.toHaveAttribute('aria-busy', 'true');
+    await walkButton(page).click();
+    await expect(walkArea(page).getByText(/^About \d+ min walk\./)).toBeVisible();
+  });
+
   test('works from the keyboard', async ({ page }) => {
     await openReady(page);
     await walkButton(page).focus();
@@ -107,7 +141,9 @@ test.describe('on an iPhone', () => {
     await openReady(page);
     await walkButton(page).click();
     await expect(
-      page.getByRole('link', { name: 'Directions to The Venetian in Apple Maps' }),
+      page.getByRole('link', {
+        name: 'Directions to The Venetian in Apple Maps (opens in a new tab)',
+      }),
     ).toHaveAttribute('href', 'https://maps.apple.com/?daddr=36.121912,-115.166229&dirflg=w');
   });
 });

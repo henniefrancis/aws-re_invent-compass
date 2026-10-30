@@ -620,6 +620,15 @@ a.site-nav__link:hover {
   margin: 0;
 }
 
+/* While the phone is finding its location the button stays focusable (so a keyboard user keeps
+   their place) but looks and acts as unavailable. */
+.board-walk button[aria-disabled='true'] {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  cursor: progress;
+}
+
 .board-walk__result {
   font-size: 1rem;
 }

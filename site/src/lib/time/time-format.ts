@@ -34,16 +34,26 @@ export function formatWallClock(iso: string): string {
  * text is not an ISO 8601 date-time with an offset.
  */
 export function formatMinutesBefore(iso: string, minutes: number): string {
-  const match = ISO_WITH_OFFSET.exec(iso);
   const instant = parseIsoWithOffset(iso);
-  if (match === null || instant === null) {
+  return instant === null
+    ? TIME_NOT_AVAILABLE
+    : formatInstantAtOffsetOf(iso, instant - minutes * 60_000);
+}
+
+/**
+ * The wall clock, 12-hour (such as "7:31 AM"), of an instant in milliseconds, written in the offset
+ * of an ISO 8601 date-time's own text. Returns TIME_NOT_AVAILABLE when that text has no offset.
+ */
+export function formatInstantAtOffsetOf(iso: string, instantMs: number): string {
+  const match = ISO_WITH_OFFSET.exec(iso);
+  if (match === null) {
     return TIME_NOT_AVAILABLE;
   }
   const offset = match[6] as string;
   const sign = offset.startsWith('-') ? -1 : 1;
   const offsetMinutes =
     offset === 'Z' ? 0 : sign * (Number(offset.slice(1, 3)) * 60 + Number(offset.slice(4, 6)));
-  const local = new Date(instant - minutes * 60_000 + offsetMinutes * 60_000);
+  const local = new Date(instantMs + offsetMinutes * 60_000);
   return twelveHour(local.getUTCHours(), String(local.getUTCMinutes()).padStart(2, '0'));
 }
 

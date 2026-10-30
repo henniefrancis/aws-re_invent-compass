@@ -1,9 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { directionsUrl } from '../../src/lib/content/links';
 import { toBoardViewModel } from '../../src/lib/board/board-state';
-import { locate, LOCATE_OPTIONS, type GeolocationLike } from '../../src/lib/board/locate';
+import {
+  locate,
+  LOCATE_OPTIONS,
+  LOCATE_WATCHDOG_MS,
+  type GeolocationLike,
+} from '../../src/lib/board/locate';
 import { nextSessionIndex } from '../../src/lib/board/next-session';
 import { buildIndex, venuePoint } from '../../src/lib/board/venue-points';
 import {
@@ -14,7 +19,16 @@ import {
   estimateWalk,
   haversineMetres,
 } from '../../src/lib/board/walk-estimate';
-import { WALK_TEXT, mapsAppFor, walkFromHere } from '../../src/lib/board/walk-view';
+import {
+  IDLE_WALK,
+  WALK_TEXT,
+  locatingWalk,
+  mapsAppFor,
+  walkAnnouncement,
+  walkForSession,
+  walkFromHere,
+  walkShown,
+} from '../../src/lib/board/walk-view';
 import { formatMinutesBefore } from '../../src/lib/time/time-format';
 import { exampleBody, validated } from '../support/handoff-data';
 
@@ -180,59 +194,105 @@ describe('locate', () => {
   });
 });
 
+describe('locate watchdog', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test('a prompt that is dismissed with no answer ends as unavailable, and a retap works', async () => {
+    vi.useFakeTimers();
+    const silent: GeolocationLike = { getCurrentPosition: () => undefined };
+    const pending = locate(silent);
+    await vi.advanceTimersByTimeAsync(LOCATE_WATCHDOG_MS);
+    expect(await pending).toEqual({ ok: false, reason: 'unavailable' });
+    const answered = locate({
+      getCurrentPosition: (ok) => {
+        ok({ coords: { latitude: 36.1, longitude: -115.1 } });
+      },
+    });
+    expect(await answered).toEqual({ ok: true, position: { lat: 36.1, lon: -115.1 } });
+  });
+
+  test('an answer clears the watchdog', async () => {
+    vi.useFakeTimers();
+    await locate({
+      getCurrentPosition: (ok) => {
+        ok({ coords: { latitude: 36.1, longitude: -115.1 } });
+      },
+    });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
 describe('walkFromHere', () => {
   const base = { ...exampleBody().sessions[0]!, applePath: null };
   const session = (venue: string | null) => ({ ...base, venue });
   const startsMs = Date.parse(base.startsAt);
+  const SERIAL = base.serialNumber;
   const here = (position = FORUM) => vi.fn(() => Promise.resolve({ ok: true as const, position }));
+  const estimate = async (wallet: 'both' | 'apple' = 'both', tapMs = startsMs - 3_600_000) => {
+    const view = await walkFromHere(session('The Venetian'), here(), wallet, () => tapMs);
+    if (view.kind !== 'estimate') {
+      throw new Error('expected an estimate');
+    }
+    return view;
+  };
 
-  test('an estimate with the leave-by time in event time and a Google Maps link', async () => {
-    const view = await walkFromHere(
-      session('The Venetian'),
-      here(),
-      'both',
-      () => startsMs - 3_600_000,
-    );
-    expect(view).toEqual({
+  test('an estimate that names its session, the leave-by time and when it was worked out', async () => {
+    expect(await estimate()).toEqual({
       kind: 'estimate',
+      serial: SERIAL,
       summary: 'About 8 min walk.',
       // 10:30 minus 8 + 15 = 23 minutes.
       leaveBy: 'Leave by 10:07 AM.',
+      // The tap was an hour before the start, written in the session's own offset.
+      workedOut: 'Worked out at 9:30 AM.',
       note: WALK_TEXT.estimateNote,
       directions: {
         href: directionsUrl('google', VENETIAN),
         label: 'Directions',
-        name: 'Directions to The Venetian in Google Maps',
+        detail: ' to The Venetian in Google Maps (opens in a new tab)',
         caption: 'Google Maps gets your location only when you open this link.',
       },
     });
   });
 
-  test('an iPhone gets Apple Maps', async () => {
-    const view = await walkFromHere(session('The Venetian'), here(), 'apple', () => 0);
-    expect(
-      view.kind === 'estimate' && view.directions.href.startsWith('https://maps.apple.com/'),
-    ).toBe(true);
+  test('the Directions link holds only the two maps hosts and says it opens a new tab', async () => {
+    const google = (await estimate('both')).directions;
+    const apple = (await estimate('apple')).directions;
+    expect(google.href.startsWith('https://www.google.com/maps/dir/')).toBe(true);
+    expect(apple.href.startsWith('https://maps.apple.com/')).toBe(true);
+    for (const link of [google, apple]) {
+      expect(link.detail).toContain('(opens in a new tab)');
+    }
   });
 
-  test('says leave now when the leave-by time has passed', async () => {
-    const view = await walkFromHere(
-      session('The Venetian'),
+  test('says leave now when the leave-by time has already passed at the tap', async () => {
+    expect((await estimate('both', startsMs - 23 * 60_000)).leaveBy).toBe('Leave now.');
+    expect((await estimate('both', startsMs - 60_000)).leaveBy).toBe('Leave now.');
+    expect((await estimate('both', startsMs - 23 * 60_000 - 1)).leaveBy).toBe('Leave by 10:07 AM.');
+    const odd = await walkFromHere(
+      { ...session('The Venetian'), startsAt: 'soon' },
       here(),
       'both',
-      () => startsMs - 60_000,
+      () => 0,
     );
-    expect(view).toMatchObject({ kind: 'estimate', leaveBy: 'Leave now.' });
+    expect(odd).toMatchObject({
+      leaveBy: 'Leave now.',
+      workedOut: 'Worked out at Time not available.',
+    });
   });
 
   test('no venue, or no map point: a message, and the location is never asked for', async () => {
     const locateSpy = here();
     expect(await walkFromHere(session(null), locateSpy, 'both', () => 0)).toEqual({
       kind: 'message',
+      serial: SERIAL,
       text: WALK_TEXT.noVenue,
     });
     expect(await walkFromHere(session('Nowhere Hall'), locateSpy, 'both', () => 0)).toEqual({
       kind: 'message',
+      serial: SERIAL,
       text: WALK_TEXT.noPoint,
     });
     expect(locateSpy).not.toHaveBeenCalled();
@@ -246,7 +306,7 @@ describe('walkFromHere', () => {
         'both',
         () => 0,
       );
-      expect(view).toEqual({ kind: 'message', text: WALK_TEXT[reason] });
+      expect(view).toEqual({ kind: 'message', serial: SERIAL, text: WALK_TEXT[reason] });
     }
   });
 
@@ -257,13 +317,57 @@ describe('walkFromHere', () => {
       'both',
       () => 0,
     );
-    expect(view).toEqual({ kind: 'message', text: WALK_TEXT.tooFar });
+    expect(view).toEqual({ kind: 'message', serial: SERIAL, text: WALK_TEXT.tooFar });
   });
 
   test('the messages are plain and carry no dash characters', () => {
     for (const text of Object.values(WALK_TEXT)) {
-      expect(text).not.toMatch(/[\u2013\u2014]/);
+      expect(text).not.toContain(String.fromCharCode(0x2013));
+      expect(text).not.toContain(String.fromCharCode(0x2014));
     }
+  });
+
+  test('the privacy line says what Compass does and what the phone may do', () => {
+    expect(WALK_TEXT.privacy).toBe(
+      'Compass does not send your location anywhere or save it. Your phone may use its own location service to find it.',
+    );
+  });
+});
+
+describe('what is shown under the next session', () => {
+  const OTHER = '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d';
+  const base = { ...exampleBody().sessions[0]!, applePath: null };
+  const worked = () =>
+    walkFromHere(
+      { ...base, venue: 'The Venetian' },
+      () => Promise.resolve({ ok: true, position: FORUM }),
+      'both',
+      () => Date.parse(base.startsAt) - 3_600_000,
+    );
+
+  test('a view is shown only under the session it was worked out for', async () => {
+    const view = await worked();
+    expect(walkShown(view, base.serialNumber).kind).toBe('estimate');
+    expect(walkShown(view, OTHER)).toEqual({ kind: 'idle' });
+    expect(walkShown(view, null)).toEqual({ kind: 'idle' });
+    expect(walkForSession(view, OTHER)).toBe(IDLE_WALK);
+    expect(walkForSession(IDLE_WALK, base.serialNumber)).toBe(IDLE_WALK);
+  });
+
+  test('locating, message and idle views, and what a screen reader hears', async () => {
+    const s = base.serialNumber;
+    expect(walkShown(locatingWalk(s), s)).toEqual({ kind: 'locating' });
+    expect(walkShown({ kind: 'message', serial: s, text: 'No.' }, s)).toEqual({
+      kind: 'message',
+      text: 'No.',
+    });
+    expect(walkShown(IDLE_WALK, s)).toEqual({ kind: 'idle' });
+    expect(walkAnnouncement({ kind: 'idle' })).toBe('');
+    expect(walkAnnouncement({ kind: 'locating' })).toBe(WALK_TEXT.locating);
+    expect(walkAnnouncement({ kind: 'message', text: 'No.' })).toBe('No.');
+    expect(walkAnnouncement(walkShown(await worked(), s))).toBe(
+      `About 8 min walk. Leave by 10:07 AM. Worked out at 9:30 AM. ${WALK_TEXT.estimateNote}`,
+    );
   });
 });
 

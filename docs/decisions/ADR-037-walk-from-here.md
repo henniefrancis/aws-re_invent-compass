@@ -1,6 +1,6 @@
 # ADR-037 Walk from here: a walking time to the next session, worked out on the phone
 
-Status: Accepted, 2026-10-31 (owner decisions). Implemented in showcase-site task 40 and pass-service task 53 (tracker L01).
+Status: Accepted, 2026-10-30 (owner decisions). Implemented in showcase-site task 40 and pass-service task 53 (tracker L01).
 
 ## Context
 
@@ -14,7 +14,17 @@ Location is personal data. The first rule is that it stays on the phone.
 - **The attendee taps first.** The page shows the button "Walk from here". The browser is asked for the location only when the attendee taps it, once (`getCurrentPosition`, never `watchPosition`). Nothing is requested when the page loads. If the session has no venue, or the venue has no map point, the page says so and does not ask for the location at all.
 - **An estimate on the phone plus a Directions link.** The page shows "About N min walk." and "Leave by 9:48 AM." (12-hour like the session times, in event time), says "This is an estimate.", and offers a Directions link: Apple Maps on an iPhone, Google Maps on everything else (the same device check as the wallet buttons). The link names only the venue's point, so the maps app starts from the phone's own location.
 - **No estimate in five cases.** Location denied, location unavailable, location timed out, no venue on the pass, no map point for the venue, and a phone more than 20 km from the venue. Each shows one short plain message.
-- **If it is too late to leave.** When the leave-by time has already passed, the page says "Leave now." instead of a time in the past.
+- **If it is too late to leave.** When the leave-by time has already passed at the tap, the page says "Leave now." instead of a time in the past.
+- **The result is a snapshot.** It shows "Worked out at 7:31 AM." (the tap time, 12-hour, written in the session's event offset) so the attendee can see how old it is. It does not change as time passes. The result belongs to the session it was made for: it shows only under that session, and a location answer that arrives after another session has become next is dropped.
+- **A prompt that is never answered.** Some browsers never answer when the attendee dismisses the permission prompt (for example Firefox "Not now"). After 20 seconds the page treats it as "unavailable" and the attendee can tap again. While the phone is finding its location the button shows as busy (`aria-busy`, `aria-disabled`) but stays focusable.
+- **Directions link.** Its accessible name says it opens in a new tab, as the site header links do.
+- **One Permissions-Policy value.** `site/scripts/required-permissions-policy.mjs` holds it. The preview and e2e server sends it, and an infra static test pins that the CloudFront value equals it, that `geolocation=(self)` is in it and that no entry is `*`.
+
+### The venue points
+
+- **The Venetian uses the Venetian Expo point** (OSRM point 7, `36.1219124, -115.1662288`), not the hotel point (point 5, `36.1217073, -115.1693352`). The two are about 280 m apart. Sessions at The Venetian are held in the Venetian Expo (the venue file lists "The Venetian Expo" and "Venetian Expo" as spellings of this venue), and the existing walking times to and from The Venetian were computed from point 7, so the phone and the venue file agree.
+- **The Caesars Forum point lies on its Koval Lane loading-dock side.** Directions to this point may end there, not at a front door. The point comes from the same OSRM table, so the walking times in the venue file share this. It is a point on the resort, not a door.
+- QA reverse-geocoded all seven points on OpenStreetMap Nominatim and each matches the building named for it.
 
 ### The numbers
 
@@ -38,10 +48,11 @@ The hand-off view gives each session a `venue`: the venue name the pass shows (i
 
 In plain English. This is a design record, not legal advice, and we have not had legal advice on it.
 
+- The page says: "Compass does not send your location anywhere or save it. Your phone may use its own location service to find it." The second sentence is there because the browser may ask the phone's own location service (for example Wi-Fi or mobile network lookups run by the phone maker or browser vendor). That is outside Compass and this page cannot control it.
 - The location is read in memory on the phone, used for one calculation, and dropped. It is not sent in any request to us or anyone else, not stored (no cookies, local storage or other storage) and not logged. A source test keeps `fetch(` out of everything except the hand-off client.
 - The browser asks the attendee for permission, and the page asks only after a tap. Saying no costs nothing: every other part of the board page works.
 - The reading is a rough fix (not high accuracy) and a cached fix older than 30 seconds is not reused.
-- **POPIA (South Africa)** and **GDPR-style data minimisation.** Both ask that personal data be processed only as far as needed for a stated purpose. The Protection of Personal Information Act has a minimality rule that data be adequate, relevant and not excessive for the purpose (section 10), and the GDPR says personal data must be adequate, relevant and limited to what is necessary (Article 5(1)(c)). Compass meets the spirit of that by not collecting the location at all: it never reaches a Compass server, so there is nothing to keep, secure or delete. The purpose is stated on the page next to the button.
+- **POPIA (South Africa)** and **GDPR-style data minimisation.** Both ask that personal data be processed only as far as needed for a stated purpose. The GDPR says personal data must be "adequate, relevant and limited to what is necessary in relation to the purposes for which they are processed" (Article 5(1)(c); text read on gdpr-info.eu, an unofficial copy, because EUR-Lex returned an empty page). The Protection of Personal Information Act has a minimality rule in section 10 along the same lines; we could not read its official text (the gov.za PDF could not be turned into text here), so that is from memory and not re-read against the official text. Compass meets the spirit of that by not collecting the location at all: it never reaches a Compass server, so there is nothing to keep, secure or delete. The purpose is stated on the page next to the button.
 - **Maps.** The Directions link opens Apple Maps or Google Maps in a new tab. That app receives the phone's location only when the attendee opens the link, under that company's own terms. The page says so under the link.
 - The Privacy page of the site lists this behaviour, and cites this record as its source.
 
@@ -61,5 +72,5 @@ The CloudFront response headers policy in `infra/modules/edge` sent `Permissions
 - Browser Geolocation API (`getCurrentPosition`, permission prompt, secure contexts only): [MDN, Geolocation API](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API).
 - Map links: [Apple Maps, Map Links](https://developer.apple.com/library/archive/featuredarticles/iPhoneURLScheme_Reference/MapLinks/MapLinks.html) (`daddr`, `dirflg=w`) and [Google Maps URLs](https://developers.google.com/maps/documentation/urls/get-started) (`api=1`, `destination`, `travelmode=walking`).
 - Venue points and walking distances: `data/venues.json` (OpenStreetMap data through the OSRM foot routing service, retrieved 17 October 2026).
-- POPIA section 10 and GDPR Article 5(1)(c), as named above. Not re-read for this record.
+- GDPR Article 5(1)(c): read on gdpr-info.eu, 30 October 2026 (unofficial copy of the official text). POPIA section 10: not re-read against the official text.
 - Compass: ADR-036 (board page buttons and the device check), `site/src/lib/board/walk-estimate.ts`.

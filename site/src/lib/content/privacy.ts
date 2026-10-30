@@ -199,7 +199,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-site-walk',
-        'On the board page, Walk from here asks your phone for its location only when you tap it. The walking time is worked out on your phone. Your location is not sent to us, saved or logged. The Directions link opens Apple Maps or Google Maps, and that app gets your location only when you open the link.',
+        'On the board page, Walk from here asks your phone for its location only when you tap it. The walking time is worked out on your phone. Compass does not send your location anywhere, save it or log it. Your phone may use its own location service to find it. The Directions link opens Apple Maps or Google Maps, and that app gets your location only when you open the link.',
         WALK,
         'Decision and Privacy',
       ),
