@@ -15,7 +15,7 @@ import {
   haversineMetres,
 } from '../../src/lib/board/walk-estimate';
 import { WALK_TEXT, mapsAppFor, walkFromHere } from '../../src/lib/board/walk-view';
-import { formatMinutesBefore24 } from '../../src/lib/time/time-format';
+import { formatMinutesBefore } from '../../src/lib/time/time-format';
 import { exampleBody, validated } from '../support/handoff-data';
 
 const FORUM = { lat: 36.1189571, lon: -115.1661889 };
@@ -107,14 +107,14 @@ describe('nextSessionIndex', () => {
   });
 });
 
-describe('formatMinutesBefore24', () => {
+describe('formatMinutesBefore', () => {
   test('writes the earlier time in the offset of the text', () => {
-    expect(formatMinutesBefore24('2026-11-30T10:30:00-08:00', 38)).toBe('09:52');
-    expect(formatMinutesBefore24('2026-11-30T00:10:00+02:00', 20)).toBe('23:50');
-    expect(formatMinutesBefore24('2026-11-30T10:30:00Z', 30)).toBe('10:00');
+    expect(formatMinutesBefore('2026-11-30T10:30:00-08:00', 38)).toBe('9:52 AM');
+    expect(formatMinutesBefore('2026-11-30T00:10:00+02:00', 20)).toBe('11:50 PM');
+    expect(formatMinutesBefore('2026-11-30T10:30:00Z', 30)).toBe('10:00 AM');
   });
   test('is not available for a bad date-time', () => {
-    expect(formatMinutesBefore24('nope', 5)).toBe('Time not available');
+    expect(formatMinutesBefore('nope', 5)).toBe('Time not available');
   });
 });
 
@@ -197,7 +197,7 @@ describe('walkFromHere', () => {
       kind: 'estimate',
       summary: 'About 8 min walk.',
       // 10:30 minus 8 + 15 = 23 minutes.
-      leaveBy: 'Leave by 10:07.',
+      leaveBy: 'Leave by 10:07 AM.',
       note: WALK_TEXT.estimateNote,
       directions: {
         href: directionsUrl('google', VENETIAN),

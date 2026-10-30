@@ -53,7 +53,7 @@ test.describe('with location allowed', () => {
     await walkButton(page).click();
     // Forum to The Venetian is 329 m in a straight line: 8 minutes, plus 15 to get inside.
     await expect(walkArea(page).getByText('About 8 min walk.')).toBeVisible();
-    await expect(walkArea(page).getByText('Leave by 08:07.')).toBeVisible();
+    await expect(walkArea(page).getByText('Leave by 8:07 AM.')).toBeVisible();
     await expect(walkArea(page).getByText(/This is an estimate\./)).toBeVisible();
     const link = page.getByRole('link', { name: 'Directions to The Venetian in Google Maps' });
     await expect(link).toHaveAttribute(

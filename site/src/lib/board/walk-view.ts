@@ -7,7 +7,7 @@
 
 import { directionsUrl, type MapsApp } from '../content/links';
 import { parseIsoWithOffset } from '../time/iso';
-import { formatMinutesBefore24 } from '../time/time-format';
+import { formatMinutesBefore } from '../time/time-format';
 import type { DeviceWallet } from './device';
 import type { BoardSession } from './handoff-view';
 import type { LocateResult } from './locate';
@@ -52,7 +52,7 @@ export type WalkView =
       readonly kind: 'estimate';
       /** "About 12 min walk." */
       readonly summary: string;
-      /** "Leave by 09:48." or "Leave now." */
+      /** "Leave by 9:48 AM." or "Leave now." */
       readonly leaveBy: string;
       readonly note: string;
       readonly directions: DirectionsLink;
@@ -90,7 +90,7 @@ function leaveByText(startsAt: string, totalMinutes: number, nowMs: number): str
   if (start === null || start - totalMinutes * 60_000 <= nowMs) {
     return WALK_TEXT.leaveNow;
   }
-  return `Leave by ${formatMinutesBefore24(startsAt, totalMinutes)}.`;
+  return `Leave by ${formatMinutesBefore(startsAt, totalMinutes)}.`;
 }
 
 /**
