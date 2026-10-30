@@ -648,6 +648,10 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 52.1 Remove `calendarPath` from each session in the hand-off view (contract source, generated copies, schemas, the API Gateway OpenAPI), the route `GET /api/v1/handoffs/{handoffId}/calendar/{serialNumber}.ics`, its handler, the harness route and their tests; the week calendar route stays
   - [x] 52.2 The per hand-off read limit becomes 30 plus 2 for every pass (one Apple pass and one view of the page per pass, with room to spare); full gate; commit scoped `pass-service`
 
+- [ ] 53. The venue of each session in the hand-off view (tracker L01, showcase-site task 40)
+  - [ ] 53.1 Each session in the hand-off view carries its `venue` (the official venue name the pass shows as GATE) or null, from the pass record; contract source, generated copies, schemas and tests; the site validator accepts only a known venue name or null
+  - [ ] 53.2 Full gate; commit on the L01 branch
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.
