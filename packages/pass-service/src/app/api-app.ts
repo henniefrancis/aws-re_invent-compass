@@ -1,12 +1,14 @@
-// The Api_Lambda app: ten operations (getHealth, issuePasses, getApplePass, updatePass,
-// voidPass, createHandoff, getHandoff, getHandoffAppleBundle, getHandoffCalendar,
-// forgetMe).
+// The Api_Lambda app: twelve operations (getHealth, issuePasses, getApplePass, updatePass,
+// voidPass, createHandoff, getHandoff, getHandoffAppleBundle, getHandoffApplePass,
+// getHandoffCalendar, getHandoffSessionCalendar, forgetMe).
 import { createHandoff } from '../handlers/api/create-handoff.js';
 import { forgetMe } from '../handlers/api/forget-me.js';
 import { getApplePass } from '../handlers/api/get-apple-pass.js';
 import { getHandoff } from '../handlers/api/get-handoff.js';
 import { getHandoffAppleBundle } from '../handlers/api/get-handoff-apple-bundle.js';
+import { getHandoffApplePass } from '../handlers/api/get-handoff-apple-pass.js';
 import { getHandoffCalendar } from '../handlers/api/get-handoff-calendar.js';
+import { getHandoffSessionCalendar } from '../handlers/api/get-handoff-session-calendar.js';
 import { getHealth } from '../handlers/api/health.js';
 import { issuePasses } from '../handlers/api/issue-passes.js';
 import { updatePass } from '../handlers/api/update-pass.js';
@@ -29,7 +31,9 @@ const routes = {
   'POST /api/v1/handoffs': createHandoff,
   'GET /api/v1/handoffs/{handoffId}': getHandoff,
   'GET /api/v1/handoffs/{handoffId}/apple/{bundleIndex}': getHandoffAppleBundle,
+  'GET /api/v1/handoffs/{handoffId}/apple/pass/{serialNumber}': getHandoffApplePass,
   'GET /api/v1/handoffs/{handoffId}/calendar.ics': getHandoffCalendar,
+  'GET /api/v1/handoffs/{handoffId}/calendar/{serialNumber}': getHandoffSessionCalendar,
   'DELETE /api/v1/me': forgetMe,
 } satisfies Record<ApiRouteKey, Handler<ApiContext>>;
 

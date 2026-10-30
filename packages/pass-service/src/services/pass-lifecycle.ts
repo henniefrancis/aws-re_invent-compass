@@ -9,7 +9,6 @@
 import type { PassFields } from '@compass/contracts';
 import type { PushTarget } from '../apns/apns-client.js';
 import type { ApiDeps } from '../app/deps.js';
-import type { ApiConfig } from '../config/config.js';
 import type { VerifiedCaller } from '../auth/token-verifier.js';
 import { EXPIRY_GRACE_MS, ttlOf } from '../data/keys.js';
 import { nextLastUpdated, nextUpdateTag } from '../data/last-updated.js';
@@ -21,10 +20,8 @@ import { deriveAuthToken, newTokenSalt } from '../security/auth-token.js';
 import { constantTimeEqualHex, sha256Hex } from '../security/hashing.js';
 import { UUID_V4_PATTERN } from '../security/handoff-id.js';
 import type { IssuePassesRequest } from '../validation/request-schemas.js';
+import { createGoogleInserter, type GoogleInserter } from './google-inserter.js';
 import type { OpContext } from './op-context.js';
-
-/** How many Google inserts run at once when passes are issued. */
-export const GOOGLE_INSERT_CONCURRENCY = 5;
 
 export type LifecycleDeps = Pick<
   ApiDeps,
@@ -103,19 +100,8 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
     op.metrics.add('ApnsFailure', outcome.failed);
   }
 
-  /** A Google call that never throws: false on any failure. Only used when Google is enabled. */
-  async function googleCall(
-    run: (issuerId: string, classSuffix: string) => Promise<'ok' | 'failed'>,
-  ): Promise<boolean> {
-    try {
-      const secret = await deps.secrets.google();
-      // Callers check `config.google.enabled` first.
-      const { classSuffix } = config.google as Extract<ApiConfig['google'], { enabled: true }>;
-      return (await run(secret.issuerId, classSuffix)) === 'ok';
-    } catch {
-      return false;
-    }
-  }
+  const inserter = createGoogleInserter(deps);
+  const googleCall: GoogleInserter['call'] = (run) => inserter.call(run);
 
   /** True when the pass has a Google object and Google is enabled by configuration. */
   function hasGoogleObject(rec: PassRecord): boolean {
@@ -144,22 +130,6 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
       return deps.google.patch(object.id, object);
     });
     op.metrics.add('GoogleWalletFailure', ok ? 0 : 1);
-  }
-
-  function insertGoogle(rec: PassRecord): Promise<boolean> {
-    return googleCall((issuerId, classSuffix) =>
-      deps.google.insert(
-        buildGenericObject(
-          {
-            serialNumber: rec.serialNumber,
-            fields: rec.fields,
-            state: 'ACTIVE',
-            timezone: config.eventWindow.timezone,
-          },
-          { issuerId, classSuffix, publicBaseUrl: config.publicBaseUrl },
-        ),
-      ),
-    );
   }
 
   /**
@@ -202,51 +172,6 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
         await passes.setGoogleState(rec.serialNumber, ok ? 'inactive' : 'pending_inactive');
       }
     }
-  }
-
-  /**
-   * Google inserts for new passes: at most GOOGLE_INSERT_CONCURRENCY at a time and under an
-   * overall budget. A pass that was not inserted in time is returned as Apple only; an insert
-   * that finishes after the budget still marks its pass active, so a later read is honest.
-   * Every pass that did not make it counts as one GoogleWalletFailure.
-   */
-  async function insertAllGoogle(records: PassRecord[], op: OpContext): Promise<Set<string>> {
-    const done = new Set<string>();
-    const queue = [...records];
-    let expired = false;
-    const worker = async (): Promise<void> => {
-      for (let rec = queue.shift(); rec !== undefined && !expired; rec = queue.shift()) {
-        if (await insertGoogle(rec)) {
-          try {
-            await passes.setGoogleState(rec.serialNumber, 'active');
-            done.add(rec.serialNumber);
-          } catch {
-            // The object exists but the record could not say so: it is reported as not inserted.
-          }
-        }
-      }
-    };
-    const budgetMs = (config.google as Extract<ApiConfig['google'], { enabled: true }>)
-      .insertBudgetMs;
-    let timer: NodeJS.Timeout | undefined;
-    const budget = new Promise<void>((resolve) => {
-      timer = setTimeout(() => {
-        expired = true;
-        resolve();
-      }, budgetMs);
-    });
-    try {
-      const workers = Array.from(
-        { length: Math.min(GOOGLE_INSERT_CONCURRENCY, records.length) },
-        worker,
-      );
-      await Promise.race([Promise.all(workers), budget]);
-    } finally {
-      clearTimeout(timer);
-    }
-    const reported = new Set(done);
-    op.metrics.add('GoogleWalletFailure', records.length - reported.size);
-    return reported;
   }
 
   const lifecycle: PassLifecycle = {
@@ -303,7 +228,7 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
         await Promise.allSettled(created.map((rec) => passes.delete(rec.serialNumber)));
         throw new ProblemError(429, 'active_pass_limit');
       }
-      const inserted = wantsGoogle ? await insertAllGoogle(created, op) : new Set<string>();
+      const inserted = wantsGoogle ? await inserter.insertAll(created, op) : new Set<string>();
       return {
         passes: created.map((rec) => ({
           serialNumber: rec.serialNumber,
@@ -397,7 +322,15 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
       if (saved === undefined) {
         return 'already';
       }
-      await fanOutVoid(saved, await registrations.listByPass(rec.serialNumber, op.now), op, true);
+      // The record that was saved may be older than a Google insert that finished meanwhile:
+      // read the Google state again, so that object is switched off.
+      const fresh = await passes.get(rec.serialNumber, op.now);
+      await fanOutVoid(
+        { ...saved, googleState: fresh?.googleState ?? saved.googleState },
+        await registrations.listByPass(rec.serialNumber, op.now),
+        op,
+        true,
+      );
       return 'voided';
     },
 

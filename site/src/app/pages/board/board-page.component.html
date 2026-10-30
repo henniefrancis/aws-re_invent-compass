@@ -65,6 +65,48 @@
         <li>
           <strong>{{ row.code }}</strong
           >: {{ row.title }}<br />{{ row.time }}
+          @if (row.actions.length > 0) {
+            <ul class="board-session-actions">
+              @for (action of row.actions; track action.href) {
+                <li>
+                  @if (action.kind === 'apple') {
+                    <a
+                      class="wallet-badge wallet-badge--row"
+                      [href]="action.href"
+                      type="application/vnd.apple.pkpass"
+                      ><img
+                        class="wallet-badge__image"
+                        src="artwork/apple-wallet.svg"
+                        width="680"
+                        height="216"
+                        [alt]="action.label"
+                    /></a>
+                  } @else if (action.kind === 'google') {
+                    <a
+                      class="wallet-badge wallet-badge--row"
+                      [href]="action.href"
+                      rel="noopener noreferrer"
+                      ><img
+                        class="wallet-badge__image"
+                        src="artwork/google-wallet.svg"
+                        width="701"
+                        height="217"
+                        [alt]="action.label"
+                    /></a>
+                  } @else {
+                    <a class="wallet-badge wallet-badge--row" [href]="action.href" download
+                      ><img
+                        class="wallet-badge__image"
+                        src="artwork/calendar.svg"
+                        width="681"
+                        height="230"
+                        [alt]="action.label"
+                    /></a>
+                  }
+                </li>
+              }
+            </ul>
+          }
         </li>
       }
     </ul>

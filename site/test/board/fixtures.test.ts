@@ -24,6 +24,7 @@ describe('hand-off fixtures', () => {
   test('the fixture set is the one the design lists', () => {
     expect(readdirSync(DIR).sort()).toEqual([
       'foreign-google-host.json',
+      'foreign-session-google-host.json',
       'malformed.json',
       'no-action.json',
       'not-found.json',
@@ -34,6 +35,7 @@ describe('hand-off fixtures', () => {
       'server-error.json',
       'wrong-bundle-path.json',
       'wrong-content-type.json',
+      'wrong-session-path.json',
     ]);
   });
 
@@ -55,15 +57,28 @@ describe('hand-off fixtures', () => {
     const apple = validateHandoffView(load('ready-apple-only').body, FIXED_ID);
     expect(one?.appleBundles).toHaveLength(1);
     expect(one?.googleSaveUrl).not.toBeNull();
+    expect(one?.sessions.every((s) => s.applePath && s.googleSaveUrl && s.calendarPath)).toBe(true);
     expect(three?.appleBundles).toHaveLength(3);
+    // 24 passes do not fit one Google link, so there is no top button; each session has its own.
+    expect(three?.googleSaveUrl).toBeNull();
+    expect(three?.sessions.every((s) => s.googleSaveUrl !== null)).toBe(true);
     expect(three?.sessions).toHaveLength(24);
     expect(three?.calendarPath).not.toBeNull();
     expect(apple?.googleSaveUrl).toBeNull();
     expect(apple?.calendarPath).toBeNull();
+    expect(apple?.sessions.every((s) => s.applePath && !s.googleSaveUrl && !s.calendarPath)).toBe(
+      true,
+    );
   });
 
   test('every negative 200 fixture is rejected', () => {
-    for (const name of ['wrong-bundle-path', 'foreign-google-host', 'no-action']) {
+    for (const name of [
+      'wrong-bundle-path',
+      'foreign-google-host',
+      'no-action',
+      'wrong-session-path',
+      'foreign-session-google-host',
+    ]) {
       expect(validateHandoffView(load(name).body, FIXED_ID), name).toBeNull();
     }
     expect(() => {
@@ -81,6 +96,8 @@ describe('hand-off fixtures', () => {
       'wrong-content-type': 'unavailable',
       'wrong-bundle-path': 'unavailable',
       'foreign-google-host': 'unavailable',
+      'wrong-session-path': 'unavailable',
+      'foreign-session-google-host': 'unavailable',
       'ready-one-bundle': 'ready',
     };
     for (const [name, kind] of Object.entries(expected)) {

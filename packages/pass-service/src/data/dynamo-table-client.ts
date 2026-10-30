@@ -108,6 +108,23 @@ export function createDynamoTableClient(doc: DocClient, tableName: string): Tabl
       return updated ? 'ok' : 'conflict';
     },
 
+    async setIfEquals(key, attribute, expected, set) {
+      const expression = setExpression(set);
+      const updated = await conditional(() =>
+        doc.send(
+          new UpdateCommand({
+            TableName: tableName,
+            Key: key,
+            UpdateExpression: expression.update,
+            ConditionExpression: 'attribute_exists(#pk) AND #ca = :expected',
+            ExpressionAttributeNames: { ...expression.names, '#pk': 'pk', '#ca': attribute },
+            ExpressionAttributeValues: { ...expression.values, ':expected': expected },
+          }),
+        ),
+      );
+      return updated ? 'ok' : 'conflict';
+    },
+
     async set(key, set) {
       const expression = setExpression(set);
       await conditional(() =>

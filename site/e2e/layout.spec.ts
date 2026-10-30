@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { PAGES, boardPath, mockHandoff } from './support/site';
 
-const TARGETS = 'button, a.button, .site-nav a, .brand-link';
+const TARGETS = 'button, a.button, .site-nav a, .brand-link, .wallet-badge';
 
 async function openAll(page: Page, path: string): Promise<void> {
   if (path === boardPath) {

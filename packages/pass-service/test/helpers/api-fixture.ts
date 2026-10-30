@@ -54,6 +54,8 @@ export interface FakeGoogle extends GoogleWalletClient {
   patchResult: (objectId: string) => GoogleResult;
   saveUrls: { objects: { id: string; classId: string }[]; nowSeconds: number }[];
   oversize: boolean;
+  /** How many objects one link holds (everything in one link by default). */
+  perLink: number;
 }
 
 /** The metrics of the last logged request. */
@@ -136,6 +138,7 @@ export function createApiFixture(options: FixtureOptions = {}): ApiFixture {
     patches: [],
     saveUrls: [],
     oversize: false,
+    perLink: Number.POSITIVE_INFINITY,
     insertResult: () => 'ok',
     patchResult: () => 'ok',
     insert(obj) {
@@ -146,12 +149,18 @@ export function createApiFixture(options: FixtureOptions = {}): ApiFixture {
       google.patches.push({ objectId, body });
       return Promise.resolve(google.patchResult(objectId));
     },
-    saveUrl(objects, nowSeconds) {
+    saveLinks(objects, nowSeconds) {
       google.saveUrls.push({ objects, nowSeconds });
-      return Promise.resolve({
-        url: `https://pay.google.com/gp/v/save/fake-${objects.length}`,
-        oversize: google.oversize,
-      });
+      const links: { url: string; oversize: boolean; count: number }[] = [];
+      for (let from = 0; from < objects.length; from += google.perLink) {
+        const count = Math.min(google.perLink, objects.length - from);
+        links.push({
+          url: `https://pay.google.com/gp/v/save/fake-${from}-${count}-${objects[from]!.id.split('.')[1]}`,
+          oversize: google.oversize,
+          count,
+        });
+      }
+      return Promise.resolve(links);
     },
   };
   const signer: PassSigner = options.signer?.(secrets) ?? {

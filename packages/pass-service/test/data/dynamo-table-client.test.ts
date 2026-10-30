@@ -86,6 +86,34 @@ describe('Feature: pass-service, DynamoDB table client', () => {
     ).toBe('conflict');
   });
 
+  test('setIfEquals sets attributes under an equality condition on the item', async () => {
+    const ok = fakeDoc({});
+    const table = createDynamoTableClient(ok.doc, 't');
+    expect(
+      await table.setIfEquals({ pk: 'A', sk: 'a' }, 'status', 'active', { googleState: 'active' }),
+    ).toBe('ok');
+    expect(ok.sent[0]).toEqual({
+      name: 'UpdateCommand',
+      input: {
+        TableName: 't',
+        Key: { pk: 'A', sk: 'a' },
+        UpdateExpression: 'SET #f0 = :v0',
+        ConditionExpression: 'attribute_exists(#pk) AND #ca = :expected',
+        ExpressionAttributeNames: { '#f0': 'googleState', '#pk': 'pk', '#ca': 'status' },
+        ExpressionAttributeValues: { ':v0': 'active', ':expected': 'active' },
+      },
+    });
+    const refused = fakeDoc(conditionFailure());
+    expect(
+      await createDynamoTableClient(refused.doc, 't').setIfEquals(
+        { pk: 'A', sk: 'a' },
+        'status',
+        'active',
+        { googleState: 'active' },
+      ),
+    ).toBe('conflict');
+  });
+
   test('set updates only an existing item and swallows a missing one', async () => {
     const ok = fakeDoc({});
     await createDynamoTableClient(ok.doc, 't').set({ pk: 'A', sk: 'a' }, { googleState: 'active' });
@@ -235,6 +263,7 @@ describe('Feature: pass-service, DynamoDB table client', () => {
       table.putIfAbsent({ pk: 'A', sk: 'a' }),
       table.put({ pk: 'A', sk: 'a' }),
       table.updateIfVersion({ pk: 'A', sk: 'a' }, 1, { version: 2 }),
+      table.setIfEquals({ pk: 'A', sk: 'a' }, 'status', 'active', { x: 1 }),
       table.set({ pk: 'A', sk: 'a' }, { x: 1 }),
       table.delete({ pk: 'A', sk: 'a' }),
       table.batchDelete([{ pk: 'A', sk: 'a' }]),

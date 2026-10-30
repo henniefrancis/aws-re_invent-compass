@@ -78,6 +78,16 @@ export function createMemoryTable(options: MemoryTableOptions = {}): MemoryTable
       return 'ok';
     },
 
+    async setIfEquals(key, attribute, expected, set) {
+      await turn();
+      const found = items.get(mapKey(key));
+      if (found === undefined || found[attribute] !== expected) {
+        return 'conflict';
+      }
+      applySet(found, set);
+      return 'ok';
+    },
+
     async set(key, set) {
       await turn();
       const found = items.get(mapKey(key));

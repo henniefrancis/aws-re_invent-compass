@@ -8,7 +8,7 @@
 import { dayHeading, formatWallClock, offsetLabel, timezoneNote } from '../time/time-format';
 import type { FragmentResult } from './fragment';
 import type { HandoffOutcome } from './handoff-client';
-import type { AppleBundle, ValidatedHandoff } from './handoff-view';
+import type { AppleBundle, BoardSession, ValidatedHandoff } from './handoff-view';
 
 export type BoardState =
   | { readonly kind: 'reading' }
@@ -44,6 +44,8 @@ export interface BoardRow {
   readonly code: string;
   readonly title: string;
   readonly time: string;
+  /** The Apple, Google and calendar buttons of this session, in that order. */
+  readonly actions: readonly BoardAction[];
 }
 
 export interface BoardViewModel {
@@ -150,6 +152,20 @@ export function bundleLabel(bundle: AppleBundle): string {
     : `${MESSAGES.appleLabel} (bundle ${String(bundle.number)} of ${String(bundle.of)})`;
 }
 
+/**
+ * The accessible name of one session's button. It starts with the badge's own text, so the
+ * visible label is part of the name (WCAG 2.5.3), and ends with the session code.
+ */
+export function sessionActionLabel(code: string, kind: BoardAction['kind']): string {
+  const badge =
+    kind === 'apple'
+      ? MESSAGES.appleLabel
+      : kind === 'google'
+        ? MESSAGES.googleLabel
+        : MESSAGES.calendarLabel;
+  return `${badge}: ${code}`;
+}
+
 function expiryText(handoff: ValidatedHandoff, nowMs: number): string {
   // A hand-off lasts 15 minutes, so the text never says more, whatever the device clock thinks.
   const minutes = Math.min(
@@ -187,6 +203,19 @@ function actionsOf(handoff: ValidatedHandoff): BoardAction[] {
   return actions;
 }
 
+function sessionActionsOf(session: BoardSession): BoardAction[] {
+  const own: [BoardAction['kind'], string | null][] = [
+    ['apple', session.applePath],
+    ['google', session.googleSaveUrl],
+    ['calendar', session.calendarPath],
+  ];
+  return own.flatMap(([kind, href]) =>
+    href === null
+      ? []
+      : [{ kind, href, label: sessionActionLabel(session.sessionCode, kind), caption: null }],
+  );
+}
+
 function rowsOf(handoff: ValidatedHandoff, withOffset: boolean): BoardRow[] {
   return handoff.sessions.map((session) => {
     const time = `${dayHeading(session.startsAt.slice(0, 10))}, ${formatWallClock(session.startsAt)}`;
@@ -194,6 +223,7 @@ function rowsOf(handoff: ValidatedHandoff, withOffset: boolean): BoardRow[] {
       code: session.sessionCode,
       title: session.title,
       time: withOffset ? `${time} (${offsetLabel(session.startsAt)})` : time,
+      actions: sessionActionsOf(session),
     };
   });
 }

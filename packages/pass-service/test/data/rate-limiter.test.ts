@@ -70,20 +70,29 @@ describe('Feature: pass-service, rate limiter', () => {
     expect((await limiter.consume('s', 'passWrites', 1, EPOCH_HOUR)).allowed).toBe(false);
   });
 
-  test('hand-off reads are capped at 30 and the counter lives as long as the hand-off', async () => {
+  test('hand-off reads are capped at 30 plus 3 for every pass and the counter lives as long as the hand-off', async () => {
     const table = createMemoryTable();
     const limiter = createRateLimiter(table);
     const expiresAtMs = EPOCH_HOUR + 900_000;
-    for (let i = 0; i < 30; i += 1) {
-      expect(await limiter.consumeHandoffRead('s', 'hash-1', expiresAtMs)).toBe(true);
+    for (let i = 0; i < 33; i += 1) {
+      expect(await limiter.consumeHandoffRead('s', 'hash-1', expiresAtMs, 1)).toBe(true);
     }
-    expect(await limiter.consumeHandoffRead('s', 'hash-1', expiresAtMs)).toBe(false);
-    expect(await limiter.consumeHandoffRead('s', 'hash-2', expiresAtMs)).toBe(true);
+    expect(await limiter.consumeHandoffRead('s', 'hash-1', expiresAtMs, 1)).toBe(false);
+    expect(await limiter.consumeHandoffRead('s', 'hash-2', expiresAtMs, 1)).toBe(true);
     expect(table.snapshot()[0]).toMatchObject({
       expiresAtMs,
       ttl: expiresAtMs / 1000 + COUNTER_TTL_MARGIN_SECONDS,
       gsi2pk: 'SUB#s',
     });
+  });
+
+  test('the hand-off read cap grows with the passes, to 270 at 80 passes', async () => {
+    const limiter = createRateLimiter(createMemoryTable());
+    const expiresAtMs = EPOCH_HOUR + 900_000;
+    for (let i = 0; i < 270; i += 1) {
+      expect(await limiter.consumeHandoffRead('s', 'hash-80', expiresAtMs, 80)).toBe(true);
+    }
+    expect(await limiter.consumeHandoffRead('s', 'hash-80', expiresAtMs, 80)).toBe(false);
   });
 
   // Feature: pass-service, Property 8: The fixed-window limiter allows exactly up to the limit, atomically

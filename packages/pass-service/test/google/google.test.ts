@@ -328,57 +328,103 @@ describe('Feature: pass-service, Save to Google Wallet link', () => {
     return JSON.parse(Buffer.from(part, 'base64url').toString('utf8')) as Record<string, unknown>;
   }
 
-  // Feature: pass-service, Property 23: Save links carry a verifiable RS256 JWT
-  test('Property 23: links carry a verifiable RS256 JWT with exactly the documented claims', async () => {
-    const secrets = googleSecrets();
-    const client = createGoogleWalletClient({
+  function objectsOf(count: number): { id: string; classId: string }[] {
+    return Array.from({ length: count }, (_, i) => ({
+      id: `3388000000099999999.00000000-0000-4000-8000-${String(i).padStart(12, '0')}`,
+      classId: '3388000000099999999.compass',
+    }));
+  }
+
+  /** Checks one link's token and returns its objects. */
+  function checkLink(url: string, iat: number): { id: string; classId: string }[] {
+    expect(url.startsWith(SAVE_URL_PREFIX)).toBe(true);
+    const jwt = url.slice(SAVE_URL_PREFIX.length);
+    const [h, p, s] = jwt.split('.') as [string, string, string];
+    expect(decode(h)).toEqual({ alg: 'RS256', typ: 'JWT' });
+    const claims = decode(p);
+    expect(Object.keys(claims)).toEqual(['iss', 'aud', 'typ', 'iat', 'origins', 'payload']);
+    expect(claims).toMatchObject({
+      iss: throwawayPki().google.clientEmail,
+      aud: 'google',
+      typ: 'savetowallet',
+      iat,
+      origins: [],
+    });
+    expect(
+      verify(
+        'RSA-SHA256',
+        Buffer.from(`${h}.${p}`),
+        throwawayPki().google.publicKey,
+        Buffer.from(s, 'base64url'),
+      ),
+    ).toBe(true);
+    return (claims.payload as { genericObjects: { id: string; classId: string }[] }).genericObjects;
+  }
+
+  function saveClient() {
+    return createGoogleWalletClient({
       http: fakeHttp([200]).http,
       tokens,
-      secrets,
+      secrets: googleSecrets(),
     });
+  }
+
+  // Feature: pass-service, Property 23: Save links carry a verifiable RS256 JWT
+  test('Property 23: links carry verifiable RS256 JWTs, each within the safe length, in order', async () => {
+    const client = saveClient();
     await fc.assert(
       fc.asyncProperty(
         fc.integer({ min: 1, max: 80 }),
         fc.integer({ min: 1_700_000_000, max: 2_000_000_000 }),
         async (count, iat) => {
-          const objects = Array.from({ length: count }, (_, i) => ({
-            id: `3388000000099999999.00000000-0000-4000-8000-${String(i).padStart(12, '0')}`,
-            classId: '3388000000099999999.compass',
-          }));
-          const { url, oversize } = await client.saveUrl(objects, iat);
-          expect(url.startsWith(SAVE_URL_PREFIX)).toBe(true);
-          const jwt = url.slice(SAVE_URL_PREFIX.length);
-          const [h, p, s] = jwt.split('.') as [string, string, string];
-          expect(decode(h)).toEqual({ alg: 'RS256', typ: 'JWT' });
-          expect(decode(p)).toEqual({
-            iss: throwawayPki().google.clientEmail,
-            aud: 'google',
-            typ: 'savetowallet',
-            iat,
-            origins: [],
-            payload: { genericObjects: objects },
-          });
-          expect(Object.keys(decode(p))).toEqual([
-            'iss',
-            'aud',
-            'typ',
-            'iat',
-            'origins',
-            'payload',
-          ]);
-          expect(
-            verify(
-              'RSA-SHA256',
-              Buffer.from(`${h}.${p}`),
-              throwawayPki().google.publicKey,
-              Buffer.from(s, 'base64url'),
-            ),
-          ).toBe(true);
-          expect(oversize).toBe(jwt.length > 1800);
+          const objects = objectsOf(count);
+          const links = await client.saveLinks(objects, iat);
+          const held = links.flatMap((link) => checkLink(link.url, iat));
+          expect(held).toEqual(objects);
+          expect(links.map((link) => link.count).reduce((a, b) => a + b, 0)).toBe(count);
+          for (const link of links) {
+            expect(link.url.length - SAVE_URL_PREFIX.length).toBeLessThanOrEqual(1800);
+            expect(link.oversize).toBe(false);
+            expect(link.count).toBeGreaterThanOrEqual(1);
+          }
+          // Greedy: a link is closed only because the next pass would not have fitted.
+          expect(links.length).toBe(Math.ceil(count / links[0]!.count));
         },
       ),
       { numRuns: 100 },
     );
+  });
+
+  test('1, 8, 9 and 12 passes: one link up to 8, then split, every token at most 1800 long', async () => {
+    const client = saveClient();
+    const lengths: Record<number, number[]> = {};
+    for (const count of [1, 8, 9, 12]) {
+      const links = await client.saveLinks(objectsOf(count), 1_800_000_000);
+      lengths[count] = links.map((link) => link.url.length - SAVE_URL_PREFIX.length);
+      expect(links.flatMap((link) => checkLink(link.url, 1_800_000_000))).toEqual(objectsOf(count));
+    }
+    expect(lengths[1]).toHaveLength(1);
+    expect(lengths[8]).toHaveLength(1);
+    expect(lengths[9]).toHaveLength(2);
+    expect(lengths[12]).toHaveLength(2);
+    for (const each of Object.values(lengths).flat()) {
+      expect(each).toBeLessThanOrEqual(1800);
+    }
+  });
+
+  test('a single object that is alone over the safe length is its own link and is flagged', async () => {
+    const huge = { id: `x.${'a'.repeat(1900)}`, classId: 'x.compass' };
+    const objects = [objectsOf(1)[0]!, huge, objectsOf(2)[1]!];
+    const links = await saveClient().saveLinks(objects, 1_800_000_000);
+    expect(links.map((link) => [link.count, link.oversize])).toEqual([
+      [1, false],
+      [1, true],
+      [1, false],
+    ]);
+  });
+
+  test('no objects make no links', async () => {
+    expect(await saveClient().saveLinks([], 1_800_000_000)).toEqual([]);
   });
 
   test('the oversize flag turns on above 1800 characters and the link is still returned', () => {

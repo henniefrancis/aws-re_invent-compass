@@ -20,6 +20,8 @@ export interface PassRecord {
   updateTagMs: number; // milliseconds, strictly increasing per pass: the passesUpdatedSince tag
   voidedAt?: string; // ISO 8601
   googleState: GoogleState;
+  /** Epoch ms before which the hand-off view does not try this pass's Google insert again. */
+  googleRetryAfterMs?: number;
   createdAtMs: number;
   expiresAtMs: number; // Date.parse(fields.endsAt) + 24 hours
   ttl: number; // ceil(expiresAtMs / 1000)

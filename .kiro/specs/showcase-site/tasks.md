@@ -455,6 +455,11 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 35.3 The Project menu's outside links (Repository, and the Builder Center post and Video once their addresses are known) open in a new tab, with hidden text "(opens in a new tab)" for screen readers
   - [x] 35.4 Site tests, the e2e suite and the local preview for the owner's review before any push; commit scoped `showcase-site`
 
+- [x] 36. Board page: Apple, Google and calendar buttons on each session (owner decision of 29 October, pass-service task 50 and its design section)
+  - [x] 36.1 `site/src/lib/board/handoff-view.ts`: validate the new per-session fields with the same strictness as today (each `applePath` and `calendarPath` must be exactly this hand-off's route for that session's serial; each `googleSaveUrl` must pass the Google prefix and token check); the top `google` is `{ saveUrl }` or null; refuse the whole view on any mismatch
+  - [x] 36.2 The board page keeps the top actions and adds, under each session, the Apple, Google and calendar buttons that session has, with accessible names that name the session (for example "Add ANT398 to Apple Wallet"), 44 by 44 pixel targets and reflow at 320 pixels
+  - [x] 36.3 Unit tests, e2e fixtures and e2e tests (a11y, CSP, forced colours, layout); full gate and the e2e suite; the owner reviews the page on the local preview before any push; commit scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

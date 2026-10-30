@@ -40,26 +40,57 @@ export const isoArb: fc.Arbitrary<string> = fc
 
 export interface WireBody {
   expiresAt: string;
-  sessions: { serialNumber: string; sessionCode: string; title: string; startsAt: string }[];
+  sessions: {
+    serialNumber: string;
+    sessionCode: string;
+    title: string;
+    startsAt: string;
+    applePath: string | null;
+    googleSaveUrl: string | null;
+    calendarPath: string | null;
+  }[];
   apple: { bundlePaths: string[] };
   google: { saveUrl: string } | null;
   calendarPath: string | null;
 }
 
-export const sessionArb = fc.record({
-  serialNumber: fc.uuid(),
-  sessionCode: fc.stringMatching(/^[A-Z0-9]{2,12}$/),
-  title: fc.string({ minLength: 1, maxLength: 80 }),
-  startsAt: isoArb,
-});
-
 const segment = fc.stringMatching(/^[A-Za-z0-9_-]{3,30}$/);
 const tokenArb = fc.tuple(segment, segment, segment).map(([a, b, c]) => `eyJ${a}.${b}.${c}`);
+
+/** The route of one session's own Apple pass for this hand-off. */
+export const applePathOf = (id: HandoffId, serial: string): string =>
+  `/api/v1/handoffs/${id}/apple/pass/${serial}`;
+/** The route of one session's own calendar file for this hand-off. */
+export const calendarPathOf = (id: HandoffId, serial: string): string =>
+  `/api/v1/handoffs/${id}/calendar/${serial}.ics`;
+
+/** A session as the service sends it, with its own routes, for this hand-off id. */
+export function sessionArb(id: HandoffId): fc.Arbitrary<WireBody['sessions'][number]> {
+  return fc
+    .record({
+      serialNumber: fc.uuid(),
+      sessionCode: fc.stringMatching(/^[A-Z0-9]{2,12}$/),
+      title: fc.string({ minLength: 1, maxLength: 80 }),
+      startsAt: isoArb,
+      withApple: fc.boolean(),
+      withGoogle: fc.option(
+        tokenArb.map((token) => `${GOOGLE_SAVE_PREFIX}${token}`),
+        { nil: null },
+      ),
+      withCalendar: fc.boolean(),
+    })
+    .map(({ withApple, withGoogle, withCalendar, ...session }) => ({
+      ...session,
+      applePath: withApple ? applePathOf(id, session.serialNumber) : null,
+      googleSaveUrl: withGoogle,
+      calendarPath: withCalendar ? calendarPathOf(id, session.serialNumber) : null,
+    }));
+}
 
 /** A body that satisfies every rule of Requirement 17 for this id. */
 export function bodyArb(id: HandoffId): fc.Arbitrary<WireBody> {
   return fc
-    .tuple(isoArb, fc.array(sessionArb, { minLength: 1, maxLength: 80 }), fc.nat(), tokenArb)
+    .tuple(isoArb, fc.array(sessionArb(id), { minLength: 1, maxLength: 80 }), fc.nat(), tokenArb)
     .chain(([expiresAt, sessions, bundleSeed, token]) => {
       const limit = Math.ceil(sessions.length / 10);
       const bundles = bundleSeed % (limit + 1);
@@ -92,12 +123,18 @@ export function exampleBody(id: HandoffId = FIXED_ID): WireBody {
         sessionCode: 'DAT302',
         title: 'Made-up session about data',
         startsAt: '2026-11-30T10:30:00-08:00',
+        applePath: applePathOf(id, '6f1c2f0e-0d6f-4c52-9b3a-1a2b3c4d5e6f'),
+        googleSaveUrl: `${GOOGLE_SAVE_PREFIX}eyJhbGciOiJSUzI1NiJ9.one-session.ghi_jkl`,
+        calendarPath: calendarPathOf(id, '6f1c2f0e-0d6f-4c52-9b3a-1a2b3c4d5e6f'),
       },
       {
         serialNumber: '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
         sessionCode: 'CMP436-R',
         title: 'Another made-up session',
         startsAt: '2026-12-01T14:00:00-08:00',
+        applePath: applePathOf(id, '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d'),
+        googleSaveUrl: null,
+        calendarPath: calendarPathOf(id, '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d'),
       },
     ],
     apple: { bundlePaths: [`/api/v1/handoffs/${id}/apple/0`] },

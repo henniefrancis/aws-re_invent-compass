@@ -14,19 +14,17 @@ test.describe('board states from the fixtures', () => {
     await expect(page.getByRole('status')).toContainText(
       'Your boarding passes are ready. 4 sessions.',
     );
-    await expect(page.getByRole('link', { name: 'Add to Apple Wallet' })).toHaveAttribute(
-      'href',
-      `/api/v1/handoffs/${HANDOFF_ID}/apple/0`,
-    );
-    await expect(page.getByRole('link', { name: 'Add to Google Wallet' })).toHaveAttribute(
-      'href',
-      /^https:\/\/pay\.google\.com\/gp\/v\/save\//,
-    );
-    await expect(page.getByRole('link', { name: 'Add to Calendar' })).toHaveAttribute(
+    await expect(
+      page.getByRole('link', { name: 'Add to Apple Wallet', exact: true }),
+    ).toHaveAttribute('href', `/api/v1/handoffs/${HANDOFF_ID}/apple/0`);
+    await expect(
+      page.getByRole('link', { name: 'Add to Google Wallet', exact: true }),
+    ).toHaveAttribute('href', /^https:\/\/pay\.google\.com\/gp\/v\/save\//);
+    await expect(page.getByRole('link', { name: 'Add to Calendar', exact: true })).toHaveAttribute(
       'href',
       `/api/v1/handoffs/${HANDOFF_ID}/calendar.ics`,
     );
-    await expect(page.locator('.board-sessions li')).toHaveCount(4);
+    await expect(page.locator('.board-sessions > li')).toHaveCount(4);
     await expect(page.getByText(/Apple Wallet is for iPhone/)).toBeVisible();
     await expect(page.getByText(/This link works for about \d+ more minutes?\./)).toBeVisible();
     await expect(page.getByText(/Times are event local time \(UTC-08:00\)\./)).toBeVisible();
@@ -36,27 +34,78 @@ test.describe('board states from the fixtures', () => {
     await mockHandoff(page, 'ready-three-bundles');
     await openBoard(page);
     // Each bundle is the official badge, named by its alt text, with a caption under it.
-    const badges = page.getByRole('link', { name: /^Add to Apple Wallet/ });
+    const badges = page.getByRole('link', { name: /^Add to Apple Wallet \(bundle/ });
     await expect(badges).toHaveCount(3);
     for (const [index, n] of [1, 2, 3].entries()) {
       await expect(badges.nth(index)).toHaveAccessibleName(
         `Add to Apple Wallet (bundle ${String(n)} of 3)`,
       );
     }
-    await expect(page.locator('.wallet-badge__caption')).toHaveText([
+    await expect(page.locator('.wallet-badge__caption', { hasText: /^Bundle/ })).toHaveText([
       'Bundle 1 of 3',
       'Bundle 2 of 3',
       'Bundle 3 of 3',
     ]);
-    await expect(page.locator('.board-sessions li')).toHaveCount(24);
+    await expect(page.locator('.board-sessions > li')).toHaveCount(24);
+  });
+
+  test('every session has its own Apple, Google and calendar button named after its code', async ({
+    page,
+  }) => {
+    await mockHandoff(page, 'ready-one-bundle');
+    await openBoard(page);
+    const first = page.locator('.board-sessions > li').first();
+    await expect(first.getByRole('link')).toHaveCount(3);
+    await expect(first.getByRole('link', { name: 'Add to Apple Wallet: ANT398' })).toHaveAttribute(
+      'href',
+      `/api/v1/handoffs/${HANDOFF_ID}/apple/pass/00000000-0000-4000-8000-000000000001`,
+    );
+    await expect(first.getByRole('link', { name: 'Add to Google Wallet: ANT398' })).toHaveAttribute(
+      'href',
+      /^https:\/\/pay\.google\.com\/gp\/v\/save\//,
+    );
+    await expect(first.getByRole('link', { name: 'Add to Calendar: ANT398' })).toHaveAttribute(
+      'href',
+      `/api/v1/handoffs/${HANDOFF_ID}/calendar/00000000-0000-4000-8000-000000000001.ics`,
+    );
+    // Four sessions, three buttons each, and the three buttons at the top.
+    await expect(page.locator('.board-session-actions a')).toHaveCount(12);
+    await expect(
+      page.getByRole('link', { name: /^Add to (Apple Wallet|Google Wallet|Calendar): [A-Z0-9]+$/ }),
+    ).toHaveCount(12);
+  });
+
+  test('24 passes give three Apple bundles, no top Google button and a Google button on every session', async ({
+    page,
+  }) => {
+    await mockHandoff(page, 'ready-three-bundles');
+    await openBoard(page);
+    await expect(page.getByRole('link', { name: 'Add to Google Wallet', exact: true })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole('link', { name: 'Add to Calendar', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('link', { name: /^Add to Google Wallet: [A-Z0-9]+$/ })).toHaveCount(
+      24,
+    );
+    await expect(page.locator('.board-sessions > li')).toHaveCount(24);
   });
 
   test('Apple only shows no Google and no calendar link', async ({ page }) => {
     await mockHandoff(page, 'ready-apple-only');
     await openBoard(page);
-    await expect(page.getByRole('link', { name: 'Add to Apple Wallet' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Add to Google Wallet' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Add to Calendar' })).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Add to Apple Wallet', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Add to Google Wallet', exact: true })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole('link', { name: 'Add to Calendar', exact: true })).toHaveCount(0);
+    // Each session offers only the Apple button.
+    await expect(page.locator('.board-session-actions a')).toHaveCount(3);
+    await expect(page.getByRole('link', { name: /^Add to Apple Wallet: [A-Z0-9]+$/ })).toHaveCount(
+      3,
+    );
+    await expect(page.getByRole('link', { name: /Google Wallet|Calendar/i })).toHaveCount(0);
   });
 
   test('404 is the expired state with one message and no retry', async ({ page }) => {

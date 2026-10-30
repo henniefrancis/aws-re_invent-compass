@@ -140,7 +140,7 @@ describe('Feature: pass-service, pass repository', () => {
       version: 2,
       status: 'voided',
       voidedAt: '2026-12-02T12:00:00.000Z',
-      googleState: 'pending_inactive',
+      googleState: 'none',
       subHash: 'sub-a',
       tokenSalt: 'salt',
     });
@@ -148,6 +148,21 @@ describe('Feature: pass-service, pass repository', () => {
     const plain = passRecord({ version: 3 });
     expect(await repo.save(plain, 2)).toBe('ok');
     expect((await repo.get(rec.serialNumber, NOW))?.version).toBe(3);
+  });
+
+  test('activateGoogle applies only while the pass is active; the retry time is stored', async () => {
+    const repo = createPassRepository(createMemoryTable());
+    const live = passRecord();
+    await repo.create(live);
+    expect(await repo.activateGoogle(live.serialNumber)).toBe(true);
+    expect((await repo.get(live.serialNumber, NOW))?.googleState).toBe('active');
+    await repo.setGoogleRetryAfter(live.serialNumber, 12345);
+    expect((await repo.get(live.serialNumber, NOW))?.googleRetryAfterMs).toBe(12345);
+    const gone = passRecord({ serialNumber: '00000000-0000-4000-8000-0000000000aa' });
+    await repo.create({ ...gone, status: 'voided' });
+    expect(await repo.activateGoogle(gone.serialNumber)).toBe(false);
+    expect((await repo.get(gone.serialNumber, NOW))?.googleState).toBe('none');
+    expect(await repo.activateGoogle('00000000-0000-4000-8000-0000000000bb')).toBe(false);
   });
 
   test('setGoogleState and delete', async () => {

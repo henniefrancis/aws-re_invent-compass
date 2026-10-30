@@ -56,7 +56,7 @@ describe('Feature: pass-service, hand-off view survives a Google failure (N4)', 
     });
     const { handoffId } = created.json as { handoffId: string };
     for (const failure of ['rejects', 'throws'] as const) {
-      fixture.google.saveUrl = () => {
+      fixture.google.saveLinks = () => {
         if (failure === 'throws') {
           throw new Error('google unavailable');
         }

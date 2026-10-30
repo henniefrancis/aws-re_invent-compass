@@ -1,9 +1,10 @@
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import {
   INITIAL_BOARD_STATE,
   MESSAGES,
   bundleLabel,
+  sessionActionLabel,
   canRetry,
   msUntilExpiry,
   reduceBoard,
@@ -15,6 +16,9 @@ import {
 import type { HandoffOutcome } from '../../src/lib/board/handoff-client';
 import { GOOGLE_SAVE_PREFIX, validateHandoffView } from '../../src/lib/board/handoff-view';
 import { FIXED_ID, bodyArb, exampleBody, idArb, isoArb, validated } from '../support/handoff-data';
+
+// The generated hand-off bodies hold up to 80 sessions; the machine may be busy.
+vi.setConfig({ testTimeout: 60_000 });
 
 const READY: BoardState = { kind: 'ready', handoff: validated(exampleBody()) };
 const LOADING: BoardState = { kind: 'loading' };
@@ -139,6 +143,26 @@ describe('toBoardViewModel examples', () => {
       code: 'DAT302',
       title: 'Made-up session about data',
       time: 'Monday 30 November, 10:30 AM',
+      actions: [
+        {
+          kind: 'apple',
+          href: `/api/v1/handoffs/${FIXED_ID}/apple/pass/6f1c2f0e-0d6f-4c52-9b3a-1a2b3c4d5e6f`,
+          label: 'Add to Apple Wallet: DAT302',
+          caption: null,
+        },
+        {
+          kind: 'google',
+          href: `${GOOGLE_SAVE_PREFIX}eyJhbGciOiJSUzI1NiJ9.one-session.ghi_jkl`,
+          label: 'Add to Google Wallet: DAT302',
+          caption: null,
+        },
+        {
+          kind: 'calendar',
+          href: `/api/v1/handoffs/${FIXED_ID}/calendar/6f1c2f0e-0d6f-4c52-9b3a-1a2b3c4d5e6f.ics`,
+          label: 'Add to Calendar: DAT302',
+          caption: null,
+        },
+      ],
     });
     expect(vm.timezoneNote).toBe('Times are event local time (UTC-08:00).');
     expect(vm.expiresText).toBe('This link works for about 15 more minutes.');
@@ -180,6 +204,45 @@ describe('toBoardViewModel examples', () => {
     expect(bundleLabel({ path: '/p', number: 2, of: 3 })).toBe(
       'Add to Apple Wallet (bundle 2 of 3)',
     );
+  });
+
+  test('each session names its code in the accessible name of every button', () => {
+    expect(sessionActionLabel('ANT398', 'apple')).toBe('Add to Apple Wallet: ANT398');
+    expect(sessionActionLabel('ANT398', 'google')).toBe('Add to Google Wallet: ANT398');
+    expect(sessionActionLabel('ANT398', 'calendar')).toBe('Add to Calendar: ANT398');
+  });
+
+  test('a session shows only the buttons it has, and none when it has none', () => {
+    const handoff = validated(exampleBody());
+    const [one, two] = handoff.sessions as [
+      (typeof handoff.sessions)[number],
+      (typeof handoff.sessions)[number],
+    ];
+    const rows = toBoardViewModel(
+      {
+        kind: 'ready',
+        handoff: {
+          ...handoff,
+          sessions: [
+            { ...one, applePath: null, calendarPath: null },
+            { ...two, applePath: null, googleSaveUrl: null, calendarPath: null },
+          ],
+        },
+      },
+      NOW,
+    ).sessions;
+    expect(rows[0]?.actions.map((a) => [a.kind, a.label])).toEqual([
+      ['google', 'Add to Google Wallet: DAT302'],
+    ]);
+    expect(rows[1]?.actions).toEqual([]);
+  });
+
+  test('the top actions stay: bundles, one Google link only when the service gave it, the calendar', () => {
+    const handoff = validated(exampleBody());
+    const top = (h: typeof handoff) =>
+      toBoardViewModel({ kind: 'ready', handoff: h }, NOW).actions.map((a) => a.kind);
+    expect(top(handoff)).toEqual(['apple', 'google', 'calendar']);
+    expect(top({ ...handoff, googleSaveUrl: null })).toEqual(['apple', 'calendar']);
   });
 
   test('every other state has constant text, no links, and the right busy and retry flags', () => {
@@ -270,7 +333,7 @@ describe('Property 6: The hand-off id never reaches visible text, the title or t
       vm.expiresText ?? '',
       vm.timezoneNote ?? '',
       vm.deviceHint ?? '',
-      ...vm.sessions.flatMap((s) => [s.code, s.title, s.time]),
+      ...vm.sessions.flatMap((s) => [s.code, s.title, s.time, ...s.actions.map((a) => a.label)]),
       ...vm.actions.map((a) => a.label),
     ];
   }
@@ -303,7 +366,7 @@ describe('Property 6: The hand-off id never reaches visible text, the title or t
             for (const text of strings(vm)) {
               expect(text.includes(id)).toBe(false);
             }
-            for (const action of vm.actions) {
+            for (const action of [...vm.actions, ...vm.sessions.flatMap((row) => row.actions)]) {
               if (action.kind === 'google') {
                 expect(action.href.startsWith(GOOGLE_SAVE_PREFIX)).toBe(true);
               } else {

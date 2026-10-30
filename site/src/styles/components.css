@@ -494,6 +494,30 @@ a.site-nav__link:hover {
   font-size: 0.875rem;
 }
 
+/* Each session's own buttons: the same badges, 44 pixels high, wrapping at any width. */
+.board-session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.board-sessions .board-session-actions li,
+.board-sessions .board-session-actions li + li {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.wallet-badge--row .wallet-badge__image {
+  block-size: 2.75rem;
+  max-inline-size: 100%;
+}
+
 .board-sessions li {
   padding: var(--space-3);
   border: 1px solid var(--color-border);

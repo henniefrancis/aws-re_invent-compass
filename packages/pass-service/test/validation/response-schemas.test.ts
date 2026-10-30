@@ -41,6 +41,9 @@ describe('Feature: pass-service, response schemas', () => {
               sessionCode: 'DAT302',
               title: 'T',
               startsAt: '2026-12-02T10:00:00-08:00',
+              applePath: `/api/v1/handoffs/x/apple/pass/${UUID}`,
+              googleSaveUrl: google === null ? null : 'https://pay.google.com/gp/v/save/y',
+              calendarPath: null,
             },
           ],
           apple: { bundlePaths: ['/api/v1/handoffs/x/apple/0'] },
@@ -48,6 +51,35 @@ describe('Feature: pass-service, response schemas', () => {
           calendarPath: null,
         }),
       ).toBeDefined();
+    }
+  });
+
+  test('a hand-off view has one top link only and every session names its three fields', () => {
+    const session = {
+      serialNumber: UUID,
+      sessionCode: 'DAT302',
+      title: 'T',
+      startsAt: '2026-12-02T10:00:00-08:00',
+      applePath: null,
+      googleSaveUrl: null,
+      calendarPath: null,
+    };
+    const view = (google: unknown, sessions: unknown[] = []) =>
+      HandoffViewSchema.safeParse({
+        expiresAt: '2026-12-02T10:15:00Z',
+        sessions,
+        apple: { bundlePaths: [] },
+        google,
+        calendarPath: null,
+      }).success;
+    expect(view({ saveUrl: 'https://pay.google.com/gp/v/save/x' }, [session])).toBe(true);
+    expect(view({ saveUrl: 'https://pay.google.com/gp/v/save/x', saveUrls: [] })).toBe(false);
+    expect(view({ saveUrls: ['https://pay.google.com/gp/v/save/x'] })).toBe(false);
+    for (const key of ['applePath', 'googleSaveUrl', 'calendarPath']) {
+      const missing: Record<string, unknown> = { ...session };
+      delete missing[key];
+      expect(view(null, [missing])).toBe(false);
+      expect(view(null, [{ ...session, [key]: 5 }])).toBe(false);
     }
   });
 

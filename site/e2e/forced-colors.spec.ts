@@ -53,7 +53,10 @@ test.describe('forced colors', () => {
   test('the board page and the demo keep their controls visible', async ({ page }) => {
     await mockHandoff(page, 'ready-one-bundle');
     await page.goto(boardPath);
-    await expect(page.getByRole('link', { name: 'Add to Apple Wallet' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Add to Apple Wallet', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Add to Apple Wallet: ANT398' })).toBeVisible();
     await expectNoAxeViolations(page);
     await page.goto('/demo');
     await page.getByRole('button', { name: 'Start with a sample week' }).click();
