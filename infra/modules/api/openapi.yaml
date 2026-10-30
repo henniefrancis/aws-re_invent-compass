@@ -944,6 +944,7 @@ components:
               - sessionCode
               - title
               - startsAt
+              - venue
               - applePath
               - googleSaveUrl
             properties:
@@ -957,6 +958,10 @@ components:
               startsAt:
                 type: string
                 format: date-time
+              venue:
+                type: string
+                nullable: true
+                description: The venue name the pass shows (its TERMINAL), or null when the pass has none.
               applePath:
                 type: string
                 nullable: true

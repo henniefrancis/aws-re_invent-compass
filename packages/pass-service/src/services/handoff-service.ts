@@ -43,6 +43,8 @@ export interface HandoffView {
     sessionCode: string;
     title: string;
     startsAt: string;
+    /** The venue name the pass shows, or null when the pass has none (an empty venue). */
+    venue: string | null;
     /** This session's own .pkpass route, when the hand-off includes Apple and the pass has it. */
     applePath: string | null;
     /** A save link for this session alone, when its Google object is active. */
@@ -237,6 +239,7 @@ export function createHandoffService(deps: HandoffDeps): HandoffService {
           sessionCode: rec.sessionCode,
           title: rec.fields.title,
           startsAt: rec.fields.startsAt,
+          venue: rec.fields.venue === '' ? null : rec.fields.venue,
           applePath:
             !top && handoff.include.apple && rec.platforms.includes('apple')
               ? `/api/v1/handoffs/${handoffId}/apple/pass/${rec.serialNumber}`

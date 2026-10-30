@@ -52,6 +52,7 @@ interface ViewBody {
     sessionCode: string;
     title: string;
     startsAt: string;
+    venue: string | null;
     applePath: string | null;
     googleSaveUrl: string | null;
   }[];
@@ -515,6 +516,16 @@ describe('Feature: pass-service, hand-off calendar', () => {
     });
     const reply = await calendar(fixture, id);
     expect(reply.json).toMatchObject({ code: 'not_found' });
+  });
+
+  test('the view gives each session its venue, or null when the pass has none', async () => {
+    const fixture = createApiFixture();
+    const serials = await seed(fixture, 2, (n) => ({
+      fields: samplePassFields({ venue: n === 0 ? 'The Venetian' : '', room: '' }),
+    }));
+    const id = await createOk(fixture, serials);
+    const body = (await view(fixture, id)).json as ViewBody;
+    expect(body.sessions.map((s) => s.venue)).toEqual(['The Venetian', null]);
   });
 
   test('empty venue and room read well in the location', async () => {
