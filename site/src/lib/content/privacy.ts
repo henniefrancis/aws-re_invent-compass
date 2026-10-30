@@ -180,9 +180,15 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-site-demo',
-        'The demo runs in your browser on made-up sessions. Nothing in it touches a real schedule.',
+        'The demo runs in your browser. It uses a small snapshot of real sessions from the AWS Events API, copied into the website. It never connects to the API, and nothing in it touches a real schedule.',
         SITE,
         'Requirements 2 and 7',
+      ),
+      summary(
+        'privacy-site-session-data',
+        'The session catalog is public. The demo snapshot holds only the session code, title, start and end times, venue and room, so it has no speakers, no attendees and no personal data.',
+        'docs/hackathon-rules.md',
+        'Compliance, rule 11',
       ),
       summary(
         'privacy-site-board',

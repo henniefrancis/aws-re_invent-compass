@@ -63,7 +63,7 @@ export function navGroups(links: SiteLinks): readonly NavGroup[] {
           kind: 'internal',
           label: 'Try the demo',
           path: '/demo',
-          description: 'Plan a made-up week in your browser',
+          description: 'Plan a week of real sessions in your browser',
         },
         {
           kind: 'internal',
