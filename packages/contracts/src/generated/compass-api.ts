@@ -204,31 +204,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/handoffs/{handoffId}/calendar/{serialNumber}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The hand-off identifier. */
-                handoffId: components["parameters"]["HandoffId"];
-                /** @description The pass serial followed by .ics (API Gateway cannot match a suffix on a path variable, so the whole segment is the variable). */
-                serialNumber: components["parameters"]["SessionCalendarFile"];
-            };
-            cookie?: never;
-        };
-        /**
-         * Download one session's calendar file.
-         * @description Returns a text/calendar file for one session in the hand-off. Authorised by the hand-off capability, with the same checks as the bundle route. A serial that is not in the hand-off, not active or not valid answers 404.
-         */
-        get: operations["getHandoffSessionCalendar"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/handoffs/{handoffId}/calendar.ics": {
         parameters: {
             query?: never;
@@ -483,8 +458,6 @@ export interface components {
                 applePath: string | null;
                 /** @description A Save to Google Wallet link for this session alone, or null. */
                 googleSaveUrl: string | null;
-                /** @description The route for this session's own calendar file, or null. */
-                calendarPath: string | null;
             }[];
             apple: {
                 bundlePaths: string[];
@@ -549,8 +522,6 @@ export interface components {
         HandoffId: string;
         /** @description The pass serial number. */
         PassSerialNumber: string;
-        /** @description The pass serial followed by .ics (API Gateway cannot match a suffix on a path variable, so the whole segment is the variable). */
-        SessionCalendarFile: string;
         /** @description The zero-based index of the Apple pass bundle. */
         BundleIndex: number;
         /** @description Apple's device library identifier. */
@@ -789,32 +760,6 @@ export interface operations {
                 };
                 content: {
                     "application/vnd.apple.pkpass": string;
-                };
-            };
-            404: components["responses"]["ProblemNotFound"];
-        };
-    };
-    getHandoffSessionCalendar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The hand-off identifier. */
-                handoffId: components["parameters"]["HandoffId"];
-                /** @description The pass serial followed by .ics (API Gateway cannot match a suffix on a path variable, so the whole segment is the variable). */
-                serialNumber: components["parameters"]["SessionCalendarFile"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The calendar file. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/calendar": string;
                 };
             };
             404: components["responses"]["ProblemNotFound"];

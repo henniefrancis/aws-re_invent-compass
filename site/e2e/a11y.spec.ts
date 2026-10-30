@@ -24,7 +24,7 @@ test.describe('axe on every page', () => {
 test.describe('axe on every board state', () => {
   const states: [string, string, string][] = [
     ['ready-one-bundle', 'ready', 'Your boarding passes are ready'],
-    ['ready-three-bundles', 'ready', 'Your boarding passes are ready'],
+    ['ready-many-sessions', 'ready', 'Your boarding passes are ready'],
     ['ready-apple-only', 'ready', 'Your boarding passes are ready'],
     ['not-found', 'expired', 'This link has expired'],
     ['rate-limited', 'rate limited', 'Too many tries'],

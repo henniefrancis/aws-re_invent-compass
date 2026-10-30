@@ -24,7 +24,6 @@ interface AcceptedWire {
     startsAt: string;
     applePath: string | null;
     googleSaveUrl: string | null;
-    calendarPath: string | null;
   }[];
   apple: { bundlePaths: string[] };
   google: { saveUrl: string } | null;
@@ -49,8 +48,6 @@ export interface BoardSession {
   readonly applePath: string | null;
   /** A Save to Google Wallet link for this session alone, or null. */
   readonly googleSaveUrl: string | null;
-  /** This session's own calendar route, or null. */
-  readonly calendarPath: string | null;
 }
 
 export interface AppleBundle {
@@ -95,20 +92,12 @@ function hasExactKeys(value: PlainObject, keys: readonly string[]): boolean {
   return actual.length === keys.length && keys.every((key) => actual.includes(key));
 }
 
-/** The route of one session's own file; the path is exactly this hand-off's and this serial's. */
-function sessionRoute(
-  value: unknown,
-  id: HandoffId,
-  serialNumber: string,
-  kind: 'apple' | 'calendar',
-): Optional<string> {
+/** The route of one session's own Apple pass: exactly this hand-off's and this serial's. */
+function appleRoute(value: unknown, id: HandoffId, serialNumber: string): Optional<string> {
   if (value === null) {
     return { ok: true, value: null };
   }
-  const expected =
-    kind === 'apple'
-      ? `/api/v1/handoffs/${id}/apple/pass/${serialNumber}`
-      : `/api/v1/handoffs/${id}/calendar/${serialNumber}.ics`;
+  const expected = `/api/v1/handoffs/${id}/apple/pass/${serialNumber}`;
   return value === expected ? { ok: true, value: expected } : { ok: false };
 }
 
@@ -122,7 +111,6 @@ function readSession(value: unknown, id: HandoffId): BoardSession | null {
       'startsAt',
       'applePath',
       'googleSaveUrl',
-      'calendarPath',
     ])
   ) {
     return null;
@@ -143,18 +131,9 @@ function readSession(value: unknown, id: HandoffId): BoardSession | null {
   if (!valid) {
     return null;
   }
-  const applePath = sessionRoute(value['applePath'], id, serialNumber, 'apple');
-  const calendarPath = sessionRoute(value['calendarPath'], id, serialNumber, 'calendar');
-  return applePath.ok && calendarPath.ok
-    ? {
-        serialNumber,
-        sessionCode,
-        title,
-        startsAt,
-        applePath: applePath.value,
-        googleSaveUrl,
-        calendarPath: calendarPath.value,
-      }
+  const applePath = appleRoute(value['applePath'], id, serialNumber);
+  return applePath.ok
+    ? { serialNumber, sessionCode, title, startsAt, applePath: applePath.value, googleSaveUrl }
     : null;
 }
 
@@ -213,9 +192,7 @@ function readCalendar(value: unknown, id: HandoffId): Optional<string> {
 }
 
 function hasOwnAction(session: BoardSession): boolean {
-  return (
-    session.applePath !== null || session.googleSaveUrl !== null || session.calendarPath !== null
-  );
+  return session.applePath !== null || session.googleSaveUrl !== null;
 }
 
 /**

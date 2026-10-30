@@ -67,7 +67,7 @@ export interface RateLimiter {
 }
 
 /** Extra reads of a hand-off for each of its passes (one per button on the board page). */
-export const HANDOFF_READS_PER_PASS = 3;
+export const HANDOFF_READS_PER_PASS = 2;
 
 function windowOf(now: number): { startSec: number; endMs: number } {
   const startSec = Math.floor(now / 1000 / WINDOW_SECONDS) * WINDOW_SECONDS;

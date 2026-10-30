@@ -56,7 +56,6 @@ test.describe('forced colors', () => {
     await expect(
       page.getByRole('link', { name: 'Add to Apple Wallet', exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Add to Apple Wallet: ANT398' })).toBeVisible();
     await expectNoAxeViolations(page);
     await page.goto('/demo');
     await page.getByRole('button', { name: 'Start with a sample week' }).click();

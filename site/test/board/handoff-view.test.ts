@@ -11,7 +11,6 @@ import {
   FIXED_ID,
   bodyArb,
   applePathOf,
-  calendarPathOf,
   exampleBody,
   idArb,
   idFromBytes,
@@ -101,7 +100,6 @@ describe('validateHandoffView examples', () => {
       ...s,
       applePath: null,
       googleSaveUrl: null,
-      calendarPath: null,
     }));
     const none = {
       ...base,
@@ -122,7 +120,6 @@ describe('validateHandoffView examples', () => {
       { ...none, apple: { bundlePaths: [`/api/v1/handoffs/${FIXED_ID}/apple/0`] } },
       only({ applePath: first.applePath }),
       only({ googleSaveUrl: first.googleSaveUrl }),
-      only({ calendarPath: first.calendarPath }),
     ]) {
       expect(validateHandoffView(withOne, FIXED_ID)).not.toBeNull();
     }
@@ -211,10 +208,10 @@ describe('the buttons of each session', () => {
     sessions: [{ ...first, ...patch }, ...body.sessions.slice(1)],
   });
 
-  test('every session returns its own three fields as sent', () => {
+  test('every session returns its own two fields as sent', () => {
     const result = validateHandoffView(body, FIXED_ID);
-    expect(result?.sessions.map((s) => [s.applePath, s.googleSaveUrl, s.calendarPath])).toEqual(
-      body.sessions.map((s) => [s.applePath, s.googleSaveUrl, s.calendarPath]),
+    expect(result?.sessions.map((s) => [s.applePath, s.googleSaveUrl])).toEqual(
+      body.sessions.map((s) => [s.applePath, s.googleSaveUrl]),
     );
     expect(result?.sessions[1]?.googleSaveUrl).toBeNull();
   });
@@ -230,12 +227,6 @@ describe('the buttons of each session', () => {
       { applePath: `${first.applePath}/` },
       { applePath: '' },
       { applePath: 5 },
-      { calendarPath: `/api/v1/handoffs/${other}/calendar/${first.serialNumber}.ics` },
-      { calendarPath: second.calendarPath },
-      { calendarPath: `/api/v1/handoffs/${FIXED_ID}/calendar/${first.serialNumber}` },
-      { calendarPath: `/api/v1/handoffs/${FIXED_ID}/calendar.ics` },
-      { calendarPath: `https://evil.invalid${first.calendarPath}` },
-      { calendarPath: 5 },
       { googleSaveUrl: 5 },
       { googleSaveUrl: undefined },
     ];
@@ -259,6 +250,16 @@ describe('the buttons of each session', () => {
       startsAt: s.startsAt,
     }));
     expect(validateHandoffView({ ...body, sessions: old }, FIXED_ID)).toBeNull();
+  });
+
+  test('a session carrying the removed calendarPath is refused', () => {
+    expect(
+      validateHandoffView(
+        withFirst({ calendarPath: `/api/v1/handoffs/${FIXED_ID}/calendar/x.ics` }),
+        FIXED_ID,
+      ),
+    ).toBeNull();
+    expect(validateHandoffView(withFirst({ calendarPath: null }), FIXED_ID)).toBeNull();
   });
 
   test('the top Google object has only saveUrl', () => {
@@ -322,7 +323,6 @@ describe('Property 4: Hand-off view validation is all or nothing', () => {
         'startsAt',
         'applePath',
         'googleSaveUrl',
-        'calendarPath',
       ] as const;
       const s: Record<string, unknown> = { ...first(b) };
       delete s[keys[pick % keys.length] as string];
@@ -413,24 +413,6 @@ describe('Property 4: Hand-off view validation is all or nothing', () => {
     sessionApplePathOtherSerial: (b, id) => ({
       ...clone(b),
       sessions: [{ ...first(b), applePath: applePathOf(id, UNRELATED_SERIAL) }],
-    }),
-    sessionCalendarPathOtherId: (b) => ({
-      ...clone(b),
-      sessions: [
-        {
-          ...first(b),
-          calendarPath: calendarPathOf(
-            idFromBytes(new Uint8Array(16).fill(9)),
-            first(b).serialNumber,
-          ),
-        },
-      ],
-    }),
-    sessionCalendarPathNoSuffix: (b, id) => ({
-      ...clone(b),
-      sessions: [
-        { ...first(b), calendarPath: `/api/v1/handoffs/${id}/calendar/${first(b).serialNumber}` },
-      ],
     }),
     sessionGoogleForeignHost: (b) => ({
       ...clone(b),

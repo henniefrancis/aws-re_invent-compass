@@ -142,7 +142,7 @@ describe('toBoardViewModel examples', () => {
     expect(vm.sessions[0]).toEqual({
       code: 'DAT302',
       title: 'Made-up session about data',
-      time: 'Monday 30 November, 10:30 AM',
+      time: 'Mon, 30 Nov 2026, 10:30 AM',
       actions: [
         {
           kind: 'apple',
@@ -154,12 +154,6 @@ describe('toBoardViewModel examples', () => {
           kind: 'google',
           href: `${GOOGLE_SAVE_PREFIX}eyJhbGciOiJSUzI1NiJ9.one-session.ghi_jkl`,
           label: 'Add to Google Wallet: DAT302',
-          caption: null,
-        },
-        {
-          kind: 'calendar',
-          href: `/api/v1/handoffs/${FIXED_ID}/calendar/6f1c2f0e-0d6f-4c52-9b3a-1a2b3c4d5e6f.ics`,
-          label: 'Add to Calendar: DAT302',
           caption: null,
         },
       ],
@@ -194,8 +188,8 @@ describe('toBoardViewModel examples', () => {
     const vm = toBoardViewModel({ kind: 'ready', handoff: validated(body) }, NOW);
     expect(vm.timezoneNote).toBeNull();
     expect(vm.sessions.map((s) => s.time)).toEqual([
-      'Monday 30 November, 10:30 AM (UTC-08:00)',
-      'Tuesday 1 December, 2:00 PM (UTC-07:00)',
+      'Mon, 30 Nov 2026, 10:30 AM (UTC-08:00)',
+      'Tue, 1 Dec 2026, 2:00 PM (UTC-07:00)',
     ]);
   });
 
@@ -209,7 +203,6 @@ describe('toBoardViewModel examples', () => {
   test('each session names its code in the accessible name of every button', () => {
     expect(sessionActionLabel('ANT398', 'apple')).toBe('Add to Apple Wallet: ANT398');
     expect(sessionActionLabel('ANT398', 'google')).toBe('Add to Google Wallet: ANT398');
-    expect(sessionActionLabel('ANT398', 'calendar')).toBe('Add to Calendar: ANT398');
   });
 
   test('a session shows only the buttons it has, and none when it has none', () => {
@@ -224,8 +217,8 @@ describe('toBoardViewModel examples', () => {
         handoff: {
           ...handoff,
           sessions: [
-            { ...one, applePath: null, calendarPath: null },
-            { ...two, applePath: null, googleSaveUrl: null, calendarPath: null },
+            { ...one, applePath: null },
+            { ...two, applePath: null, googleSaveUrl: null },
           ],
         },
       },
@@ -457,5 +450,125 @@ describe('Property 8: Apple bundle labels cover each bundle exactly once', () =>
       ),
       { numRuns: 200 },
     );
+  });
+});
+
+describe('the line under the heading follows where the buttons are', () => {
+  const base = validated(exampleBody());
+  const bare = base.sessions.map((s) => ({
+    ...s,
+    applePath: null,
+    googleSaveUrl: null,
+    calendarPath: null,
+  }));
+  const message = (patch: Partial<typeof base>) =>
+    toBoardViewModel({ kind: 'ready', handoff: { ...base, ...patch } }, NOW).message;
+
+  test('top buttons keep the plain line', () => {
+    expect(message({ sessions: bare })).toBe(MESSAGES.readyMessage);
+  });
+
+  test('session buttons say so, and mention the week calendar when it is at the top', () => {
+    const own = { appleBundles: [], googleSaveUrl: null };
+    expect(message(own)).toBe('Add each session below, or the whole week to your calendar.');
+    expect(message({ ...own, calendarPath: null })).toBe('Add each session below.');
+  });
+});
+
+describe('the wallet of the device', () => {
+  const handoff = validated(exampleBody());
+  const kinds = (vm: BoardViewModel) => vm.actions.map((a) => a.kind);
+  const rowKinds = (vm: BoardViewModel) => vm.sessions.map((r) => r.actions.map((a) => a.kind));
+  const ready = { kind: 'ready', handoff } as const;
+
+  test('both shows everything, with the lead line and the help paragraph apart', () => {
+    const vm = toBoardViewModel(ready, NOW, 'both');
+    expect(kinds(vm)).toEqual(['apple', 'google', 'calendar']);
+    expect(vm.message).toBe(MESSAGES.readyMessage);
+    expect(vm.deviceHint).toBe(MESSAGES.deviceHint);
+  });
+
+  test('an iPhone hides the Google buttons at the top and on the sessions; the top calendar stays', () => {
+    const vm = toBoardViewModel(ready, NOW, 'apple');
+    expect(kinds(vm)).toEqual(['apple', 'calendar']);
+    expect(rowKinds(vm)).toEqual([['apple'], ['apple']]);
+    // The device line joins the lead line and the separate help paragraph is gone.
+    expect(vm.message).toBe('Choose how to add your passes. Showing Apple Wallet for your iPhone.');
+    expect(vm.deviceHint).toBeNull();
+  });
+
+  test('an Android phone hides the Apple buttons', () => {
+    const vm = toBoardViewModel(ready, NOW, 'google');
+    expect(kinds(vm)).toEqual(['google', 'calendar']);
+    expect(rowKinds(vm)).toEqual([['google'], []]);
+    expect(vm.message).toBe(
+      'Choose how to add your passes. Showing Google Wallet for your Android phone.',
+    );
+    expect(vm.deviceHint).toBeNull();
+  });
+
+  test('with session buttons the device line follows the session lead line', () => {
+    const many = { ...handoff, appleBundles: [], googleSaveUrl: null };
+    expect(toBoardViewModel({ kind: 'ready', handoff: many }, NOW, 'apple').message).toBe(
+      'Add each session below, or the whole week to your calendar. Showing Apple Wallet for your iPhone.',
+    );
+  });
+
+  test('the other states do not change', () => {
+    expect(toBoardViewModel({ kind: 'expired' }, NOW, 'apple').message).toBe(
+      MESSAGES.expiredMessage,
+    );
+  });
+});
+
+describe('the device choice needs a button of its own wallet', () => {
+  const handoff = validated(exampleBody());
+  const noApple = {
+    ...handoff,
+    appleBundles: [],
+    sessions: handoff.sessions.map((s) => ({ ...s, applePath: null })),
+  };
+  const noGoogle = {
+    ...handoff,
+    googleSaveUrl: null,
+    sessions: handoff.sessions.map((s) => ({ ...s, googleSaveUrl: null })),
+  };
+
+  test('Google only passes on an iPhone show everything and say nothing about the device', () => {
+    const vm = toBoardViewModel({ kind: 'ready', handoff: noApple }, NOW, 'apple');
+    expect(vm.actions.map((a) => a.kind)).toEqual(['google', 'calendar']);
+    expect(vm.sessions.some((s) => s.actions.some((a) => a.kind === 'google'))).toBe(true);
+    expect(vm.message).toBe(MESSAGES.readyMessage);
+    expect(vm.deviceHint).toBe(MESSAGES.deviceHint);
+  });
+
+  test('Apple only passes on an Android phone show everything and say nothing about the device', () => {
+    const vm = toBoardViewModel({ kind: 'ready', handoff: noGoogle }, NOW, 'google');
+    expect(vm.actions.map((a) => a.kind)).toEqual(['apple', 'calendar']);
+    expect(vm.message).toBe(MESSAGES.readyMessage);
+    expect(vm.deviceHint).toBe(MESSAGES.deviceHint);
+  });
+
+  test('a wallet button only on a session is enough to apply the choice', () => {
+    const sessionsOnly = {
+      ...handoff,
+      appleBundles: [],
+      googleSaveUrl: null,
+      sessions: handoff.sessions.map((s) => ({ ...s, applePath: s.applePath })),
+    };
+    const vm = toBoardViewModel({ kind: 'ready', handoff: sessionsOnly }, NOW, 'apple');
+    expect(vm.sessions.every((s) => s.actions.every((a) => a.kind !== 'google'))).toBe(true);
+    expect(vm.message).toContain('Showing Apple Wallet for your iPhone.');
+    expect(vm.deviceHint).toBeNull();
+  });
+
+  test('more than eight Google only sessions on an iPhone keep their Google buttons', () => {
+    const many = {
+      ...noApple,
+      googleSaveUrl: null,
+    };
+    const vm = toBoardViewModel({ kind: 'ready', handoff: many }, NOW, 'apple');
+    expect(vm.sessions.some((s) => s.actions.length > 0)).toBe(true);
+    expect(vm.message).not.toContain('Showing Apple Wallet');
   });
 });

@@ -30,8 +30,8 @@ describe('hand-off fixtures', () => {
       'not-found.json',
       'rate-limited.json',
       'ready-apple-only.json',
+      'ready-many-sessions.json',
       'ready-one-bundle.json',
-      'ready-three-bundles.json',
       'server-error.json',
       'wrong-bundle-path.json',
       'wrong-content-type.json',
@@ -44,31 +44,32 @@ describe('hand-off fixtures', () => {
   });
 
   test('every ready fixture is accepted', () => {
-    for (const name of ['ready-one-bundle', 'ready-three-bundles', 'ready-apple-only']) {
+    for (const name of ['ready-one-bundle', 'ready-many-sessions', 'ready-apple-only']) {
       const fixture = load(name);
       expect(fixture.status).toBe(200);
       expect(validateHandoffView(fixture.body, FIXED_ID), name).not.toBeNull();
     }
   });
 
-  test('the shapes cover one bundle, three bundles, Apple only', () => {
+  test('the shapes cover top actions only, session actions only, Apple only', () => {
     const one = validateHandoffView(load('ready-one-bundle').body, FIXED_ID);
-    const three = validateHandoffView(load('ready-three-bundles').body, FIXED_ID);
+    const many = validateHandoffView(load('ready-many-sessions').body, FIXED_ID);
     const apple = validateHandoffView(load('ready-apple-only').body, FIXED_ID);
+    // Eight sessions or fewer: only the top actions.
     expect(one?.appleBundles).toHaveLength(1);
     expect(one?.googleSaveUrl).not.toBeNull();
-    expect(one?.sessions.every((s) => s.applePath && s.googleSaveUrl && s.calendarPath)).toBe(true);
-    expect(three?.appleBundles).toHaveLength(3);
-    // 24 passes do not fit one Google link, so there is no top button; each session has its own.
-    expect(three?.googleSaveUrl).toBeNull();
-    expect(three?.sessions.every((s) => s.googleSaveUrl !== null)).toBe(true);
-    expect(three?.sessions).toHaveLength(24);
-    expect(three?.calendarPath).not.toBeNull();
+    expect(one?.calendarPath).not.toBeNull();
+    expect(one?.sessions.every((s) => !s.applePath && !s.googleSaveUrl)).toBe(true);
+    // More than eight: only the week calendar at the top and every action on the sessions.
+    expect(many?.sessions).toHaveLength(24);
+    expect(many?.appleBundles).toEqual([]);
+    expect(many?.googleSaveUrl).toBeNull();
+    expect(many?.calendarPath).not.toBeNull();
+    expect(many?.sessions.every((s) => s.applePath && s.googleSaveUrl)).toBe(true);
+    expect(apple?.appleBundles).toHaveLength(1);
     expect(apple?.googleSaveUrl).toBeNull();
     expect(apple?.calendarPath).toBeNull();
-    expect(apple?.sessions.every((s) => s.applePath && !s.googleSaveUrl && !s.calendarPath)).toBe(
-      true,
-    );
+    expect(apple?.sessions.every((s) => !s.applePath && !s.googleSaveUrl)).toBe(true);
   });
 
   test('every negative 200 fixture is rejected', () => {

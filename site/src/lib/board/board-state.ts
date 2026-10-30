@@ -5,7 +5,8 @@
 // a Ready state carry it, because they are the links the attendee follows. Every message is a
 // constant. None is built from the id or from a response body.
 
-import { dayHeading, formatWallClock, offsetLabel, timezoneNote } from '../time/time-format';
+import { formatWallClock, offsetLabel, shortDay, timezoneNote } from '../time/time-format';
+import type { DeviceWallet } from './device';
 import type { FragmentResult } from './fragment';
 import type { HandoffOutcome } from './handoff-client';
 import type { AppleBundle, BoardSession, ValidatedHandoff } from './handoff-view';
@@ -74,6 +75,8 @@ export const MESSAGES = {
   invalidMessage: 'Scan the QR code again on your computer.',
   readyHeading: 'Your boarding passes are ready',
   readyMessage: 'Choose how to add your passes.',
+  readySessionsMessage: 'Add each session below.',
+  readySessionsWeekMessage: 'Add each session below, or the whole week to your calendar.',
   expiredHeading: 'This link has expired',
   expiredMessage:
     'This link has expired or is not valid. Links last 15 minutes. Create a new one on your computer.',
@@ -83,6 +86,8 @@ export const MESSAGES = {
   unavailableMessage: 'We could not load your passes. Check your connection and try again.',
   deviceHint:
     'Apple Wallet is for iPhone. Google Wallet is for Android. The calendar file works on an iPad or any other device.',
+  deviceNoteApple: 'Showing Apple Wallet for your iPhone.',
+  deviceNoteGoogle: 'Showing Google Wallet for your Android phone.',
   appleLabel: 'Add to Apple Wallet',
   googleLabel: 'Add to Google Wallet',
   calendarLabel: 'Add to Calendar',
@@ -156,14 +161,8 @@ export function bundleLabel(bundle: AppleBundle): string {
  * The accessible name of one session's button. It starts with the badge's own text, so the
  * visible label is part of the name (WCAG 2.5.3), and ends with the session code.
  */
-export function sessionActionLabel(code: string, kind: BoardAction['kind']): string {
-  const badge =
-    kind === 'apple'
-      ? MESSAGES.appleLabel
-      : kind === 'google'
-        ? MESSAGES.googleLabel
-        : MESSAGES.calendarLabel;
-  return `${badge}: ${code}`;
+export function sessionActionLabel(code: string, kind: 'apple' | 'google'): string {
+  return `${kind === 'apple' ? MESSAGES.appleLabel : MESSAGES.googleLabel}: ${code}`;
 }
 
 function expiryText(handoff: ValidatedHandoff, nowMs: number): string {
@@ -204,10 +203,9 @@ function actionsOf(handoff: ValidatedHandoff): BoardAction[] {
 }
 
 function sessionActionsOf(session: BoardSession): BoardAction[] {
-  const own: [BoardAction['kind'], string | null][] = [
+  const own: ['apple' | 'google', string | null][] = [
     ['apple', session.applePath],
     ['google', session.googleSaveUrl],
-    ['calendar', session.calendarPath],
   ];
   return own.flatMap(([kind, href]) =>
     href === null
@@ -216,9 +214,31 @@ function sessionActionsOf(session: BoardSession): BoardAction[] {
   );
 }
 
+/** The line under the heading: it says where the buttons are when the sessions hold them. */
+function readyMessageOf(handoff: ValidatedHandoff): string {
+  const onSessions =
+    handoff.appleBundles.length === 0 &&
+    handoff.googleSaveUrl === null &&
+    handoff.sessions.some((s) => s.applePath !== null || s.googleSaveUrl !== null);
+  if (!onSessions) {
+    return MESSAGES.readyMessage;
+  }
+  return handoff.calendarPath === null
+    ? MESSAGES.readySessionsMessage
+    : MESSAGES.readySessionsWeekMessage;
+}
+
+/** On a phone the line under the heading also says which wallet is shown. */
+function withDeviceNote(message: string, wallet: DeviceWallet): string {
+  if (wallet === 'both') {
+    return message;
+  }
+  return `${message} ${wallet === 'apple' ? MESSAGES.deviceNoteApple : MESSAGES.deviceNoteGoogle}`;
+}
+
 function rowsOf(handoff: ValidatedHandoff, withOffset: boolean): BoardRow[] {
   return handoff.sessions.map((session) => {
-    const time = `${dayHeading(session.startsAt.slice(0, 10))}, ${formatWallClock(session.startsAt)}`;
+    const time = `${shortDay(session.startsAt.slice(0, 10))}, ${formatWallClock(session.startsAt)}`;
     return {
       code: session.sessionCode,
       title: session.title,
@@ -249,20 +269,41 @@ function plain(
 }
 
 /** What the page shows for a state at a given time. Only Ready has links. */
-export function toBoardViewModel(state: BoardState, nowMs: number): BoardViewModel {
+export function toBoardViewModel(
+  state: BoardState,
+  nowMs: number,
+  wallet: DeviceWallet = 'both',
+): BoardViewModel {
   if (state.kind === 'ready') {
     const handoff = state.handoff;
     const note = timezoneNote(handoff.sessions.map((s) => s.startsAt));
+    const all = actionsOf(handoff);
+    const allRows = rowsOf(handoff, note === null);
+    // The device choice only applies when that wallet has a button in this view (top or on a
+    // session). Otherwise the page would be left with no usable wallet button, so it shows
+    // everything and says nothing about the device.
+    const hasOwn =
+      all.some((a) => a.kind === wallet) ||
+      allRows.some((row) => row.actions.some((a) => a.kind === wallet));
+    const device: DeviceWallet = hasOwn ? wallet : 'both';
+    const shown = (kind: BoardAction['kind']): boolean =>
+      kind === 'calendar' || device === 'both' || kind === device;
+    const actions = all.filter((a) => shown(a.kind));
+    const sessions = allRows.map((row) => ({
+      ...row,
+      actions: row.actions.filter((a) => shown(a.kind)),
+    }));
     return {
       heading: MESSAGES.readyHeading,
-      message: MESSAGES.readyMessage,
+      message: withDeviceNote(readyMessageOf(handoff), device),
       busy: false,
       canRetry: false,
-      actions: actionsOf(handoff),
-      sessions: rowsOf(handoff, note === null),
+      actions,
+      sessions,
       expiresText: expiryText(handoff, nowMs),
       timezoneNote: note,
-      deviceHint: MESSAGES.deviceHint,
+      // On a phone the device line is part of the lead line; on other devices it stays apart.
+      deviceHint: device === 'both' ? MESSAGES.deviceHint : null,
       announcement: `${MESSAGES.readyHeading}. ${String(handoff.sessions.length)} ${
         handoff.sessions.length === 1 ? 'session' : 'sessions'
       }.`,

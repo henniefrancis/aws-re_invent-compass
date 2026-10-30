@@ -3,7 +3,17 @@ import { HANDOFF_ID, installClock, mockHandoff, openBoard, openNav, watch } from
 
 const heading = (page: import('@playwright/test').Page) => page.locator('h1');
 
+const DESKTOP_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+const IPHONE_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+const ANDROID_UA =
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
+
 test.describe('board states from the fixtures', () => {
+  // These tests look for every wallet, so they present as a computer on every profile.
+  test.use({ userAgent: DESKTOP_UA });
+
   test('ready with one bundle shows the three actions, the sessions and the expiry', async ({
     page,
   }) => {
@@ -30,32 +40,36 @@ test.describe('board states from the fixtures', () => {
     await expect(page.getByText(/Times are event local time \(UTC-08:00\)\./)).toBeVisible();
   });
 
-  test('three bundles are labelled bundle N of 3', async ({ page }) => {
-    await mockHandoff(page, 'ready-three-bundles');
-    await openBoard(page);
-    // Each bundle is the official badge, named by its alt text, with a caption under it.
-    const badges = page.getByRole('link', { name: /^Add to Apple Wallet \(bundle/ });
-    await expect(badges).toHaveCount(3);
-    for (const [index, n] of [1, 2, 3].entries()) {
-      await expect(badges.nth(index)).toHaveAccessibleName(
-        `Add to Apple Wallet (bundle ${String(n)} of 3)`,
-      );
-    }
-    await expect(page.locator('.wallet-badge__caption', { hasText: /^Bundle/ })).toHaveText([
-      'Bundle 1 of 3',
-      'Bundle 2 of 3',
-      'Bundle 3 of 3',
-    ]);
-    await expect(page.locator('.board-sessions > li')).toHaveCount(24);
-  });
-
-  test('every session has its own Apple, Google and calendar button named after its code', async ({
+  test('eight sessions or fewer show only the top actions, none on the sessions', async ({
     page,
   }) => {
     await mockHandoff(page, 'ready-one-bundle');
     await openBoard(page);
+    await expect(page.getByText('Choose how to add your passes.')).toBeVisible();
+    await expect(page.locator('.board-actions a')).toHaveCount(3);
+    await expect(page.locator('.board-session-actions')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /^Add to .*: [A-Z0-9]+$/ })).toHaveCount(0);
+    await expect(page.locator('.board-sessions > li')).toHaveCount(4);
+  });
+
+  test('more than eight sessions show only the week calendar at the top and every button on each session', async ({
+    page,
+  }) => {
+    await mockHandoff(page, 'ready-many-sessions');
+    await openBoard(page);
+    await expect(
+      page.getByText('Add each session below, or the whole week to your calendar.'),
+    ).toBeVisible();
+    await expect(page.locator('.board-actions a')).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'Add to Calendar', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'Add to Apple Wallet', exact: true })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole('link', { name: 'Add to Google Wallet', exact: true })).toHaveCount(
+      0,
+    );
     const first = page.locator('.board-sessions > li').first();
-    await expect(first.getByRole('link')).toHaveCount(3);
+    await expect(first.getByRole('link')).toHaveCount(2);
     await expect(first.getByRole('link', { name: 'Add to Apple Wallet: ANT398' })).toHaveAttribute(
       'href',
       `/api/v1/handoffs/${HANDOFF_ID}/apple/pass/00000000-0000-4000-8000-000000000001`,
@@ -64,29 +78,7 @@ test.describe('board states from the fixtures', () => {
       'href',
       /^https:\/\/pay\.google\.com\/gp\/v\/save\//,
     );
-    await expect(first.getByRole('link', { name: 'Add to Calendar: ANT398' })).toHaveAttribute(
-      'href',
-      `/api/v1/handoffs/${HANDOFF_ID}/calendar/00000000-0000-4000-8000-000000000001.ics`,
-    );
-    // Four sessions, three buttons each, and the three buttons at the top.
-    await expect(page.locator('.board-session-actions a')).toHaveCount(12);
-    await expect(
-      page.getByRole('link', { name: /^Add to (Apple Wallet|Google Wallet|Calendar): [A-Z0-9]+$/ }),
-    ).toHaveCount(12);
-  });
-
-  test('24 passes give three Apple bundles, no top Google button and a Google button on every session', async ({
-    page,
-  }) => {
-    await mockHandoff(page, 'ready-three-bundles');
-    await openBoard(page);
-    await expect(page.getByRole('link', { name: 'Add to Google Wallet', exact: true })).toHaveCount(
-      0,
-    );
-    await expect(page.getByRole('link', { name: 'Add to Calendar', exact: true })).toHaveCount(1);
-    await expect(page.getByRole('link', { name: /^Add to Google Wallet: [A-Z0-9]+$/ })).toHaveCount(
-      24,
-    );
+    await expect(page.locator('.board-session-actions a')).toHaveCount(48);
     await expect(page.locator('.board-sessions > li')).toHaveCount(24);
   });
 
@@ -100,12 +92,7 @@ test.describe('board states from the fixtures', () => {
       0,
     );
     await expect(page.getByRole('link', { name: 'Add to Calendar', exact: true })).toHaveCount(0);
-    // Each session offers only the Apple button.
-    await expect(page.locator('.board-session-actions a')).toHaveCount(3);
-    await expect(page.getByRole('link', { name: /^Add to Apple Wallet: [A-Z0-9]+$/ })).toHaveCount(
-      3,
-    );
-    await expect(page.getByRole('link', { name: /Google Wallet|Calendar/i })).toHaveCount(0);
+    await expect(page.locator('.board-session-actions')).toHaveCount(0);
   });
 
   test('404 is the expired state with one message and no retry', async ({ page }) => {
@@ -211,7 +198,7 @@ test.describe('the fragment', () => {
 
   test('the id is not in the title, the text or the console', async ({ page }) => {
     const record = watch(page);
-    await mockHandoff(page, 'ready-three-bundles');
+    await mockHandoff(page, 'ready-many-sessions');
     await openBoard(page);
     await expect(heading(page)).toHaveText('Your boarding passes are ready');
     await expect(page).not.toHaveTitle(new RegExp(HANDOFF_ID));
@@ -319,5 +306,79 @@ test.describe('without JavaScript', () => {
     await expect(
       page.getByText('This page needs JavaScript to open your hand-off link.'),
     ).toBeVisible();
+  });
+});
+
+test.describe('the wallet of the device (task 37)', () => {
+  const apple = (page: import('@playwright/test').Page) =>
+    page.getByRole('link', { name: /^Add to Apple Wallet/ });
+  const google = (page: import('@playwright/test').Page) =>
+    page.getByRole('link', { name: /^Add to Google Wallet/ });
+  const calendar = (page: import('@playwright/test').Page) =>
+    page.getByRole('link', { name: /^Add to Calendar/ });
+
+  test.describe('on an iPhone', () => {
+    test.use({ userAgent: IPHONE_UA });
+
+    test('only Apple Wallet and the calendar show, and the device line is in the lead line', async ({
+      page,
+    }) => {
+      await mockHandoff(page, 'ready-one-bundle');
+      await openBoard(page);
+      await expect(
+        page.getByText('Choose how to add your passes. Showing Apple Wallet for your iPhone.'),
+      ).toBeVisible();
+      await expect(page.getByText(/Apple Wallet is for iPhone/)).toHaveCount(0);
+      await expect(apple(page)).toHaveCount(1);
+      await expect(calendar(page)).toHaveCount(1);
+      await expect(google(page)).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Show all wallets' })).toHaveCount(0);
+    });
+
+    test('the session buttons follow the same rule', async ({ page }) => {
+      await mockHandoff(page, 'ready-many-sessions');
+      await openBoard(page);
+      await expect(page.getByRole('link', { name: /^Add to Google Wallet: / })).toHaveCount(0);
+      await expect(page.getByRole('link', { name: /^Add to Apple Wallet: / })).toHaveCount(24);
+      await expect(page.getByRole('link', { name: /^Add to Calendar: / })).toHaveCount(0);
+    });
+  });
+
+  test.describe('on an Android phone', () => {
+    test.use({ userAgent: ANDROID_UA });
+
+    test('only Google Wallet and the calendar show', async ({ page, browserName }) => {
+      // Chromium keeps reporting its real client hints under a replaced user agent.
+      test.skip(browserName === 'chromium', 'Client hints cannot be replaced in Chromium.');
+      await mockHandoff(page, 'ready-one-bundle');
+      await openBoard(page);
+      await expect(
+        page.getByText(
+          'Choose how to add your passes. Showing Google Wallet for your Android phone.',
+        ),
+      ).toBeVisible();
+      await expect(google(page)).toHaveCount(1);
+      await expect(calendar(page)).toHaveCount(1);
+      await expect(apple(page)).toHaveCount(0);
+    });
+  });
+
+  test.describe('on a computer or anything else', () => {
+    test.use({ userAgent: DESKTOP_UA });
+
+    test('everything shows, in one row, with the help paragraph apart', async ({ page }) => {
+      await mockHandoff(page, 'ready-one-bundle');
+      await openBoard(page);
+      await expect(apple(page)).toHaveCount(1);
+      await expect(google(page)).toHaveCount(1);
+      await expect(calendar(page)).toHaveCount(1);
+      await expect(page.getByText(/Apple Wallet is for iPhone/)).toBeVisible();
+      // The wallet and calendar badges share one row where the screen is wide enough.
+      test.skip((page.viewportSize()?.width ?? 0) < 700, 'Three badges wrap on a phone.');
+      const tops = await page
+        .locator('.board-actions a')
+        .evaluateAll((links) => links.map((a) => Math.round(a.getBoundingClientRect().top)));
+      expect(new Set(tops).size).toBe(1);
+    });
   });
 });

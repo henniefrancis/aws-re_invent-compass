@@ -5,7 +5,7 @@ const TARGETS = 'button, a.button, .site-nav a, .brand-link, .wallet-badge';
 
 async function openAll(page: Page, path: string): Promise<void> {
   if (path === boardPath) {
-    await mockHandoff(page, 'ready-three-bundles');
+    await mockHandoff(page, 'ready-many-sessions');
     await page.goto(boardPath);
     await expect(page.locator('h1')).toHaveText('Your boarding passes are ready');
   } else {
@@ -103,9 +103,9 @@ test.describe('the board page on a phone', () => {
       testInfo.project.name !== 'iphone-portrait',
       'The first viewport rule is for iPhone portrait.',
     );
-    await mockHandoff(page, 'ready-three-bundles');
+    await mockHandoff(page, 'ready-many-sessions');
     await page.goto(boardPath);
-    const first = page.getByRole('link', { name: /^Add to Apple Wallet/ }).first();
+    const first = page.locator('.board-actions a').first();
     await expect(first).toBeVisible();
     const box = await first.boundingBox();
     const height = page.viewportSize()?.height ?? 0;

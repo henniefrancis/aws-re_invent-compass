@@ -19,6 +19,7 @@ import {
 } from '../../../lib/board/board-state';
 import { FRAGMENT_HOLDER } from '../../fragment-holder';
 import { createBoardController, type BoardController } from '../../../lib/board/board-controller';
+import { walletForDevice, type DeviceWallet } from '../../../lib/board/device';
 import { watchVisibility } from '../../../lib/board/visibility';
 
 /**
@@ -42,7 +43,11 @@ export class BoardPage implements OnDestroy {
 
   /** False in the prerendered page, so a visitor without JavaScript keeps the notice. */
   protected readonly scriptRuns = signal(false);
-  protected readonly vm = computed(() => toBoardViewModel(this.state(), this.nowMs()));
+  /** The wallet of this phone, read once in the browser. "both" in the prerendered page. */
+  private readonly deviceWallet = signal<DeviceWallet>('both');
+  protected readonly vm = computed(() =>
+    toBoardViewModel(this.state(), this.nowMs(), this.deviceWallet()),
+  );
   protected readonly announcement = signal('');
   protected readonly retryLabel = MESSAGES.retryLabel;
 
@@ -51,6 +56,15 @@ export class BoardPage implements OnDestroy {
     inject(Meta).updateTag({ name: 'robots', content: 'noindex' });
     afterNextRender(() => {
       this.scriptRuns.set(true);
+      const hints = (navigator as { userAgentData?: { platform?: string; mobile?: boolean } })
+        .userAgentData;
+      this.deviceWallet.set(
+        walletForDevice({
+          userAgent: navigator.userAgent,
+          platform: hints?.platform,
+          mobile: hints?.mobile,
+        }),
+      );
       this.nowMs.set(Date.now());
       this.controller = createBoardController({
         // Taken from the address (raw, not router normalised) before the router started.

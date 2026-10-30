@@ -47,7 +47,6 @@ export interface WireBody {
     startsAt: string;
     applePath: string | null;
     googleSaveUrl: string | null;
-    calendarPath: string | null;
   }[];
   apple: { bundlePaths: string[] };
   google: { saveUrl: string } | null;
@@ -60,10 +59,6 @@ const tokenArb = fc.tuple(segment, segment, segment).map(([a, b, c]) => `eyJ${a}
 /** The route of one session's own Apple pass for this hand-off. */
 export const applePathOf = (id: HandoffId, serial: string): string =>
   `/api/v1/handoffs/${id}/apple/pass/${serial}`;
-/** The route of one session's own calendar file for this hand-off. */
-export const calendarPathOf = (id: HandoffId, serial: string): string =>
-  `/api/v1/handoffs/${id}/calendar/${serial}.ics`;
-
 /** A session as the service sends it, with its own routes, for this hand-off id. */
 export function sessionArb(id: HandoffId): fc.Arbitrary<WireBody['sessions'][number]> {
   return fc
@@ -77,13 +72,11 @@ export function sessionArb(id: HandoffId): fc.Arbitrary<WireBody['sessions'][num
         tokenArb.map((token) => `${GOOGLE_SAVE_PREFIX}${token}`),
         { nil: null },
       ),
-      withCalendar: fc.boolean(),
     })
-    .map(({ withApple, withGoogle, withCalendar, ...session }) => ({
+    .map(({ withApple, withGoogle, ...session }) => ({
       ...session,
       applePath: withApple ? applePathOf(id, session.serialNumber) : null,
       googleSaveUrl: withGoogle,
-      calendarPath: withCalendar ? calendarPathOf(id, session.serialNumber) : null,
     }));
 }
 
@@ -125,7 +118,6 @@ export function exampleBody(id: HandoffId = FIXED_ID): WireBody {
         startsAt: '2026-11-30T10:30:00-08:00',
         applePath: applePathOf(id, '6f1c2f0e-0d6f-4c52-9b3a-1a2b3c4d5e6f'),
         googleSaveUrl: `${GOOGLE_SAVE_PREFIX}eyJhbGciOiJSUzI1NiJ9.one-session.ghi_jkl`,
-        calendarPath: calendarPathOf(id, '6f1c2f0e-0d6f-4c52-9b3a-1a2b3c4d5e6f'),
       },
       {
         serialNumber: '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
@@ -134,7 +126,6 @@ export function exampleBody(id: HandoffId = FIXED_ID): WireBody {
         startsAt: '2026-12-01T14:00:00-08:00',
         applePath: applePathOf(id, '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d'),
         googleSaveUrl: null,
-        calendarPath: calendarPathOf(id, '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d'),
       },
     ],
     apple: { bundlePaths: [`/api/v1/handoffs/${id}/apple/0`] },

@@ -19,6 +19,7 @@
   .notice,
   .source-note,
   .board-note,
+  .board-session__time,
   .doc-list p,
   .wallet-badge__caption,
   .site-nav__description,
@@ -34,6 +35,13 @@
     border: 2px solid ButtonBorder;
     background: ButtonFace;
     color: ButtonText;
+  }
+
+  /* The gradient heading gives way to plain system text. */
+  .gradient-text {
+    background: none;
+    -webkit-text-fill-color: CanvasText;
+    color: CanvasText;
   }
 
   button:disabled {

@@ -72,6 +72,20 @@ export function formatDateInZone(iso: string, timeZone: string): string {
   return `${parts['day']} ${parts['month']} ${parts['year']}`;
 }
 
+/** A short date for a board session card, for example "Mon, 30 Nov 2026" (task 39). */
+export function shortDay(isoDate: string): string {
+  const date = new Date(
+    Date.UTC(
+      Number(isoDate.slice(0, 4)),
+      Number(isoDate.slice(5, 7)) - 1,
+      Number(isoDate.slice(8, 10)),
+    ),
+  );
+  const part = (options: Intl.DateTimeFormatOptions): string =>
+    new Intl.DateTimeFormat('en-GB', { ...options, timeZone: 'UTC' }).format(date);
+  return `${part({ weekday: 'short' })}, ${part({ day: 'numeric' })} ${part({ month: 'short' })} ${part({ year: 'numeric' })}`;
+}
+
 /** A day heading such as "Monday 30 November", from an event local date (YYYY-MM-DD). */
 export function dayHeading(isoDate: string): string {
   const date = new Date(

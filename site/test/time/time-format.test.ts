@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import {
   TIME_NOT_AVAILABLE,
   dayHeading,
+  shortDay,
   formatDateInZone,
   formatInZone,
   formatInZone24,
@@ -102,6 +103,9 @@ describe('time formatting examples', () => {
 
   test('builds a day heading from an event local date', () => {
     expect(dayHeading('2026-11-30')).toBe('Monday 30 November');
+    expect(shortDay('2026-11-30')).toBe('Mon, 30 Nov 2026');
+    expect(shortDay('2026-12-01')).toBe('Tue, 1 Dec 2026');
+    expect(shortDay('2026-12-31')).toBe('Thu, 31 Dec 2026');
     expect(dayHeading('2026-12-03')).toBe('Thursday 3 December');
   });
 

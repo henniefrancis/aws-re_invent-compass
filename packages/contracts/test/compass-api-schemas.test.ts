@@ -33,7 +33,6 @@ const valid: Record<keyof typeof CompassApiResponseSchemas, unknown> = {
         startsAt: WHEN,
         applePath: null,
         googleSaveUrl: null,
-        calendarPath: null,
       },
     ],
     apple: { bundlePaths: ['/a'] },

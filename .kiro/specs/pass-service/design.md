@@ -1421,3 +1421,20 @@ The TAM also found that a Google insert that fails, or does not finish inside th
 ## Owner change: buttons for each session (29 October 2026, task 50)
 
 On the local preview of task 48 the owner asked for one Google button, not several, and then for Apple, Google and calendar buttons on each session. The owner accepted a later release for it. The board page now keeps the "add everything" buttons at the top (the Apple bundles, one Google link when every pass fits in one, and the week's calendar) and gives each session its own three buttons. Each session's Google link names one object, so it is always far inside Google's safe length; the top Google link appears only when the whole set fits, which replaces the multi-link split of task 48 on the page. Two new routes serve one Apple pass and one session's calendar by serial number, behind exactly the same checks as the bundle route, and the per hand-off read limit grows with the number of passes so every button works once.
+
+## Owner change: top or per session (30 October 2026, task 51)
+
+After seeing both on the local preview, the owner chose one place for the buttons, never both. With 8 sessions or fewer, the board shows only the top actions: one Apple bundle (at most 10 passes), one Google link (about 8 passes fit Google's safe length) and the week's calendar. With more than 8, it shows the buttons on each session, and the top keeps only the week's calendar file, so a long week can still go into a calendar in one import (owner, 30 October). Sessions carry no calendar button of their own: the week's file at the top already covers every session, so the per-session calendar route was removed (task 52). The threshold is the Google one, so the top always covers every pass. When the single Google link cannot be made for 8 or fewer, the Google buttons move to the sessions that have them, so no pass loses its Google button.
+
+## Measured Google save token lengths (29 and 30 October 2026)
+
+The length of a Save to Google Wallet token, signed with RS256 and naming each object by id and class, as measured for ADR-036:
+
+| Passes in one token | 29 October (TAM, dev ids) | 30 October (QA, production-length ids: 19-digit issuer id, UUID serials, 70-character service account email) |
+| ------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 1                   | 746                       | 733                                                                                                          |
+| 8                   | 1,782                     | 1,796                                                                                                        |
+| 9                   | 1,930                     | over 1,800 (split)                                                                                           |
+| 12                  | 2,374                     | over 1,800 (split)                                                                                           |
+
+Each extra pass adds about 130 to 150 characters. Google's stated safe length is 1,800, so 8 passes sit close to it: the service measures each signed token and does not rely on the count alone.

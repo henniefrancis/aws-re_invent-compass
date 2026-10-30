@@ -52,7 +52,6 @@ export const HandoffViewSchema: z.ZodType<Schemas['HandoffView']> = z.strictObje
       startsAt: dateTime,
       applePath: z.string().nullable(),
       googleSaveUrl: z.string().nullable(),
-      calendarPath: z.string().nullable(),
     }),
   ),
   apple: z.strictObject({ bundlePaths: z.array(z.string()) }),

@@ -38,12 +38,6 @@ const applePass = (fixture: ApiFixture, id: string, serial: string) =>
     resource: '/api/v1/handoffs/{handoffId}/apple/pass/{serialNumber}',
     path: { handoffId: id, serialNumber: serial },
   });
-const sessionCalendar = (fixture: ApiFixture, id: string, file: string) =>
-  fixture.call({
-    method: 'GET',
-    resource: '/api/v1/handoffs/{handoffId}/calendar/{serialNumber}',
-    path: { handoffId: id, serialNumber: file },
-  });
 const calendar = (fixture: ApiFixture, id: string) =>
   fixture.call({
     method: 'GET',
@@ -60,7 +54,6 @@ interface ViewBody {
     startsAt: string;
     applePath: string | null;
     googleSaveUrl: string | null;
-    calendarPath: string | null;
   }[];
   apple: { bundlePaths: string[] };
   google: { saveUrl: string } | null;
@@ -254,8 +247,15 @@ describe('Feature: pass-service, hand-off view and downloads', () => {
           );
           const appleIdx = activeIdx.filter((i) => specs[i]![1].includes('apple'));
           const expectedBundles = include.apple ? Math.ceil(appleIdx.length / 10) : 0;
+          // Eight sessions or fewer get the top actions only; more get the session actions only.
+          const top = activeIdx.length <= 8;
           expect(body.apple.bundlePaths).toEqual(
-            Array.from({ length: expectedBundles }, (_, i) => `/api/v1/handoffs/${id}/apple/${i}`),
+            top
+              ? Array.from(
+                  { length: expectedBundles },
+                  (_, i) => `/api/v1/handoffs/${id}/apple/${i}`,
+                )
+              : [],
           );
           const union: string[] = [];
           for (let i = 0; i < expectedBundles; i += 1) {
@@ -279,7 +279,7 @@ describe('Feature: pass-service, hand-off view and downloads', () => {
           );
           // The top link needs every pass that wants Google to have an object, in one link.
           const wanting = activeIdx.filter((i) => specs[i]![1].includes('google'));
-          const wantsGoogle = sendsGoogle && wanting.length > 0 && wanting.length <= 8;
+          const wantsGoogle = top && sendsGoogle && wanting.length > 0;
           if (wantsGoogle) {
             const first = serials[wanting[0]!];
             expect(body.google).toEqual({
@@ -296,17 +296,14 @@ describe('Feature: pass-service, hand-off view and downloads', () => {
             const session = body.sessions[n]!;
             const serial = serials[i]!;
             expect(session.applePath).toBe(
-              include.apple && specs[i]![1].includes('apple')
+              !top && include.apple && specs[i]![1].includes('apple')
                 ? `/api/v1/handoffs/${id}/apple/pass/${serial}`
                 : null,
             );
             expect(session.googleSaveUrl).toBe(
-              withObject.includes(i) && sendsGoogle
+              !wantsGoogle && withObject.includes(i) && sendsGoogle
                 ? `https://pay.google.com/gp/v/save/fake-0-1-${serial}`
                 : null,
-            );
-            expect(session.calendarPath).toBe(
-              include.calendar ? `/api/v1/handoffs/${id}/calendar/${serial}.ics` : null,
             );
           }
         },
@@ -364,10 +361,10 @@ describe('Feature: pass-service, hand-off view and downloads', () => {
     expect((await bundle(fixture, id, '0')).result.statusCode).toBe(404);
   });
 
-  test('reads are capped at 30 plus 3 for every pass in the hand-off, then the same 404', async () => {
+  test('reads are capped at 30 plus 2 for every pass in the hand-off, then the same 404', async () => {
     const fixture = createApiFixture();
     const id = await createOk(fixture, await seed(fixture, 1));
-    for (let i = 0; i < 33; i += 1) {
+    for (let i = 0; i < 32; i += 1) {
       expect((await view(fixture, id)).result.statusCode).toBe(200);
     }
     expect((await view(fixture, id)).result.statusCode).toBe(404);
@@ -534,32 +531,36 @@ describe('Feature: pass-service, hand-off calendar', () => {
 describe('Feature: pass-service, Google links for each session and for all (tasks 48 and 50)', () => {
   const GOOGLE_ONLY = { apple: false, google: true, calendar: false };
 
-  test('1, 8, 9 and 12 passes: every session has its own link, the top link only when all fit in one', async () => {
-    for (const [count, perLink, top] of [
-      [1, 8, true],
-      [8, 8, true],
-      [9, 8, false],
-      [12, 8, false],
+  test('1 and 8 passes get only the top link; 9 and 12 get a link on every session and no top link', async () => {
+    for (const [count, top] of [
+      [1, true],
+      [8, true],
+      [9, false],
+      [12, false],
     ] as const) {
       const fixture = createApiFixture();
-      fixture.google.perLink = perLink;
       const serials = await seed(fixture, count, () => ({
         platforms: ['apple', 'google'],
         googleState: 'active',
       }));
       const id = await createOk(fixture, serials, GOOGLE_ONLY);
       const body = (await view(fixture, id)).json as ViewBody;
-      expect(body.sessions.map((s) => s.googleSaveUrl)).toEqual(
-        serials.map((serial) => `https://pay.google.com/gp/v/save/fake-0-1-${serial}`),
-      );
-      expect(body.google).toEqual(
-        top ? { saveUrl: `https://pay.google.com/gp/v/save/fake-0-${count}-${serials[0]}` } : null,
-      );
-      // Each session is signed alone; the whole set is measured once more when there are two or more.
       const calls = fixture.google.saveUrls.map((c) => c.objects.length);
-      expect(calls).toEqual(
-        count === 1 ? [1] : [...serials.map(() => 1), ...(count <= 8 ? [count] : [])],
-      );
+      if (top) {
+        expect(body.google).toEqual({
+          saveUrl: `https://pay.google.com/gp/v/save/fake-0-${count}-${serials[0]}`,
+        });
+        expect(body.sessions.every((s) => s.googleSaveUrl === null)).toBe(true);
+        // Only the one token for the whole set is signed.
+        expect(calls).toEqual([count]);
+      } else {
+        expect(body.google).toBeNull();
+        expect(body.sessions.map((s) => s.googleSaveUrl)).toEqual(
+          serials.map((serial) => `https://pay.google.com/gp/v/save/fake-0-1-${serial}`),
+        );
+        // The all-in-one token is never signed above 8 sessions.
+        expect(calls).toEqual(serials.map(() => 1));
+      }
       expect(lastLog(fixture.capture).GoogleSaveJwtOversize ?? 0).toBe(0);
     }
   });
@@ -581,13 +582,13 @@ describe('Feature: pass-service, Google links for each session and for all (task
   test('GoogleSaveJwtOversize counts every session link that is still over', async () => {
     const fixture = createApiFixture();
     fixture.google.oversize = true;
-    const serials = await seed(fixture, 3, () => ({
+    const serials = await seed(fixture, 9, () => ({
       platforms: ['google'],
       googleState: 'active',
     }));
     const id = await createOk(fixture, serials, GOOGLE_ONLY);
     await view(fixture, id);
-    expect(lastLog(fixture.capture).GoogleSaveJwtOversize).toBe(3);
+    expect(lastLog(fixture.capture).GoogleSaveJwtOversize).toBe(9);
   });
 
   test('a session whose Google insert failed has no link of its own, the others do', async () => {
@@ -605,19 +606,20 @@ describe('Feature: pass-service, Google links for each session and for all (task
   });
 });
 
-describe('Feature: pass-service, one Apple pass and one calendar for each session (task 50)', () => {
+describe('Feature: pass-service, one Apple pass for each session (tasks 50 and 52)', () => {
   test('the view names the routes of each session and they download that session alone', async () => {
     const fixture = createApiFixture();
-    const serials = await seed(fixture, 3, () => ({ platforms: ['apple'] }));
+    const serials = await seed(fixture, 9, () => ({ platforms: ['apple'] }));
     const id = await createOk(fixture, serials);
     const body = (await view(fixture, id)).json as ViewBody;
+    // More than eight sessions: no Apple bundle at the top, the week calendar stays.
+    expect(body.apple.bundlePaths).toEqual([]);
+    expect(body.calendarPath).toBe(`/api/v1/handoffs/${id}/calendar.ics`);
     expect(body.sessions.map((s) => s.applePath)).toEqual(
       serials.map((serial) => `/api/v1/handoffs/${id}/apple/pass/${serial}`),
     );
-    expect(body.sessions.map((s) => s.calendarPath)).toEqual(
-      serials.map((serial) => `/api/v1/handoffs/${id}/calendar/${serial}.ics`),
-    );
-    expect(body.sessions.map((s) => s.googleSaveUrl)).toEqual([null, null, null]);
+    expect(body.sessions.every((s) => !('calendarPath' in s))).toBe(true);
+    expect(body.sessions.every((s) => s.googleSaveUrl === null)).toBe(true);
     const pass = await applePass(fixture, id, serials[1]!);
     expect(pass.result.statusCode).toBe(200);
     expect(pass.result.headers['content-type']).toBe('application/vnd.apple.pkpass');
@@ -628,23 +630,11 @@ describe('Feature: pass-service, one Apple pass and one calendar for each sessio
     expect(JSON.parse(Buffer.from(pass.result.body, 'base64').toString())).toMatchObject({
       serial: serials[1],
     });
-    const ics = await sessionCalendar(fixture, id, `${serials[2]}.ics`);
-    expect(ics.result.statusCode).toBe(200);
-    expect(ics.result.headers['content-type']).toBe('text/calendar');
-    expect(ics.result.headers['content-disposition']).toBe(
-      'attachment; filename="reinvent-session.ics"',
-    );
-    const parsed = new ICAL.Component(
-      ICAL.parse(Buffer.from(ics.result.body, 'base64').toString()) as never,
-    );
-    const events = parsed.getAllSubcomponents('vevent');
-    expect(events).toHaveLength(1);
-    expect(events[0]!.getFirstPropertyValue('summary')).toBe('SSS102 Talk 2');
   });
 
   test('a pass that is Apple only has no Google link and a pass without Apple has no pass route', async () => {
     const fixture = createApiFixture();
-    const serials = await seed(fixture, 2, (i) => ({
+    const serials = await seed(fixture, 9, (i) => ({
       platforms: i === 0 ? ['apple'] : ['google'],
       googleState: i === 0 ? 'none' : 'active',
     }));
@@ -669,9 +659,7 @@ describe('Feature: pass-service, one Apple pass and one calendar for each sessio
     expect(unknown.result.statusCode).toBe(404);
     for (const serial of [foreign, serialOf(99), serials[1]!, '', 'x; DROP TABLE']) {
       const a = await applePass(fixture, id, serial);
-      const c = await sessionCalendar(fixture, id, `${serial}.ics`);
       expect(a.result.statusCode).toBe(404);
-      expect(c.result.statusCode).toBe(404);
       expect(a.result.body).toBe(unknown.result.body);
       expect(a.json).toEqual({
         type: 'about:blank',
@@ -679,28 +667,12 @@ describe('Feature: pass-service, one Apple pass and one calendar for each sessio
         status: 404,
         code: 'not_found',
       });
-      expect(c.json).toEqual(a.json);
-    }
-    // The calendar file name must end in .ics.
-    for (const file of [serials[0]!, `${serials[0]}.ICS`, `${serials[0]}.ics.`, '']) {
-      expect((await sessionCalendar(fixture, id, file)).result.statusCode).toBe(404);
     }
     const noParams = await fixture.call({
       method: 'GET',
       resource: '/api/v1/handoffs/{handoffId}/apple/pass/{serialNumber}',
     });
     expect(noParams.result.statusCode).toBe(404);
-    const noParamsCal = await fixture.call({
-      method: 'GET',
-      resource: '/api/v1/handoffs/{handoffId}/calendar/{serialNumber}',
-    });
-    expect(noParamsCal.result.statusCode).toBe(404);
-    const noIdCal = await fixture.call({
-      method: 'GET',
-      resource: '/api/v1/handoffs/{handoffId}/calendar/{serialNumber}',
-      path: { serialNumber: `${serials[0]}.ics` },
-    });
-    expect(noIdCal.result.statusCode).toBe(404);
     const noIdPass = await fixture.call({
       method: 'GET',
       resource: '/api/v1/handoffs/{handoffId}/apple/pass/{serialNumber}',
@@ -719,41 +691,26 @@ describe('Feature: pass-service, one Apple pass and one calendar for each sessio
       google: true,
       calendar: true,
     });
-    const noCalendar = await createOk(fixture, serials, {
-      apple: true,
-      google: false,
-      calendar: false,
-    });
     const live = await createOk(fixture, serials);
     expect((await applePass(fixture, noApple, serials[0]!)).result.statusCode).toBe(404);
-    expect(
-      (await sessionCalendar(fixture, noCalendar, `${serials[0]}.ics`)).result.statusCode,
-    ).toBe(404);
     const withoutApple = (await view(fixture, noApple)).json as ViewBody;
     expect(withoutApple.sessions[0]!.applePath).toBeNull();
-    const withoutCalendar = (await view(fixture, noCalendar)).json as ViewBody;
-    expect(withoutCalendar.sessions[0]!.calendarPath).toBeNull();
     expect(
       (await applePass(fixture, 'BBBBBBBBBBBBBBBBBBBBBB', serials[0]!)).result.statusCode,
     ).toBe(404);
     fixture.clock.advance(16 * MINUTE);
     expect((await applePass(fixture, live, serials[0]!)).result.statusCode).toBe(404);
-    expect((await sessionCalendar(fixture, live, `${serials[0]}.ics`)).result.statusCode).toBe(404);
   });
 
-  test('with the calendar switched off the session file and the session path go away', async () => {
+  test('with the calendar switched off the week calendar path goes away', async () => {
     const fixture = createApiFixture({ env: { HANDOFF_CALENDAR_ENABLED: 'false' } });
     const serials = await seed(fixture, 1);
     const id = await createOk(fixture, serials);
-    const body = (await view(fixture, id)).json as ViewBody;
-    expect(body.calendarPath).toBeNull();
-    expect(body.sessions[0]!.calendarPath).toBeNull();
-    const reply = await sessionCalendar(fixture, id, `${serials[0]}.ics`);
-    expect(reply.result.statusCode).toBe(404);
-    expect(reply.json).toMatchObject({ code: 'not_enabled' });
+    expect(((await view(fixture, id)).json as ViewBody).calendarPath).toBeNull();
+    expect((await calendar(fixture, id)).json).toMatchObject({ code: 'not_enabled' });
   });
 
-  test('every route draws on the same read limit, 30 plus 3 for every pass', async () => {
+  test('every route draws on the same read limit, 30 plus 2 for every pass', async () => {
     const fixture = createApiFixture();
     const serials = await seed(fixture, 2, () => ({ platforms: ['apple'] }));
     const id = await createOk(fixture, serials);
@@ -763,10 +720,8 @@ describe('Feature: pass-service, one Apple pass and one calendar for each sessio
       () => calendar(fixture, id),
       () => applePass(fixture, id, serials[0]!),
       () => applePass(fixture, id, serials[1]!),
-      () => sessionCalendar(fixture, id, `${serials[0]}.ics`),
-      () => sessionCalendar(fixture, id, `${serials[1]}.ics`),
     ];
-    for (let i = 0; i < 36; i += 1) {
+    for (let i = 0; i < 34; i += 1) {
       expect((await calls[i % calls.length]!()).result.statusCode).toBe(200);
     }
     for (const call of calls) {
@@ -1029,9 +984,36 @@ describe('Feature: pass-service, review fixes of task 50.6', () => {
     }));
     const id = await createOk(fixture, serials, GOOGLE_ONLY);
     const body = (await view(fixture, id)).json as ViewBody;
-    expect(fixture.google.saveUrls.map((c) => c.objects.length)).toEqual([1, 1, 1, 3]);
+    expect(fixture.google.saveUrls.map((c) => c.objects.length)).toEqual([3, 1, 1, 1]);
     expect(body.google).toBeNull();
     expect(body.sessions.every((s) => s.googleSaveUrl !== null)).toBe(true);
+  });
+
+  test('an oversize top token that split is not counted on top of the per-session ones', async () => {
+    const fixture = createApiFixture();
+    fixture.google.perLink = 2;
+    fixture.google.oversize = true;
+    const serials = await seed(fixture, 3, () => ({
+      platforms: ['google'],
+      googleState: 'active',
+    }));
+    const id = await createOk(fixture, serials, GOOGLE_ONLY);
+    await view(fixture, id);
+    // Three session tokens are oversize; the split top token adds nothing.
+    expect(lastLog(fixture.capture).GoogleSaveJwtOversize).toBe(3);
+  });
+
+  test('an oversize top token that is given is counted once', async () => {
+    const fixture = createApiFixture();
+    fixture.google.oversize = true;
+    const serials = await seed(fixture, 2, () => ({
+      platforms: ['google'],
+      googleState: 'active',
+    }));
+    const id = await createOk(fixture, serials, GOOGLE_ONLY);
+    const body = (await view(fixture, id)).json as ViewBody;
+    expect(body.google).not.toBeNull();
+    expect(lastLog(fixture.capture).GoogleSaveJwtOversize).toBe(1);
   });
 
   test('a pass that does not want Google does not hold back the top link', async () => {
@@ -1047,7 +1029,7 @@ describe('Feature: pass-service, review fixes of task 50.6', () => {
     });
   });
 
-  test('above 8 Google passes the all-in-one token is not signed at all', async () => {
+  test('above 8 sessions the all-in-one token is not signed at all; at 8 only it is signed', async () => {
     for (const [count, whole] of [
       [8, true],
       [9, false],
@@ -1061,11 +1043,9 @@ describe('Feature: pass-service, review fixes of task 50.6', () => {
       const id = await createOk(fixture, serials, GOOGLE_ONLY);
       const body = (await view(fixture, id)).json as ViewBody;
       const sizes = fixture.google.saveUrls.map((c) => c.objects.length);
-      expect(sizes.filter((n) => n === 1)).toHaveLength(count);
-      expect(sizes.includes(count)).toBe(whole);
-      expect(sizes.some((n) => n > 1 && n !== count)).toBe(false);
+      expect(sizes).toEqual(whole ? [count] : serials.map(() => 1));
       expect(body.google !== null).toBe(whole);
-      expect(body.sessions.every((s) => s.googleSaveUrl !== null)).toBe(true);
+      expect(body.sessions.every((s) => s.googleSaveUrl !== null)).toBe(!whole);
     }
   });
 });

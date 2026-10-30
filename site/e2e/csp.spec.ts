@@ -78,7 +78,7 @@ test.describe('under the Required_CSP', () => {
     const violations = await watchCsp(page);
     const record = watch(page);
     for (const [name, heading] of [
-      ['ready-three-bundles', 'Your boarding passes are ready'],
+      ['ready-many-sessions', 'Your boarding passes are ready'],
       ['not-found', 'This link has expired'],
       ['rate-limited', 'Too many tries'],
       ['server-error', 'We could not load your passes'],

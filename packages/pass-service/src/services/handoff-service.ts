@@ -21,8 +21,13 @@ import { passTemplateInput } from './pass-template-input.js';
 /** A failed Google insert is not tried again by a view for this long (per pass). */
 export const GOOGLE_RETRY_COOLDOWN_MS = 60_000;
 
-/** More passes than this never fit one save link (measured: 8 fit, 9 do not). */
-export const MAX_TOP_LINK_PASSES = 8;
+/**
+ * The most sessions for which the board shows the top actions (one Apple bundle, one Google
+ * link, the week's calendar). It is the number of passes that fit one Google save link
+ * (measured: 8 fit, 9 do not), so the top always covers every pass. With more sessions the
+ * board shows the buttons of each session and, at the top, only the week's calendar.
+ */
+export const TOP_ACTIONS_MAX_SESSIONS = 8;
 
 export const VIEW_INSERT_BUDGET_MS = 5_000;
 
@@ -42,8 +47,6 @@ export interface HandoffView {
     applePath: string | null;
     /** A save link for this session alone, when its Google object is active. */
     googleSaveUrl: string | null;
-    /** This session's own calendar route, when the hand-off includes the calendar. */
-    calendarPath: string | null;
   }[];
   apple: { bundlePaths: string[] };
   /** One link for every pass, present only when they all fit within SAFE_JWT_LENGTH. */
@@ -61,7 +64,6 @@ export interface HandoffService {
   appleBundle(handoffId: string, index: number, op: OpContext): Promise<Uint8Array>;
   applePass(handoffId: string, serialNumber: string, op: OpContext): Promise<Uint8Array>;
   calendar(handoffId: string, op: OpContext): Promise<string>;
-  sessionCalendar(handoffId: string, serialNumber: string, op: OpContext): Promise<string>;
 }
 
 interface Resolved {
@@ -157,9 +159,12 @@ export function createHandoffService(deps: HandoffDeps): HandoffService {
 
     async view(handoffId, op) {
       const { handoff, active } = await resolve(handoffId, op);
-      const bundlePaths = handoff.include.apple
-        ? appleChunks(active).map((_, i) => `/api/v1/handoffs/${handoffId}/apple/${i}`)
-        : [];
+      // Top actions or session actions, never both (task 51).
+      const top = active.length <= TOP_ACTIONS_MAX_SESSIONS;
+      const bundlePaths =
+        top && handoff.include.apple
+          ? appleChunks(active).map((_, i) => `/api/v1/handoffs/${handoffId}/apple/${i}`)
+          : [];
       const wantsGoogle = handoff.include.google && config.google.enabled;
       // A pass whose insert failed or ran out of the budget is tried once more. Failures are
       // counted by the inserter and never stop the view. The retry is capped well inside the
@@ -194,35 +199,37 @@ export function createHandoffService(deps: HandoffDeps): HandoffService {
             id: googleObjectId(secret.issuerId, rec.serialNumber),
             classId,
           });
-          // One save link for each session: one object per token, far inside the safe length.
-          const own = await Promise.all(
-            withObject.map((rec) => deps.google.saveLinks([objectOf(rec)], nowSeconds)),
-          );
-          const single = own.map((links) => links[0] as { url: string; oversize: boolean });
-          withObject.forEach((rec, i) =>
-            googleUrls.set(rec.serialNumber, (single[i] as { url: string }).url),
-          );
-          op.metrics.add('GoogleSaveJwtOversize', single.filter((link) => link.oversize).length);
-          // The top link is given only when every pass that wants Google has an object and
-          // they all fit in one link. Above MAX_TOP_LINK_PASSES they cannot (about 9 passes
-          // reach the safe length), so the all-in-one token is not even signed.
+          const objects = new Set(withObject.map((rec) => rec.serialNumber));
           const wanting = active.filter((rec) => rec.platforms.includes('google'));
-          if (
-            wanting.length > 0 &&
-            wanting.length <= MAX_TOP_LINK_PASSES &&
-            wanting.every((rec) => googleUrls.has(rec.serialNumber))
-          ) {
-            const all =
-              wanting.length === 1
-                ? [{ url: googleUrls.get((wanting[0] as PassRecord).serialNumber) as string }]
-                : await deps.google.saveLinks(wanting.map(objectOf), nowSeconds);
+          if (top && wanting.length > 0 && wanting.every((rec) => objects.has(rec.serialNumber))) {
+            // One link for every pass, only when they all fit in one.
+            const all = await deps.google.saveLinks(wanting.map(objectOf), nowSeconds);
             google = all.length === 1 ? { saveUrl: (all[0] as { url: string }).url } : null;
+            // The top token is counted only when it is the one given; when it split, the
+            // per-session tokens below are counted instead, so no oversize link counts twice.
+            if (google !== null) {
+              op.metrics.add('GoogleSaveJwtOversize', all.filter((link) => link.oversize).length);
+            }
+          }
+          if (google === null) {
+            // No top link (more sessions than fit, or it cannot be made): one save link for
+            // each session that has an object, one object per token.
+            const own = await Promise.all(
+              withObject.map((rec) => deps.google.saveLinks([objectOf(rec)], nowSeconds)),
+            );
+            const single = own.map((links) => links[0] as { url: string; oversize: boolean });
+            withObject.forEach((rec, i) =>
+              googleUrls.set(rec.serialNumber, (single[i] as { url: string }).url),
+            );
+            op.metrics.add('GoogleSaveJwtOversize', single.filter((link) => link.oversize).length);
           }
         } catch {
           googleUrls.clear();
+          google = null;
           op.metrics.add('GoogleWalletFailure', 1);
         }
       }
+      const calendar = handoff.include.calendar && config.handoffCalendarEnabled;
       return {
         expiresAt: new Date(handoff.expiresAtMs).toISOString(),
         sessions: active.map((rec) => ({
@@ -231,21 +238,14 @@ export function createHandoffService(deps: HandoffDeps): HandoffService {
           title: rec.fields.title,
           startsAt: rec.fields.startsAt,
           applePath:
-            handoff.include.apple && rec.platforms.includes('apple')
+            !top && handoff.include.apple && rec.platforms.includes('apple')
               ? `/api/v1/handoffs/${handoffId}/apple/pass/${rec.serialNumber}`
               : null,
           googleSaveUrl: googleUrls.get(rec.serialNumber) ?? null,
-          calendarPath:
-            handoff.include.calendar && config.handoffCalendarEnabled
-              ? `/api/v1/handoffs/${handoffId}/calendar/${rec.serialNumber}.ics`
-              : null,
         })),
         apple: { bundlePaths },
         google,
-        calendarPath:
-          handoff.include.calendar && config.handoffCalendarEnabled
-            ? `/api/v1/handoffs/${handoffId}/calendar.ics`
-            : null,
+        calendarPath: calendar ? `/api/v1/handoffs/${handoffId}/calendar.ics` : null,
       };
     },
 
@@ -294,22 +294,6 @@ export function createHandoffService(deps: HandoffDeps): HandoffService {
       }
       return buildCalendar(
         active.map((rec) => ({ serialNumber: rec.serialNumber, fields: rec.fields })),
-        config.eventWindow.timezone,
-        op.now,
-      );
-    },
-
-    async sessionCalendar(handoffId, serialNumber, op) {
-      const { handoff, active } = await resolve(handoffId, op);
-      if (!config.handoffCalendarEnabled) {
-        throw new ProblemError(404, 'not_enabled');
-      }
-      const rec = handoff.include.calendar ? ownPass(active, serialNumber) : undefined;
-      if (rec === undefined) {
-        throw notFound();
-      }
-      return buildCalendar(
-        [{ serialNumber: rec.serialNumber, fields: rec.fields }],
         config.eventWindow.timezone,
         op.now,
       );

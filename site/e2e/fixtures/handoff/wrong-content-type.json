@@ -10,8 +10,7 @@
         "title": "Serverless APIs: Hands on workshop",
         "startsAt": "2026-11-30T08:30:00-08:00",
         "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000001",
-        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-1.made-up-signature",
-        "calendarPath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/calendar/00000000-0000-4000-8000-000000000001.ics"
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-1.made-up-signature"
       },
       {
         "serialNumber": "00000000-0000-4000-8000-000000000002",
@@ -19,8 +18,7 @@
         "title": "Edge delivery: From zero to production",
         "startsAt": "2026-11-30T10:00:00-08:00",
         "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000002",
-        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-2.made-up-signature",
-        "calendarPath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/calendar/00000000-0000-4000-8000-000000000002.ics"
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-2.made-up-signature"
       },
       {
         "serialNumber": "00000000-0000-4000-8000-000000000003",
@@ -28,8 +26,7 @@
         "title": "Edge delivery: Patterns and practice",
         "startsAt": "2026-11-30T10:00:00-08:00",
         "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000003",
-        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-3.made-up-signature",
-        "calendarPath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/calendar/00000000-0000-4000-8000-000000000003.ics"
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-3.made-up-signature"
       },
       {
         "serialNumber": "00000000-0000-4000-8000-000000000004",
@@ -37,8 +34,7 @@
         "title": "Data lakes: Deep dive",
         "startsAt": "2026-11-30T10:00:00-08:00",
         "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000004",
-        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-4.made-up-signature",
-        "calendarPath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/calendar/00000000-0000-4000-8000-000000000004.ics"
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-4.made-up-signature"
       }
     ],
     "apple": {

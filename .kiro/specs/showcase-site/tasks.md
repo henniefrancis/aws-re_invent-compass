@@ -460,6 +460,21 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 36.2 The board page keeps the top actions and adds, under each session, the Apple, Google and calendar buttons that session has, with accessible names that name the session (for example "Add ANT398 to Apple Wallet"), 44 by 44 pixel targets and reflow at 320 pixels
   - [x] 36.3 Unit tests, e2e fixtures and e2e tests (a11y, CSP, forced colours, layout); full gate and the e2e suite; the owner reviews the page on the local preview before any push; commit scoped `showcase-site`
 
+- [x] 37. Board page shows the wallet of the attendee's phone (owner idea of 30 October)
+  - [x] 37.1 When the board page loads, read the browser's own identity on the device (`navigator.userAgentData` where present, else `navigator.userAgent`); nothing is sent anywhere. An iPhone shows only the Apple Wallet buttons; an Android phone shows only the Google Wallet buttons; any other device (a computer, an iPad, or anything not clearly one of the two) shows both, as today. Calendar buttons always show. When the phone's own wallet has no button in this view, the page shows both wallets (QA review of 30 October)
+  - [x] 37.2 No control to show the other wallet (owner decision of 30 October, after review): the phone sees only its own wallet; the device line joins the lead line on a phone, for example "Choose how to add your passes. Showing Apple Wallet for your iPhone."
+  - [x] 37.3 The rule applies to the top buttons and to every session's buttons, together with the top or per-session rule of pass-service task 51; the device help line reads well in each case
+  - [x] 37.4 Unit tests for the detection with real user agent strings (iPhone Safari, iPhone Chrome, Android Chrome, Samsung Internet, iPadOS Safari that reports a Mac, desktop Chrome, Firefox and Safari), e2e on the existing device profiles; owner review on the local preview; full gate and e2e; commit scoped `showcase-site`
+
+- [x] 38. Board page type on a phone (owner request of 30 October)
+  - [x] 38.1 Below 48rem the board state heading scales with the screen so "Your boarding passes are ready" fits one line at 375 pixels, and the board text is 0.9375rem; owner review on the local preview; full gate and e2e (layout, reflow at 320 pixels); commit scoped `showcase-site`
+
+- [x] 39. Board page polish from the owner's review of 30 October
+  - [x] 39.1 The board state heading and the "Your sessions" heading use the logo's "re:Invent" gradient (left to right `#ff9d00` to `#ab28b0`), with plain system text in forced colours mode
+  - [x] 39.2 Each session card shows its time in the top left corner, written like "Mon, 30 Nov 2026, 10:00 AM", and its session code in the top right corner, both at 0.75rem close to the edges, with the title below across the full width at the same 0.5rem side margins, the wallet button centred and 0.375rem under it; the small code uses the gradient with a lighter purple end (`#cc55d0`, 4.75:1 on the card) so it meets 4.5:1; the card stays readable at 320 pixels
+  - [x] 39.3 No calendar button on a session: the week's calendar file at the top covers every session (pass-service task 52)
+  - [x] 39.4 Owner review on the local preview; full gate and e2e; commit scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

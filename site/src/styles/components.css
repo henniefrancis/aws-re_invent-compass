@@ -433,6 +433,31 @@ a.site-nav__link:hover {
   text-align: center;
 }
 
+/* The logo's orange to purple gradient, for the headings and the session codes. On the dark
+   page (#0c0d26) the ends measure 9.15:1 and 3.33:1, and on a session card (#15173a) 8.29:1
+   and 3.01:1: both pass 3:1, the AA minimum for large text, which the headings are. The small
+   session codes use a lighter purple end instead (see the session card). */
+.gradient-text {
+  background: linear-gradient(90deg, #ff9d00, #ab28b0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* On a phone the state heading fits one line and the text is a little smaller (task 38). The
+   heading scales with the screen: 21 px fits "Your boarding passes are ready" at 375 px wide,
+   and 5.2vw leaves room for the wider system fonts. */
+@media (max-width: 47.99rem) {
+  .board-panel {
+    font-size: 0.9375rem;
+  }
+
+  .board-panel > h1 {
+    font-size: max(1.1667rem, calc(5.2vw + 2px));
+  }
+}
+
 .board-note {
   color: var(--color-ink-muted);
 }
@@ -451,7 +476,7 @@ a.site-nav__link:hover {
 
 /* The official Apple and Google badges and the owner's calendar button (task 29). The badges
    are shown as supplied, never redrawn or recoloured, at one height. */
-/* The wallet badges sit side by side and the calendar button gets its own row below (task 30). */
+/* The badges sit side by side in one centred row that wraps when it must. */
 .board-actions {
   display: flex;
   flex-wrap: wrap;
@@ -468,10 +493,6 @@ a.site-nav__link:hover {
 
 .board-actions li + li {
   margin-block-start: 0;
-}
-
-.board-action--calendar {
-  flex-basis: 100%;
 }
 
 .wallet-badge {
@@ -498,6 +519,7 @@ a.site-nav__link:hover {
 .board-session-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-2) var(--space-3);
   margin: var(--space-2) 0 0;
   padding: 0;
@@ -513,19 +535,79 @@ a.site-nav__link:hover {
   background: none;
 }
 
-.wallet-badge--row .wallet-badge__image {
-  block-size: 2.75rem;
-  max-inline-size: 100%;
+/* A session's Apple and Google badges stay on one row (owner review of 30 October): each takes
+   an equal share of the card up to its normal size (9rem wide, about 2.75rem tall) and shrinks
+   on a narrow phone. The link keeps its 44 pixel target even when the image is smaller. */
+.board-session-actions {
+  flex-wrap: nowrap;
+  gap: var(--space-2);
 }
 
-.board-sessions li {
-  padding: var(--space-3);
+.board-sessions .board-session-actions li {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  max-inline-size: 9rem;
+}
+
+.wallet-badge--row {
+  inline-size: 100%;
+}
+
+.wallet-badge--row .wallet-badge__image {
+  inline-size: 100%;
+  block-size: auto;
+}
+
+/* A session card (task 39): the time in the top left corner and the code in the top right, both
+   small and close to the edges, with the title below. The code comes first in the page order
+   so a screen reader reads it with the title. The small code uses a lighter purple end
+   (#cc55d0, 4.75:1 on the card) so it meets the 4.5:1 contrast for normal size text. */
+.board-session {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'time code'
+    'title title';
+  gap: 0.25rem 0.5rem;
+  padding-block-start: 0.375rem;
+}
+
+.board-session__code,
+.board-session__time {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.board-session__code {
+  grid-area: code;
+  justify-self: end;
+  text-align: end;
+  max-inline-size: 100%;
+  font-weight: 700;
+  background-image: linear-gradient(90deg, #ff9d00, #cc55d0);
+}
+
+.board-session__time {
+  grid-area: time;
+  color: var(--color-ink-muted);
+}
+
+.board-session__title {
+  grid-area: title;
+}
+
+/* The card's side margins match the corner text (0.5rem), and the space under the buttons
+   matches the space above the time (0.375rem), owner review of 30 October. */
+.board-sessions > li {
+  padding: 0 0.5rem 0.375rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
 
 .visually-hidden {
+  position: absolute;
   border: 0;
   clip-path: inset(50%);
   block-size: 1px;

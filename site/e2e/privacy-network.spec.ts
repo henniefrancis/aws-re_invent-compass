@@ -57,7 +57,7 @@ test.describe('the site collects nothing and talks only to itself', () => {
     baseURL,
   }) => {
     const record = watch(page);
-    await mockHandoff(page, 'ready-three-bundles');
+    await mockHandoff(page, 'ready-many-sessions');
     await openBoard(page);
     await expect(page.locator('h1')).toHaveText('Your boarding passes are ready');
     expectSameOrigin(record, baseURL);

@@ -286,20 +286,6 @@ const scenarios: Record<string, Record<number, Scenario>> = {
         path: { handoffId: w.handoffId, serialNumber: UNKNOWN_SERIAL },
       }),
   },
-  getHandoffSessionCalendar: {
-    200: (w) =>
-      api(w, {
-        method: 'GET',
-        resource: '/api/v1/handoffs/{handoffId}/calendar/{serialNumber}',
-        path: { handoffId: w.handoffId, serialNumber: `${w.serial}.ics` },
-      }),
-    404: (w) =>
-      api(w, {
-        method: 'GET',
-        resource: '/api/v1/handoffs/{handoffId}/calendar/{serialNumber}',
-        path: { handoffId: w.handoffId, serialNumber: `${UNKNOWN_SERIAL}.ics` },
-      }),
-  },
   getHandoffCalendar: {
     200: (w) =>
       api(w, {
@@ -464,11 +450,11 @@ describe('Feature: pass-service, contract conformance', () => {
   test('the two routers serve exactly the contract methods and paths', () => {
     const contractKeys = operations.map((op) => `${op.method.toUpperCase()} ${op.path}`).sort();
     expect([...API_ROUTE_KEYS, ...PASSKIT_ROUTE_KEYS].sort()).toEqual(contractKeys);
-    expect(contractKeys).toHaveLength(17);
+    expect(contractKeys).toHaveLength(16);
     expect(API_ROUTE_KEYS.every((key) => !key.includes('/api/passkit/'))).toBe(true);
     expect(PASSKIT_ROUTE_KEYS.every((key) => key.includes('/api/passkit/'))).toBe(true);
     expect(PASSKIT_ROUTE_KEYS).toHaveLength(5);
-    expect(API_ROUTE_KEYS).toHaveLength(12);
+    expect(API_ROUTE_KEYS).toHaveLength(11);
   });
 
   test.each(operations.map((op) => [op.operationId, op] as const))(

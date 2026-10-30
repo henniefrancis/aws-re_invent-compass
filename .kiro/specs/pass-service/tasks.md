@@ -639,6 +639,15 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 50.6 Review fixes (security M1 and L1, QA Low-1, Low-2 and Info-1 of 30 October): mark a Google object active only while the pass is still active (a conditional write); when the pass was voided meanwhile, patch the object INACTIVE and do not report it as added; a failed insert is not retried on a view for 60 seconds; the top Google link is given only when every Google pass in the hand-off has its object and they fit one link, and is not attempted above 8 passes; every per-session button's accessible name starts with its visible text (for example "Add to Apple Wallet: ANT398")
   - [x] 50.5 Tests: routes (happy path, foreign serial, inactive pass, expired hand-off, platform not included, limit), view shape for 1, 8, 9 and 12 passes, Google top link present at 8 and absent when it would not fit, response schema tests; full gate; commit scoped `pass-service`
 
+- [x] 51. Top buttons or session buttons, never both (owner decision of 30 October, design "Owner change: top or per session")
+  - [x] 51.1 A hand-off of 8 sessions or fewer gets only the top actions: the Apple bundle, one Google link and the week's calendar, and every session's `applePath`, `googleSaveUrl` and `calendarPath` is null. When the one Google link cannot be made (a pass has no Google object, or the passes do not fit one link), the top `google` is null and the sessions that have a Google object get their own `googleSaveUrl` instead
+  - [x] 51.2 A hand-off of more than 8 sessions gets per-session actions: `apple.bundlePaths` is empty and the top `google` is null, and every session has the paths and link it qualifies for. The week's calendar file stays at the top in both cases (owner, 30 October), so the top `calendarPath` is kept. The bundle route stays
+  - [x] 51.3 One named threshold (8, the passes that fit one Google save link) replaces `MAX_TOP_LINK_PASSES`; update the site e2e fixtures so the 4 session hand-off has only top actions and the 24 session one only session actions; owner review on the local preview, then the full gate and e2e; commit scoped `pass-service`
+
+- [x] 52. Drop the per-session calendar (owner decision of 30 October, design "Owner change: top or per session")
+  - [x] 52.1 Remove `calendarPath` from each session in the hand-off view (contract source, generated copies, schemas, the API Gateway OpenAPI), the route `GET /api/v1/handoffs/{handoffId}/calendar/{serialNumber}.ics`, its handler, the harness route and their tests; the week calendar route stays
+  - [x] 52.2 The per hand-off read limit becomes 30 plus 2 for every pass (one Apple pass and one view of the page per pass, with room to spare); full gate; commit scoped `pass-service`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.

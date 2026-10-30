@@ -1,5 +1,5 @@
 <section class="board-panel stack" [attr.aria-busy]="vm().busy">
-  <h1 #stateHeading tabindex="-1">{{ vm().heading }}</h1>
+  <h1 #stateHeading tabindex="-1" class="gradient-text">{{ vm().heading }}</h1>
   <p>{{ vm().message }}</p>
   @if (!scriptRuns()) {
     <p class="board-note">This page needs JavaScript to open your hand-off link.</p>
@@ -56,15 +56,20 @@
   }
 
   @if (vm().sessions.length > 0) {
-    <h2>Your sessions</h2>
+    <h2 class="gradient-text">Your sessions</h2>
     @if (vm().timezoneNote !== null) {
       <p>{{ vm().timezoneNote }}</p>
     }
     <ul class="board-sessions">
       @for (row of vm().sessions; track $index) {
         <li>
-          <strong>{{ row.code }}</strong
-          >: {{ row.title }}<br />{{ row.time }}
+          <div class="board-session">
+            <strong class="board-session__code gradient-text">{{ row.code }}</strong>
+            <span class="board-session__title"
+              ><span class="visually-hidden">: </span>{{ row.title }}</span
+            >
+            <span class="board-session__time">{{ row.time }}</span>
+          </div>
           @if (row.actions.length > 0) {
             <ul class="board-session-actions">
               @for (action of row.actions; track action.href) {
@@ -91,15 +96,6 @@
                         src="artwork/google-wallet.svg"
                         width="701"
                         height="217"
-                        [alt]="action.label"
-                    /></a>
-                  } @else {
-                    <a class="wallet-badge wallet-badge--row" [href]="action.href" download
-                      ><img
-                        class="wallet-badge__image"
-                        src="artwork/calendar.svg"
-                        width="681"
-                        height="230"
                         [alt]="action.label"
                     /></a>
                   }

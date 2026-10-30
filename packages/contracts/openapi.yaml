@@ -358,36 +358,6 @@ paths:
         uri: '${api_lambda_invoke_arn}'
         passthroughBehavior: when_no_match
 
-  /api/v1/handoffs/{handoffId}/calendar/{serialNumber}:
-    parameters:
-      - $ref: '#/components/parameters/HandoffId'
-      - $ref: '#/components/parameters/SessionCalendarFile'
-    get:
-      operationId: getHandoffSessionCalendar
-      summary: Download one session's calendar file.
-      description: >-
-        Returns a text/calendar file for one session in the hand-off. Authorised
-        by the hand-off capability, with the same checks as the bundle route. A
-        serial that is not in the hand-off, not active or not valid answers 404.
-      x-amazon-apigateway-request-validator: params-only
-      responses:
-        '200':
-          description: The calendar file.
-          content:
-            text/calendar:
-              schema:
-                type: string
-                format: binary
-        '404':
-          $ref: '#/components/responses/ProblemNotFound'
-      security:
-        - api_key: []
-      x-amazon-apigateway-integration:
-        type: aws_proxy
-        httpMethod: POST
-        uri: '${api_lambda_invoke_arn}'
-        passthroughBehavior: when_no_match
-
   /api/v1/handoffs/{handoffId}/calendar.ics:
     parameters:
       - $ref: '#/components/parameters/HandoffId'
@@ -658,15 +628,6 @@ components:
       in: path
       required: true
       description: The pass serial number.
-      schema:
-        type: string
-    SessionCalendarFile:
-      name: serialNumber
-      in: path
-      required: true
-      description: >-
-        The pass serial followed by .ics (API Gateway cannot match a suffix on a
-        path variable, so the whole segment is the variable).
       schema:
         type: string
     BundleIndex:
@@ -985,7 +946,6 @@ components:
               - startsAt
               - applePath
               - googleSaveUrl
-              - calendarPath
             properties:
               serialNumber:
                 type: string
@@ -1005,10 +965,6 @@ components:
                 type: string
                 nullable: true
                 description: A Save to Google Wallet link for this session alone, or null.
-              calendarPath:
-                type: string
-                nullable: true
-                description: The route for this session's own calendar file, or null.
         apple:
           type: object
           additionalProperties: false
