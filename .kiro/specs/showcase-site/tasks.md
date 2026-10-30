@@ -485,14 +485,14 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 41.1 Pick 15 to 20 real sessions from the owner's cached catalog (2,359 sessions, fetched 29 October 2026) that keep the demo's story: a clash, a true repeat of a session, a missing meal break, a session at each of the six official venues, the starter week, and the guided clash. Keep only code, title, start, end, venue and room (owner decision of 20 October), with a credit to the AWS Events API
   - [x] 41.2 A small script makes the snapshot from the cache so it can be refreshed; the snapshot, not the cache, is committed
   - [x] 41.3 Replace the 15 made-up sessions in `site/src/lib/demo/demo-catalog.ts` and every place that names them (starter week, guided clash, copy, tests, e2e), keeping the demo's behaviour; the credit shows on the demo page and the Legal and Privacy pages say where the session data comes from
-  - [ ] 41.4 Owner review on the local preview; full gate and e2e; commit on the RD1 branch
+  - [x] 41.4 Owner review on the local preview; full gate and e2e; commit on the RD1 branch
 
 - [x] 42. "Boarding closes" everywhere on the site (owner decision of 31 October, to match the pass)
   - The home page story, the timeline graphic, the demo week view and their tests say "Boarding closes at 10:20" instead of "Seat released at 10:20"; the product steering line the home page quotes, Requirement 2 of the home page, `CONCEPT.md`, `site/README.md` and `site/ARTWORK.md` match; the seat rule itself (held until 10 minutes before the start) is unchanged
 
 - [ ] 43. Demo session cards look like the board's (owner request of 31 October)
   - [x] 43.1 Each session in the demo's session list and in "Your week" uses the board's card layout: the date and time (for example "Mon, 30 Nov 2026, 11:30 AM to 12:30 PM") small in the top left corner, the session code small in the top right in the gradient, the title across the full width, then the venue and room and "Boarding closes at ...", and the buttons centred; the card styles are shared with the board page, not copied; the reading order still gives the code with the title
-  - [ ] 43.2 Owner review on the local preview; full gate and e2e; commit scoped `showcase-site`
+  - [x] 43.2 Owner review on the local preview; full gate and e2e; commit scoped `showcase-site`
 
 ## Notes
 
