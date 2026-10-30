@@ -39,7 +39,7 @@ export const MOST_TOOLS_SHOW: ContentBlock = quoted(
 
 export const COMPASS_SHOWS: ContentBlock = quoted(
   'compass-shows',
-  'Seat released at 10:20',
+  'Boarding closes at 10:20',
   '.kiro/steering/product.md',
   'The problem we solve',
 );

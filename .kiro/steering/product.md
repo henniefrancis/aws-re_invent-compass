@@ -20,7 +20,7 @@ re:Invent Compass helps a first-time AWS re:Invent attendee plan their week from
 
 ## The problem we solve
 
-A reserved seat is only held until 10 minutes before the session starts, then it goes to the walk-up line (official re:Invent 2026 FAQ). First-timers lose seats by arriving late, by underestimating walks between hotels, and by skipping meals and rest. Most tools show "Starts 10:30". Compass shows **"Seat released at 10:20"** and the walk from where you are.
+A reserved seat is only held until 10 minutes before the session starts, then it goes to the walk-up line (official re:Invent 2026 FAQ). First-timers lose seats by arriving late, by underestimating walks between hotels, and by skipping meals and rest. Most tools show "Starts 10:30". Compass shows **"Boarding closes at 10:20"** and the walk from where you are.
 
 ## Devices (ADR-005)
 

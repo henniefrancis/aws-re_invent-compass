@@ -36,7 +36,7 @@ describe('text helpers', () => {
 
   test('boarding text is the closing time, or the reason the engine gives', () => {
     expect(boardingText({ status: 'closes', at: '2026-12-04T10:20:00-08:00', reason: 'r' })).toBe(
-      'Seat released at 10:20 AM',
+      'Boarding closes at 10:20 AM',
     );
     expect(boardingText({ status: 'notApplicable', reason: 'No reservation needed.' })).toBe(
       'No reservation needed.',
@@ -108,7 +108,7 @@ describe('catalog view', () => {
     const noVenue = view[2]?.sessions.find((s) => s.sessionId === 'ACT053');
     expect(noVenue?.gate).toBe('Venue not published');
     const clash = view[2]?.sessions.find((s) => s.sessionId === 'SEC318-R');
-    expect(clash?.boarding).toBe('Seat released at 8:20 AM');
+    expect(clash?.boarding).toBe('Boarding closes at 8:20 AM');
   });
 
   test('personal time in the week is not a held session', () => {
@@ -170,7 +170,7 @@ describe('week view', () => {
       label: 'INV530-R1',
       gate: 'MGM Grand, Level 3, Room 350',
       timeRange: '11:30 AM to 12:30 PM',
-      boarding: 'Seat released at 11:20 AM',
+      boarding: 'Boarding closes at 11:20 AM',
     });
   });
 

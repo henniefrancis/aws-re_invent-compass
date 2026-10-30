@@ -60,7 +60,7 @@ For rehearsal in simulated mode, the synthetic catalog has the same story: `BWP2
 
   > So the time that matters is not when a session starts. It is when boarding closes, plus the walk to get there. re:Invent already works like an airline. Each reserved session is a boarding pass. The venue is the terminal, the room is the gate.
 
-- **Prepare:** a title card built from the README table "re:Invent already works like an airline". Note: the site home page and the demo week view still say "Seat released at 10:20", not "Boarding closes" (see open question 5), so build this card yourself rather than filming the home page hero.
+- **Prepare:** a title card built from the README table "re:Invent already works like an airline". The site home page now says "Boarding closes at 10:20", like the pass, so the home page hero can be filmed too.
 
 ### Shot 3. Install the Power in Kiro (0:32 to 0:42)
 
@@ -191,7 +191,7 @@ Shots 1 and 2 (map, metaphor cards) and the simulated rehearsal can be done befo
 2. **Real reservations.** With writes on, shots 6, 7 and 10 make real reservations, a real swap, a layover and a real cancel on your re:Invent schedule. Are you happy to do that with sessions you really want, or should those shots show the read-only replies and you make the changes in the re:Invent app?
 3. **Hook on camera.** The owner rule asks for a hook blocking a bad booking. Is the in-Kiro hook block enough, or do you also want the server guardrail block shown?
 4. **Tech scan source.** The sample repo, one of your public projects, or `scan_github` through the GitHub App?
-5. **Wording on the site.** The site home page and the demo week view still say "Seat released at", while the passes and this script say "Boarding closes". Change the site before filming (a site change after the freeze), or keep it and avoid those frames?
+5. **Wording on the site.** Decided 31 October 2026: the site now says "Boarding closes" everywhere, like the passes and this script.
 6. **Folder.** `.kiro/steering/structure.md` names `docs/demo/` for the video script; this draft is in `docs/video/` as asked. Keep it here (and update the steering file later), or move it?
 7. **Campus map.** May the official campus map and venue footage be shown, or should the cold open use original artwork?
 8. **On camera.** Do you want to appear in shot 13, or end on the pass and the end card?

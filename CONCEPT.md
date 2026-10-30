@@ -16,7 +16,7 @@ The single most expensive first-timer mistake is invisible in every catalog:
 
 > A reserved seat is only held until **10 minutes before the session starts**. After that it is released to the walk-up line. (Official re:Invent 2026 FAQ)
 
-So the time that matters is not "Starts 10:30". It is **"Seat released at 10:20"**, plus the walk from wherever you are now.
+So the time that matters is not "Starts 10:30". It is **"Boarding closes at 10:20"**, plus the walk from wherever you are now.
 
 ## 2. The insight: re:Invent already works like an airline
 
@@ -48,7 +48,7 @@ Everyone at re:Invent has flown to get there. The metaphor needs no explaining.
 ### Act 2: Boarding (on the phone)
 
 - The final task issues a boarding pass for each reserved session: Apple Wallet and Google Wallet.
-- Each pass shows: session code and title, venue and room, **"Seat released at"**, walk time from the previous session, and the next connection.
+- Each pass shows: session code and title, venue and room, **"Boarding closes"**, walk time from the previous session, and the next connection.
 - Every pass says clearly: **"Unofficial. Your badge is your ticket."** No AWS logos or branding.
 - Fallback with no setup: a calendar file (`.ics`) with alarms set to "leave now" and "boarding closes".
 
@@ -159,7 +159,7 @@ The full register (16 risks with owner, likelihood and mitigation) is in build p
 2. The Power activates. Compass scans the repo: "You run Lambda, DynamoDB and Step Functions at production depth. You have never touched Bedrock."
 3. Kiro writes `.kiro/specs/my-reinvent-week/`. We scroll the design: reasons, connection times, a lunch layover.
 4. They run the tasks. One reservation is blocked: "Likely impossible connection: the walk from The Venetian to Wynn is 40 minutes, an estimate, and you have 30. Try the repeat on Friday." They accept the safe swap.
-5. The final task issues boarding passes. They scan the QR code with an iPhone and add them to Wallet. Cut to the lock screen at the Venetian: "DAT302, Seat released at 10:20, 6 min walk."
+5. The final task issues boarding passes. They scan the QR code with an iPhone and add them to Wallet. Cut to the lock screen at the Venetian: "DAT302, Boarding closes at 10:20, 6 min walk."
 6. They cancel a session. Compass voids the pass: it leaves the main Wallet view and moves to expired passes. `GetSchedule` confirms the cancellation. (No wallet lets anyone delete a pass remotely; voiding is the closest, and every pass also expires at its session end.)
 7. On the showcase site, on a phone, anyone can try the clash demo with no install.
 

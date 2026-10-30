@@ -146,9 +146,9 @@ describe('content provenance', () => {
     );
   });
 
-  test('the story states the seat release rule with its official source', () => {
+  test('the story states the boarding rule with its official source', () => {
     expect(story.TAGLINE.text).toBe('From your code to your seat, on time.');
-    expect(story.COMPASS_SHOWS.text).toBe('Seat released at 10:20');
+    expect(story.COMPASS_SHOWS.text).toBe('Boarding closes at 10:20');
     expect(story.MOST_TOOLS_SHOW.text).toBe('Starts 10:30');
     expect(story.DISCLAIMER.text).toBe('Unofficial. Your badge is your ticket.');
     expect(story.SEAT_RULE_SOURCE.text).toContain('official re:Invent 2026 FAQ');

@@ -111,7 +111,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 #### Acceptance Criteria
 
 1. THE Home_Page SHALL show the product name and the tagline "From your code to your seat, on time." (amended 20 October 2026 by owner decision, task 24: it was "Plan like a spec. Board like a flight.")
-2. THE Home_Page SHALL tell the "Seat released at" story: a reserved seat is held only until 10 minutes before the session starts, and Compass shows "Seat released at 10:20" where most tools show "Starts 10:30", attributing the rule to the official re:Invent 2026 FAQ.
+2. THE Home_Page SHALL tell the "Boarding closes at" story (worded "Seat released at" until 31 October 2026, owner decision to match the pass): a reserved seat is held only until 10 minutes before the session starts, and Compass shows "Seat released at 10:20" where most tools show "Starts 10:30", attributing the rule to the official re:Invent 2026 FAQ.
 3. THE Home_Page SHALL show the airline metaphor table with the terms and meanings from the product steering.
 4. THE Home_Page SHALL present the three acts Plan, Boarding and Fly (amended 20 October 2026, task 24: the second act was Board) with content from `CONCEPT.md` section 3, using the scanner list from the build plan and product steering (Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3 and boto3) where `CONCEPT.md` differs.
 5. THE Home_Page SHALL state in plain words the principles "The badge is the ticket", "A human approves every write" and "Local first".

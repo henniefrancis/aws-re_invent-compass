@@ -34,7 +34,7 @@ test.describe('the demo', () => {
       page.getByText(/All times are in America\/Los_Angeles \(UTC-08:00\)\./),
     ).toBeVisible();
     await expect(page.locator('.catalog-item')).toHaveCount(17);
-    await expect(page.getByText('Seat released at 11:20 AM').first()).toBeVisible();
+    await expect(page.getByText('Boarding closes at 11:20 AM').first()).toBeVisible();
     await expect(page.getByText('Venue not published').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Download sample calendar' })).toBeDisabled();
     await expect(page.getByText('Add a session first.')).toBeVisible();

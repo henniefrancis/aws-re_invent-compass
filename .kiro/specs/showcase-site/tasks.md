@@ -487,6 +487,9 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 41.3 Replace the 15 made-up sessions in `site/src/lib/demo/demo-catalog.ts` and every place that names them (starter week, guided clash, copy, tests, e2e), keeping the demo's behaviour; the credit shows on the demo page and the Legal and Privacy pages say where the session data comes from
   - [ ] 41.4 Owner review on the local preview; full gate and e2e; commit on the RD1 branch
 
+- [x] 42. "Boarding closes" everywhere on the site (owner decision of 31 October, to match the pass)
+  - The home page story, the timeline graphic, the demo week view and their tests say "Boarding closes at 10:20" instead of "Seat released at 10:20"; the product steering line the home page quotes, Requirement 2 of the home page, `CONCEPT.md`, `site/README.md` and `site/ARTWORK.md` match; the seat rule itself (held until 10 minutes before the start) is unchanged
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

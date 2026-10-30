@@ -231,7 +231,7 @@ describe('pass layout', () => {
     expect(texts).toContain('Unofficial. Your badge is your ticket.');
     expect(texts.some((t) => t.startsWith('10 min walk from'))).toBe(true);
     expect(texts).toContain('Next connection: not known');
-    expect(texts.join(' ')).not.toContain('Seat released');
+    expect(texts.join(' ')).not.toContain('Boarding closes');
     const ys = layout.lines.map((l) => l.y);
     expect(ys).toEqual([...ys].sort((a, b) => a - b));
     const onCard = layout.lines.filter((l) => l.onCard);

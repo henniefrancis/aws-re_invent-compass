@@ -54,7 +54,7 @@ describe('the real engine and the real venue data', () => {
     const sessions = buildCatalogView(EMPTY_DEMO, deps).flatMap((d) => d.sessions);
     expect(sessions).toHaveLength(DEMO_SESSIONS.length);
     const reservable = sessions.find((s) => s.reservable);
-    expect(reservable?.boarding).toMatch(/^Seat released at \d{1,2}:\d{2} (AM|PM)$/);
+    expect(reservable?.boarding).toMatch(/^Boarding closes at \d{1,2}:\d{2} (AM|PM)$/);
     for (const session of sessions) {
       expect(session.boarding.length).toBeGreaterThan(0);
     }
