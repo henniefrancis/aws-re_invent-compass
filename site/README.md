@@ -10,7 +10,7 @@ It is a static Angular 22.2.3 site (standalone components, zoneless, prerendered
 
 | Route      | What it is                                                                                           |
 | ---------- | ---------------------------------------------------------------------------------------------------- |
-| `/`        | The story: boarding closes at 10:20, the airline metaphor, Plan, Boarding, Fly, three promises         |
+| `/`        | The story: boarding closes at 10:20, the airline metaphor, Plan, Boarding, Fly, three promises       |
 | `/demo`    | The demo on real sessions, using the real rules engine, a sample pass and a sample calendar          |
 | `/install` | Kiro Power install steps, the two npx commands, Node.js 24                                           |
 | `/privacy` | What stays on your machine, what leaves it and for how long, what this site does                     |
