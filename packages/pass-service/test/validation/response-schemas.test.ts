@@ -41,6 +41,7 @@ describe('Feature: pass-service, response schemas', () => {
               sessionCode: 'DAT302',
               title: 'T',
               startsAt: '2026-12-02T10:00:00-08:00',
+              venue: 'The Venetian',
               applePath: `/api/v1/handoffs/x/apple/pass/${UUID}`,
               googleSaveUrl: google === null ? null : 'https://pay.google.com/gp/v/save/y',
             },
@@ -59,6 +60,7 @@ describe('Feature: pass-service, response schemas', () => {
       sessionCode: 'DAT302',
       title: 'T',
       startsAt: '2026-12-02T10:00:00-08:00',
+      venue: null,
       applePath: null,
       googleSaveUrl: null,
     };
@@ -73,7 +75,7 @@ describe('Feature: pass-service, response schemas', () => {
     expect(view({ saveUrl: 'https://pay.google.com/gp/v/save/x' }, [session])).toBe(true);
     expect(view({ saveUrl: 'https://pay.google.com/gp/v/save/x', saveUrls: [] })).toBe(false);
     expect(view({ saveUrls: ['https://pay.google.com/gp/v/save/x'] })).toBe(false);
-    for (const key of ['applePath', 'googleSaveUrl']) {
+    for (const key of ['venue', 'applePath', 'googleSaveUrl']) {
       const missing: Record<string, unknown> = { ...session };
       delete missing[key];
       expect(view(null, [missing])).toBe(false);

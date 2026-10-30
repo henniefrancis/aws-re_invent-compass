@@ -56,7 +56,7 @@ locals {
     "upgrade-insecure-requests",
   ])
 
-  permissions_policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()"
+  permissions_policy = "accelerometer=(), camera=(), geolocation=(self), gyroscope=(), microphone=(), payment=(), usb=()"
 
   # Custom domain: the aliases, and the A and AAAA alias records for each of them.
   custom_domain = var.domain_name != null

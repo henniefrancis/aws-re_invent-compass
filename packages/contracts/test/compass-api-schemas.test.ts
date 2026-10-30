@@ -31,6 +31,7 @@ const valid: Record<keyof typeof CompassApiResponseSchemas, unknown> = {
         sessionCode: 'ABC101',
         title: 'T',
         startsAt: WHEN,
+        venue: null,
         applePath: null,
         googleSaveUrl: null,
       },

@@ -28,6 +28,21 @@ export function privateReportingUrl(links: SiteLinks): string {
   return `${links.repository}/security/advisories/new`;
 }
 
+/** The two maps apps the board page can open for walking directions (showcase-site task 40). */
+export type MapsApp = 'apple' | 'google';
+
+/**
+ * A link that opens walking directions to a point in Apple Maps or Google Maps. The link names
+ * only the destination, so the maps app uses the phone's own location as the start, and it
+ * receives that location only when the attendee opens the link.
+ */
+export function directionsUrl(app: MapsApp, point: { lat: number; lon: number }): string {
+  const destination = `${point.lat.toFixed(6)},${point.lon.toFixed(6)}`;
+  return app === 'apple'
+    ? `https://maps.apple.com/?daddr=${destination}&dirflg=w`
+    : `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=walking`;
+}
+
 export const COMING_SOON = 'coming soon';
 
 /** A link the site shows: inside the site, outside it, or plain text while the address is unknown. */

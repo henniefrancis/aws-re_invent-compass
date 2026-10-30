@@ -23,6 +23,27 @@ vi.setConfig({ testTimeout: 60_000 });
 const UNRELATED_SERIAL = '11111111-2222-4333-8444-555555555555';
 const clone = (body: WireBody): WireBody => structuredClone(body);
 
+describe('the venue of a session', () => {
+  const withVenue = (venue: unknown) => {
+    const body = exampleBody();
+    return { ...body, sessions: [{ ...body.sessions[0], venue }, ...body.sessions.slice(1)] };
+  };
+
+  test('is a name of 1 to 40 characters, or null', () => {
+    expect(validateHandoffView(withVenue('The Venetian'), FIXED_ID)?.sessions[0]?.venue).toBe(
+      'The Venetian',
+    );
+    expect(validateHandoffView(withVenue(null), FIXED_ID)?.sessions[0]?.venue).toBeNull();
+    expect(validateHandoffView(withVenue('x'.repeat(40)), FIXED_ID)).not.toBeNull();
+  });
+
+  test('anything else refuses the whole body', () => {
+    for (const bad of ['', 'x'.repeat(41), 5, true, {}, ['The Venetian'], undefined]) {
+      expect(validateHandoffView(withVenue(bad), FIXED_ID)).toBeNull();
+    }
+  });
+});
+
 describe('validateHandoffView examples', () => {
   test('accepts the example body and returns everything unchanged', () => {
     const result = validateHandoffView(exampleBody(), FIXED_ID);
@@ -321,6 +342,7 @@ describe('Property 4: Hand-off view validation is all or nothing', () => {
         'sessionCode',
         'title',
         'startsAt',
+        'venue',
         'applePath',
         'googleSaveUrl',
       ] as const;

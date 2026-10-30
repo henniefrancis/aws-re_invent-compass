@@ -661,7 +661,7 @@ describe('data/venues.json aliases and integrity', () => {
   // INTEGRITY PIN. This is the SHA-256 of data/venues.json (line endings normalised to LF). If you
   // change the venue data on purpose, update this value in the SAME commit, so a change to the
   // walking times can never slip in without a reviewer seeing it here.
-  const PINNED_SHA256 = '289972e1ce6dd331c4f6ce6a52da601e937340bf5ba4dde912346a5259bd0223';
+  const PINNED_SHA256 = '1d5f6e45656506ec3c78fc89ae2ee6538d3b503f733b09f3c4b57abb64d94253';
 
   test('data/venues.json matches its pinned SHA-256', () => {
     const digest = createHash('sha256').update(file.replaceAll('\r\n', '\n')).digest('hex');

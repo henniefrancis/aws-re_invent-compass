@@ -18,6 +18,7 @@ export type SourceDocument =
   | 'SECURITY.md'
   | 'docs/story/creator-and-inspiration.md'
   | 'docs/hackathon-rules.md'
+  | 'docs/decisions/ADR-037-walk-from-here.md'
   | 'kiro.dev/docs/powers/installation';
 
 export interface ContentBlock {
@@ -45,6 +46,7 @@ export const FILE_SOURCES: readonly SourceDocument[] = [
   'SECURITY.md',
   'docs/story/creator-and-inspiration.md',
   'docs/hackathon-rules.md',
+  'docs/decisions/ADR-037-walk-from-here.md',
 ];
 
 /** A block whose text appears exactly in its source. */

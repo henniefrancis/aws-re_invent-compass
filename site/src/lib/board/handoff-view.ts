@@ -22,6 +22,7 @@ interface AcceptedWire {
     sessionCode: string;
     title: string;
     startsAt: string;
+    venue: string | null;
     applePath: string | null;
     googleSaveUrl: string | null;
   }[];
@@ -44,6 +45,8 @@ export interface BoardSession {
   readonly sessionCode: string;
   readonly title: string;
   readonly startsAt: string;
+  /** The venue name the pass shows, or null when the pass has none. */
+  readonly venue: string | null;
   /** This session's own .pkpass route, or null when the hand-off has none for it. */
   readonly applePath: string | null;
   /** A Save to Google Wallet link for this session alone, or null. */
@@ -79,6 +82,8 @@ const GOOGLE_TOKEN = /^eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 export const MAX_GOOGLE_TOKEN = 4096;
 export const MAX_TITLE_LENGTH = 80;
 export const MAX_CODE_LENGTH = 20;
+/** The pass allows a venue of up to 40 characters. */
+export const MAX_VENUE_LENGTH = 40;
 
 type PlainObject = Record<string, unknown>;
 
@@ -101,6 +106,16 @@ function appleRoute(value: unknown, id: HandoffId, serialNumber: string): Option
   return value === expected ? { ok: true, value: expected } : { ok: false };
 }
 
+/** The venue name of a session: a name of 1 to 40 characters, or null for none. */
+function venueOf(value: unknown): Optional<string> {
+  if (value === null) {
+    return { ok: true, value: null };
+  }
+  return typeof value === 'string' && value.length >= 1 && value.length <= MAX_VENUE_LENGTH
+    ? { ok: true, value }
+    : { ok: false };
+}
+
 function readSession(value: unknown, id: HandoffId): BoardSession | null {
   if (
     !isPlainObject(value) ||
@@ -109,6 +124,7 @@ function readSession(value: unknown, id: HandoffId): BoardSession | null {
       'sessionCode',
       'title',
       'startsAt',
+      'venue',
       'applePath',
       'googleSaveUrl',
     ])
@@ -132,8 +148,17 @@ function readSession(value: unknown, id: HandoffId): BoardSession | null {
     return null;
   }
   const applePath = appleRoute(value['applePath'], id, serialNumber);
-  return applePath.ok
-    ? { serialNumber, sessionCode, title, startsAt, applePath: applePath.value, googleSaveUrl }
+  const venue = venueOf(value['venue']);
+  return applePath.ok && venue.ok
+    ? {
+        serialNumber,
+        sessionCode,
+        title,
+        startsAt,
+        venue: venue.value,
+        applePath: applePath.value,
+        googleSaveUrl,
+      }
     : null;
 }
 

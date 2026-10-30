@@ -40,3 +40,4 @@ One record per architecture decision for re:Invent Compass, mirrored from the pr
 | [ADR-034](ADR-034-pass-confirmation.md)                         | One confirmation for issuing passes                      | Accepted    |
 | [ADR-035](ADR-035-github-token-handling.md)                     | GitHub token handling                                    | Accepted    |
 | [ADR-036](ADR-036-board-buttons-top-or-per-session.md)          | Board page buttons: at the top or on each session        | Accepted    |
+| [ADR-037](ADR-037-walk-from-here.md)                            | Walk from here: walking time to the next session         | Accepted    |

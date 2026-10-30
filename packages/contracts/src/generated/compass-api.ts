@@ -454,6 +454,8 @@ export interface components {
                 title: string;
                 /** Format: date-time */
                 startsAt: string;
+                /** @description The venue name the pass shows (its TERMINAL), or null when the pass has none. */
+                venue: string | null;
                 /** @description The route for this session's own .pkpass, or null. */
                 applePath: string | null;
                 /** @description A Save to Google Wallet link for this session alone, or null. */

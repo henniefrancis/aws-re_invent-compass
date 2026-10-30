@@ -45,6 +45,7 @@ export interface WireBody {
     sessionCode: string;
     title: string;
     startsAt: string;
+    venue: string | null;
     applePath: string | null;
     googleSaveUrl: string | null;
   }[];
@@ -67,6 +68,7 @@ export function sessionArb(id: HandoffId): fc.Arbitrary<WireBody['sessions'][num
       sessionCode: fc.stringMatching(/^[A-Z0-9]{2,12}$/),
       title: fc.string({ minLength: 1, maxLength: 80 }),
       startsAt: isoArb,
+      venue: fc.option(fc.string({ minLength: 1, maxLength: 40 }), { nil: null }),
       withApple: fc.boolean(),
       withGoogle: fc.option(
         tokenArb.map((token) => `${GOOGLE_SAVE_PREFIX}${token}`),
@@ -116,6 +118,7 @@ export function exampleBody(id: HandoffId = FIXED_ID): WireBody {
         sessionCode: 'DAT302',
         title: 'Made-up session about data',
         startsAt: '2026-11-30T10:30:00-08:00',
+        venue: 'The Venetian',
         applePath: applePathOf(id, '6f1c2f0e-0d6f-4c52-9b3a-1a2b3c4d5e6f'),
         googleSaveUrl: `${GOOGLE_SAVE_PREFIX}eyJhbGciOiJSUzI1NiJ9.one-session.ghi_jkl`,
       },
@@ -124,6 +127,7 @@ export function exampleBody(id: HandoffId = FIXED_ID): WireBody {
         sessionCode: 'CMP436-R',
         title: 'Another made-up session',
         startsAt: '2026-12-01T14:00:00-08:00',
+        venue: null,
         applePath: applePathOf(id, '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d'),
         googleSaveUrl: null,
       },

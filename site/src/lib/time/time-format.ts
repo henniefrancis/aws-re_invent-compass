@@ -4,6 +4,8 @@
 // zone, so it reads the wall clock written in the ISO string itself. The demo knows the zone
 // and uses Intl. Both give the same text for the same instant.
 
+import { parseIsoWithOffset } from './iso';
+
 /** Shown when a value is not an ISO 8601 date-time with an offset. Never an invented time. */
 export const TIME_NOT_AVAILABLE = 'Time not available';
 
@@ -24,6 +26,26 @@ export function formatWallClock(iso: string): string {
     return TIME_NOT_AVAILABLE;
   }
   return twelveHour(Number(match[4]), match[5] as string);
+}
+
+/**
+ * The wall clock, 24-hour (such as "09:48"), of the moment a number of minutes before an
+ * instant, written in the offset of the instant's own text. Returns TIME_NOT_AVAILABLE when the
+ * text is not an ISO 8601 date-time with an offset.
+ */
+export function formatMinutesBefore24(iso: string, minutes: number): string {
+  const match = ISO_WITH_OFFSET.exec(iso);
+  const instant = parseIsoWithOffset(iso);
+  if (match === null || instant === null) {
+    return TIME_NOT_AVAILABLE;
+  }
+  const offset = match[6] as string;
+  const sign = offset.startsWith('-') ? -1 : 1;
+  const offsetMinutes =
+    offset === 'Z' ? 0 : sign * (Number(offset.slice(1, 3)) * 60 + Number(offset.slice(4, 6)));
+  const local = new Date(instant - minutes * 60_000 + offsetMinutes * 60_000);
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  return `${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}`;
 }
 
 /** The offset written in the string, such as "UTC-08:00". Zero offsets read "UTC". */

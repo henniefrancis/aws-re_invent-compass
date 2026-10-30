@@ -10,6 +10,7 @@ import type { DeviceWallet } from './device';
 import type { FragmentResult } from './fragment';
 import type { HandoffOutcome } from './handoff-client';
 import type { AppleBundle, BoardSession, ValidatedHandoff } from './handoff-view';
+import { nextSessionIndex } from './next-session';
 
 export type BoardState =
   | { readonly kind: 'reading' }
@@ -45,6 +46,8 @@ export interface BoardRow {
   readonly code: string;
   readonly title: string;
   readonly time: string;
+  /** True for the next session to start, the one that offers "Walk from here". */
+  readonly isNext: boolean;
   /** The Apple, Google and calendar buttons of this session, in that order. */
   readonly actions: readonly BoardAction[];
 }
@@ -56,6 +59,8 @@ export interface BoardViewModel {
   readonly canRetry: boolean;
   readonly actions: readonly BoardAction[];
   readonly sessions: readonly BoardRow[];
+  /** The next session to start, or null when every session has started. */
+  readonly nextSession: BoardSession | null;
   readonly expiresText: string | null;
   readonly timezoneNote: string | null;
   readonly deviceHint: string | null;
@@ -236,13 +241,14 @@ function withDeviceNote(message: string, wallet: DeviceWallet): string {
   return `${message} ${wallet === 'apple' ? MESSAGES.deviceNoteApple : MESSAGES.deviceNoteGoogle}`;
 }
 
-function rowsOf(handoff: ValidatedHandoff, withOffset: boolean): BoardRow[] {
-  return handoff.sessions.map((session) => {
+function rowsOf(handoff: ValidatedHandoff, withOffset: boolean, nextIndex: number): BoardRow[] {
+  return handoff.sessions.map((session, index) => {
     const time = `${shortDay(session.startsAt.slice(0, 10))}, ${formatWallClock(session.startsAt)}`;
     return {
       code: session.sessionCode,
       title: session.title,
       time: withOffset ? `${time} (${offsetLabel(session.startsAt)})` : time,
+      isNext: index === nextIndex,
       actions: sessionActionsOf(session),
     };
   });
@@ -253,6 +259,7 @@ const PLAIN: Omit<BoardViewModel, 'heading' | 'message' | 'announcement'> = {
   canRetry: false,
   actions: [],
   sessions: [],
+  nextSession: null,
   expiresText: null,
   timezoneNote: null,
   deviceHint: null,
@@ -278,7 +285,8 @@ export function toBoardViewModel(
     const handoff = state.handoff;
     const note = timezoneNote(handoff.sessions.map((s) => s.startsAt));
     const all = actionsOf(handoff);
-    const allRows = rowsOf(handoff, note === null);
+    const nextIndex = nextSessionIndex(handoff.sessions, nowMs);
+    const allRows = rowsOf(handoff, note === null, nextIndex);
     // The device choice only applies when that wallet has a button in this view (top or on a
     // session). Otherwise the page would be left with no usable wallet button, so it shows
     // everything and says nothing about the device.
@@ -300,6 +308,7 @@ export function toBoardViewModel(
       canRetry: false,
       actions,
       sessions,
+      nextSession: handoff.sessions[nextIndex] ?? null,
       expiresText: expiryText(handoff, nowMs),
       timezoneNote: note,
       // On a phone the device line is part of the lead line; on other devices it stays apart.
