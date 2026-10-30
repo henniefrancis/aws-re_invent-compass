@@ -490,6 +490,10 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 42. "Boarding closes" everywhere on the site (owner decision of 31 October, to match the pass)
   - The home page story, the timeline graphic, the demo week view and their tests say "Boarding closes at 10:20" instead of "Seat released at 10:20"; the product steering line the home page quotes, Requirement 2 of the home page, `CONCEPT.md`, `site/README.md` and `site/ARTWORK.md` match; the seat rule itself (held until 10 minutes before the start) is unchanged
 
+- [ ] 43. Demo session cards look like the board's (owner request of 31 October)
+  - [x] 43.1 Each session in the demo's session list and in "Your week" uses the board's card layout: the date and time (for example "Mon, 30 Nov 2026, 11:30 AM to 12:30 PM") small in the top left corner, the session code small in the top right in the gradient, the title across the full width, then the venue and room and "Boarding closes at ...", and the buttons centred; the card styles are shared with the board page, not copied; the reading order still gives the code with the title
+  - [ ] 43.2 Owner review on the local preview; full gate and e2e; commit scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

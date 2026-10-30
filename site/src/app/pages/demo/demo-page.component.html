@@ -142,16 +142,24 @@
         <h3 [id]="'day-' + day.date">{{ day.heading }}</h3>
         <ul class="plain-list">
           @for (item of day.items; track item.ref) {
-            <li class="week-item">
-              <p>
-                <strong>{{ item.code ?? item.title }}</strong>
+            <li class="session-card week-item">
+              <div class="board-session">
                 @if (item.code !== null) {
-                  : {{ item.title }}
+                  <strong class="board-session__code gradient-text">{{ item.code }}</strong>
                 }
-              </p>
-              <p>{{ item.gate }}. {{ item.timeRange }}.</p>
+                <span class="board-session__title">
+                  @if (item.code !== null) {
+                    <span class="visually-hidden">: </span>
+                  }
+                  {{ item.title }}</span
+                >
+                <span class="board-session__time"
+                  >{{ shortDay(day.date) }}, {{ item.timeRange }}</span
+                >
+              </div>
+              <p>{{ item.gate }}.</p>
               <p>{{ item.boarding }}</p>
-              <div class="cluster">
+              <div class="cluster session-card__actions">
                 @if (item.kind === 'reservedSession') {
                   <button
                     type="button"
@@ -235,31 +243,43 @@
         <h3 [id]="'cat-' + day.date">{{ day.heading }}</h3>
         <ul class="plain-list">
           @for (session of day.sessions; track session.sessionId) {
-            <li class="card catalog-item">
-              <p>
-                <strong>{{ session.code }}</strong
-                >: {{ session.title }}
-              </p>
-              <p>
-                @if (session.type !== null) {
-                  {{ session.type }}.
-                }
-                @if (session.level !== null) {
-                  Level {{ session.level }}.
-                }
-              </p>
-              <p>{{ session.gate }}. {{ session.timeRange }}.</p>
+            <li class="session-card catalog-item">
+              <div class="board-session">
+                <strong class="board-session__code gradient-text">{{ session.code }}</strong>
+                <span class="board-session__title"
+                  ><span class="visually-hidden">: </span>{{ session.title }}</span
+                >
+                <span class="board-session__time"
+                  >{{ shortDay(day.date) }}, {{ session.timeRange }}</span
+                >
+              </div>
+              @if (session.type !== null || session.level !== null) {
+                <p>
+                  @if (session.type !== null) {
+                    {{ session.type }}.
+                  }
+                  @if (session.level !== null) {
+                    Level {{ session.level }}.
+                  }
+                </p>
+              }
+              <p>{{ session.gate }}.</p>
               <p>{{ session.boarding }}</p>
-              <button
-                type="button"
-                [attr.aria-disabled]="session.inWeek ? 'true' : null"
-                [attr.aria-label]="
-                  (session.inWeek ? 'In your week: ' : 'Add ') + session.code + ', ' + session.title
-                "
-                (click)="act({ type: 'add', sessionId: session.sessionId })"
-              >
-                {{ session.inWeek ? 'In your week' : 'Add' }}
-              </button>
+              <div class="session-card__actions">
+                <button
+                  type="button"
+                  [attr.aria-disabled]="session.inWeek ? 'true' : null"
+                  [attr.aria-label]="
+                    (session.inWeek ? 'In your week: ' : 'Add ') +
+                    session.code +
+                    ', ' +
+                    session.title
+                  "
+                  (click)="act({ type: 'add', sessionId: session.sessionId })"
+                >
+                  {{ session.inWeek ? 'In your week' : 'Add' }}
+                </button>
+              </div>
             </li>
           }
         </ul>
