@@ -262,7 +262,7 @@ describe('walkFromHere', () => {
 
   test('the messages are plain and carry no dash characters', () => {
     for (const text of Object.values(WALK_TEXT)) {
-      expect(text).not.toMatch(/[\\u2013\\u2014]/);
+      expect(text).not.toMatch(/[\2013\2014]/);
     }
   });
 });
