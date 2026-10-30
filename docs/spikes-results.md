@@ -140,3 +140,15 @@ Two layover bugs:
 2. **Badge pickup day.** The live event window starts at `2026-11-30T05:30:00.000-08:00`, so a layover on Sunday 29 November was refused, although badge pickup and registration open that day. Fixed in compass-power task 56: layovers may start from 00:00 on the day before the event, in the event time zone.
 
 The owner reruns the layover create on the next live run to confirm that 07:00 shows as 07:00 in the re:Invent app.
+
+## SP4 result: Google Wallet end to end (31 October 2026)
+
+Owner checks on a real Android phone against dev, after the release of 31 October (develop 84fbfa9):
+
+- Save: the pass saves with the approved Google layout and no "test only" mark (25 October; publishing access granted 21 October).
+- Void: after a cancel and `sync_passes`, the pass moved to Expired passes (29 October, LW1 run).
+- Second save of the same pass from a new hand-off link works as expected. The service's insert answers 409 for an object that already exists and the client patches it, so the fallback stays as built.
+- Long save links: no change needed. The board page never gives a Google link for more than 8 passes (ADR-036).
+- The class suffix is set and working on dev.
+
+Pass-service task 28 therefore closes with no code change.

@@ -502,12 +502,12 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 27.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 28. Apply the SP4 result (waits on the owner)
-  - [ ] 28.1 Adjust the Google configuration to the recorded SP4 result
+- [x] 28. Apply the SP4 result (waits on the owner; applied 31 October 2026, no code change: see `docs/spikes-results.md` "SP4 result")
+  - [x] 28.1 Adjust the Google configuration to the recorded SP4 result
     - Record the `GOOGLE_WALLET_CLASS_SUFFIX` value for S6; if a duplicate insert does not answer 409, change the fallback condition to the recorded status and its test; if long save links failed, raise the several-save-URLs question with the integrator; if publishing access is not granted by 28 October, document "beta, test users" in the README (no code change); if access is refused, document `GOOGLE_WALLET_ENABLED=false` (cut-list item 10)
     - _Requirements: 14.3, 14.6, 14.7, 24.4, 24.6_
 
-  - [ ] 28.2 Commit
+  - [x] 28.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [x] 29. Final checkpoint - Ensure all tests pass and coverage is complete
