@@ -92,7 +92,7 @@ describe('demo runtime', () => {
     const runtime = createDemoRuntime(createFakeEngine(), venueData);
     expect(runtime).not.toBeNull();
     expect(runtime?.catalog.size).toBe(DEMO_SESSIONS.length);
-    expect(runtime?.catalog.get('syn-003')?.code).toBe('AIM321');
+    expect(runtime?.catalog.get('INV530-R1')?.code).toBe('INV530-R1');
     expect(runtime?.context).toMatchObject({
       now: DEMO_EVENT.now,
       eventTimezone: 'America/Los_Angeles',

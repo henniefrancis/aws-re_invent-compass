@@ -15,8 +15,8 @@ describe('the home page hero pass', () => {
     expect(buildSamplePass(STARTER_WEEK[0] as string, week, deps)).toEqual(HERO_PASS);
   });
 
-  test('says it is a sample of a made-up session and carries the disclaimer', () => {
-    expect(HERO_PASS.label).toBe('Sample pass. Made-up session.');
+  test('says it is a sample and not a real booking and carries the disclaimer', () => {
+    expect(HERO_PASS.label).toBe('Sample pass. Not a real booking.');
     expect(HERO_PASS.disclaimer).toBe('Unofficial. Your badge is your ticket.');
   });
 });

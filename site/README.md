@@ -1,6 +1,6 @@
 # re:Invent Compass showcase site
 
-The public website of re:Invent Compass (stream S7). It tells the story ("From your code to your seat, on time."), runs a click-through demo on made-up sessions, explains how to install Compass and what leaves your machine, and serves the `/board` page that a phone opens from the QR code to add unofficial boarding passes to Apple Wallet or Google Wallet.
+The public website of re:Invent Compass (stream S7). It tells the story ("From your code to your seat, on time."), runs a click-through demo on real re:Invent 2026 sessions (a simulated week), explains how to install Compass and what leaves your machine, and serves the `/board` page that a phone opens from the QR code to add unofficial boarding passes to Apple Wallet or Google Wallet.
 
 re:Invent Compass is an independent community project and is not affiliated with, endorsed by, or sponsored by Amazon Web Services.
 
@@ -11,7 +11,7 @@ It is a static Angular 22.2.3 site (standalone components, zoneless, prerendered
 | Route      | What it is                                                                                           |
 | ---------- | ---------------------------------------------------------------------------------------------------- |
 | `/`        | The story: seat released at 10:20, the airline metaphor, Plan, Boarding, Fly, three promises         |
-| `/demo`    | The demo on made-up sessions, using the real rules engine, a sample pass and a sample calendar       |
+| `/demo`    | The demo on real sessions, using the real rules engine, a sample pass and a sample calendar          |
 | `/install` | Kiro Power install steps, the two npx commands, Node.js 24                                           |
 | `/privacy` | What stays on your machine, what leaves it and for how long, what this site does                     |
 | `/board`   | The hand-off page. It reads `#h=<id>` from the address, removes it, and shows the passes you can add |
@@ -61,7 +61,7 @@ Other headers worth setting on the distribution: `X-Content-Type-Options: nosnif
 
 Every unit of copy is a content block in `src/lib/content/` that names its source document and section. A block marked verbatim must appear exactly in that document, and a test checks it. The sources are `CONCEPT.md`, `README.md`, `.kiro/steering/product.md` and `tech.md`, `docs/architecture/build-plan.md` (section 4.2 for the privacy page), `KIRO-SPEC-PROMPTS.md` (the `npx reinvent-compass demo` line), the showcase-site requirements (statements about how this site behaves) and the official Kiro powers installation page. Where a source conflicts with the build plan, the build plan wins. There are no testimonials, no invented numbers and no invented features.
 
-The demo sessions are 15 records of `fixtures/synthetic/catalog.json` (made-up data), all at the six official 2026 venues or with no venue. Nothing is edited by hand, and a test checks every entry against the catalog.
+The demo sessions are 17 real sessions of the re:Invent 2026 catalog, read from the AWS Events API and committed as `src/lib/demo/demo-sessions.json` (code, title, start, end, venue and room only, credited to the AWS Events API). `node site/scripts/make-demo-sessions.mjs` rebuilds the file from a local copy of the catalog cache by an explicit list of codes, and refuses to write an unofficial venue or a time outside the event window. Seats and reservations in the demo are demo settings, not catalog data.
 
 ## Artwork
 

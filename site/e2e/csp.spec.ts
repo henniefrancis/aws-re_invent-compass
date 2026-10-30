@@ -21,15 +21,15 @@ async function demoFlow(page: Page): Promise<void> {
   await page.goto('/demo');
   await page.getByRole('button', { name: 'Start with a sample week' }).click();
   await expect(page.getByRole('status')).toContainText('Sample week loaded');
-  await page.getByRole('button', { name: /^Add ARC228, / }).click();
-  await expect(page.getByRole('heading', { name: 'ARC228 was blocked' })).toBeVisible();
+  await page.getByRole('button', { name: /^Add CMP340, / }).click();
+  await expect(page.getByRole('heading', { name: 'CMP340 was blocked' })).toBeVisible();
   await page.getByRole('button', { name: 'Start the safe swap' }).click();
   await page.getByRole('button', { name: 'Reserve the repeat' }).click();
   await page.getByRole('button', { name: 'Confirm the schedule' }).click();
   await page.getByRole('button', { name: 'Cancel the original' }).click();
   await expect(page.getByText('The swap is done.')).toBeVisible();
-  await page.getByRole('button', { name: /Show sample pass for BWP213/ }).click();
-  await expect(page.getByRole('img', { name: /Boarding pass. Session BWP213./ })).toBeVisible();
+  await page.getByRole('button', { name: /Show sample pass for TNC334-R/ }).click();
+  await expect(page.getByRole('img', { name: /Boarding pass. Session TNC334-R./ })).toBeVisible();
 }
 
 test.describe('under the Required_CSP', () => {

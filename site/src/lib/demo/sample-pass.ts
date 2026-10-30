@@ -21,7 +21,7 @@ import { boardingText } from './week-view';
 import { formatDateInZone, formatInZone, formatInZone24 } from '../time/time-format';
 import { DEMO_EVENT } from './demo-catalog';
 
-export const SAMPLE_LABEL = 'Sample pass. Made-up session.';
+export const SAMPLE_LABEL = 'Sample pass. Not a real booking.';
 export const PASS_DISCLAIMER = 'Unofficial. Your badge is your ticket.';
 export const MAX_TITLE = 80;
 export const TITLE_KEPT = 77;

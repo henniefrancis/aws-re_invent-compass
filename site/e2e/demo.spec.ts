@@ -8,23 +8,32 @@ const addButton = (page: Page, code: string) =>
 
 async function loadSample(page: Page): Promise<void> {
   await page.goto('/demo');
-  await expect(page.getByText(/These sessions are made up/)).toBeVisible();
+  await expect(page.getByText(/These are real re:Invent 2026 sessions/)).toBeVisible();
+  await expect(
+    page.getByText('Session data: AWS Events API, catalog as of 29 October 2026.'),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Start with a sample week' }).click();
-  await expect(status(page)).toContainText('Sample week loaded: 2 sessions. Try adding ARC228');
+  await expect(status(page)).toContainText('Sample week loaded: 2 sessions. Try adding CMP340');
 }
 
 test.describe('the demo', () => {
-  test('lists the made-up sessions by day with the boarding time and no real schedule', async ({
+  test('lists the real sessions by day with the boarding time and no real schedule', async ({
     page,
   }) => {
     await page.goto('/demo');
-    await expect(page.getByRole('heading', { level: 3, name: 'Tuesday 1 December' })).toBeVisible();
-    await expect(page.getByRole('heading', { level: 3, name: 'Friday 4 December' })).toBeVisible();
+    for (const heading of [
+      'Monday 30 November',
+      'Tuesday 1 December',
+      'Wednesday 2 December',
+      'Thursday 3 December',
+    ]) {
+      await expect(page.getByRole('heading', { level: 3, name: heading })).toBeVisible();
+    }
     await expect(page.getByText(/Nothing in this demo touches a real schedule/)).toBeVisible();
     await expect(
       page.getByText(/All times are in America\/Los_Angeles \(UTC-08:00\)\./),
     ).toBeVisible();
-    await expect(page.locator('.catalog-item')).toHaveCount(15);
+    await expect(page.locator('.catalog-item')).toHaveCount(17);
     await expect(page.getByText('Seat released at 11:20 AM').first()).toBeVisible();
     await expect(page.getByText('Venue not published').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Download sample calendar' })).toBeDisabled();
@@ -35,45 +44,51 @@ test.describe('the demo', () => {
     page,
   }) => {
     await loadSample(page);
-    await addButton(page, 'ARC228').click();
-    await expect(status(page)).toContainText('Blocked: ARC228 was not added.');
+    await addButton(page, 'CMP340').click();
+    await expect(status(page)).toContainText('Blocked: CMP340 was not added.');
     const panel = page.locator('.verdict').first();
-    await expect(panel.getByRole('heading', { name: 'ARC228 was blocked' })).toBeVisible();
+    await expect(panel.getByRole('heading', { name: 'CMP340 was blocked' })).toBeVisible();
     await expect(panel.locator('li').first()).toContainText('overlap');
-    await expect(panel.getByText('Safe swap: move BWP213 to its repeat BWP213-R.')).toBeVisible();
-    await expect(page.locator('section[aria-labelledby="day-2026-12-01"]')).not.toContainText(
-      'ARC228',
+    await expect(
+      panel.getByText('Safe swap: move TNC334-R to its repeat TNC334-R1.'),
+    ).toBeVisible();
+    await expect(page.locator('section[aria-labelledby="day-2026-11-30"]')).not.toContainText(
+      'CMP340',
     );
 
     await panel.getByRole('button', { name: 'Start the safe swap' }).click();
     await expect(status(page)).toContainText('Step 1 of 3');
     await page.getByRole('button', { name: 'Reserve the repeat' }).click();
-    await expect(status(page)).toContainText('Step 1 of 3 done: BWP213-R is reserved (simulated).');
+    await expect(status(page)).toContainText(
+      'Step 1 of 3 done: TNC334-R1 is reserved (simulated).',
+    );
     await page.getByRole('button', { name: 'Confirm the schedule' }).click();
     await expect(status(page)).toContainText('Step 2 of 3 done');
     await page.getByRole('button', { name: 'Cancel the original' }).click();
-    await expect(status(page)).toContainText('Step 3 of 3 done: BWP213 is cancelled (simulated).');
-    await expect(page.locator('section[aria-labelledby="day-2026-12-04"]')).toContainText(
-      'BWP213-R',
+    await expect(status(page)).toContainText(
+      'Step 3 of 3 done: TNC334-R is cancelled (simulated).',
     );
-    await expect(page.locator('section[aria-labelledby="day-2026-12-01"]')).toHaveCount(0);
+    await expect(page.locator('section[aria-labelledby="day-2026-12-03"]')).toContainText(
+      'TNC334-R1',
+    );
+    await expect(page.locator('section[aria-labelledby="day-2026-11-30"]')).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Add ARC228' }).first().click();
-    await expect(status(page)).toContainText('ARC228');
+    await page.getByRole('button', { name: 'Add CMP340' }).first().click();
+    await expect(status(page)).toContainText('CMP340');
   });
 
   test('shows the sample pass as an image with every field in its name, and no barcode', async ({
     page,
   }) => {
     await loadSample(page);
-    await page.getByRole('button', { name: /Show sample pass for BWP213/ }).click();
-    const pass = page.getByRole('img', { name: /Boarding pass. Session BWP213./ });
+    await page.getByRole('button', { name: /Show sample pass for TNC334-R/ }).click();
+    const pass = page.getByRole('img', { name: /Boarding pass. Session TNC334-R./ });
     await expect(pass).toBeVisible();
     const name = (await pass.getAttribute('aria-label')) ?? '';
     for (const part of [
-      'Terminal: MGM Grand',
+      'Terminal: Caesars Palace',
       'Boarding closes: 12:50',
-      'Sample pass. Made-up session.',
+      'Sample pass. Not a real booking.',
       'Unofficial. Your badge is your ticket.',
     ]) {
       expect(name).toContain(part);
@@ -105,8 +120,8 @@ test.describe('the demo', () => {
 
   test('focus follows the action when the focused control is removed (QA M1)', async ({ page }) => {
     await loadSample(page);
-    await addButton(page, 'ARC228').click();
-    await expect(page.getByRole('heading', { name: 'ARC228 was blocked' })).toBeVisible();
+    await addButton(page, 'CMP340').click();
+    await expect(page.getByRole('heading', { name: 'CMP340 was blocked' })).toBeVisible();
 
     // Start the safe swap: the verdict panel is replaced by the swap panel.
     await page.getByRole('button', { name: 'Start the safe swap' }).click();
@@ -117,7 +132,7 @@ test.describe('the demo', () => {
     await page.getByRole('button', { name: 'Confirm the schedule' }).click();
     await expect(page.getByRole('button', { name: 'Cancel the original' })).toBeFocused();
     await page.getByRole('button', { name: 'Cancel the original' }).click();
-    await expect(page.getByRole('button', { name: 'Add ARC228' }).first()).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Add CMP340' }).first()).toBeFocused();
 
     // Close the finished swap panel: focus goes to "Your week".
     await page.getByRole('button', { name: 'Close' }).click();
@@ -133,19 +148,19 @@ test.describe('the demo', () => {
 
   test('Keep my week closes the verdict and focuses the week heading', async ({ page }) => {
     await loadSample(page);
-    await addButton(page, 'ARC228').click();
+    await addButton(page, 'CMP340').click();
     await page.getByRole('button', { name: 'Keep my week' }).click();
     await expect(page.getByRole('heading', { name: 'Your week' })).toBeFocused();
   });
 
   test('every item in the week has its own accessible name', async ({ page }) => {
     await loadSample(page);
-    await addButton(page, 'ARC228').click();
+    await addButton(page, 'CMP340').click();
     await page.getByRole('button', { name: 'Start the safe swap' }).click();
     await page.getByRole('button', { name: 'Reserve the repeat' }).click();
     await page.getByRole('button', { name: 'Confirm the schedule' }).click();
     await page.getByRole('button', { name: 'Cancel the original' }).click();
-    await page.getByRole('button', { name: 'Add ARC228' }).first().click();
+    await page.getByRole('button', { name: 'Add CMP340' }).first().click();
     const names = await page.getByRole('button', { name: /^Remove / }).allTextContents();
     expect(names.length).toBe(3);
     expect(new Set(names).size).toBe(names.length);
@@ -155,11 +170,13 @@ test.describe('the demo', () => {
     page,
   }) => {
     await page.goto('/demo');
-    await addButton(page, 'AIM482').click();
-    await expect(status(page)).toContainText('AIM482');
+    await addButton(page, 'ACT053').click();
+    await expect(status(page)).toContainText('ACT053');
     await page.getByRole('button', { name: 'Add anyway' }).click();
-    await addButton(page, 'CMP327').click();
-    await expect(page.locator('.verdict').first()).toContainText('removes your only meal break');
+    await addButton(page, 'SEC318-R').click();
+    await expect(page.locator('.verdict').first()).toContainText(
+      'could not be judged because data was missing',
+    );
     await page.getByRole('button', { name: 'Add anyway' }).click();
     const layover = page.getByRole('button', { name: /^Add this layover/ });
     await expect(layover).toBeVisible();
@@ -179,10 +196,10 @@ test.describe('the demo', () => {
 
   test('adding a session that fits adds it, and Remove takes it out', async ({ page }) => {
     await page.goto('/demo');
-    await addButton(page, 'DAT204').click();
-    await expect(status(page)).toContainText('DAT204 was added to your week');
-    await expect(page.locator('section[aria-labelledby="day-2026-12-01"]')).toContainText('DAT204');
-    await page.getByRole('button', { name: /^Remove DAT204/ }).click();
+    await addButton(page, 'AIM433').click();
+    await expect(status(page)).toContainText('AIM433 was added to your week');
+    await expect(page.locator('section[aria-labelledby="day-2026-11-30"]')).toContainText('AIM433');
+    await page.getByRole('button', { name: /^Remove AIM433/ }).click();
     await expect(page.getByText('Nothing here yet.')).toBeVisible();
   });
 });

@@ -105,9 +105,17 @@ function withoutRef(state: DemoState, ref: string): readonly Commitment[] {
   return state.commitments.filter((c) => commitmentRef(c) !== ref);
 }
 
-/** The first catalog repeat of a held session that is not in the week yet, if there is one. */
+/**
+ * The first catalog repeat of a held session that is not in the week yet, if there is one. A repeat
+ * shares the base code of the held session: the real catalog lists DAT302-R and DAT302-R1 as
+ * repeats of DAT302, and the held session may be either of them.
+ */
 function repeatOf(held: NormalisedSession, state: DemoState): NormalisedSession | undefined {
-  return DEMO_SESSIONS.find((s) => s.repeatOf === held.code && !heldSession(state, s.sessionId));
+  const base = held.repeatOf ?? held.code;
+  return DEMO_SESSIONS.find(
+    (s) =>
+      s.repeatOf === base && s.sessionId !== held.sessionId && !heldSession(state, s.sessionId),
+  );
 }
 
 /** The held session that clashes with the candidate, if the engine reports a clash with it. */

@@ -1,28 +1,23 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  NormalisedSessionSchema,
-  SessionWireSchema,
-  type NormalisedSession,
-} from '@compass/contracts';
-import { normaliseSession } from '@compass/core/catalog';
+import { NormalisedSessionSchema, type NormalisedSession } from '@compass/contracts';
 import { describe, expect, test } from 'vitest';
+import snapshot from '../../src/lib/demo/demo-sessions.json';
 import {
   DEMO_EVENT,
   DEMO_SESSIONS,
+  DEMO_SOURCE,
   DEMO_SOURCE_IDS,
   GUIDED_CLASH,
   STARTER_WEEK,
+  toSession,
 } from '../../src/lib/demo/demo-catalog';
 import { DEMO_VENUE_DATA } from '../../src/lib/demo/venue-data';
 import { SITE_ROOT } from '../support/source-files';
 
 const REPO_ROOT = join(SITE_ROOT, '..');
-const catalog = (
-  JSON.parse(
-    readFileSync(join(REPO_ROOT, 'fixtures', 'synthetic', 'catalog.json'), 'utf8'),
-  ) as unknown[]
-).map((record) => SessionWireSchema.parse(record));
+/** The only fields the snapshot may hold for a session (owner rule, hackathon rules row 11). */
+const ALLOWED_FIELDS = ['code', 'endsAt', 'room', 'startsAt', 'title', 'venue'];
 
 /** The six official 2026 venues, as named in data/venues.json (S2). */
 const OFFICIAL_VENUES = [
@@ -57,31 +52,70 @@ describe('demo catalog provenance (Requirement 7.1)', () => {
     expect(new Set(DEMO_SOURCE_IDS).size).toBe(DEMO_SOURCE_IDS.length);
   });
 
-  test('every entry equals the normalised form of the synthetic record with the same id', () => {
-    for (const id of DEMO_SOURCE_IDS) {
-      const wire = catalog.find((record) => record.sessionId === id);
-      expect(wire, id).toBeDefined();
-      expect(get(id), id).toEqual(
-        normaliseSession(wire as NonNullable<typeof wire>, undefined, DEMO_EVENT.timezone),
+  test('the snapshot holds the code, title, start, end, venue and room only, with a source credit', () => {
+    expect(snapshot.source.name).toBe('AWS Events API');
+    expect(DEMO_SOURCE.name).toBe('AWS Events API');
+    expect(Date.parse(snapshot.fetchedAt)).not.toBeNaN();
+    expect(DEMO_SOURCE.asOf).toBe('29 October 2026');
+    for (const record of snapshot.sessions) {
+      expect(Object.keys(record).filter((k) => !ALLOWED_FIELDS.includes(k))).toEqual([]);
+      for (const field of ['code', 'title', 'startsAt', 'endsAt']) {
+        expect(Object.keys(record), record.code).toContain(field);
+      }
+    }
+  });
+
+  test('every entry is built from its snapshot record, with the repeat link from the code suffix', () => {
+    for (const record of snapshot.sessions) {
+      const session = get(record.code);
+      expect(session.sessionId).toBe(record.code);
+      expect(session.title).toBe(record.title);
+      expect(session.startsAt).toBe(record.startsAt);
+      expect(session.endsAt).toBe(record.endsAt);
+      expect(session.venue).toBe((record as { venue?: string }).venue);
+      const room = (record as { room?: string }).room;
+      expect(session.room).toBe(
+        room === undefined
+          ? undefined
+          : room
+              .split('|')
+              .map((p) => p.trim())
+              .join(', '),
+      );
+      expect(session.type).toBeUndefined();
+      expect(session.level).toBeUndefined();
+      expect(session.repeatOf).toBe(
+        /-R[0-9]?$/.test(record.code) ? record.code.replace(/-R[0-9]?$/, '') : undefined,
       );
     }
   });
 
-  test('every entry is a valid NormalisedSession and every source record parses as a wire session', () => {
+  test('a record with no venue and no room lists both as missing, and a room bar becomes a comma', () => {
+    const record = {
+      code: 'XYZ1',
+      title: 'T',
+      startsAt: '2026-12-01T10:00:00-08:00',
+      endsAt: '2026-12-01T11:00:00-08:00',
+    };
+    expect(toSession(record)).toMatchObject({ missingFields: ['venue', 'room'] });
+    expect(toSession({ ...record, venue: 'Wynn', room: 'Level 1 | Room 2' })).toMatchObject({
+      venue: 'Wynn',
+      room: 'Level 1, Room 2',
+      missingFields: [],
+    });
+  });
+
+  test('every entry is a valid NormalisedSession', () => {
     for (const session of DEMO_SESSIONS) {
       expect(NormalisedSessionSchema.parse(session)).toEqual(session);
     }
-    expect(catalog).toHaveLength(120);
   });
 
-  test('the demo event takes its timezone from the copied records and has a fixed instant', () => {
+  test('the demo event has the Las Vegas timezone and a fixed instant', () => {
     expect(DEMO_EVENT.timezone).toBe('America/Los_Angeles');
-    for (const wire of catalog.filter((r) => DEMO_SOURCE_IDS.includes(r.sessionId))) {
-      expect(wire.sessionTime?.timezone).toBe(DEMO_EVENT.timezone);
-    }
-    expect(DEMO_EVENT.now).toBe('2026-11-30T18:00:00-08:00');
+    expect(DEMO_EVENT.now).toBe('2026-11-29T18:00:00-08:00');
     expect(Date.parse(DEMO_EVENT.now)).toBeLessThan(Date.parse(DEMO_SESSIONS[0]?.startsAt ?? ''));
-    expect(DEMO_EVENT.windowStart).toBe('2026-12-01T00:00:00-08:00');
+    expect(DEMO_EVENT.windowStart).toBe('2026-11-30T00:00:00-08:00');
     expect(DEMO_EVENT.windowEnd).toBe('2026-12-04T23:59:00-08:00');
     for (const session of DEMO_SESSIONS) {
       expect(start(session)).toBeGreaterThanOrEqual(Date.parse(DEMO_EVENT.windowStart));
@@ -118,7 +152,7 @@ describe('demo catalog venues', () => {
 
   test('one session has no venue and says so in its missing fields', () => {
     const noVenue = DEMO_SESSIONS.filter((s) => s.venue === undefined);
-    expect(noVenue.map((s) => s.sessionId)).toEqual(['syn-008']);
+    expect(noVenue.map((s) => s.sessionId)).toEqual(['ACT053']);
     expect(noVenue[0]?.missingFields).toContain('venue');
   });
 
@@ -138,7 +172,10 @@ describe('demo catalog scenarios (Requirement 7.3)', () => {
   test('a held Starter_Week session has a -R repeat that overlaps no other Starter_Week session', () => {
     const starter = STARTER_WEEK.map(get);
     const found = starter.filter((held) => {
-      const repeats = DEMO_SESSIONS.filter((s) => s.repeatOf === held.code);
+      const base = held.repeatOf ?? held.code;
+      const repeats = DEMO_SESSIONS.filter(
+        (s) => s.repeatOf === base && s.sessionId !== held.sessionId,
+      );
       return repeats.some((repeat) =>
         starter.every((other) => other === held || !overlap(repeat, other)),
       );
@@ -165,14 +202,15 @@ describe('demo catalog scenarios (Requirement 7.3)', () => {
     expect(DEMO_SESSIONS.some((s) => !s.isReservable)).toBe(true);
   });
 
-  test('adding syn-003 to the Starter_Week fills one meal window, so a missing meal layover is reachable', () => {
+  test('INV530-R1 and CMP325-R together fill one whole meal window, and the Starter_Week alone does not', () => {
     const mealStart = 11 * 60 + 30;
     const mealEnd = 14 * 60;
-    const starter = [...STARTER_WEEK, 'syn-003'].map(get);
-    const freeOn = (d: string): number => {
+    const pair = ['INV530-R1', 'CMP325-R'].map(get);
+    const starter = STARTER_WEEK.map(get);
+    const freeOn = (d: string, week: NormalisedSession[]): number => {
       let free = 0;
       for (let minute = mealStart; minute < mealEnd; minute += 1) {
-        const busy = starter.some((s) => {
+        const busy = week.some((s) => {
           const from =
             Number((s.startsAt ?? '').slice(11, 13)) * 60 +
             Number((s.startsAt ?? '').slice(14, 16));
@@ -182,7 +220,9 @@ describe('demo catalog scenarios (Requirement 7.3)', () => {
       }
       return free;
     };
-    expect([...new Set(starter.map(day))].some((d) => freeOn(d) < 30)).toBe(true);
+    const monday = day(get('INV530-R1'));
+    expect(freeOn(monday, pair)).toBe(0);
+    expect([...new Set(starter.map(day))].every((d) => freeOn(d, starter) >= 30)).toBe(true);
   });
 
   test('the guided clash names real, reservable, overlapping sessions', () => {
@@ -199,7 +239,9 @@ describe('demo catalog scenarios (Requirement 7.3)', () => {
     expect(['available', 'limited', 'veryLimited']).toContain(repeat.seatAvailability);
     expect(repeat.isReservable).toBe(true);
     expect(repeat.title).toBe(held.title);
-    expect(repeat.repeatOf).toBe(held.code);
+    // The catalog lists TNC334-R and TNC334-R1 as repeats of TNC334, so both share one base code.
+    expect(repeat.repeatOf).toBe(held.repeatOf ?? held.code);
+    expect(repeat.code).not.toBe(held.code);
     for (const other of STARTER_WEEK.map(get)) {
       if (other !== held) {
         expect(overlap(repeat, other), other.sessionId).toBe(false);
