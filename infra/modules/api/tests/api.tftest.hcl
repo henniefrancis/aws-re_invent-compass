@@ -132,8 +132,8 @@ run "api_key_gates_every_method" {
   }
 
   assert {
-    condition     = length(flatten([for path, item in yamldecode(aws_api_gateway_rest_api.this.body).paths : [for method, op in item : method if contains(["get", "put", "post", "delete", "patch", "head", "options"], method)]])) == 15
-    error_message = "The contract must still define its 15 operations."
+    condition     = length(flatten([for path, item in yamldecode(aws_api_gateway_rest_api.this.body).paths : [for method, op in item : method if contains(["get", "put", "post", "delete", "patch", "head", "options"], method)]])) == 16
+    error_message = "The contract must still define its 16 operations (getHandoffApplePass added by ADR-036)."
   }
 
   assert {

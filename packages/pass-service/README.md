@@ -3,7 +3,7 @@
 The Compass API Lambdas of re:Invent Compass (stream S5). Two bundles, `api` and `passkit`, sign
 unofficial Apple and Google Wallet Boarding Passes for signed-in attendees, run Apple's PassKit web
 service, push pass updates over APNs, patch Google Wallet objects and serve the 15-minute hand-off to
-the phone. The contract is `contracts/compass-api.openapi.yaml` (15 operations); this package never
+the phone. The contract is `contracts/compass-api.openapi.yaml` (16 operations); this package never
 edits it. Infrastructure is S6's (Terraform only); this README is the interface between the two.
 
 Specs: `.kiro/specs/pass-service/` (requirements, design, tasks).
