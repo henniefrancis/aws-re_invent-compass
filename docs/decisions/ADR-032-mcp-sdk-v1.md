@@ -1,6 +1,6 @@
 # ADR-032 MCP TypeScript SDK stays on the v1 line for 0.1.0
 
-Status: Accepted, 2026-10-29 (CTO final review finding 7). The decision on the 1.32.2 patch is open: this ADR recommends it and the owner decides.
+Status: Accepted, 2026-10-29 (CTO final review finding 7). Amended 2026-10-30: the owner approved the 1.32.2 patch, and the pin is now 1.32.2 (compass-power task 59).
 
 ## Context
 
@@ -20,7 +20,7 @@ Facts from the official sources, checked 29 October 2026:
 - **Stay on the v1 line for 0.1.0.** The server is built, tested at 100 percent coverage and live-tested against v1. Moving to v2 means new package names and import paths, a migration of `packages/mcp-server/src`, and a new full gate, a few days before the 1 November submission (ADR-003). Nothing in 0.1.0 needs a v2 feature.
 - **Keep the exact pin.** The pin stays exact so the bundled package is reproducible. Any change to it goes through the full gate.
 - **Move to v2 after 0.1.0**, and before the v1 support window ends (at least 27 January 2027, from the README). Plan it as its own Kiro spec, using the migration guide linked from the SDK repository.
-- **On 1.32.2: recommended, not applied.** The owner decides the bump.
+- **On 1.32.2: taken.** The owner approved the bump on 30 October 2026, and the pin moved from 1.32.1 to 1.32.2 through the full gate (compass-power task 59).
   - It was published on 23 October 2026, so it is days old. It follows 1.32.1 (5 October).
   - The releases page lists two fixes: optional `Transport` properties gain an explicit `| undefined` (a backport of #1766, in #2814), and registering after `connect()` is allowed when the capability was declared (#2958).
   - The dependency list of 1.32.2 is the same as 1.32.1.

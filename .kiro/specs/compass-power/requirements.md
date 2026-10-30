@@ -14,7 +14,7 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 
 ## Glossary
 
-- **Compass_Server**: The local stdio MCP server in `packages/mcp-server`, built on `@modelcontextprotocol/sdk` 1.32.1.
+- **Compass_Server**: The local stdio MCP server in `packages/mcp-server`, built on `@modelcontextprotocol/sdk` 1.32.2 (1.32.1 until 30 October 2026, ADR-032).
 - **CLI**: The `reinvent-compass` command in the same package: no arguments starts the Compass_Server; `demo` runs the simulated flow; `hook <name>` is what Kiro hooks call.
 - **Tool**: One of the seventeen MCP tools defined in `mcpTools` in `packages/contracts/src/mcp-tools.ts`.
 - **Read_Tool**: `refresh_catalog`, `find_sessions`, `scan_repo`, `check_itinerary`. These may be auto-approved by the attendee.

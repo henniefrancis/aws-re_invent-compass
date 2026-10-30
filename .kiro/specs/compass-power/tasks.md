@@ -668,6 +668,10 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Each ADR states only what the code and specs show, links its sources, and is listed in `docs/decisions/README.md`; dash check and prettier; commit scoped `compass-power`
   - _Requirements: 20.1_
 
+- [x] 59. Take the MCP SDK 1.32.2 patch (owner approval of 30 October, ADR-032)
+  - Pin `@modelcontextprotocol/sdk` at exactly 1.32.2 in `packages/mcp-server/package.json`, refresh the lock file, amend ADR-032, Requirement terms and the foundation-contracts dependency table; full gate; commit scoped `compass-power`
+  - _Requirements: 20.1_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.
