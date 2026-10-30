@@ -7,7 +7,7 @@
 
 import { directionsUrl, type MapsApp } from '../content/links';
 import { parseIsoWithOffset } from '../time/iso';
-import { formatMinutesBefore } from '../time/time-format';
+import { formatInstantAtOffsetOf, formatMinutesBefore } from '../time/time-format';
 import type { DeviceWallet } from './device';
 import type { BoardSession } from './handoff-view';
 import type { LocateResult } from './locate';
@@ -21,7 +21,8 @@ import {
 
 export const WALK_TEXT = {
   button: 'Walk from here',
-  privacy: 'Your location is used on this phone only. It is not sent to us or saved.',
+  privacy:
+    'Compass does not send your location anywhere or save it. Your phone may use its own location service to find it.',
   locating: 'Finding where you are.',
   noVenue: 'This session has no venue yet, so there is no walking time.',
   noPoint: 'We have no map point for this venue, so there is no walking time.',
@@ -38,30 +39,82 @@ export interface DirectionsLink {
   readonly href: string;
   /** The visible text of the link. */
   readonly label: string;
-  /** The accessible name of the link: it also names the venue. */
-  readonly name: string;
+  /** Visually hidden text after the label: the venue, the app and that it opens a new tab. */
+  readonly detail: string;
   /** The line under the link: when the maps app learns the location. */
   readonly caption: string;
 }
 
+/**
+ * What the page holds for "Walk from here". Everything but idle names the session (by serial
+ * number) it was worked out for, so it is shown only under that session.
+ */
 export type WalkView =
+  | { readonly kind: 'idle' }
+  | { readonly kind: 'locating'; readonly serial: string }
+  | { readonly kind: 'message'; readonly serial: string; readonly text: string }
+  | {
+      readonly kind: 'estimate';
+      readonly serial: string;
+      /** "About 12 min walk." */
+      readonly summary: string;
+      /** "Leave by 9:48 AM." or "Leave now.", as it was when the attendee tapped. */
+      readonly leaveBy: string;
+      /** "Worked out at 7:31 AM.": the tap time, in the session's event offset. */
+      readonly workedOut: string;
+      readonly note: string;
+      readonly directions: DirectionsLink;
+    };
+
+/** How often the page moves its clock on while it is open (so the next session can change), in milliseconds. */
+export const WALK_TICK_MS = 30_000;
+
+export const IDLE_WALK: WalkView = { kind: 'idle' };
+export const locatingWalk = (serial: string): WalkView => ({ kind: 'locating', serial });
+
+const message = (serial: string, text: string): WalkView => ({ kind: 'message', serial, text });
+
+/** The view for the session that is next now: anything worked out for another session is dropped. */
+export function walkForSession(view: WalkView, nextSerial: string | null): WalkView {
+  return view.kind !== 'idle' && view.serial === nextSerial ? view : IDLE_WALK;
+}
+
+/** What the page shows right now under the next session. */
+export type WalkShown =
   | { readonly kind: 'idle' }
   | { readonly kind: 'locating' }
   | { readonly kind: 'message'; readonly text: string }
   | {
       readonly kind: 'estimate';
-      /** "About 12 min walk." */
       readonly summary: string;
-      /** "Leave by 9:48 AM." or "Leave now." */
       readonly leaveBy: string;
+      readonly workedOut: string;
       readonly note: string;
       readonly directions: DirectionsLink;
     };
 
-export const IDLE_WALK: WalkView = { kind: 'idle' };
-export const LOCATING_WALK: WalkView = { kind: 'locating' };
+/** The held view, shown only when it was worked out for the next session. */
+export function walkShown(view: WalkView, nextSerial: string | null): WalkShown {
+  const own = walkForSession(view, nextSerial);
+  if (own.kind === 'estimate') {
+    const { summary, leaveBy, workedOut, note, directions } = own;
+    return { kind: 'estimate', summary, leaveBy, workedOut, note, directions };
+  }
+  return own.kind === 'message' ? { kind: 'message', text: own.text } : { kind: own.kind };
+}
 
-const message = (text: string): WalkView => ({ kind: 'message', text });
+/** The sentence a screen reader hears when the shown view changes. */
+export function walkAnnouncement(shown: WalkShown): string {
+  if (shown.kind === 'locating') {
+    return WALK_TEXT.locating;
+  }
+  if (shown.kind === 'message') {
+    return shown.text;
+  }
+  return shown.kind === 'estimate'
+    ? `${shown.summary} ${shown.leaveBy} ${shown.workedOut} ${shown.note}`
+    : '';
+}
 
 const FAILURES: Record<'denied' | 'unavailable' | 'timeout', string> = {
   denied: WALK_TEXT.denied,
@@ -80,7 +133,7 @@ function directionsFor(venue: string, point: Coordinates, wallet: DeviceWallet):
   return {
     href: directionsUrl(app, point),
     label: 'Directions',
-    name: `Directions to ${venue} in ${appName}`,
+    detail: ` to ${venue} in ${appName} (opens in a new tab)`,
     caption: `${appName} gets your location only when you open this link.`,
   };
 }
@@ -104,25 +157,29 @@ export async function walkFromHere(
   wallet: DeviceWallet,
   now: () => number,
 ): Promise<WalkView> {
+  const serial = session.serialNumber;
   if (session.venue === null) {
-    return message(WALK_TEXT.noVenue);
+    return message(serial, WALK_TEXT.noVenue);
   }
   const point = venuePoint(session.venue);
   if (point === null) {
-    return message(WALK_TEXT.noPoint);
+    return message(serial, WALK_TEXT.noPoint);
   }
   const found = await locate();
   if (!found.ok) {
-    return message(FAILURES[found.reason]);
+    return message(serial, FAILURES[found.reason]);
   }
+  const tapMs = now();
   const estimate = estimateWalk(found.position, point);
   if (estimate === 'tooFar') {
-    return message(WALK_TEXT.tooFar);
+    return message(serial, WALK_TEXT.tooFar);
   }
   return {
     kind: 'estimate',
+    serial,
     summary: `About ${String(estimate.walkMinutes)} min walk.`,
-    leaveBy: leaveByText(session.startsAt, estimate.totalMinutes, now()),
+    leaveBy: leaveByText(session.startsAt, estimate.totalMinutes, tapMs),
+    workedOut: `Worked out at ${formatInstantAtOffsetOf(session.startsAt, tapMs)}.`,
     note: WALK_TEXT.estimateNote,
     directions: directionsFor(session.venue, point, wallet),
   };

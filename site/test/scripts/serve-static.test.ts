@@ -10,6 +10,7 @@ import {
   HOST,
   LOCAL_CSP,
   REQUIRED_CSP,
+  REQUIRED_PERMISSIONS_POLICY,
   SECURITY_HEADERS,
   contentType,
   createStaticServer,
@@ -66,6 +67,16 @@ describe('the Required_CSP', () => {
     expect(SECURITY_HEADERS['Content-Security-Policy']).toBe(LOCAL_CSP);
     expect(SECURITY_HEADERS['X-Content-Type-Options']).toBe('nosniff');
     expect(SECURITY_HEADERS['Referrer-Policy']).toBe('no-referrer');
+  });
+});
+
+describe('the Permissions-Policy', () => {
+  test('lets only the site itself use the location and switches the rest off', () => {
+    expect(REQUIRED_PERMISSIONS_POLICY).toBe(
+      'accelerometer=(), camera=(), geolocation=(self), gyroscope=(), microphone=(), payment=(), usb=()',
+    );
+    expect(REQUIRED_PERMISSIONS_POLICY).not.toContain('*');
+    expect(SECURITY_HEADERS['Permissions-Policy']).toBe(REQUIRED_PERMISSIONS_POLICY);
   });
 });
 

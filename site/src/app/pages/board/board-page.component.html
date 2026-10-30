@@ -74,9 +74,16 @@
             <div class="board-walk">
               <p class="source-note">{{ walkText.privacy }}</p>
               <p>
-                <button type="button" (click)="startWalk()">{{ walkText.button }}</button>
+                <button
+                  type="button"
+                  [attr.aria-disabled]="walkShown().kind === 'locating' ? 'true' : null"
+                  [attr.aria-busy]="walkShown().kind === 'locating' ? 'true' : null"
+                  (click)="startWalk()"
+                >
+                  {{ walkText.button }}
+                </button>
               </p>
-              @if (walk(); as w) {
+              @if (walkShown(); as w) {
                 @if (w.kind === 'locating') {
                   <p>{{ walkText.locating }}</p>
                 } @else if (w.kind === 'message') {
@@ -85,15 +92,15 @@
                   <p class="board-walk__result">
                     <strong>{{ w.summary }}</strong> {{ w.leaveBy }}
                   </p>
-                  <p class="source-note">{{ w.note }}</p>
+                  <p class="source-note">{{ w.workedOut }} {{ w.note }}</p>
                   <p>
                     <a
                       class="board-walk__link"
                       [href]="w.directions.href"
-                      [attr.aria-label]="w.directions.name"
                       target="_blank"
                       rel="noopener noreferrer"
-                      >{{ w.directions.label }}</a
+                      >{{ w.directions.label
+                      }}<span class="visually-hidden">{{ w.directions.detail }}</span></a
                     >
                   </p>
                   <p class="source-note">{{ w.directions.caption }}</p>

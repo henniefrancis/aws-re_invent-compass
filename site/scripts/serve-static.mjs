@@ -13,9 +13,10 @@ import { createServer } from 'node:http';
 import { readFile as readFileFs } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { maybeRunCli } from './cli.mjs';
+import { REQUIRED_PERMISSIONS_POLICY } from './required-permissions-policy.mjs';
 import { LOCAL_CSP, REQUIRED_CSP } from './required-csp.mjs';
 
-export { LOCAL_CSP, REQUIRED_CSP };
+export { LOCAL_CSP, REQUIRED_CSP, REQUIRED_PERMISSIONS_POLICY };
 
 export const DEFAULT_PORT = 4173;
 export const HOST = '127.0.0.1';
@@ -26,6 +27,7 @@ export const HOST = '127.0.0.1';
  */
 export const SECURITY_HEADERS = Object.freeze({
   'Content-Security-Policy': LOCAL_CSP,
+  'Permissions-Policy': REQUIRED_PERMISSIONS_POLICY,
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
   'Cache-Control': 'no-store',

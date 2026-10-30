@@ -24,9 +24,13 @@ import { locate } from '../../../lib/board/locate';
 import { watchVisibility } from '../../../lib/board/visibility';
 import {
   IDLE_WALK,
-  LOCATING_WALK,
   WALK_TEXT,
+  locatingWalk,
+  WALK_TICK_MS,
+  walkAnnouncement,
+  walkForSession,
   walkFromHere,
+  walkShown,
   type WalkView,
 } from '../../../lib/board/walk-view';
 
@@ -60,7 +64,11 @@ export class BoardPage implements OnDestroy {
   protected readonly retryLabel = MESSAGES.retryLabel;
   protected readonly walkText = WALK_TEXT;
   /** What "Walk from here" shows under the next session. It lives in memory only. */
-  protected readonly walk = signal<WalkView>(IDLE_WALK);
+  private readonly walk = signal<WalkView>(IDLE_WALK);
+  protected readonly walkShown = computed(() =>
+    walkShown(this.walk(), this.vm().nextSession?.serialNumber ?? null),
+  );
+  private ticker: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     // The hand-off page is never indexed. The tag is part of the prerendered head.
@@ -77,6 +85,9 @@ export class BoardPage implements OnDestroy {
         }),
       );
       this.nowMs.set(Date.now());
+      this.ticker = setInterval(() => {
+        this.tick();
+      }, WALK_TICK_MS);
       this.controller = createBoardController({
         // Taken from the address (raw, not router normalised) before the router started.
         readHash: () => this.fragment.take(),
@@ -109,29 +120,36 @@ export class BoardPage implements OnDestroy {
   /** Asks for the location only now, on the attendee's tap, and works out the walk on the phone. */
   protected startWalk(): void {
     const session = this.vm().nextSession;
-    if (session === null || this.walk().kind === 'locating') {
+    if (session === null || this.walkShown().kind === 'locating') {
       return;
     }
-    this.walk.set(LOCATING_WALK);
-    this.announcement.set(WALK_TEXT.locating);
+    this.walk.set(locatingWalk(session.serialNumber));
+    this.announcement.set(walkAnnouncement(this.walkShown()));
     void walkFromHere(
       session,
       () => locate(navigator.geolocation),
       this.deviceWallet(),
       () => Date.now(),
     ).then((view) => {
-      this.walk.set(view);
-      this.announcement.set(
-        view.kind === 'message'
-          ? view.text
-          : view.kind === 'estimate'
-            ? `${view.summary} ${view.leaveBy} ${view.note}`
-            : '',
-      );
+      this.nowMs.set(Date.now());
+      // The next session may have changed while the phone was finding its location.
+      if (this.vm().nextSession?.serialNumber === session.serialNumber) {
+        this.walk.set(view);
+        this.announcement.set(walkAnnouncement(this.walkShown()));
+      }
     });
   }
 
+  /** Moves the clock on, so the next session can change while the page stays open. */
+  private tick(): void {
+    this.nowMs.set(Date.now());
+    this.walk.update((view) => walkForSession(view, this.vm().nextSession?.serialNumber ?? null));
+  }
+
   ngOnDestroy(): void {
+    if (this.ticker !== null) {
+      clearInterval(this.ticker);
+    }
     this.controller?.dispose();
   }
 

@@ -27,6 +27,13 @@ export const LOCATE_OPTIONS = {
   maximumAge: 30_000,
 } as const;
 
+/**
+ * Some browsers never answer when the attendee dismisses the permission prompt without choosing
+ * (Firefox "Not now"). After this many milliseconds the answer is "unavailable", so the page is
+ * never left waiting and the attendee can tap again.
+ */
+export const LOCATE_WATCHDOG_MS = 20_000;
+
 /** The values of GeolocationPositionError.code. */
 const PERMISSION_DENIED = 1;
 const TIMEOUT = 3;
@@ -45,7 +52,14 @@ export function locate(geolocation: GeolocationLike | undefined): Promise<Locate
   if (geolocation === undefined) {
     return Promise.resolve({ ok: false, reason: 'unavailable' });
   }
-  return new Promise((resolve) => {
+  return new Promise((settle) => {
+    const watchdog = setTimeout(() => {
+      settle({ ok: false, reason: 'unavailable' });
+    }, LOCATE_WATCHDOG_MS);
+    const resolve = (result: LocateResult): void => {
+      clearTimeout(watchdog);
+      settle(result);
+    };
     try {
       geolocation.getCurrentPosition(
         ({ coords }) => {
