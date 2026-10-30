@@ -143,6 +143,7 @@ describe('toBoardViewModel examples', () => {
       code: 'DAT302',
       title: 'Made-up session about data',
       time: 'Mon, 30 Nov 2026, 10:30 AM',
+      isNext: true,
       actions: [
         {
           kind: 'apple',

@@ -9,6 +9,7 @@
         "sessionCode": "ANT398",
         "title": "Serverless APIs: Hands on workshop",
         "startsAt": "2026-11-30T08:30:00-08:00",
+        "venue": "The Venetian",
         "applePath": null,
         "googleSaveUrl": null
       },
@@ -17,6 +18,7 @@
         "sessionCode": "ARC121",
         "title": "Edge delivery: From zero to production",
         "startsAt": "2026-11-30T10:00:00-08:00",
+        "venue": "Caesars Forum",
         "applePath": null,
         "googleSaveUrl": null
       },
@@ -25,6 +27,7 @@
         "sessionCode": "BWP447",
         "title": "Edge delivery: Patterns and practice",
         "startsAt": "2026-11-30T10:00:00-08:00",
+        "venue": "Wynn",
         "applePath": null,
         "googleSaveUrl": null
       }

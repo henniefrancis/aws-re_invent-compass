@@ -7,6 +7,7 @@ import { quoted, summary, type ContentBlock } from './content-block';
 const PLAN = 'docs/architecture/build-plan.md';
 const PRODUCT = '.kiro/steering/product.md';
 const SITE = '.kiro/specs/showcase-site/requirements.md';
+const WALK = 'docs/decisions/ADR-037-walk-from-here.md';
 const MCP_README = 'packages/mcp-server/README.md';
 
 export interface PrivacySection {
@@ -189,6 +190,12 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         'The board page keeps your hand-off link in the memory of the page only. It removes the link from the address bar as soon as it has read it, and it never stores, logs or shares it.',
         SITE,
         'Requirement 16',
+      ),
+      summary(
+        'privacy-site-walk',
+        'On the board page, Walk from here asks your phone for its location only when you tap it. The walking time is worked out on your phone. Your location is not sent to us, saved or logged. The Directions link opens Apple Maps or Google Maps, and that app gets your location only when you open the link.',
+        WALK,
+        'Decision and Privacy',
       ),
     ],
   },

@@ -70,6 +70,37 @@
             >
             <span class="board-session__time">{{ row.time }}</span>
           </div>
+          @if (row.isNext) {
+            <div class="board-walk">
+              <p class="source-note">{{ walkText.privacy }}</p>
+              <p>
+                <button type="button" (click)="startWalk()">{{ walkText.button }}</button>
+              </p>
+              @if (walk(); as w) {
+                @if (w.kind === 'locating') {
+                  <p>{{ walkText.locating }}</p>
+                } @else if (w.kind === 'message') {
+                  <p>{{ w.text }}</p>
+                } @else if (w.kind === 'estimate') {
+                  <p class="board-walk__result">
+                    <strong>{{ w.summary }}</strong> {{ w.leaveBy }}
+                  </p>
+                  <p class="source-note">{{ w.note }}</p>
+                  <p>
+                    <a
+                      class="board-walk__link"
+                      [href]="w.directions.href"
+                      [attr.aria-label]="w.directions.name"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >{{ w.directions.label }}</a
+                    >
+                  </p>
+                  <p class="source-note">{{ w.directions.caption }}</p>
+                }
+              }
+            </div>
+          }
           @if (row.actions.length > 0) {
             <ul class="board-session-actions">
               @for (action of row.actions; track action.href) {

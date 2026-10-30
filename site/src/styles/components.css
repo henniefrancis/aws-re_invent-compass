@@ -606,6 +606,28 @@ a.site-nav__link:hover {
   background: var(--color-surface);
 }
 
+/* "Walk from here" under the next session (task 40): a short block of plain lines and one
+   button. The text keeps the card's colours; the link and button are 44 pixels high. */
+.board-walk {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+
+.board-walk p {
+  margin: 0;
+}
+
+.board-walk__result {
+  font-size: 1rem;
+}
+
+.board-walk__link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+}
+
 .visually-hidden {
   position: absolute;
   border: 0;
