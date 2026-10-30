@@ -23,9 +23,9 @@ export const BOARDING_MINUTES = 10;
 export const FILE_NAME = 'compass-demo-week.ics';
 const MAX_OCTETS = 75;
 const DESCRIPTION =
-  'Made-up session for the re:Invent Compass demo. Unofficial. Your badge is your ticket.';
+  'Real session from the re:Invent Compass demo, data from the AWS Events API. Unofficial. Your badge is your ticket.';
 const LAYOVER_DESCRIPTION =
-  'Made-up layover for the re:Invent Compass demo. Unofficial. Your badge is your ticket.';
+  'Sample layover from the re:Invent Compass demo. Unofficial. Your badge is your ticket.';
 
 const BACKSLASH = String.fromCharCode(92);
 

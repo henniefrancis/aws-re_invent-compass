@@ -55,7 +55,7 @@ export function heldIds(state: DemoState): string[] {
  * test double engine. The shipped Starter_Week is clean, so tests that need impossible
  * connections or a missing meal layover use this week instead.
  */
-export const RICH_WEEK: readonly string[] = ['syn-003', 'syn-024', 'syn-002', 'syn-028'];
+export const RICH_WEEK: readonly string[] = ['INV530-R1', 'CMP325-R', 'AIM433', 'SEC411'];
 
 export function richWeek(): DemoState {
   const open = makeDeps({ checkReservation: () => ({ decision: 'allow', reasons: [] }) });

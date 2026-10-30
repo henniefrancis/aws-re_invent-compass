@@ -39,8 +39,8 @@ test.describe('the site collects nothing and talks only to itself', () => {
     await page.goto('/demo');
     await page.getByRole('button', { name: 'Start with a sample week' }).click();
     await expect(page.getByRole('status')).toContainText('Sample week loaded');
-    await page.getByRole('button', { name: /^Add ARC228, / }).click();
-    await expect(page.getByRole('heading', { name: 'ARC228 was blocked' })).toBeVisible();
+    await page.getByRole('button', { name: /^Add CMP340, / }).click();
+    await expect(page.getByRole('heading', { name: 'CMP340 was blocked' })).toBeVisible();
     const requestsBefore = record.requests.length;
     await page.getByRole('button', { name: 'Start the safe swap' }).click();
     await page.getByRole('button', { name: 'Reserve the repeat' }).click();

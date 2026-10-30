@@ -32,12 +32,12 @@ describe('verdict view', () => {
     const view = buildVerdictView(blocked, deps);
     expect(view).toMatchObject({
       kind: 'block',
-      title: 'ARC228 was blocked',
-      reasons: ['ARC228 overlaps BWP213.'],
-      rebook: { message: 'No alternative found for ARC228.', options: [] },
+      title: 'CMP340 was blocked',
+      reasons: ['CMP340 overlaps TNC334-R.'],
+      rebook: { message: 'No alternative found for CMP340.', options: [] },
     });
     expect(view?.swapOffer?.text).toBe(
-      'Safe swap: move BWP213 to its repeat BWP213-R. Reserve the repeat first, confirm, then cancel the original.',
+      'Safe swap: move TNC334-R to its repeat TNC334-R1. Reserve the repeat first, confirm, then cancel the original.',
     );
   });
 
@@ -46,13 +46,13 @@ describe('verdict view', () => {
       ...starter,
       pending: {
         kind: 'block',
-        sessionId: 'syn-076',
+        sessionId: 'CMP340',
         reasons: ['No.'],
         rebook: {
           status: 'ok',
           message: 'Found two.',
           options: [
-            { kind: 'repeat', sessionId: 'syn-025', startsAt: 'a', reason: 'It repeats.' },
+            { kind: 'repeat', sessionId: 'TNC334-R1', startsAt: 'a', reason: 'It repeats.' },
             { kind: 'standby', sessionId: 'other', startsAt: 'b', reason: 'A backup.' },
           ],
         },
@@ -61,7 +61,7 @@ describe('verdict view', () => {
     };
     const view = buildVerdictView(state, deps);
     expect(view?.rebook?.options).toEqual([
-      { sessionId: 'syn-025', text: 'BWP213-R: It repeats.', canBook: true },
+      { sessionId: 'TNC334-R1', text: 'TNC334-R1: It repeats.', canBook: true },
       { sessionId: 'other', text: 'other: A backup.', canBook: false },
     ]);
     expect(view?.swapOffer).toBeNull();
@@ -71,10 +71,10 @@ describe('verdict view', () => {
     const warn = makeDeps({
       checkReservation: () => ({ decision: 'warn', reasons: ['Careful.'] }),
     });
-    const state = run([{ type: 'add', sessionId: 'syn-002' }], warn);
+    const state = run([{ type: 'add', sessionId: 'AIM433' }], warn);
     expect(buildVerdictView(state, warn)).toEqual({
       kind: 'warn',
-      title: 'Warning for DAT204',
+      title: 'Warning for AIM433',
       reasons: ['Careful.'],
       rebook: null,
       swapOffer: null,
@@ -95,7 +95,7 @@ describe('swap view', () => {
       [2, 'waiting', 'Confirm the schedule'],
       [3, 'waiting', 'Cancel the original'],
     ]);
-    expect(view?.steps[0]?.label).toBe('Reserve BWP213-R, the repeat (simulated)');
+    expect(view?.steps[0]?.label).toBe('Reserve TNC334-R1, the repeat (simulated)');
     expect(view?.message).toBe(DEMO_TEXT.swapIntro);
   });
 
@@ -114,8 +114,8 @@ describe('swap view', () => {
     const view = buildSwapView(done, deps);
     expect(view?.state).toBe('done');
     expect(view?.steps.map((s) => s.status)).toEqual(['done', 'done', 'done']);
-    expect(view?.invite).toEqual({ sessionId: 'syn-076', text: 'Add ARC228' });
-    expect(view?.message).toBe('The swap is done. You can now add ARC228.');
+    expect(view?.invite).toEqual({ sessionId: 'CMP340', text: 'Add CMP340' });
+    expect(view?.message).toBe('The swap is done. You can now add CMP340.');
   });
 
   test('a stopped swap says so and shows the reasons', () => {
@@ -146,14 +146,15 @@ describe('swap view', () => {
 
 describe('page text', () => {
   test('the guided hint names the session to try', () => {
-    expect(guidedHint(deps)).toContain('ARC228');
+    expect(guidedHint(deps)).toContain('CMP340');
     const without = { ...deps, catalog: new Map() };
     expect(guidedHint(without)).toBe(DEMO_TEXT.startSample);
   });
 
-  test('the notes say the sessions are made up and what the walk minutes mean', () => {
-    expect(DEMO_TEXT.madeUp).toContain('made up');
-    expect(DEMO_TEXT.madeUp).toContain('real schedule');
+  test('the notes say the sessions are real and the week is simulated and what the walk minutes mean', () => {
+    expect(DEMO_TEXT.sessionNote).toContain('real re:Invent 2026 sessions');
+    expect(DEMO_TEXT.credit).toBe('Session data: AWS Events API, catalog as of 29 October 2026.');
+    expect(DEMO_TEXT.sessionNote).toContain('real schedule');
     expect(DEMO_TEXT.walkNote).toContain('walk plus a buffer');
     expect(DEMO_TEXT.emptyWeek).toBe('Add a session first.');
     expect(EMPTY_DEMO.commitments).toEqual([]);
@@ -185,7 +186,7 @@ describe('pass layout', () => {
   });
 
   test('shows the engine reason as a small line when there is no boarding time', () => {
-    const base = buildSamplePass('syn-002', starter, deps) as NonNullable<
+    const base = buildSamplePass('AIM433', starter, deps) as NonNullable<
       ReturnType<typeof buildSamplePass>
     >;
     const layout = layoutPass({
@@ -216,19 +217,19 @@ describe('pass layout', () => {
   });
 
   test('lays out every field of the pass with growing y positions on the card', () => {
-    const pass = buildSamplePass('syn-002', starter, deps);
+    const pass = buildSamplePass('AIM433', starter, deps);
     const layout = layoutPass(pass as NonNullable<typeof pass>);
     expect(layout.width).toBe(PASS_WIDTH);
     const texts = layout.lines.map((l) => l.text);
     for (const label of ['SESSION', 'TERMINAL', 'GATE', 'FLIGHT NAME', 'DATE', 'BOARDING CLOSES']) {
       expect(texts).toContain(label);
     }
-    expect(texts).toContain('DAT204');
+    expect(texts).toContain('AIM433');
     expect(texts).toContain(pass?.boardingCloses as string);
     expect(texts).toContain(pass?.date as string);
-    expect(texts).toContain('Sample pass. Made-up session.');
+    expect(texts).toContain('Sample pass. Not a real booking.');
     expect(texts).toContain('Unofficial. Your badge is your ticket.');
-    expect(texts.some((t) => t.startsWith('40 min walk from'))).toBe(true);
+    expect(texts.some((t) => t.startsWith('10 min walk from'))).toBe(true);
     expect(texts).toContain('Next connection: not known');
     expect(texts.join(' ')).not.toContain('Seat released');
     const ys = layout.lines.map((l) => l.y);
@@ -237,9 +238,9 @@ describe('pass layout', () => {
     expect(onCard.every((l) => l.y < layout.cardHeight)).toBe(true);
     expect(layout.lines.filter((l) => !l.onCard).every((l) => l.y > layout.cardHeight)).toBe(true);
     expect(layout.height).toBeGreaterThan(ys.at(-1) ?? 0);
-    const first = buildSamplePass('syn-003', starter, deps);
+    const first = buildSamplePass('INV530-R1', starter, deps);
     const firstTexts = layoutPass(first as NonNullable<typeof first>).lines.map((l) => l.text);
     expect(firstTexts).toContain('Walk from the previous session: not known');
-    expect(firstTexts.some((t) => t.startsWith('Next: BWP213 at'))).toBe(true);
+    expect(firstTexts.some((t) => t.startsWith('Next: CMP325-R at'))).toBe(true);
   });
 });

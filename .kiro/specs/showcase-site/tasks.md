@@ -482,9 +482,9 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 40.4 Denied or unavailable location, a session with no venue, a venue without coordinates, and a location far from Las Vegas (more than 20 km) each give a short plain message and no estimate; the button works by keyboard and is announced to screen readers; the strict CSP holds
   - [x] 40.5 Owner review on the local preview; full gate and e2e (geolocation mocked in Playwright); commit on the L01 branch
 - [ ] 41. Real sessions in the click-through demo (tracker RD1, owner decision of 31 October)
-  - [ ] 41.1 Pick 15 to 20 real sessions from the owner's cached catalog (2,359 sessions, fetched 29 October 2026) that keep the demo's story: a clash, a true repeat of a session, a missing meal break, a session at each of the six official venues, the starter week, and the guided clash. Keep only code, title, start, end, venue and room (owner decision of 20 October), with a credit to the AWS Events API
-  - [ ] 41.2 A small script makes the snapshot from the cache so it can be refreshed; the snapshot, not the cache, is committed
-  - [ ] 41.3 Replace the 15 made-up sessions in `site/src/lib/demo/demo-catalog.ts` and every place that names them (starter week, guided clash, copy, tests, e2e), keeping the demo's behaviour; the credit shows on the demo page and the Legal and Privacy pages say where the session data comes from
+  - [x] 41.1 Pick 15 to 20 real sessions from the owner's cached catalog (2,359 sessions, fetched 29 October 2026) that keep the demo's story: a clash, a true repeat of a session, a missing meal break, a session at each of the six official venues, the starter week, and the guided clash. Keep only code, title, start, end, venue and room (owner decision of 20 October), with a credit to the AWS Events API
+  - [x] 41.2 A small script makes the snapshot from the cache so it can be refreshed; the snapshot, not the cache, is committed
+  - [x] 41.3 Replace the 15 made-up sessions in `site/src/lib/demo/demo-catalog.ts` and every place that names them (starter week, guided clash, copy, tests, e2e), keeping the demo's behaviour; the credit shows on the demo page and the Legal and Privacy pages say where the session data comes from
   - [ ] 41.4 Owner review on the local preview; full gate and e2e; commit on the RD1 branch
 
 ## Notes

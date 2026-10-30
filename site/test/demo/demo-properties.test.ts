@@ -15,14 +15,14 @@ import { createFakeEngine, createRecordingEngine } from '../doubles/rules-double
 import { VENUE_DATA, heldIds, makeDeps, run, runStates } from '../support/demo-harness';
 
 const POPULAR = [
-  'syn-003',
-  'syn-002',
-  'syn-047',
-  'syn-026',
-  'syn-076',
-  'syn-024',
-  'syn-025',
-  'syn-008',
+  'INV530-R1',
+  'AIM433',
+  'ANT414',
+  'SEC318-R',
+  'CMP340',
+  'TNC334-R',
+  'TNC334-R1',
+  'ACT053',
 ];
 const sessionIdArb = fc.oneof(
   { weight: 3, arbitrary: fc.constantFrom(...POPULAR) },
@@ -273,7 +273,7 @@ describe('Property 12: The safe swap runs in order and cancels only after a safe
     { type: 'advanceSwap' },
     { type: 'advanceSwap' },
     { type: 'dismiss' },
-    { type: 'selectPass', sessionId: 'syn-003' },
+    { type: 'selectPass', sessionId: 'INV530-R1' },
   );
 
   test('steps follow the order, the original goes only after safe, and a stop restores the week', () => {

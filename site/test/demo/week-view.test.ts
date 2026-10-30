@@ -54,30 +54,32 @@ describe('schedule helpers', () => {
     const layover: Commitment = {
       kind: 'personalTime',
       title: 'Layover',
-      startsAt: '2026-12-01T13:00:00-08:00',
-      endsAt: '2026-12-01T13:30:00-08:00',
+      startsAt: '2026-11-30T13:00:00-08:00',
+      endsAt: '2026-11-30T13:30:00-08:00',
     };
-    expect(commitmentRef(layover)).toBe('Layover-2026-12-01T13:00:00-08:00');
+    expect(commitmentRef(layover)).toBe('Layover-2026-11-30T13:00:00-08:00');
     expect(commitmentRef({ ...layover, personalTimeId: 'x' })).toBe('x');
-    expect(commitmentRef(commitmentOfSession(byId('syn-003')))).toBe('syn-003');
+    expect(commitmentRef(commitmentOfSession(byId('INV530-R1')))).toBe('INV530-R1');
     const sorted = sortCommitments([
-      commitmentOfSession(byId('syn-002')),
+      commitmentOfSession(byId('AIM433')),
       layover,
-      commitmentOfSession(byId('syn-003')),
+      commitmentOfSession(byId('INV530-R1')),
     ]);
     expect(sorted.map(commitmentRef)).toEqual([
-      'syn-003',
-      'Layover-2026-12-01T13:00:00-08:00',
-      'syn-002',
+      'INV530-R1',
+      'Layover-2026-11-30T13:00:00-08:00',
+      'AIM433',
     ]);
     const sameTime = sortCommitments([
-      commitmentOfSession(byId('syn-046')),
-      commitmentOfSession(byId('syn-003')),
+      commitmentOfSession(byId('SEC318-R1')),
+      commitmentOfSession(byId('ANT414')),
     ]);
-    expect(sameTime.map(commitmentRef)).toEqual(['syn-003', 'syn-046']);
+    expect(sameTime.map(commitmentRef)).toEqual(['ANT414', 'SEC318-R1']);
     const input = toScheduleInput(sorted, deps.catalog);
-    expect(Object.keys(input.sessions).sort()).toEqual(['syn-002', 'syn-003']);
-    expect(toScheduleInput([commitmentOfSession(byId('syn-003'))], new Map()).sessions).toEqual({});
+    expect(Object.keys(input.sessions).sort()).toEqual(['AIM433', 'INV530-R1']);
+    expect(toScheduleInput([commitmentOfSession(byId('INV530-R1'))], new Map()).sessions).toEqual(
+      {},
+    );
     expect(dayOfIso('2026-12-04T10:00:00-08:00')).toBe('2026-12-04');
   });
 });
@@ -85,23 +87,28 @@ describe('schedule helpers', () => {
 describe('catalog view', () => {
   test('groups the sessions by event day with every field of Requirement 8.1', () => {
     const view = buildCatalogView(EMPTY_DEMO, deps);
-    expect(view.map((d) => d.heading)).toEqual(['Tuesday 1 December', 'Friday 4 December']);
+    expect(view.map((d) => d.heading)).toEqual([
+      'Monday 30 November',
+      'Tuesday 1 December',
+      'Wednesday 2 December',
+      'Thursday 3 December',
+    ]);
     expect(view.flatMap((d) => d.sessions)).toHaveLength(DEMO_SESSIONS.length);
-    const keynote = view[0]?.sessions.find((s) => s.sessionId === 'syn-120');
+    const keynote = view[1]?.sessions.find((s) => s.sessionId === 'KEY002');
     expect(keynote).toMatchObject({
-      code: 'KEY259',
-      type: 'Keynote',
-      level: '400',
-      gate: 'The Venetian, Main hall',
-      timeRange: '9:00 AM to 10:30 AM',
-      boarding: 'KEY259 needs no reservation.',
+      code: 'KEY002',
+      type: null,
+      level: null,
+      gate: 'The Venetian, Level 2, Ballroom E, Keynote',
+      timeRange: '8:30 AM to 10:30 AM',
+      boarding: 'KEY002 needs no reservation.',
       reservable: false,
       inWeek: false,
     });
-    const noVenue = view[1]?.sessions.find((s) => s.sessionId === 'syn-008');
+    const noVenue = view[2]?.sessions.find((s) => s.sessionId === 'ACT053');
     expect(noVenue?.gate).toBe('Venue not published');
-    const clash = view[1]?.sessions.find((s) => s.sessionId === 'syn-026');
-    expect(clash?.boarding).toBe('Seat released at 12:50 PM');
+    const clash = view[2]?.sessions.find((s) => s.sessionId === 'SEC318-R');
+    expect(clash?.boarding).toBe('Seat released at 8:20 AM');
   });
 
   test('personal time in the week is not a held session', () => {
@@ -130,18 +137,18 @@ describe('catalog view', () => {
         .filter((s) => s.inWeek)
         .map((s) => s.sessionId)
         .sort(),
-    ).toEqual(['syn-002', 'syn-003', 'syn-024', 'syn-028']);
+    ).toEqual(['AIM433', 'CMP325-R', 'INV530-R1', 'SEC411']);
   });
 
   test('shows nothing for a type or level that is not published', () => {
-    const bare: NormalisedSession = { ...byId('syn-003'), missingFields: ['type', 'level'] };
+    const bare: NormalisedSession = { ...byId('INV530-R1'), missingFields: ['type', 'level'] };
     delete (bare as { type?: string }).type;
     delete (bare as { level?: string }).level;
     const custom = createDemoRuntime(createFakeEngine(), VENUE_DATA);
     expect(custom).not.toBeNull();
     const view = buildCatalogView(EMPTY_DEMO, {
       ...(custom as NonNullable<typeof custom>),
-      catalog: new Map([['syn-003', bare]]),
+      catalog: new Map([['INV530-R1', bare]]),
     });
     expect(view[0]?.sessions[0]).toMatchObject({ type: null, level: null });
   });
@@ -154,15 +161,15 @@ describe('week view', () => {
 
   test('groups the week by day with boarding, gate and time range for each item', () => {
     const view = buildWeekView(starter, deps);
-    expect(view.map((d) => d.heading)).toEqual(['Tuesday 1 December', 'Friday 4 December']);
+    expect(view.map((d) => d.heading)).toEqual(['Monday 30 November', 'Thursday 3 December']);
     expect(view[0]?.items[0]).toEqual({
-      ref: 'syn-003',
+      ref: 'INV530-R1',
       kind: 'reservedSession',
-      code: 'AIM321',
-      title: 'Identity and access: Deep dive',
-      label: 'AIM321',
-      gate: 'MGM Grand, Room 118',
-      timeRange: '11:30 AM to 1:00 PM',
+      code: 'INV530-R1',
+      title: 'EC2 at 20: Rebuilding the control plane while it is running',
+      label: 'INV530-R1',
+      gate: 'MGM Grand, Level 3, Room 350',
+      timeRange: '11:30 AM to 12:30 PM',
       boarding: 'Seat released at 11:20 AM',
     });
   });
@@ -172,13 +179,13 @@ describe('week view', () => {
     expect(view[0]?.connections).toEqual([
       {
         classification: 'impossible',
-        text: 'Impossible: AIM321 to BWP213. Walk from MGM Grand to MGM Grand is about 10 minutes (estimate), with -20 spare.',
+        text: 'Impossible: INV530-R1 to CMP325-R. Walk from MGM Grand to MGM Grand is about 10 minutes (estimate), with -20 spare.',
         walk: 'Walk plus buffer: 10 minutes.',
       },
       {
-        classification: 'impossible',
-        text: 'Impossible: BWP213 to DAT204. Walk from MGM Grand to Wynn is about 40 minutes (estimate), with -20 spare.',
-        walk: 'Walk plus buffer: 40 minutes.',
+        classification: 'comfortable',
+        text: 'Comfortable: CMP325-R to AIM433. Walk from MGM Grand to MGM Grand is about 10 minutes (estimate), with 10 spare.',
+        walk: 'Walk plus buffer: 10 minutes.',
       },
     ]);
     expect(view[1]?.connections).toEqual([]);
@@ -186,11 +193,11 @@ describe('week view', () => {
 
   test('shows the layover report with its suggested blocks', () => {
     const day = buildWeekView(starter, deps)[0];
-    expect(day?.layovers.lines).toEqual(['Only 0 free minutes in the meal window on 2026-12-01.']);
+    expect(day?.layovers.lines).toEqual(['Only 0 free minutes in the meal window on 2026-11-30.']);
     expect(day?.layovers.suggestions).toEqual([
       {
-        start: '2026-12-01T14:00:00-08:00',
-        end: '2026-12-01T14:30:00-08:00',
+        start: '2026-11-30T14:00:00-08:00',
+        end: '2026-11-30T14:30:00-08:00',
         label: '2:00 PM to 2:30 PM: A free gap just after the meal window.',
       },
     ]);
@@ -240,7 +247,7 @@ describe('week view', () => {
         status: 'ok',
         days: [
           {
-            day: '2026-12-01',
+            day: '2026-11-30',
             mealLayoverMissing: true,
             freeMealMinutes: 0,
             reasons: ['No meal time.'],
@@ -264,33 +271,33 @@ describe('week view', () => {
         {
           kind: 'personalTime',
           title: 'Layover',
-          startsAt: '2026-12-01T12:00:00-08:00',
-          endsAt: '2026-12-01T12:30:00-08:00',
+          startsAt: '2026-11-30T12:00:00-08:00',
+          endsAt: '2026-11-30T12:30:00-08:00',
         },
         {
           kind: 'personalTime',
           title: 'Layover',
-          startsAt: '2026-12-01T13:00:00-08:00',
-          endsAt: '2026-12-01T13:30:00-08:00',
+          startsAt: '2026-11-30T13:00:00-08:00',
+          endsAt: '2026-11-30T13:30:00-08:00',
         },
         {
           kind: 'reservedSession',
-          sessionId: 'syn-002',
-          startsAt: '2026-12-01T14:30:00-08:00',
-          endsAt: '2026-12-01T16:00:00-08:00',
+          sessionId: 'AIM433',
+          startsAt: '2026-11-30T14:30:00-08:00',
+          endsAt: '2026-11-30T16:00:00-08:00',
         },
         {
           kind: 'reservedSession',
           sessionId: 'gone',
-          startsAt: '2026-12-01T17:00:00-08:00',
-          endsAt: '2026-12-01T17:30:00-08:00',
+          startsAt: '2026-11-30T17:00:00-08:00',
+          endsAt: '2026-11-30T17:30:00-08:00',
           title: 'Titled',
         },
         {
           kind: 'reservedSession',
           sessionId: 'gone2',
-          startsAt: '2026-12-01T18:00:00-08:00',
-          endsAt: '2026-12-01T18:30:00-08:00',
+          startsAt: '2026-11-30T18:00:00-08:00',
+          endsAt: '2026-11-30T18:30:00-08:00',
         },
       ],
     };
@@ -298,7 +305,7 @@ describe('week view', () => {
     expect(items.map((i) => i.label)).toEqual([
       'Layover at 12:00 PM',
       'Layover at 1:00 PM',
-      'DAT204',
+      'AIM433',
       'Titled',
       'gone2',
     ]);
@@ -309,29 +316,29 @@ describe('week view', () => {
     const layover: Commitment = {
       kind: 'personalTime',
       title: 'Layover',
-      startsAt: '2026-12-01T13:00:00-08:00',
-      endsAt: '2026-12-01T13:30:00-08:00',
+      startsAt: '2026-11-30T13:00:00-08:00',
+      endsAt: '2026-11-30T13:30:00-08:00',
     };
     const stray: Commitment = {
       kind: 'reservedSession',
       sessionId: 'gone',
-      startsAt: '2026-12-01T15:00:00-08:00',
-      endsAt: '2026-12-01T16:00:00-08:00',
+      startsAt: '2026-11-30T15:00:00-08:00',
+      endsAt: '2026-11-30T16:00:00-08:00',
     };
     const titled: Commitment = {
       ...stray,
       sessionId: 'gone2',
       title: 'Titled',
       venue: 'Encore',
-      startsAt: '2026-12-01T16:30:00-08:00',
-      endsAt: '2026-12-01T17:00:00-08:00',
+      startsAt: '2026-11-30T16:30:00-08:00',
+      endsAt: '2026-11-30T17:00:00-08:00',
     };
     const located: Commitment = {
       ...layover,
       personalTimeId: 'p',
       location: 'Wynn',
-      startsAt: '2026-12-01T17:30:00-08:00',
-      endsAt: '2026-12-01T18:00:00-08:00',
+      startsAt: '2026-11-30T17:30:00-08:00',
+      endsAt: '2026-11-30T18:00:00-08:00',
     };
     const state: DemoState = { ...EMPTY_DEMO, commitments: [layover, stray, titled, located] };
     const items = buildWeekView(state, deps)[0]?.items;
