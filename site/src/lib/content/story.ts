@@ -88,7 +88,7 @@ export const UNOFFICIAL_STATEMENT: ContentBlock = summary(
 
 export const TRY_IT: ContentBlock = summary(
   'try-it',
-  'The demo runs on made-up sessions, with no install and no sign-in.',
-  '.kiro/steering/product.md',
-  'Devices (ADR-005)',
+  'The demo runs on a small snapshot of real sessions from the AWS Events API, with no install and no sign-in.',
+  'docs/hackathon-rules.md',
+  'Compliance, rule 11',
 );

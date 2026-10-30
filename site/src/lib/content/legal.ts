@@ -21,6 +21,12 @@ export const DISCLAIMER_BLOCKS: readonly ContentBlock[] = [
     '27.2',
   ),
   summary(
+    'disclaimer-demo-data',
+    'The demo uses a small snapshot of real sessions from the public AWS Events API catalog. It shows only the session code, title, times, venue and room. The data is credited to the AWS Events API and is used only to show how Compass checks compatibility.',
+    'docs/hackathon-rules.md',
+    'Compliance, rule 11',
+  ),
+  summary(
     'disclaimer-warranty',
     'Compass is provided "as is", without warranties or conditions of any kind, as the Apache License 2.0 says.',
     'LICENSE',
