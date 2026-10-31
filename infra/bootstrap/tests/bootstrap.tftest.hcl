@@ -253,6 +253,14 @@ run "apply_role_scoping" {
   }
 
   assert {
+    condition = anytrue([
+      for s in jsondecode(aws_iam_policy.apply["dev-edge"].policy).Statement :
+      s.Sid == "ManageCloudFrontFunction" && contains(s.Action, "cloudfront:TagResource") && contains(s.Action, "cloudfront:UntagResource") && s.Resource == "arn:aws:cloudfront::aws:function/compass-dev-*"
+    ])
+    error_message = "Creating a CloudFront function tags it, so the apply role needs cloudfront:TagResource on this environment's functions only."
+  }
+
+  assert {
     condition = alltrue([
       for k, p in aws_iam_policy.apply : !anytrue([
         for s in jsondecode(p.policy).Statement :

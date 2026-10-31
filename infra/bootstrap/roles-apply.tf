@@ -352,12 +352,16 @@ locals {
         Condition = local.tag_on_manage[e]
       },
       {
+        # The AWS provider tags a CloudFront function on create, which is the IAM action
+        # cloudfront:TagResource on the function (first prod apply, 31 October 2026).
         Sid    = "ManageCloudFrontFunction"
         Effect = "Allow"
         Action = [
           "cloudfront:CreateFunction",
           "cloudfront:DeleteFunction",
           "cloudfront:PublishFunction",
+          "cloudfront:TagResource",
+          "cloudfront:UntagResource",
           "cloudfront:UpdateFunction",
         ]
         Resource = local.name_scope[e].cf_function_pattern

@@ -338,6 +338,9 @@ The build order lays the shared foundation first (version pins, provider, tags, 
   - [x] 27.3 Bring `scripts/google-wallet-class.mjs` into the root coverage gate with unit tests at 100 percent, with every network and file call injected and no real Google call
   - [x] 27.4 Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent, `npm run test:site`, the infra static tests, actionlint if present); commit scoped `infra`
 
+- [x] 28. The apply role may tag CloudFront functions (first prod apply of 31 October 2026, design item 46)
+  - [x] 28.1 Add `cloudfront:TagResource` and `cloudfront:UntagResource` to the `ManageCloudFrontFunction` statement of the apply roles, still scoped to `function/compass-<env>-*`; a native test checks it; fmt, validate and the bootstrap tests; commit scoped `infra`. The owner applies the bootstrap, then reruns `scripts/release.sh prod`
+
 ## Notes
 
 - The implementation language is Terraform/HCL, Bash, and Node.js (`.mjs`), fixed by the design and tech steering (Terraform only, no CDK/CloudFormation/SAM).
