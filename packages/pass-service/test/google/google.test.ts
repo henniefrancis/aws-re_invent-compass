@@ -4,7 +4,12 @@ import { JWT } from 'google-auth-library';
 import fc from 'fast-check';
 import { describe, expect, test, vi } from 'vitest';
 import { formatEventDate, formatEventTime24 } from '../../src/apple/format-time.js';
-import { backFields, boardingClosesAt, shortRoom } from '../../src/apple/pass-template.js';
+import {
+  WALLET_GROUP_ID,
+  backFields,
+  boardingClosesAt,
+  shortRoom,
+} from '../../src/apple/pass-template.js';
 import {
   GENERIC_OBJECT_URL,
   createGoogleWalletClient,
@@ -358,6 +363,8 @@ describe('Feature: pass-service, Save to Google Wallet link', () => {
         Buffer.from(s, 'base64url'),
       ),
     ).toBe(true);
+    expect(JSON.stringify(claims)).not.toContain('groupingInfo');
+    expect(JSON.stringify(claims)).not.toContain('sortIndex');
     return (claims.payload as { genericObjects: { id: string; classId: string }[] }).genericObjects;
   }
 
@@ -493,5 +500,39 @@ describe('Feature: pass-service, Google token source', () => {
     expect(built).toEqual([throwawayPki().google.clientEmail, 'other@example.test']);
     current = createFakeSecrets();
     await expect(source.accessToken()).rejects.toThrow('no access token');
+  });
+});
+
+describe('Feature: pass-service, one wallet group for the week, Google (task 55)', () => {
+  const build = (startsAt: string, endsAt: string) =>
+    buildGenericObject(
+      {
+        serialNumber: '66666666-6666-4666-8666-666666666666',
+        fields: samplePassFields({ startsAt, endsAt }),
+        state: 'ACTIVE',
+        timezone: TZ,
+      },
+      { issuerId: '3388000000099999999', classSuffix: 'compass', publicBaseUrl: 'https://x.test' },
+    );
+
+  test('every object carries the fixed group id and a whole-minute sortIndex of the start', () => {
+    const obj = build('2026-12-02T09:20:00-08:00', '2026-12-02T11:00:00-08:00');
+    expect(obj.groupingInfo.groupingId).toBe(WALLET_GROUP_ID);
+    expect(obj.groupingInfo.sortIndex).toBe(Date.parse('2026-12-02T17:20:00Z') / 60_000);
+    expect(Number.isInteger(obj.groupingInfo.sortIndex)).toBe(true);
+  });
+
+  test('two sessions sort by start and the index fits a signed 32-bit integer for 2026', () => {
+    const early = build('2026-11-30T08:00:00-08:00', '2026-11-30T09:00:00-08:00');
+    const late = build('2026-12-04T16:00:00-08:00', '2026-12-04T17:00:00-08:00');
+    expect(early.groupingInfo.sortIndex).toBeLessThan(late.groupingInfo.sortIndex);
+    for (const obj of [early, late]) {
+      expect(obj.groupingInfo.sortIndex).toBeLessThanOrEqual(2 ** 31 - 1);
+      expect(obj.groupingInfo.sortIndex).toBeGreaterThan(0);
+    }
+  });
+
+  test('the group id holds no attendee data and the save token names objects by id only', () => {
+    expect(WALLET_GROUP_ID).toMatch(/^[a-z0-9-]+$/);
   });
 });
