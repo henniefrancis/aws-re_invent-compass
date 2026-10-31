@@ -669,6 +669,9 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 56.3 Tests at 100 percent coverage: each change message, no message when nothing visible changed, a quota refusal that leaves the update successful, and the message text holding no attendee data beyond the session's own fields; full gate; commit scoped `pass-service`
   - [x] 56.4 Owner check on dev (confirmed by the owner on 1 November 2026): MAM411 moved to a test room in the local catalog cache, `sync_passes` updated the pass, and both phones showed the change alert
 
+- [x] 57. The Apple pass issuer name is re:Invent Compass (owner request of 1 November)
+  - `organizationName` changes from "AWS Community South Africa" (task 44) to "re:Invent Compass", the product name, so the Lock Screen card and the change alerts (task 56) name Compass. Passes already on a phone take the new name on their next update. Google Wallet alert titles come from Google's issuer business profile, which this does not change. Tests updated; full gate; commit scoped `pass-service`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.

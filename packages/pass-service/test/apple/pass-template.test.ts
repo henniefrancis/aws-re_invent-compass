@@ -137,7 +137,7 @@ describe('Feature: pass-service, pass template', () => {
     expect('logoText' in json).toBe(false);
     expect('posterGeneric' in json).toBe(false);
     expect('preferredStyleSchemes' in json).toBe(false);
-    expect(json.organizationName).toBe('AWS Community South Africa');
+    expect(json.organizationName).toBe('re:Invent Compass');
     expect(json.description).toBe('Unofficial Boarding Pass');
     expect(row(json.eventTicket.headerFields)).toEqual(['SESSION=MAM411 (PKTextAlignmentNatural)']);
     expect(row(json.eventTicket.primaryFields)).toEqual([
@@ -357,7 +357,7 @@ describe('Feature: pass-service, pass template', () => {
           expect(json.eventTicket.backFields.some((f) => f.value === INDEPENDENT_NOTICE)).toBe(
             true,
           );
-          expect(json.organizationName).toBe('AWS Community South Africa');
+          expect(json.organizationName).toBe('re:Invent Compass');
           expect(json.description).toMatch(/unofficial/i);
           expect(text).not.toMatch(/barcode/i);
           expect(json.sharingProhibited).toBe(true);

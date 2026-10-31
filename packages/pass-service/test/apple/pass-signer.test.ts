@@ -111,7 +111,7 @@ describe('Feature: pass-service, pass signer', () => {
     expect(json.boardingPass).toBeUndefined();
     expect(json.posterGeneric).toBeUndefined();
     expect(json.preferredStyleSchemes).toBeUndefined();
-    expect(json.organizationName).toBe('AWS Community South Africa');
+    expect(json.organizationName).toBe('re:Invent Compass');
     expect(json.semantics).toMatchObject({
       eventType: 'PKEventTypeGeneric',
       venueRegionName: 'Las Vegas',
