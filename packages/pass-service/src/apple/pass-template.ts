@@ -24,14 +24,13 @@ export {
   SEAT_RULE,
   UNOFFICIAL_NOTICE,
 } from './pass-texts.js';
-/** The issuer Wallet names on the pass and the Lock Screen (owner decision, task 44). */
 /**
  * The one wallet group for re:Invent 2026 (task 55). Apple's top-level `groupingIdentifier` and
  * Google's `groupingInfo.groupingId` both carry it, so an attendee's session passes stack as one
  * group. A fixed constant: no attendee, session or serial data in it.
  */
 export const WALLET_GROUP_ID = 'reinvent-2026-compass';
-
+/** The issuer Wallet names on the pass and the Lock Screen (owner decision, task 44). */
 export const ORGANIZATION_NAME = 'AWS Community South Africa';
 export const NO_VENUE = 'Venue not published';
 export const NO_ROOM = 'Room not published';
