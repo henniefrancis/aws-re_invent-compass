@@ -672,6 +672,10 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Pin `@modelcontextprotocol/sdk` at exactly 1.32.2 in `packages/mcp-server/package.json`, refresh the lock file, amend ADR-032, Requirement terms and the foundation-contracts dependency table; full gate; commit scoped `compass-power`
   - _Requirements: 20.1_
 
+- [x] 60. The npm trusted publisher expires (release step 15, 31 October)
+  - The first `v0.1.0` publish failed with E404 after the provenance statement: npm expires a trusted publisher that has not completed a publish within 2 days. `docs/runbooks/npm-release.md` now says to create it on release day with only "npm publish" allowed, gives the `npm trust` CLI form, adds a check before the tag in "Tag order", and adds the E404 case to "If a publish fails"; dash check and prettier; commit scoped `compass-power`
+  - _Requirements: 20.1_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.
