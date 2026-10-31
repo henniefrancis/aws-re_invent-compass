@@ -70,7 +70,8 @@ test.describe('no positioned overlays and no hidden focus', () => {
       expect(fixed).toEqual([]);
 
       // Focus each control in turn (WebKit does not Tab to links by default) and check that
-      // nothing sits on top of its centre.
+      // nothing sits on top of the centre of its first line. The centre of a wrapped link's
+      // whole box can fall in the gap between its lines.
       const covered = await page.evaluate(() => {
         const focusables = [
           ...document.querySelectorAll<HTMLElement>(
@@ -81,8 +82,8 @@ test.describe('no positioned overlays and no hidden focus', () => {
         for (const element of focusables) {
           element.focus();
           element.scrollIntoView({ block: 'nearest' });
-          const box = element.getBoundingClientRect();
-          if (box.width === 0 || box.height === 0) {
+          const box = element.getClientRects()[0];
+          if (box === undefined || box.width === 0 || box.height === 0) {
             continue;
           }
           const top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);

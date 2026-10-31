@@ -494,6 +494,9 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 43.1 Each session in the demo's session list and in "Your week" uses the board's card layout: the date and time (for example "Mon, 30 Nov 2026, 11:30 AM to 12:30 PM") small in the top left corner, the session code small in the top right in the gradient, the title across the full width, then the venue and room and "Boarding closes at ...", and the buttons centred; the card styles are shared with the board page, not copied; the reading order still gives the code with the title
   - [x] 43.2 Owner review on the local preview; full gate and e2e; commit scoped `showcase-site`
 
+- [ ] 44. The hidden-focus check in `site/e2e/layout.spec.ts` probes a link's first line, not the centre of its whole box (release step 14, 31 October)
+  - The first `e2e.yml` run on `main` (6923e1c) failed on `/security` in iPhone portrait: on Linux WebKit "The full security policy (SECURITY.md)" wraps onto two lines, and the centre of a wrapped link's bounding box falls in the gap between the lines, so `elementFromPoint` returned the list item. The page snapshot shows nothing on top of the link. The check now takes the centre of the element's first client rect (its first line box), which is still covered if anything really sits on top of it; the page is unchanged
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.
