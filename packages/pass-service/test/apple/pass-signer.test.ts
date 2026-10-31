@@ -100,6 +100,7 @@ describe('Feature: pass-service, pass signer', () => {
     expect(json.serialNumber).toBe(serial(1));
     expect(json.expirationDate).toBe('2026-12-02T19:00:00.000Z');
     expect(json.sharingProhibited).toBe(true);
+    expect(json.groupingIdentifier).toBe('reinvent-2026-compass');
     expect(json.barcodes).toBeUndefined();
     expect(json.relevantDates).toEqual([
       { startDate: '2026-12-02T17:20:00.000Z', endDate: '2026-12-02T19:00:00.000Z' },

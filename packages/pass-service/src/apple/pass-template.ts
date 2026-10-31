@@ -25,6 +25,13 @@ export {
   UNOFFICIAL_NOTICE,
 } from './pass-texts.js';
 /** The issuer Wallet names on the pass and the Lock Screen (owner decision, task 44). */
+/**
+ * The one wallet group for re:Invent 2026 (task 55). Apple's top-level `groupingIdentifier` and
+ * Google's `groupingInfo.groupingId` both carry it, so an attendee's session passes stack as one
+ * group. A fixed constant: no attendee, session or serial data in it.
+ */
+export const WALLET_GROUP_ID = 'reinvent-2026-compass';
+
 export const ORGANIZATION_NAME = 'AWS Community South Africa';
 export const NO_VENUE = 'Venue not published';
 export const NO_ROOM = 'Room not published';
@@ -82,6 +89,7 @@ export interface PassJson {
   organizationName: string;
   description: string;
   sharingProhibited: true;
+  groupingIdentifier: string;
   backgroundColor: string;
   foregroundColor: string;
   labelColor: string;
@@ -224,6 +232,7 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
     organizationName: ORGANIZATION_NAME,
     description: 'Unofficial Boarding Pass',
     sharingProhibited: true,
+    groupingIdentifier: WALLET_GROUP_ID,
     backgroundColor: PASS_COLOURS.background,
     foregroundColor: PASS_COLOURS.foreground,
     labelColor: PASS_COLOURS.label,

@@ -9,6 +9,7 @@ import {
   PRIVACY_NOTICE,
   SEAT_RULE,
   UNOFFICIAL_NOTICE,
+  WALLET_GROUP_ID,
   boardingClosesAt,
   buildPassJson,
   NO_ROOM,
@@ -434,6 +435,30 @@ describe('Feature: pass-service, pass template', () => {
         },
       ),
       { numRuns: 300 },
+    );
+  });
+});
+
+describe('Feature: pass-service, one wallet group for the week (task 55)', () => {
+  test('the group constant is fixed and holds no attendee data', () => {
+    expect(WALLET_GROUP_ID).toBe('reinvent-2026-compass');
+    expect(WALLET_GROUP_ID).toMatch(/^[a-z0-9-]+$/);
+  });
+
+  test('every pass carries the same top-level groupingIdentifier, active or voided', () => {
+    fc.assert(
+      fc.property(passFieldsArb, (fields) => {
+        const active = buildPassJson(input(fields));
+        const voided = buildPassJson({
+          ...input(fields),
+          status: 'voided',
+          voidedAt: '2026-12-01T00:00:00.000Z',
+        });
+        expect(active.groupingIdentifier).toBe(WALLET_GROUP_ID);
+        expect(voided.groupingIdentifier).toBe(WALLET_GROUP_ID);
+        expect(Object.keys(active)).toContain('groupingIdentifier');
+      }),
+      { numRuns: 50 },
     );
   });
 });
