@@ -652,6 +652,11 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 53.1 Each session in the hand-off view carries its `venue` (the official venue name the pass shows as GATE) or null, from the pass record; contract source, generated copies, schemas and tests; the site validator accepts only a known venue name or null
   - [x] 53.2 Full gate; commit on the L01 branch
 
+- [x] 54. Six new high npm advisories (CI audit of 31 October 2026)
+  - node-forge 1.4.0 to 1.4.2 (GHSA-7wch-p9px-956x, GHSA-jc66-7q78-782g, GHSA-8hrf-8g6f-7xwp, GHSA-hqq3-7jhf-c5jx, GHSA-5x38-2vff-x55p), a patch release that passkit-generator's `^1.4.0` range accepts
+  - joi 17.13.4 to 17.13.9 through a root `overrides` entry (GHSA-4528-x5fx-h6hg), because passkit-generator 3.7.0 pins joi exactly; npm's own suggestion, downgrading passkit-generator to 3.1.2, is refused
+  - `audit-check` passes with no new allowlist entry; full gate; commit scoped `pass-service`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.
