@@ -42,6 +42,15 @@ test('the Google Wallet images have one set of names everywhere (pass-service ta
   assert.deepEqual(files, expected);
 });
 
+test('release.sh builds the TypeScript workspace before the Lambda and site builds (infra task 29)', () => {
+  const source = readOwned('scripts/release.sh');
+  assert.match(source, /workspace_build_cmd="\$\{COMPASS_WORKSPACE_BUILD_CMD:-npx tsc -b\}"/);
+  const workspaceAt = source.indexOf('bash -c "${workspace_build_cmd}" || fail');
+  const lambdaAt = source.indexOf('bash -c "${lambda_build_cmd}"');
+  const siteAt = source.indexOf('bash -c "${site_build_cmd}"');
+  assert.ok(workspaceAt > 0 && lambdaAt > workspaceAt && siteAt > workspaceAt);
+});
+
 test('release.sh adds the Google Wallet images to the built site before the sync (infra task 25)', () => {
   const source = readOwned('scripts/release.sh');
   const buildAt = source.indexOf('bash -c "${site_build_cmd}"');

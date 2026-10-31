@@ -331,6 +331,9 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
     - _Requirements: 4.11_
   - [x] 22.2 Commit with compass-power task 51 (scoped `compass-power`). Do not push
 
+- [x] 23. Refresh the Events API OpenAPI copy (live document re-checked on 31 October)
+  - Replace `packages/contracts/events-api.openapi.json` with the live `https://api.awsevents.com/v1/openapi.json`. The only differences are three `PersonalTime` descriptions: personal time is wall-clock time in the event's time zone, not UTC, and a block ends on the same date it starts. Regenerate `src/generated/events-api.ts` (comments only) and run the contract tests; commit with compass-power task 62
+
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.
 - Each top-level task (1 through 14) ends with a commit sub-task. Commit locally only after that task's tests pass, using Conventional Commits with `foundation-contracts` as the scope. The first commit (1.6) also includes `.kiro/specs/foundation-contracts/`. Never push, merge, tag or open a PR: the integrator does that after review.

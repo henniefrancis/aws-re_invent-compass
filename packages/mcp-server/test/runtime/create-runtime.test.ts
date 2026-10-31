@@ -323,6 +323,33 @@ describe('live composition', () => {
     expect(env.stderr.join('')).not.toContain('access-token-value');
   });
 
+  test('a held sign-in with an expired access token is renewed before sign_in reports it', async () => {
+    const store = createTokenStore(memoryKeyring());
+    store.save({ ...tokens(), accessTokenExpiresAt: Date.now() - 86_400_000 });
+    const urls: string[] = [];
+    const oauthFetch = (url: string) => {
+      urls.push(url);
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            access_token: 'renewed-access-token',
+            id_token: fakeIdToken(),
+            expires_in: 3600,
+            token_type: 'Bearer',
+          }),
+          { status: 200 },
+        ),
+      );
+    };
+    const env = await testEnvironment({ store, oauthFetch });
+    const runtime = await createRuntime(env.environment, {});
+    const result = await runtime.events.signIn(false);
+    expect(result.signedIn).toBe(true);
+    expect(Date.parse(String(result.expiresAt))).toBeGreaterThan(Date.now());
+    expect(urls).toEqual(['https://oauth.awsevents.com/oauth2/token']);
+    expect(env.launched).toHaveLength(0);
+  });
+
   test('sign-out revokes through the injected fetch and clears the store', async () => {
     const store = createTokenStore(memoryKeyring());
     store.save(tokens());

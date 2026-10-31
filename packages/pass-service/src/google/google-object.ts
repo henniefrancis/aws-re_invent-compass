@@ -5,13 +5,17 @@
 // `heroImage` are Image values, `validTimeInterval` is a TimeInterval of DateTime values. No
 // `barcode` is set. The class template (scripts/google-wallet-class.mjs) puts the terminal and
 // gate, then the date and boarding closes on the front and orders the details (task 47).
+// `groupingInfo` (task 55) puts every pass of the week in one group, ordered by start; it is on the
+// inserted object only, never in the save token.
 // https://developers.google.com/wallet/generic/rest/v1/genericobject
+// https://developers.google.com/wallet/reference/rest/v1/GroupingInfo
 // https://developers.google.com/wallet/generic/resources/template
 import type { PassFields } from '@compass/contracts';
 import { formatEventDate, formatEventTime24 } from '../apple/format-time.js';
 import {
   NO_ROOM,
   NO_VENUE,
+  WALLET_GROUP_ID,
   backFields,
   boardingClosesAt,
   shortRoom,
@@ -46,6 +50,16 @@ export interface GoogleImage {
   contentDescription: LocalizedString;
 }
 
+export interface GroupingInfo {
+  groupingId: string;
+  sortIndex: number;
+}
+
+/** Whole minutes since the Unix epoch at the session start, so earlier sessions sort first. */
+export function groupSortIndex(startsAt: string): number {
+  return Math.floor(Date.parse(startsAt) / 60_000);
+}
+
 export interface GenericObject {
   id: string;
   classId: string;
@@ -58,6 +72,7 @@ export interface GenericObject {
   heroImage: GoogleImage;
   textModulesData: TextModule[];
   hexBackgroundColor: string;
+  groupingInfo: GroupingInfo;
   validTimeInterval: { end: { date: string } };
 }
 
@@ -133,6 +148,51 @@ export function buildGenericObject(
       ...details,
     ],
     hexBackgroundColor: GOOGLE_BACKGROUND,
+    groupingInfo: { groupingId: WALLET_GROUP_ID, sortIndex: groupSortIndex(fields.startsAt) },
     validTimeInterval: { end: { date: fields.endsAt } },
+  };
+}
+
+/** An issuer message on a Google object (Message in the Google Wallet REST reference). */
+export interface WalletMessage {
+  id: string;
+  header: string;
+  body: string;
+  messageType: 'TEXT_AND_NOTIFY';
+}
+
+/**
+ * The change alert for an updated pass (task 56): one message that names only what the attendee
+ * sees change, the venue and room or the time, in the pass's own formats. Undefined when nothing
+ * visible changed. The id is unique to the pass version, so a later change adds a new message.
+ */
+export function changeMessageFor(
+  before: PassFields,
+  after: PassFields,
+  timezone: string,
+  version: number,
+): WalletMessage | undefined {
+  const lines: string[] = [];
+  if (before.venue !== after.venue || before.room !== after.room) {
+    const venue = after.venue === '' ? NO_VENUE : after.venue;
+    const room = after.room === '' ? NO_ROOM : after.room;
+    lines.push(`Now at ${venue}, ${room}.`);
+  }
+  if (
+    Date.parse(before.startsAt) !== Date.parse(after.startsAt) ||
+    Date.parse(before.endsAt) !== Date.parse(after.endsAt)
+  ) {
+    lines.push(
+      `Now ${formatEventDate(after.startsAt, timezone)} | ${formatEventTime24(after.startsAt, timezone)}-${formatEventTime24(after.endsAt, timezone)}.`,
+    );
+  }
+  if (lines.length === 0) {
+    return undefined;
+  }
+  return {
+    id: `change-${String(version)}`,
+    header: `${after.sessionCode} changed`,
+    body: lines.join(' '),
+    messageType: 'TEXT_AND_NOTIFY',
   };
 }

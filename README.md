@@ -8,7 +8,7 @@ It ships as a Kiro Power plus a local MCP server that any desktop MCP client can
 
 Built for the re:Invent Catalog API Builder Challenge (September to November 2026).
 
-> **Status: built, version 0.1.0, not yet released.** The code, tests and infrastructure are in this repository, and the code is set to version 0.1.0. These parts are **coming soon**: the production site and Compass API at `https://reinvent-compass.vegas`, the npm package `reinvent-compass` (published after the production deploy), the Kiro Power listing, the Builder Center article and the demo video. Links will be added here when they are live.
+> **Status: built, version 0.1.0, not yet released.** The code, tests and infrastructure are in this repository, and the code is set to version 0.1.0. These parts are **coming soon**: the production site and Compass API at `https://reinvent-compass.vegas`, the npm package `reinvent-compass` (published after the production deploy), the Builder Center article and the demo video. Links will be added here when they are live.
 
 ## Contents
 

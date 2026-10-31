@@ -68,6 +68,8 @@ export interface AuthPort {
   isSignedIn(): boolean;
   /** When the held access token expires, as an ISO instant, if known. */
   expiresAt(): string | undefined;
+  /** Renews the held access token when it has expired or is about to (S1 refreshIfNeeded). */
+  refreshIfNeeded(): Promise<void>;
   signIn(): Promise<{ memoryOnlyNotice?: string }>;
   signOut(): Promise<{ signOutUrl: string }>;
 }
@@ -152,8 +154,9 @@ const NAIVE_WALL_CLOCK = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::(\d{2})(?:\.\d+)?)?$
 
 /**
  * The wire form of a personal time instant: the wall-clock time in the event time zone, with no
- * zone suffix. The OpenAPI document says UTC, but the live service and the re:Invent app read
+ * zone suffix. The OpenAPI document said UTC, but the live service and the re:Invent app read
  * the value as event time, so 07:00 PST sent as 15:00 showed at 15:00 (compass-power task 55).
+ * AWS has since corrected the document to event wall-clock time (re-checked 31 October 2026).
  */
 export function toWireInstant(instant: string, eventTimezone: string): string {
   const local = toZoneWallClock(instant, eventTimezone);
@@ -305,9 +308,18 @@ export function createEventsAdapter(deps: EventsAdapterDeps): EventsPort {
 
   return {
     signIn: async (force) => {
+      // Renew a held sign-in before reporting it, so the expiry shown is never one that has
+      // already passed. A rejected refresh token means the sign-in has ended: sign in again.
       if (!force && auth.isSignedIn()) {
-        const expiresAt = auth.expiresAt();
-        return { signedIn: true, ...(expiresAt === undefined ? {} : { expiresAt }) };
+        try {
+          await auth.refreshIfNeeded();
+          const expiresAt = auth.expiresAt();
+          return { signedIn: true, ...(expiresAt === undefined ? {} : { expiresAt }) };
+        } catch (error) {
+          if (!(error instanceof SignInRequiredError)) {
+            throw mapEventsError(error);
+          }
+        }
       }
       try {
         const done = await auth.signIn();

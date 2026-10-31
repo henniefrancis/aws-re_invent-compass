@@ -358,7 +358,10 @@ export interface components {
         PersonalTime: {
             /** @description Identifies this entry, for update and removal. */
             personalTimeId: string;
-            /** @description When the block starts, written `YYYY-MM-DDTHH:MM:SS` in UTC (e.g. "2025-12-02T16:00:00"). */
+            /**
+             * @description When the block starts, written `YYYY-MM-DDTHH:MM:SS` as wall-clock time in the event's own timezone (the
+             *     event's `timezone`), not UTC (e.g. "2025-12-02T16:00:00").
+             */
             startDateTime: string;
             /** @description When the block ends, in the same form as `startDateTime`. */
             endDateTime: string;
@@ -372,14 +375,15 @@ export interface components {
         /** @description The values of a personal time entry: a block of the caller's own time on their schedule, not a session. */
         PersonalTimeInput: {
             /**
-             * @description When the block starts, written `YYYY-MM-DDTHH:MM:SS` (e.g. "2025-12-02T16:00:00"). Always UTC, so a trailing
-             *     "Z" or an offset such as "+01:00" is rejected rather than converted. A block is stored to the minute, so the
-             *     seconds must be `00`.
+             * @description When the block starts, written `YYYY-MM-DDTHH:MM:SS` (e.g. "2025-12-02T16:00:00") as wall-clock time in the
+             *     event's own timezone (the event's `timezone`), not UTC. A trailing "Z" or an offset such as "+01:00" is
+             *     rejected rather than converted. A block is stored to the minute, so the seconds must be `00`.
              */
             startDateTime: string;
             /**
-             * @description When the block ends, in the same form as `startDateTime`. Must be after `startDateTime`, and the length
-             *     between the two must be a whole number of 5-minute increments.
+             * @description When the block ends, in the same form as `startDateTime`. Must be after `startDateTime` and on the same
+             *     date, so a block cannot cross midnight, and the length between the two must be a whole number of 5-minute
+             *     increments.
              */
             endDateTime: string;
             /** @description Short label for the block. */

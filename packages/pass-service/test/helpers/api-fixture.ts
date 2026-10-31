@@ -14,7 +14,7 @@ import { createHandoffRepository } from '../../src/data/handoff-repository.js';
 import { createPassRepository } from '../../src/data/pass-repository.js';
 import { createRateLimiter } from '../../src/data/rate-limiter.js';
 import { createRegistrationRepository } from '../../src/data/registration-repository.js';
-import type { GenericObject } from '../../src/google/google-object.js';
+import type { GenericObject, WalletMessage } from '../../src/google/google-object.js';
 import type { GoogleResult, GoogleWalletClient } from '../../src/google/google-wallet-client.js';
 import { createMemoryTable, type MemoryTable } from '../../src/harness/memory-table.js';
 import type { ProxyResult } from '../../src/http/event.js';
@@ -52,6 +52,8 @@ export interface FakeGoogle extends GoogleWalletClient {
   patches: { objectId: string; body: Partial<GenericObject> }[];
   insertResult: (obj: GenericObject) => GoogleResult;
   patchResult: (objectId: string) => GoogleResult;
+  messages: { objectId: string; message: WalletMessage }[];
+  messageResult: (objectId: string) => GoogleResult;
   saveUrls: { objects: { id: string; classId: string }[]; nowSeconds: number }[];
   oversize: boolean;
   /** How many objects one link holds (everything in one link by default). */
@@ -141,6 +143,8 @@ export function createApiFixture(options: FixtureOptions = {}): ApiFixture {
     perLink: Number.POSITIVE_INFINITY,
     insertResult: () => 'ok',
     patchResult: () => 'ok',
+    messages: [],
+    messageResult: () => 'ok',
     insert(obj) {
       google.inserts.push(obj);
       return Promise.resolve(google.insertResult(obj));
@@ -148,6 +152,10 @@ export function createApiFixture(options: FixtureOptions = {}): ApiFixture {
     patch(objectId, body) {
       google.patches.push({ objectId, body });
       return Promise.resolve(google.patchResult(objectId));
+    },
+    addMessage(objectId, message) {
+      google.messages.push({ objectId, message });
+      return Promise.resolve(google.messageResult(objectId));
     },
     saveLinks(objects, nowSeconds) {
       google.saveUrls.push({ objects, nowSeconds });

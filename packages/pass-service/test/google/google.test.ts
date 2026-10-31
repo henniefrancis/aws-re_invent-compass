@@ -4,7 +4,12 @@ import { JWT } from 'google-auth-library';
 import fc from 'fast-check';
 import { describe, expect, test, vi } from 'vitest';
 import { formatEventDate, formatEventTime24 } from '../../src/apple/format-time.js';
-import { backFields, boardingClosesAt, shortRoom } from '../../src/apple/pass-template.js';
+import {
+  WALLET_GROUP_ID,
+  backFields,
+  boardingClosesAt,
+  shortRoom,
+} from '../../src/apple/pass-template.js';
 import {
   GENERIC_OBJECT_URL,
   createGoogleWalletClient,
@@ -12,6 +17,7 @@ import {
 import {
   GOOGLE_BACKGROUND,
   buildGenericObject,
+  changeMessageFor,
   googleObjectId,
 } from '../../src/google/google-object.js';
 import {
@@ -290,6 +296,32 @@ describe('Feature: pass-service, Google REST client', () => {
     }
   });
 
+  test('addMessage posts one message to the documented endpoint (task 56)', async () => {
+    const message = {
+      id: 'change-2',
+      header: 'CMP340 changed',
+      body: 'Now at Venetian, Room 9.',
+      messageType: 'TEXT_AND_NOTIFY' as const,
+    };
+    for (const [status, result] of [
+      [200, 'ok'],
+      [429, 'failed'],
+      [400, 'failed'],
+    ] as const) {
+      const { http, calls } = fakeHttp([status]);
+      const client = createGoogleWalletClient({ http, tokens, secrets: googleSecrets() });
+      expect(await client.addMessage(obj.id, message)).toBe(result);
+      expect(calls).toEqual([
+        {
+          url: `${GENERIC_OBJECT_URL}/${encodeURIComponent(obj.id)}/addMessage`,
+          method: 'POST',
+          authorization: 'Bearer fake-access-token',
+          body: { message },
+        },
+      ]);
+    }
+  });
+
   test('a network error, a token failure and a timeout are failures without a retry', async () => {
     const network = fakeHttp([new Error('connection reset to secret-host')]);
     const failing = createGoogleWalletClient({
@@ -358,6 +390,8 @@ describe('Feature: pass-service, Save to Google Wallet link', () => {
         Buffer.from(s, 'base64url'),
       ),
     ).toBe(true);
+    expect(JSON.stringify(claims)).not.toContain('groupingInfo');
+    expect(JSON.stringify(claims)).not.toContain('sortIndex');
     return (claims.payload as { genericObjects: { id: string; classId: string }[] }).genericObjects;
   }
 
@@ -493,5 +527,78 @@ describe('Feature: pass-service, Google token source', () => {
     expect(built).toEqual([throwawayPki().google.clientEmail, 'other@example.test']);
     current = createFakeSecrets();
     await expect(source.accessToken()).rejects.toThrow('no access token');
+  });
+});
+
+describe('Feature: pass-service, one wallet group for the week, Google (task 55)', () => {
+  const build = (startsAt: string, endsAt: string) =>
+    buildGenericObject(
+      {
+        serialNumber: '66666666-6666-4666-8666-666666666666',
+        fields: samplePassFields({ startsAt, endsAt }),
+        state: 'ACTIVE',
+        timezone: TZ,
+      },
+      { issuerId: '3388000000099999999', classSuffix: 'compass', publicBaseUrl: 'https://x.test' },
+    );
+
+  test('every object carries the fixed group id and a whole-minute sortIndex of the start', () => {
+    const obj = build('2026-12-02T09:20:00-08:00', '2026-12-02T11:00:00-08:00');
+    expect(obj.groupingInfo.groupingId).toBe(WALLET_GROUP_ID);
+    expect(obj.groupingInfo.sortIndex).toBe(Date.parse('2026-12-02T17:20:00Z') / 60_000);
+    expect(Number.isInteger(obj.groupingInfo.sortIndex)).toBe(true);
+  });
+
+  test('two sessions sort by start and the index fits a signed 32-bit integer for 2026', () => {
+    const early = build('2026-11-30T08:00:00-08:00', '2026-11-30T09:00:00-08:00');
+    const late = build('2026-12-04T16:00:00-08:00', '2026-12-04T17:00:00-08:00');
+    expect(early.groupingInfo.sortIndex).toBeLessThan(late.groupingInfo.sortIndex);
+    for (const obj of [early, late]) {
+      expect(obj.groupingInfo.sortIndex).toBeLessThanOrEqual(2 ** 31 - 1);
+      expect(obj.groupingInfo.sortIndex).toBeGreaterThan(0);
+    }
+  });
+
+  test('the group id holds no attendee data and the save token names objects by id only', () => {
+    expect(WALLET_GROUP_ID).toMatch(/^[a-z0-9-]+$/);
+  });
+});
+
+describe('Feature: pass-service, Google change alert (task 56)', () => {
+  const before = samplePassFields({ venue: 'Venetian', room: 'Room 1' });
+
+  test('names only what changed, in the pass formats, with a version id', () => {
+    const moved = changeMessageFor(before, { ...before, room: 'Room 9' }, TZ, 3);
+    expect(moved).toEqual({
+      id: 'change-3',
+      header: `${before.sessionCode} changed`,
+      body: 'Now at Venetian, Room 9.',
+      messageType: 'TEXT_AND_NOTIFY',
+    });
+    const startsAt = '2026-12-02T11:00:00-08:00';
+    const endsAt = '2026-12-02T12:00:00-08:00';
+    const later = changeMessageFor(before, { ...before, startsAt, endsAt }, TZ, 4);
+    expect(later?.body).toBe(
+      `Now ${formatEventDate(startsAt, TZ)} | ${formatEventTime24(startsAt, TZ)}-${formatEventTime24(endsAt, TZ)}.`,
+    );
+    const both = changeMessageFor(
+      before,
+      { ...before, venue: '', room: '', endsAt: '2026-12-02T23:00:00-08:00' },
+      TZ,
+      5,
+    );
+    expect(both?.body).toMatch(/^Now at Venue not published, Room not published\. Now .+\.$/);
+  });
+
+  test('sends nothing when nothing the attendee acts on changed', () => {
+    expect(changeMessageFor(before, { ...before, title: 'A new title' }, TZ, 2)).toBeUndefined();
+    const sameInstant = { ...before, startsAt: new Date(before.startsAt).toISOString() };
+    expect(changeMessageFor(before, sameInstant, TZ, 2)).toBeUndefined();
+  });
+
+  test('holds no attendee data', () => {
+    const named = { ...before, attendeeName: 'Pat Example', room: 'Room 9' };
+    const message = changeMessageFor({ ...before, attendeeName: 'Pat Example' }, named, TZ, 2);
+    expect(JSON.stringify(message)).not.toContain('Pat Example');
   });
 });

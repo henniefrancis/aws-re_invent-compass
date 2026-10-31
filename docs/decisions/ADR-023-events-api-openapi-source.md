@@ -12,11 +12,13 @@ Record the provenance of the committed Events API OpenAPI document explicitly:
 
 - Committed path: `packages/contracts/events-api.openapi.json`
 - Source URL: https://api.awsevents.com/v1/openapi.json
-- Retrieval date (UTC, ISO 8601): 2026-10-15
+- Retrieval date (UTC, ISO 8601): 2026-10-31 (first retrieved 2026-10-15)
 - OpenAPI version: 3.1.0
 - Document title and version: "AWS Events API", version 1.0.0
-- Byte size: 100531 bytes
-- SHA-256 (hex): b8591c1bb9bcf9f40871f3af19b8418f39fc527f7e8692e7ef1d533ca9638d82
+- Byte size: 100728 bytes
+- SHA-256 (hex): 2688566112c6205379fe15011e72512c5f0ff5c575b4c1e608e932eb5bb03f94
+
+Refresh of 31 October 2026 (foundation-contracts task 23): the live document changed only in three `PersonalTime` descriptions. Personal time is now documented as wall-clock time in the event's own time zone, not UTC (what the live service already did, and what Compass writes since compass-power task 55), and a block must end on the same date it starts (compass-power task 62). The previous SHA-256 was b8591c1bb9bcf9f40871f3af19b8418f39fc527f7e8692e7ef1d533ca9638d82.
 
 The document is refreshed only by an operator rerunning the fetch helper at `packages/contracts/scripts/fetch-events-api.mjs`. Any refresh that changes the document updates this ADR's SHA-256 in the same change, so this record always names the hash of the file currently committed.
 

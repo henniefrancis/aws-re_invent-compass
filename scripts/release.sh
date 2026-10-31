@@ -22,6 +22,7 @@
 # (names such as module.data.aws_dynamodb_table.this), never values.
 #
 # Optional overrides (environment variables):
+#   COMPASS_WORKSPACE_BUILD_CMD  command that builds the TypeScript workspace first
 #   COMPASS_LAMBDA_BUILD_CMD  command that builds the two Lambda zips
 #   COMPASS_SITE_BUILD_CMD    command that builds the site
 #   COMPASS_SITE_DIR          directory the site build writes, relative to the repo root
@@ -148,11 +149,16 @@ aws sts get-caller-identity --region "${AWS_REGION}" >/dev/null 2>&1 || fail "no
 
 # ---- build: Lambda zips and the site -------------------------------------
 
+workspace_build_cmd="${COMPASS_WORKSPACE_BUILD_CMD:-npx tsc -b}"
 lambda_build_cmd="${COMPASS_LAMBDA_BUILD_CMD:-npm run build:lambda --workspace @compass/pass-service}"
 site_build_cmd="${COMPASS_SITE_BUILD_CMD:-npm run build --workspace site}"
 site_dir="${repo_root}/${COMPASS_SITE_DIR:-site/dist/site/browser}"
 
 cd "${repo_root}"
+# The site imports the built workspace packages, so a fresh checkout builds them first.
+echo "building the workspace"
+bash -c "${workspace_build_cmd}" || fail "the workspace build failed"
+
 echo "building the Lambda bundles"
 bash -c "${lambda_build_cmd}" || fail "the Lambda build failed"
 

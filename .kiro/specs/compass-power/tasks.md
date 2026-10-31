@@ -672,6 +672,18 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Pin `@modelcontextprotocol/sdk` at exactly 1.32.2 in `packages/mcp-server/package.json`, refresh the lock file, amend ADR-032, Requirement terms and the foundation-contracts dependency table; full gate; commit scoped `compass-power`
   - _Requirements: 20.1_
 
+- [x] 60. The npm trusted publisher expires (release step 15, 31 October)
+  - The first `v0.1.0` publish failed with E404 after the provenance statement: npm expires a trusted publisher that has not completed a publish within 2 days. `docs/runbooks/npm-release.md` now says to create it on release day with only "npm publish" allowed, gives the `npm trust` CLI form, adds a check before the tag in "Tag order", and adds the E404 case to "If a publish fails"; dash check and prettier; commit scoped `compass-power`
+  - _Requirements: 20.1_
+
+- [x] 61. `sign_in` never reports an expiry that has already passed (owner, prod check of 31 October)
+  - On prod, `sign_in` answered "This sign-in lasts until 2026-10-30" on 31 October: when a sign-in is already held, the adapter reported the stored access token's expiry without renewing it. The `AuthPort` gains `refreshIfNeeded` (the S1 credential source in live mode, a no-op in simulated mode); a held sign-in is renewed before its expiry is reported; a rejected refresh token (`SignInRequiredError`) runs the sign-in flow again; any other failure is mapped as before. Unit tests for the three paths at 100 percent coverage; full gate; commit scoped `compass-power`
+  - _Requirements: 9.1_
+
+- [x] 62. A layover never crosses midnight (Events API OpenAPI change found on 31 October)
+  - The live Events API OpenAPI now says a personal-time block must end on the same date it starts, in the event's own time zone. `add_layover` (create and update) refuses a block whose start and end fall on different event-local dates, before any request, with a plain message that names the rule; an end at exactly 00:00 the next day counts as a different date, as the API states. Unit tests at 100 percent coverage, including a block that ends at 23:55 and one that ends at 00:00; full gate; commit scoped `compass-power`
+  - _Requirements: 14.1_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

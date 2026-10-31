@@ -14,7 +14,12 @@ import { EXPIRY_GRACE_MS, ttlOf } from '../data/keys.js';
 import { nextLastUpdated, nextUpdateTag } from '../data/last-updated.js';
 import { ACTIVE_PASS_LIMIT } from '../data/rate-limiter.js';
 import type { DeviceRegistration, PassRecord } from '../data/records.js';
-import { buildGenericObject, googleObjectId, type GenericObject } from '../google/google-object.js';
+import {
+  buildGenericObject,
+  changeMessageFor,
+  googleObjectId,
+  type GenericObject,
+} from '../google/google-object.js';
 import { ProblemError } from '../http/problem.js';
 import { deriveAuthToken, newTokenSalt } from '../security/auth-token.js';
 import { constantTimeEqualHex, sha256Hex } from '../security/hashing.js';
@@ -129,6 +134,21 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
       );
       return deps.google.patch(object.id, object);
     });
+    op.metrics.add('GoogleWalletFailure', ok ? 0 : 1);
+  }
+
+  /**
+   * The change alert (task 56): one notifying message when the venue, room or time changed.
+   * Google allows three a pass in 24 hours; a refusal is only counted, never an error.
+   */
+  async function notifyChange(before: PassFields, rec: PassRecord, op: OpContext): Promise<void> {
+    const message = changeMessageFor(before, rec.fields, config.eventWindow.timezone, rec.version);
+    if (message === undefined) {
+      return;
+    }
+    const ok = await googleCall((issuerId) =>
+      deps.google.addMessage(googleObjectId(issuerId, rec.serialNumber), message),
+    );
     op.metrics.add('GoogleWalletFailure', ok ? 0 : 1);
   }
 
@@ -264,10 +284,14 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
         limiter.consume(rec.subHash, 'updates', 1, op.now),
         limiter.consume(rec.subHash, 'passUpdate', 1, op.now, serial),
       ]);
+      // The fields the change is built on, so the change alert compares against what this
+      // update replaced, also after a conflict retry (task 56, QA Low).
+      let before = rec.fields;
       const saved = await saveVersioned(rec, op, (current) => {
         if (current.status === 'voided') {
           return undefined;
         }
+        before = current.fields;
         const expiresAtMs = Date.parse(fields.endsAt) + EXPIRY_GRACE_MS;
         return {
           ...current,
@@ -287,6 +311,7 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
         await pushAll(await registrations.listByPass(serial, op.now), op);
         if (hasGoogleObject(saved)) {
           await patchContent(saved, op);
+          await notifyChange(before, saved, op);
         }
       }
       return { serialNumber: serial, version: saved.version };

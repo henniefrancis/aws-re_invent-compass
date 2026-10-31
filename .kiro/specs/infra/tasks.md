@@ -341,6 +341,9 @@ The build order lays the shared foundation first (version pins, provider, tags, 
 - [x] 28. The apply role may tag CloudFront functions (first prod apply of 31 October 2026, design item 46)
   - [x] 28.1 Add `cloudfront:TagResource` and `cloudfront:UntagResource` to the `ManageCloudFrontFunction` statement of the apply roles, still scoped to `function/compass-<env>-*`; a native test checks it; fmt, validate and the bootstrap tests; commit scoped `infra`. The owner applies the bootstrap, then reruns `scripts/release.sh prod`
 
+- [x] 29. `release.sh` builds the TypeScript workspace first (first prod release of 31 October 2026, design item 47)
+  - [x] 29.1 Run `npx tsc -b` (overridable with `COMPASS_WORKSPACE_BUILD_CMD`) before the Lambda and site builds, failing with a clear message; a static test checks the default and the order; update `docs/runbooks/release.md`; shellcheck if present, the infra static tests; commit scoped `infra`
+
 ## Notes
 
 - The implementation language is Terraform/HCL, Bash, and Node.js (`.mjs`), fixed by the design and tech steering (Terraform only, no CDK/CloudFormation/SAM).

@@ -256,6 +256,31 @@ describe('Feature: pass-service, update', () => {
     expect(lastLog(fixture.capture).GoogleWalletFailure).toBe(1);
   });
 
+  test('a visible change adds one notifying Google message; a refusal never fails the update (task 56)', async () => {
+    const fixture = createApiFixture();
+    const serial = await fixture.issue(SUB, samplePassFields(), ['apple', 'google']);
+    const reply = await update(fixture, serial);
+    expect(reply.result.statusCode).toBe(200);
+    expect(fixture.google.messages).toHaveLength(1);
+    expect(fixture.google.messages[0]?.objectId).toBe(fixture.google.patches.at(-1)?.objectId);
+    expect(fixture.google.messages[0]?.message).toMatchObject({
+      header: `${samplePassFields().sessionCode} changed`,
+      messageType: 'TEXT_AND_NOTIFY',
+      body: expect.stringContaining('Room 9') as unknown,
+    });
+    expect(lastLog(fixture.capture).GoogleWalletFailure ?? 0).toBe(0);
+
+    // The same fields again: nothing visible changed, so no message.
+    await update(fixture, serial);
+    expect(fixture.google.messages).toHaveLength(1);
+
+    fixture.google.messageResult = () => 'failed';
+    const refused = await update(fixture, serial, samplePassFields({ room: 'Room 10' }));
+    expect(refused.result.statusCode).toBe(200);
+    expect(fixture.google.messages).toHaveLength(2);
+    expect(lastLog(fixture.capture).GoogleWalletFailure).toBe(1);
+  });
+
   test('a pass with Google disabled by configuration is never patched', async () => {
     const fixture = createApiFixture();
     const serial = await fixture.issue(SUB, samplePassFields(), ['apple', 'google']);
