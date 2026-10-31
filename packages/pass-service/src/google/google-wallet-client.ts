@@ -8,7 +8,7 @@
 // https://developers.google.com/wallet/generic/rest/v1/genericobject/insert
 // https://developers.google.com/wallet/generic/rest/v1/genericobject/patch
 import type { SecretsProvider } from '../credentials/secrets-provider.js';
-import type { GenericObject } from './google-object.js';
+import type { GenericObject, WalletMessage } from './google-object.js';
 import { SAFE_JWT_LENGTH, saveLink, signSaveJwt, type SaveJwtClaims } from './save-jwt.js';
 import type { GoogleTokenSource } from './token-source.js';
 
@@ -22,6 +22,8 @@ export interface GoogleWalletClient {
   /** A 409 falls back to one patch. */
   insert(obj: GenericObject): Promise<GoogleResult>;
   patch(objectId: string, obj: Partial<GenericObject>): Promise<GoogleResult>;
+  /** Adds one issuer message to the object (the generic object addMessage method, task 56). */
+  addMessage(objectId: string, message: WalletMessage): Promise<GoogleResult>;
   /**
    * The Save to Google Wallet links for these objects, in order. Each link holds as many
    * objects as keep its signed token within SAFE_JWT_LENGTH, measured on the token itself.
@@ -83,6 +85,15 @@ export function createGoogleWalletClient(deps: GoogleClientDeps): GoogleWalletCl
     },
 
     patch,
+
+    async addMessage(objectId, message) {
+      const status = await send(
+        'POST',
+        `${GENERIC_OBJECT_URL}/${encodeURIComponent(objectId)}/addMessage`,
+        { message },
+      );
+      return status !== undefined && status >= 200 && status < 300 ? 'ok' : 'failed';
+    },
 
     async saveLinks(objects, nowSeconds) {
       const google = await deps.secrets.google();

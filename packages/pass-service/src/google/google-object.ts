@@ -152,3 +152,47 @@ export function buildGenericObject(
     validTimeInterval: { end: { date: fields.endsAt } },
   };
 }
+
+/** An issuer message on a Google object (Message in the Google Wallet REST reference). */
+export interface WalletMessage {
+  id: string;
+  header: string;
+  body: string;
+  messageType: 'TEXT_AND_NOTIFY';
+}
+
+/**
+ * The change alert for an updated pass (task 56): one message that names only what the attendee
+ * sees change, the venue and room or the time, in the pass's own formats. Undefined when nothing
+ * visible changed. The id is unique to the pass version, so a later change adds a new message.
+ */
+export function changeMessageFor(
+  before: PassFields,
+  after: PassFields,
+  timezone: string,
+  version: number,
+): WalletMessage | undefined {
+  const lines: string[] = [];
+  if (before.venue !== after.venue || before.room !== after.room) {
+    const venue = after.venue === '' ? NO_VENUE : after.venue;
+    const room = after.room === '' ? NO_ROOM : after.room;
+    lines.push(`Now at ${venue}, ${room}.`);
+  }
+  if (
+    Date.parse(before.startsAt) !== Date.parse(after.startsAt) ||
+    Date.parse(before.endsAt) !== Date.parse(after.endsAt)
+  ) {
+    lines.push(
+      `Now ${formatEventDate(after.startsAt, timezone)} | ${formatEventTime24(after.startsAt, timezone)}-${formatEventTime24(after.endsAt, timezone)}.`,
+    );
+  }
+  if (lines.length === 0) {
+    return undefined;
+  }
+  return {
+    id: `change-${String(version)}`,
+    header: `${after.sessionCode} changed`,
+    body: lines.join(' '),
+    messageType: 'TEXT_AND_NOTIFY',
+  };
+}

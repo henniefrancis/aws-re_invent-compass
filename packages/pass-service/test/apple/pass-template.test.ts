@@ -107,12 +107,14 @@ describe('Feature: pass-service, pass template', () => {
       label: 'GATE',
       value: NO_ROOM,
       textAlignment: 'PKTextAlignmentRight',
+      changeMessage: 'Gate changed to %@',
     });
     expect(terminal).toEqual({
       key: 'terminal',
       label: 'TERMINAL',
       value: 'Venue not published',
       textAlignment: 'PKTextAlignmentLeft',
+      changeMessage: 'Terminal changed to %@',
     });
     expect(json.eventTicket.backFields.some((f) => f.key === 'roomFull')).toBe(false);
   });
@@ -401,6 +403,7 @@ describe('Feature: pass-service, pass template', () => {
               label: 'TERMINAL',
               value: fields.venue === '' ? 'Venue not published' : fields.venue,
               textAlignment: 'PKTextAlignmentLeft',
+              changeMessage: 'Terminal changed to %@',
             },
             { key: 'arrow', value: ARROW, textAlignment: 'PKTextAlignmentCenter' },
             {
@@ -408,6 +411,7 @@ describe('Feature: pass-service, pass template', () => {
               label: 'GATE',
               value: shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room),
               textAlignment: 'PKTextAlignmentRight',
+              changeMessage: 'Gate changed to %@',
             },
           ]);
           const aux = json.eventTicket.auxiliaryFields;
@@ -417,7 +421,23 @@ describe('Feature: pass-service, pass template', () => {
             label: 'BOARDING CLOSES',
             value: expectedTime(startMs - 10 * MINUTE),
             textAlignment: 'PKTextAlignmentNatural',
+            changeMessage: 'Boarding now closes at %@',
           });
+          expect(aux[0]?.changeMessage).toBe('Time changed to %@');
+          // Only the four fields an attendee acts on alert on a change (task 56).
+          const alerting = [
+            ...json.eventTicket.headerFields,
+            ...json.eventTicket.primaryFields,
+            ...json.eventTicket.secondaryFields,
+            ...json.eventTicket.auxiliaryFields,
+            ...json.eventTicket.backFields,
+          ]
+            .filter((f) => f.changeMessage !== undefined)
+            .map((f) => f.key);
+          expect(alerting).toEqual(['terminal', 'gate', 'date', 'boardingCloses']);
+          for (const f of [...json.eventTicket.secondaryFields, ...aux]) {
+            expect(f.changeMessage === undefined || f.changeMessage.includes('%@')).toBe(true);
+          }
           const [datePart, timePart] = (aux[0]?.value ?? '').split(' | ');
           expect(datePart).toMatch(/^\d{1,2} [A-Z][a-z]{2} 2026$/);
           expect(timePart).toBe(`${expectedTime(startMs)}-${expectedTime(endMs)}`);

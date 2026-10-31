@@ -17,6 +17,7 @@ import {
 import {
   GOOGLE_BACKGROUND,
   buildGenericObject,
+  changeMessageFor,
   googleObjectId,
 } from '../../src/google/google-object.js';
 import {
@@ -295,6 +296,32 @@ describe('Feature: pass-service, Google REST client', () => {
     }
   });
 
+  test('addMessage posts one message to the documented endpoint (task 56)', async () => {
+    const message = {
+      id: 'change-2',
+      header: 'CMP340 changed',
+      body: 'Now at Venetian, Room 9.',
+      messageType: 'TEXT_AND_NOTIFY' as const,
+    };
+    for (const [status, result] of [
+      [200, 'ok'],
+      [429, 'failed'],
+      [400, 'failed'],
+    ] as const) {
+      const { http, calls } = fakeHttp([status]);
+      const client = createGoogleWalletClient({ http, tokens, secrets: googleSecrets() });
+      expect(await client.addMessage(obj.id, message)).toBe(result);
+      expect(calls).toEqual([
+        {
+          url: `${GENERIC_OBJECT_URL}/${encodeURIComponent(obj.id)}/addMessage`,
+          method: 'POST',
+          authorization: 'Bearer fake-access-token',
+          body: { message },
+        },
+      ]);
+    }
+  });
+
   test('a network error, a token failure and a timeout are failures without a retry', async () => {
     const network = fakeHttp([new Error('connection reset to secret-host')]);
     const failing = createGoogleWalletClient({
@@ -534,5 +561,44 @@ describe('Feature: pass-service, one wallet group for the week, Google (task 55)
 
   test('the group id holds no attendee data and the save token names objects by id only', () => {
     expect(WALLET_GROUP_ID).toMatch(/^[a-z0-9-]+$/);
+  });
+});
+
+describe('Feature: pass-service, Google change alert (task 56)', () => {
+  const before = samplePassFields({ venue: 'Venetian', room: 'Room 1' });
+
+  test('names only what changed, in the pass formats, with a version id', () => {
+    const moved = changeMessageFor(before, { ...before, room: 'Room 9' }, TZ, 3);
+    expect(moved).toEqual({
+      id: 'change-3',
+      header: `${before.sessionCode} changed`,
+      body: 'Now at Venetian, Room 9.',
+      messageType: 'TEXT_AND_NOTIFY',
+    });
+    const startsAt = '2026-12-02T11:00:00-08:00';
+    const endsAt = '2026-12-02T12:00:00-08:00';
+    const later = changeMessageFor(before, { ...before, startsAt, endsAt }, TZ, 4);
+    expect(later?.body).toBe(
+      `Now ${formatEventDate(startsAt, TZ)} | ${formatEventTime24(startsAt, TZ)}-${formatEventTime24(endsAt, TZ)}.`,
+    );
+    const both = changeMessageFor(
+      before,
+      { ...before, venue: '', room: '', endsAt: '2026-12-02T23:00:00-08:00' },
+      TZ,
+      5,
+    );
+    expect(both?.body).toMatch(/^Now at Venue not published, Room not published\. Now .+\.$/);
+  });
+
+  test('sends nothing when nothing the attendee acts on changed', () => {
+    expect(changeMessageFor(before, { ...before, title: 'A new title' }, TZ, 2)).toBeUndefined();
+    const sameInstant = { ...before, startsAt: new Date(before.startsAt).toISOString() };
+    expect(changeMessageFor(before, sameInstant, TZ, 2)).toBeUndefined();
+  });
+
+  test('holds no attendee data', () => {
+    const named = { ...before, attendeeName: 'Pat Example', room: 'Room 9' };
+    const message = changeMessageFor({ ...before, attendeeName: 'Pat Example' }, named, TZ, 2);
+    expect(JSON.stringify(message)).not.toContain('Pat Example');
   });
 });

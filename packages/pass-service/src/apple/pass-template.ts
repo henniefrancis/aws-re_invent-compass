@@ -67,7 +67,17 @@ export interface PassField {
   label?: string;
   value: string;
   textAlignment?: TextAlignment;
+  /** Shown by Wallet as a notification when a pushed update changes this field (task 56). */
+  changeMessage?: string;
 }
+
+/** The change alerts (task 56): Wallet replaces `%@` with the field's new value. */
+export const CHANGE_MESSAGES = {
+  terminal: 'Terminal changed to %@',
+  gate: 'Gate changed to %@',
+  date: 'Time changed to %@',
+  boardingCloses: 'Boarding now closes at %@',
+} as const;
 
 /** The event semantic tags (task 42), kept for Siri and the system. */
 export interface PassSemantics {
@@ -248,18 +258,30 @@ export function buildPassJson(input: PassTemplateInput): PassJson {
       headerFields: [field('session', 'SESSION', fields.sessionCode, 'PKTextAlignmentNatural')],
       primaryFields: [field('title', 'FLIGHT NAME', fields.title, 'PKTextAlignmentNatural')],
       secondaryFields: [
-        field('terminal', 'TERMINAL', venue, 'PKTextAlignmentLeft'),
+        {
+          ...field('terminal', 'TERMINAL', venue, 'PKTextAlignmentLeft'),
+          changeMessage: CHANGE_MESSAGES.terminal,
+        },
         { key: 'arrow', value: ARROW, textAlignment: 'PKTextAlignmentCenter' },
-        field('gate', 'GATE', gate, 'PKTextAlignmentRight'),
+        {
+          ...field('gate', 'GATE', gate, 'PKTextAlignmentRight'),
+          changeMessage: CHANGE_MESSAGES.gate,
+        },
       ],
       auxiliaryFields: [
-        field(
-          'date',
-          'DATE',
-          `${formatEventDate(fields.startsAt, timezone)} | ${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)}`,
-          'PKTextAlignmentLeft',
-        ),
-        field('boardingCloses', 'BOARDING CLOSES', closes, 'PKTextAlignmentNatural'),
+        {
+          ...field(
+            'date',
+            'DATE',
+            `${formatEventDate(fields.startsAt, timezone)} | ${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)}`,
+            'PKTextAlignmentLeft',
+          ),
+          changeMessage: CHANGE_MESSAGES.date,
+        },
+        {
+          ...field('boardingCloses', 'BOARDING CLOSES', closes, 'PKTextAlignmentNatural'),
+          changeMessage: CHANGE_MESSAGES.boardingCloses,
+        },
       ],
       backFields: backFields(fields, timezone),
     },
