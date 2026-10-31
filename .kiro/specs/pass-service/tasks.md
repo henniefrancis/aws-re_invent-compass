@@ -663,11 +663,11 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 55.3 Tests for both at 100 percent coverage, including that the constant holds no attendee data and that two sessions sort by start; the contract and fixtures updated if they show pass JSON; full gate; commit scoped `pass-service`
   - [x] 55.4 Owner check on real phones from dev (confirmed by the owner on 1 November 2026): three or more sessions show as one stack in Apple Wallet and one group in Google Wallet, in start order
 
-- [ ] 56. Change alerts on the phone (owner choice of 31 October, option A of the lock-screen research, design "Owner change: change alerts")
+- [x] 56. Change alerts on the phone (owner choice of 31 October, option A of the lock-screen research, design "Owner change: change alerts")
   - [x] 56.1 Apple: the `terminal`, `gate`, `date` and `boardingCloses` fields carry a `changeMessage` with `%@` ("Terminal changed to %@", "Gate changed to %@", "Time changed to %@", "Boarding now closes at %@"), so when an update changes one of them, Wallet shows a notification on the lock screen; the other fields carry none
   - [x] 56.2 Google: when an update changes the session's venue, room, start or end, the service adds one message to the object with `messageType` `TEXT_AND_NOTIFY` through the generic object `addMessage` method, after the content patch: a header with the session code ("CMP340 changed"), a body that names only what changed with the new values in the pass's own formats, and an id unique to the pass version. Google allows 3 such notifications per pass in 24 hours: a refused or failed call is counted in the existing Google failure metric and never fails the update. An update that changes nothing the attendee sees sends no message
   - [x] 56.3 Tests at 100 percent coverage: each change message, no message when nothing visible changed, a quota refusal that leaves the update successful, and the message text holding no attendee data beyond the session's own fields; full gate; commit scoped `pass-service`
-  - [ ] 56.4 Owner check on dev with task 55.4: change a session's room or time on dev (reissue through `sync_passes`), and see the alert on both phones
+  - [x] 56.4 Owner check on dev (confirmed by the owner on 1 November 2026): MAM411 moved to a test room in the local catalog cache, `sync_passes` updated the pass, and both phones showed the change alert
 
 ## Notes
 
