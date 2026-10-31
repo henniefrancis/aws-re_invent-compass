@@ -30,8 +30,11 @@ export {
  * group. A fixed constant: no attendee, session or serial data in it.
  */
 export const WALLET_GROUP_ID = 'reinvent-2026-compass';
-/** The issuer Wallet names on the pass and the Lock Screen (owner decision, task 44). */
-export const ORGANIZATION_NAME = 'AWS Community South Africa';
+/**
+ * The issuer Wallet names on the pass, the Lock Screen and change alerts (owner decisions, tasks
+ * 44 and 57).
+ */
+export const ORGANIZATION_NAME = 're:Invent Compass';
 export const NO_VENUE = 'Venue not published';
 export const NO_ROOM = 'Room not published';
 /** The region semantic tag: re:Invent is held in Las Vegas (task 42). */
