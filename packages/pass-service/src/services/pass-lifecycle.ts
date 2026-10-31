@@ -284,10 +284,14 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
         limiter.consume(rec.subHash, 'updates', 1, op.now),
         limiter.consume(rec.subHash, 'passUpdate', 1, op.now, serial),
       ]);
+      // The fields the change is built on, so the change alert compares against what this
+      // update replaced, also after a conflict retry (task 56, QA Low).
+      let before = rec.fields;
       const saved = await saveVersioned(rec, op, (current) => {
         if (current.status === 'voided') {
           return undefined;
         }
+        before = current.fields;
         const expiresAtMs = Date.parse(fields.endsAt) + EXPIRY_GRACE_MS;
         return {
           ...current,
@@ -307,7 +311,7 @@ export function createPassLifecycle(deps: LifecycleDeps): PassLifecycle {
         await pushAll(await registrations.listByPass(serial, op.now), op);
         if (hasGoogleObject(saved)) {
           await patchContent(saved, op);
-          await notifyChange(rec.fields, saved, op);
+          await notifyChange(before, saved, op);
         }
       }
       return { serialNumber: serial, version: saved.version };
