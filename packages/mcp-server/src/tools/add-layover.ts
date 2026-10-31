@@ -6,10 +6,10 @@
 // all: both times need an offset, the end must be after the start, and both must be inside the
 // event window (read from the Schedule_Snapshot, or from S1 only when there is none, never
 // guessed), widened to start at 00:00 on the badge pickup day, the day before the event, in the
-// event time zone (task 56), and must end on the date they start in that zone (task 62). Update and delete also check the personal time id with the
-// Identifier_Check and look the entry up in the fresh schedule, so the confirmation names what
-// will change. An
-// overlap with a commitment is a warning; the layover is still written. Every action asks the
+// event time zone (task 56), and must end on the date they start in that zone (task 62). Update
+// and delete also check the personal time id with the Identifier_Check and look the entry up in
+// the fresh schedule, so the confirmation names what will change. An overlap with a commitment
+// is a warning; the layover is still written. Every action asks the
 // human to confirm (Schedule_Write_Tools). The title is the attendee's own text and is shown
 // only inside a Labelled_Data_Block.
 
@@ -83,7 +83,15 @@ async function validTimes(
 /** The calendar date of an instant in the event time zone; a zone that cannot be read refuses. */
 function eventDate(ms: number, zone: string): string {
   try {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: zone, dateStyle: 'short' }).format(ms);
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: zone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    }).formatToParts(ms);
+    return ['year', 'month', 'day']
+      .map((type) => parts.find((part) => part.type === type)?.value)
+      .join('-');
   } catch {
     throw new CompassError('LayoverInvalid');
   }
