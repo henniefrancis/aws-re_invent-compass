@@ -657,11 +657,11 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - joi 17.13.4 to 17.13.9 through a root `overrides` entry (GHSA-4528-x5fx-h6hg), because passkit-generator 3.7.0 pins joi exactly; npm's own suggestion, downgrading passkit-generator to 3.1.2, is refused
   - `audit-check` passes with no new allowlist entry; full gate; commit scoped `pass-service`
 
-- [ ] 55. One wallet group for the week (owner request of 31 October, design "Owner change: one group for the week")
+- [x] 55. One wallet group for the week (owner request of 31 October, design "Owner change: one group for the week")
   - [x] 55.1 Apple: every pass carries the same top-level `groupingIdentifier` (a fixed constant for re:Invent 2026, no attendee data in it), so Wallet stacks all of an attendee's session passes as one group; check against Apple's PassKit package format reference that it applies to the `eventTicket` style with the same `passTypeIdentifier`; updated passes served by the pass web service carry it too, so passes already on a phone regroup on their next update
   - [x] 55.2 Google: every `GenericObject` the service inserts carries `groupingInfo` with the same `groupingId` constant and a `sortIndex` from the session start (whole minutes since the Unix epoch, which fits a 32-bit integer and puts earlier sessions first); check the field against the Google Wallet REST reference for `GenericObject`; the save token still names objects by id only, so its measured length does not change (assert it)
   - [x] 55.3 Tests for both at 100 percent coverage, including that the constant holds no attendee data and that two sessions sort by start; the contract and fixtures updated if they show pass JSON; full gate; commit scoped `pass-service`
-  - [ ] 55.4 Owner check on real phones from dev: three or more sessions show as one stack in Apple Wallet and one group in Google Wallet, in start order
+  - [x] 55.4 Owner check on real phones from dev (confirmed by the owner on 1 November 2026): three or more sessions show as one stack in Apple Wallet and one group in Google Wallet, in start order
 
 - [ ] 56. Change alerts on the phone (owner choice of 31 October, option A of the lock-screen research, design "Owner change: change alerts")
   - [x] 56.1 Apple: the `terminal`, `gate`, `date` and `boardingCloses` fields carry a `changeMessage` with `%@` ("Terminal changed to %@", "Gate changed to %@", "Time changed to %@", "Boarding now closes at %@"), so when an update changes one of them, Wallet shows a notification on the lock screen; the other fields carry none
