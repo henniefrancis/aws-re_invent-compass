@@ -154,8 +154,9 @@ const NAIVE_WALL_CLOCK = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::(\d{2})(?:\.\d+)?)?$
 
 /**
  * The wire form of a personal time instant: the wall-clock time in the event time zone, with no
- * zone suffix. The OpenAPI document says UTC, but the live service and the re:Invent app read
+ * zone suffix. The OpenAPI document said UTC, but the live service and the re:Invent app read
  * the value as event time, so 07:00 PST sent as 15:00 showed at 15:00 (compass-power task 55).
+ * AWS has since corrected the document to event wall-clock time (re-checked 31 October 2026).
  */
 export function toWireInstant(instant: string, eventTimezone: string): string {
   const local = toZoneWallClock(instant, eventTimezone);

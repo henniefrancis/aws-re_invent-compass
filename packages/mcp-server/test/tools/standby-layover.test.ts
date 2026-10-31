@@ -257,6 +257,47 @@ describe('add_layover', () => {
     });
   });
 
+  test('refuses a layover that crosses midnight in the event time zone, before any call (task 62)', async () => {
+    const { fake, ctx } = setup();
+    await fake.runtime.snapshot.write({
+      version: 1,
+      mode: 'simulated',
+      fetchedAt: 'x',
+      eventWindow: fake.events.window,
+      schedule: { reserved: [], favorites: [], personalTime: [] },
+    });
+    for (const endDateTime of ['2026-12-02T00:30:00-08:00', '2026-12-02T00:00:00-08:00']) {
+      await expect(
+        addLayover(layover({ startDateTime: '2026-12-01T23:30:00-08:00', endDateTime }), ctx),
+      ).rejects.toMatchObject({ code: 'LayoverInvalid' });
+    }
+    // The same block given in UTC is still checked on the Las Vegas date.
+    await expect(
+      addLayover(
+        layover({ startDateTime: '2026-12-02T07:30:00Z', endDateTime: '2026-12-02T08:30:00Z' }),
+        ctx,
+      ),
+    ).rejects.toMatchObject({ code: 'LayoverInvalid' });
+    expect(fake.events.calls).toEqual([]);
+    const late = layover({
+      startDateTime: '2026-12-01T23:30:00-08:00',
+      endDateTime: '2026-12-01T23:55:00-08:00',
+    });
+    expect((await addLayover(late, ctx)).structured).toMatchObject({ done: true });
+  });
+
+  test('refuses a layover inside the dates when the event time zone cannot be read', async () => {
+    const { fake, ctx } = setup();
+    await fake.runtime.snapshot.write({
+      version: 1,
+      mode: 'simulated',
+      fetchedAt: 'x',
+      eventWindow: { ...fake.events.window, timezone: 'Not/AZone' },
+      schedule: { reserved: [], favorites: [], personalTime: [] },
+    });
+    await expect(addLayover(layover(), ctx)).rejects.toMatchObject({ code: 'LayoverInvalid' });
+  });
+
   test('reads the window from S1 only when there is no snapshot', async () => {
     const { fake, ctx } = setup();
     await addLayover(layover(), ctx);
