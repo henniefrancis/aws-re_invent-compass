@@ -1438,3 +1438,7 @@ The length of a Save to Google Wallet token, signed with RS256 and naming each o
 | 12                  | 2,374                     | over 1,800 (split)                                                                                           |
 
 Each extra pass adds about 130 to 150 characters. Google's stated safe length is 1,800, so 8 passes sit close to it: the service measures each signed token and does not rely on the count alone.
+
+## Owner change: one group for the week (31 October 2026, task 55)
+
+The owner wants an attendee's passes to sit in the wallet as one group for the week, not as separate passes, the way an airline groups the legs of a trip. Apple Wallet groups passes that share a `groupingIdentifier`, a pass type identifier and a style; Google Wallet groups objects that share `groupingInfo.groupingId` and orders them by `groupingInfo.sortIndex`. Both identifiers are fixed constants for re:Invent 2026 and carry no attendee data. The Google sort index is the session start in whole minutes since the Unix epoch, so earlier sessions come first. Grouping lives in the pass and the inserted object, not in the save token, so the token lengths measured for ADR-036 do not change. This works with the buttons at the top and on each session alike: passes saved one at a time still join the same group.
