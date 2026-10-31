@@ -11,6 +11,7 @@ import type { Runtime } from '../ports/runtime.js';
 import { DATA_PREAMBLE, ATTENDEE_PREAMBLE } from '../safety/labelled-data.js';
 import { messageFor } from '../server/error-messages.js';
 import { SIMULATED_LABEL } from '../server/results.js';
+import { QR_PAGE_FAILED } from '../tools/send-to-phone.js';
 import { connectDemoClient } from './in-memory-client.js';
 import { DEMO_TRIPLE } from './triple.js';
 
@@ -155,25 +156,36 @@ const STEPS: Step[] = [
     },
   },
   {
-    title: 'Issue boarding passes',
+    title: 'Issue Boarding Passes',
     run: async (api) => {
-      const { output } = await api.call('issue_boarding_passes', { sessionIds: [aRepeat, b] });
-      expect(output.issued.length === 2, 'The boarding passes were not issued.');
+      const { output } = await api.call('issue_all_boarding_passes', {});
+      expect(
+        output.issued.includes(aRepeat) && output.issued.includes(b),
+        'The Boarding Passes were not issued.',
+      );
       return [
-        `Compass issued ${output.issued.length} boarding passes through the in-process pass service. They are unofficial; your badge is your ticket.`,
+        `Compass issued ${output.issued.length} Boarding Passes through the in-process pass service. They are unofficial; your badge is your ticket.`,
       ];
     },
   },
   {
     title: 'Hand the passes to your phone',
     run: async (api) => {
-      const { output, text } = await api.call('send_to_phone', {});
+      const { output, text } = await api.call('send_to_phone', { show: 'both' });
       expect(output.handoffUrl.length > 0, 'No phone link was created.');
       return [
         'Compass made a 15-minute link for your phone. The link never resolves in simulated mode.',
+        // The demo has no QR page (runDemo leaves it out), so the QR code comes back as text
+        // and is printed here, in the terminal.
         ...proseOf(text)
-          .filter((line) => !line.startsWith('Open this link'))
-          .map((line) => `  ${line}`),
+          .filter(
+            (line) => !line.startsWith('Open this link') && !line.startsWith('It works until'),
+          )
+          .map((line) =>
+            line === QR_PAGE_FAILED
+              ? '  Or scan this QR code with your phone camera:'
+              : `  ${line}`,
+          ),
         `  Link expires at ${clean(output.expiresAt)}.`,
       ];
     },
@@ -210,7 +222,10 @@ export async function runDemo(
   runtime: Runtime,
   options: DemoOptions,
 ): Promise<number> {
-  const client = await connectDemoClient(runtime);
+  // A terminal demo prints the QR code in the terminal and never opens a browser page (task 48).
+  const demoRuntime: Runtime = { ...runtime };
+  delete demoRuntime.qrPage;
+  const client = await connectDemoClient(demoRuntime);
   const api: DemoApi = {
     repoPath: options.repoPath,
     call: async (name, args) => {

@@ -83,7 +83,7 @@ export async function syncPasses(
   if (changes.length > 0 && ctx.elicit !== undefined) {
     const answer = await ctx.elicit({
       message: [
-        `This sync will change your boarding passes: ${plan.toIssue.length} to issue, ${plan.toUpdate.length} to update, ${plan.toVoid.length} to void${emptyVoid ? ', which is every pass you hold' : ''}.`,
+        `This sync will change your Boarding Passes: ${plan.toIssue.length} to issue, ${plan.toUpdate.length} to update, ${plan.toVoid.length} to void${emptyVoid ? ', which is every pass you hold' : ''}.`,
         ...changes.map(
           (c) => `- ${c.verb} ${c.code}${c.title === undefined ? '' : ` "${c.title}"`}`,
         ),

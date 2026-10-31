@@ -1,9 +1,11 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "reinvent-compass",
-  "version": "0.0.0",
-  "description": "Plan your AWS re:Invent week from your own code, book it safely with guardrails, and get unofficial boarding passes on your phone. Independent community project, not affiliated with AWS.",
-  "author": { "name": "Hennie Francis" },
+  "version": "0.1.0",
+  "description": "Plan your AWS re:Invent week from your own code, book it safely with guardrails, and get unofficial Boarding Passes on your phone. Independent community project, not affiliated with AWS.",
+  "author": {
+    "name": "Hennie Francis"
+  },
   "license": "Apache-2.0",
   "homepage": "https://github.com/henniefrancis/aws-re_invent-compass",
   "repository": "https://github.com/henniefrancis/aws-re_invent-compass",

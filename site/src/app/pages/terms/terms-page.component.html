@@ -1,0 +1,5 @@
+<h1 tabindex="-1">{{ title }}</h1>
+<p class="source-note">{{ updated }}</p>
+@for (block of blocks; track block.id; let first = $first) {
+  <p [class.lead]="first">{{ block.text }}</p>
+}

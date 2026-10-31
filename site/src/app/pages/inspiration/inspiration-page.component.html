@@ -1,0 +1,7 @@
+<h1 tabindex="-1">{{ title }}</h1>
+<blockquote class="story-quote">
+  <p>{{ keyLine }}</p>
+</blockquote>
+@for (block of paragraphs; track block.id) {
+  <p>{{ block.text }}</p>
+}

@@ -1,0 +1,43 @@
+<h1 tabindex="-1">{{ title }}</h1>
+<div class="creator">
+  <div>
+    <img
+      class="creator__photo"
+      [src]="photo.src"
+      [alt]="photo.alt"
+      [width]="photo.size"
+      [height]="photo.size"
+      decoding="async"
+    />
+    <section class="connect" aria-labelledby="connect-title">
+      <h2 id="connect-title" class="connect__title">Connect with Hennie</h2>
+      <ul class="connect__list">
+        @for (link of links; track link.href) {
+          <li>
+            <a
+              class="connect__link"
+              [href]="link.href"
+              [title]="link.label"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                [src]="link.image"
+                [alt]="link.label + ' (opens in a new tab)'"
+                width="96"
+                height="96"
+                decoding="async"
+              />
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  </div>
+  <div>
+    <p class="lead">{{ builtBy }}</p>
+    @for (block of bio; track block.id) {
+      <p>{{ block.text }}</p>
+    }
+  </div>
+</div>

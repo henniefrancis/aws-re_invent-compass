@@ -16,7 +16,7 @@ describe('the package README', () => {
     expect(text).toContain('not affiliated with, endorsed by or sponsored by AWS or Amazon');
   });
 
-  test('lists all seventeen tools with the class the registry gives them', async () => {
+  test('lists all twenty-four tools with the class the registry gives them', async () => {
     const text = await readme;
     const classes = { read: 'read', localAction: 'local action', write: 'write' } as const;
     for (const name of names) {
@@ -24,19 +24,30 @@ describe('the package README', () => {
       expect(row, name).toBeDefined();
       expect(row?.split('|')[2]?.trim()).toBe(classes[TOOL_SPECS[name].class]);
     }
-    expect(names).toHaveLength(17);
+    expect(names).toHaveLength(24);
   });
 
   test('allows only the three read tools that read nothing of yours to be auto-approved and says write tools never are', async () => {
     const text = await readme;
-    const reads = names.filter((n) => TOOL_SPECS[n].class === 'read' && n !== 'scan_repo');
+    const perCall = [
+      'scan_repo',
+      'show_schedule',
+      'show_my_tech',
+      'find_sessions_by_tech',
+      'scan_github',
+    ];
+    const reads = names.filter((n) => TOOL_SPECS[n].class === 'read' && !perCall.includes(n));
     expect(reads).toHaveLength(3);
     expect(text).toContain('`scan_repo` is read-only too, but it reads a folder on your machine');
+    expect(text).toContain('`show_schedule` is read-only as well, but it reads your schedule');
+    expect(text).toContain(
+      '`show_my_tech` and `find_sessions_by_tech` read your tech list on this machine, so approve them per call too.',
+    );
     expect(text).toContain(`"autoApprove": [${reads.map((n) => `"${n}"`).join(', ')}]`);
     expect(text).toContain('**Write tools must never be auto-approved.**');
     expect(text).toContain('including `sync_passes`, which can void passes');
     const snippet = /"autoApprove": \[(.*)\]/.exec(text)?.[1] ?? '';
-    for (const name of names.filter((n) => TOOL_SPECS[n].class === 'write')) {
+    for (const name of [...perCall, ...names.filter((n) => TOOL_SPECS[n].class === 'write')]) {
       expect(snippet).not.toContain(name);
     }
   });

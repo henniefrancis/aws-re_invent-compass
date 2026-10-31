@@ -6,6 +6,7 @@ import type { DeviceRegistration, PassRecord } from '../../src/data/records.js';
 import { createMetrics } from '../../src/observability/metrics.js';
 import { createPassLifecycle } from '../../src/services/pass-lifecycle.js';
 import { createApiFixture, lastLog, type ApiFixture } from '../helpers/api-fixture.js';
+import { makePassRecord } from '../helpers/pass-record.js';
 import { passFieldsArb, samplePassFields } from '../helpers/pass-fields.js';
 
 const SUB = 'c'.repeat(64);
@@ -95,6 +96,72 @@ describe('Feature: pass-service, update', () => {
         },
       ),
       { numRuns: 100 },
+    );
+  });
+
+  test('a Google insert that finishes between void reading the pass and saving it is still switched off', async () => {
+    const fixture = createApiFixture({
+      tweak: (deps) => {
+        const realSave = deps.passes.save.bind(deps.passes);
+        deps.passes = {
+          ...deps.passes,
+          // The view's insert completes after void has read the pass and before void saves.
+          save: async (rec, expected) => {
+            await deps.passes.activateGoogle(rec.serialNumber);
+            return realSave(rec, expected);
+          },
+        };
+      },
+    });
+    const serial = '00000000-0000-4000-8000-0000000000c1';
+    await fixture.deps.passes.create(
+      makePassRecord(SUB, serial, { platforms: ['google'], googleState: 'none' }),
+    );
+    const reply = await fixture.call(route('POST', '/void', serial));
+    expect(reply.result.statusCode).toBe(200);
+    const rec = await fixture.deps.passes.get(serial, fixture.clock.now());
+    expect(rec?.status).toBe('voided');
+    expect(rec?.googleState).toBe('inactive');
+    expect(fixture.google.patches).toHaveLength(1);
+    expect(fixture.google.patches[0]!.body).toMatchObject({ state: 'INACTIVE' });
+  });
+
+  test('when the record cannot be read again after the void save, the saved Google state is used', async () => {
+    let saved = false;
+    const fixture = createApiFixture({
+      tweak: (deps) => {
+        const realGet = deps.passes.get.bind(deps.passes);
+        const realSave = deps.passes.save.bind(deps.passes);
+        deps.passes = {
+          ...deps.passes,
+          save: async (rec, expected) => {
+            const outcome = await realSave(rec, expected);
+            saved = true;
+            return outcome;
+          },
+          get: (serial, now) => (saved ? Promise.resolve(undefined) : realGet(serial, now)),
+        };
+      },
+    });
+    const serial = '00000000-0000-4000-8000-0000000000c3';
+    await fixture.deps.passes.create(
+      makePassRecord(SUB, serial, { platforms: ['google'], googleState: 'active' }),
+    );
+    const reply = await fixture.call(route('POST', '/void', serial));
+    expect(reply.result.statusCode).toBe(200);
+    expect(fixture.google.patches).toHaveLength(1);
+    expect(fixture.google.patches[0]!.body).toMatchObject({ state: 'INACTIVE' });
+  });
+
+  test('a versioned save never rewrites the Google state', async () => {
+    const fixture = createApiFixture();
+    const serial = '00000000-0000-4000-8000-0000000000c2';
+    const rec = makePassRecord(SUB, serial, { platforms: ['google'], googleState: 'none' });
+    await fixture.deps.passes.create(rec);
+    await fixture.deps.passes.activateGoogle(serial);
+    expect(await fixture.deps.passes.save({ ...rec, version: 2 }, 1)).toBe('ok');
+    expect((await fixture.deps.passes.get(serial, fixture.clock.now()))?.googleState).toBe(
+      'active',
     );
   });
 
@@ -489,7 +556,7 @@ describe('Feature: pass-service, Google inserts when passes are issued', () => {
       tweak: (deps) => {
         deps.passes = {
           ...deps.passes,
-          setGoogleState: () => Promise.reject(new Error('table unavailable')),
+          activateGoogle: () => Promise.reject(new Error('table unavailable')),
         };
       },
     });

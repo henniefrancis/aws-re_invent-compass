@@ -54,7 +54,7 @@ describe('the real engine and the real venue data', () => {
     const sessions = buildCatalogView(EMPTY_DEMO, deps).flatMap((d) => d.sessions);
     expect(sessions).toHaveLength(DEMO_SESSIONS.length);
     const reservable = sessions.find((s) => s.reservable);
-    expect(reservable?.boarding).toMatch(/^Seat released at \d{1,2}:\d{2} (AM|PM)$/);
+    expect(reservable?.boarding).toMatch(/^Boarding closes at \d{1,2}:\d{2} (AM|PM)$/);
     for (const session of sessions) {
       expect(session.boarding.length).toBeGreaterThan(0);
     }
@@ -114,12 +114,31 @@ describe('the guided path on the real engine', () => {
     }
   });
 
-  test('a missing meal layover shows the engine suggestion when AIM321 is held next to BWP213', () => {
+  test('a missing meal layover shows the engine suggestion when INV530-R1 and CMP325-R fill the meal window', () => {
     const open = makeDeps({ checkReservation: () => ({ decision: 'allow', reasons: [] }) });
-    const crowded = run([{ type: 'add', sessionId: 'syn-003' }], open, starter);
-    const tuesday = buildWeekView(crowded, deps).find((day) => day.date === '2026-12-01');
-    expect(tuesday?.layovers.lines.join(' ')).toContain('meal');
-    expect(tuesday?.layovers.suggestions.length).toBeGreaterThan(0);
+    const crowded = run(
+      [
+        { type: 'add', sessionId: 'INV530-R1' },
+        { type: 'add', sessionId: 'CMP325-R' },
+      ],
+      open,
+    );
+    const monday = buildWeekView(crowded, deps).find((day) => day.date === '2026-11-30');
+    expect(monday?.layovers.lines.join(' ')).toContain('meal');
+    expect(monday?.layovers.suggestions.length).toBeGreaterThan(0);
+  });
+
+  test('a session with no venue warns twice, and the long stretch after it gets a suggested rest', () => {
+    const first = reduceDemo(EMPTY_DEMO, { type: 'add', sessionId: 'ACT053' }, deps);
+    expect(first.pending?.kind).toBe('warn');
+    const held = reduceDemo(first, { type: 'confirmWarn' }, deps);
+    const second = reduceDemo(held, { type: 'add', sessionId: 'SEC318-R' }, deps);
+    expect(second.pending?.kind).toBe('warn');
+    expect(second.pending?.reasons.join(' ')).toContain('could not be judged');
+    const week = reduceDemo(second, { type: 'confirmWarn' }, deps);
+    const wednesday = buildWeekView(week, deps).find((day) => day.date === '2026-12-02');
+    expect(wednesday?.layovers.lines.join(' ')).toContain('without a break');
+    expect(wednesday?.layovers.suggestions.length).toBeGreaterThan(0);
   });
 
   test('every connection view repeats the engine walk, and the layover lines are the engine reasons', () => {

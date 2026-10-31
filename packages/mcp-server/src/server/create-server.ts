@@ -22,7 +22,9 @@ import type { Mutex } from './mutex.js';
 import { registrationSchema } from './output-schema.js';
 import { failureResult, toCallToolResult } from './results.js';
 import { TOOL_SPECS, annotationsFor } from './tool-registry.js';
-import type { ElicitQuestion, ToolContext } from './types.js';
+import { resolveSessionCodes } from './session-codes.js';
+import { chooseWith, confirmWith } from './elicitation.js';
+import type { ToolContext, ToolOutcome } from './types.js';
 
 function register<K extends McpToolName>(
   server: McpServer,
@@ -47,48 +49,64 @@ function register<K extends McpToolName>(
     async (args: unknown): Promise<CallToolResult> => {
       const ctx: ToolContext = { runtime, state };
       if (server.server.getClientCapabilities()?.elicitation !== undefined) {
-        ctx.elicit = async (question: ElicitQuestion) => {
-          try {
-            const answer = await server.server.elicitInput({
-              message: question.message,
-              requestedSchema: {
-                type: 'object',
-                properties: {
-                  confirm: {
-                    type: 'boolean',
-                    title: 'Confirm',
-                    description: 'Tick to confirm, or decline to stop.',
-                  },
-                },
-                required: ['confirm'],
-              },
-            });
-            // Only a ticked box is a yes (QA M1, security L2): an accepted form with confirm missing,
-            // false or not a boolean true counts as a decline.
-            return answer.action === 'accept' && answer.content?.confirm !== true
-              ? 'decline'
-              : answer.action;
-          } catch {
-            // A form the client could not answer properly (an invalid answer, a closed
-            // connection) is not a yes, so no write follows.
-            return 'cancel';
-          }
-        };
+        ctx.elicit = confirmWith(server.server);
+        ctx.choose = chooseWith(server.server);
       }
       try {
-        const input = mcpTools[name].input.parse(args) as McpToolInput<K>;
+        // Codes such as SVS339 are accepted wherever a session id is (task 38).
+        const input = await resolveSessionCodes(
+          mcpTools[name].input.parse(args) as McpToolInput<K>,
+          runtime.events,
+        );
         // Write tools run one at a time; each re-reads the schedule when it gets its turn.
         const outcome =
           spec.class === 'write'
             ? await writeLock.run(() => spec.handler(input, ctx))
             : await spec.handler(input, ctx);
-        return toCallToolResult(name, outcome, runtime.mode === 'simulated');
+        return toCallToolResult(
+          name,
+          withWritesOnNotice(name, outcome, runtime),
+          runtime.mode === 'simulated',
+        );
       } catch (error) {
         runtime.logger.warn('tool failed', { tool: name, code: codeFor(error) });
         return failureResult(messageFor(error));
       }
     },
   );
+}
+
+/** The line shown in chat when the attendee has turned writes on in live mode (task 40). */
+export const WRITES_ON_LINE =
+  'Writes are on: Compass can change your real re:Invent schedule after you approve each change.';
+
+const WRITES_ON_TOOLS: ReadonlySet<McpToolName> = new Set<McpToolName>([
+  'sign_in',
+  'show_schedule',
+  'reserve_with_guardrails',
+  'cancel_reservation',
+  'add_standby',
+  'remove_standby',
+  'add_layover',
+]);
+
+/**
+ * When writes are on in live mode, the schedule tools, show_schedule and sign_in start their
+ * reply with WRITES_ON_LINE, so the person in the chat can see it (CTO review M1, task 40).
+ */
+function withWritesOnNotice<K extends McpToolName>(
+  name: K,
+  outcome: ToolOutcome<K>,
+  runtime: Runtime,
+): ToolOutcome<K> {
+  const writesOn = runtime.mode === 'live' && runtime.readOnly !== true;
+  return writesOn && outcome.ok && WRITES_ON_TOOLS.has(name)
+    ? {
+        ...outcome,
+        text: `${WRITES_ON_LINE}
+${outcome.text}`,
+      }
+    : outcome;
 }
 
 /** Builds the server with every tool registered. Reads nothing. */

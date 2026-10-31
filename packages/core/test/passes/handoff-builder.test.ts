@@ -264,6 +264,25 @@ describe('Feature: boarding-passes, Handoff_Builder example tests', () => {
     expect(renderTerminalQr(modules).split(ESC).join('<ESC>')).toMatchSnapshot();
   });
 
+  // Feature: boarding-passes, Requirement 5.6 (task 13): an SVG render for a browser page.
+  test('the SVG render is the same symbol as an SVG document with no link text', async () => {
+    const renders = await createHandoffBuilder(
+      depsAnswering(SENTINEL_HANDOFF_ID, SENTINEL_BOARD_URL),
+    ).handoff([SERIAL], INCLUDE);
+    const expected = await QRCode.toString(SENTINEL_BOARD_URL, {
+      errorCorrectionLevel: 'M',
+      margin: 4,
+      type: 'svg',
+    });
+    expect(renders.svg).toBe(expected);
+    expect(renders.svg.startsWith('<svg')).toBe(true);
+    const { size } = referenceMatrix(SENTINEL_BOARD_URL);
+    expect(renders.svg).toContain(`viewBox="0 0 ${size + 8} ${size + 8}"`);
+    expect(renders.svg).not.toContain(SENTINEL_HANDOFF_ID);
+    expect(renders.svg).not.toContain('board');
+    expect(renders.svg).not.toMatch(/<script|<a |href=/i);
+  });
+
   test('the QR encodes the parsed, normalised href, not the server string', async () => {
     const shouting = `https://D111111ABCDEF8.cloudfront.net/board#h=${SENTINEL_HANDOFF_ID}`;
     const renders = await createHandoffBuilder(
@@ -331,6 +350,21 @@ describe('Feature: boarding-passes, Handoff_Builder example tests', () => {
     create.mockRestore();
     expect(error.code).toBe('handoff.qr_failed');
     expect(error.message).toBe('The hand-off link could not be turned into a QR code.');
+  });
+
+  test('an SVG render failure is the same fixed PassError', async () => {
+    const toString = vi.spyOn(QRCode, 'toString').mockImplementationOnce(() => {
+      throw new Error(`library says ${SENTINEL_BOARD_URL}`);
+    });
+    const error = await failureOf(
+      createHandoffBuilder(depsAnswering(SENTINEL_HANDOFF_ID, SENTINEL_BOARD_URL)).handoff(
+        [SERIAL],
+        INCLUDE,
+      ),
+    );
+    toString.mockRestore();
+    expect(error.code).toBe('handoff.qr_failed');
+    expect(error.message).not.toContain(SENTINEL_HANDOFF_ID);
   });
 });
 

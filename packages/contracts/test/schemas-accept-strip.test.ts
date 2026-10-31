@@ -646,7 +646,11 @@ const toolSamples: Record<
   },
   scan_repo: {
     input: { path: '/repo' },
-    output: { services: ['bedrock'], depthByService: [{ service: 'bedrock', depth: 2 }] },
+    output: {
+      services: ['bedrock'],
+      depthByService: [{ service: 'bedrock', depth: 2 }],
+      technologies: [{ technology: '.NET', score: 12 }],
+    },
   },
   plan_week: {
     input: { goals: ['learn'], level: '300', maxPerDay: 4 },
@@ -655,6 +659,17 @@ const toolSamples: Record<
   check_itinerary: {
     input: { commitments: [commitmentSample] },
     output: { verdict: verdictSample },
+  },
+  show_schedule: {
+    input: {},
+    output: {
+      schedule: {
+        reserved: ['s1'],
+        favorites: ['s2'],
+        personalTime: [{ ...personalTimeInputSample, personalTimeId: 'pt1' }],
+      },
+      notInCatalog: ['s2'],
+    },
   },
   reserve_with_guardrails: {
     input: { sessionIds: ['AIM101'] },
@@ -667,13 +682,22 @@ const toolSamples: Record<
     input: { action: 'create', personalTime: personalTimeInputSample },
     output: { action: 'create', done: true, personalTimeId: 'pt1' },
   },
-  issue_boarding_passes: {
-    input: { sessionIds: ['AIM101'] },
+  issue_all_boarding_passes: {
+    input: {},
+    output: { issued: ['s1', 's2'], serials: ['serial-1', 'serial-2'] },
+  },
+  issue_boarding_pass: {
+    input: { sessionId: 'AIM101' },
     output: { issued: ['s1'], serials: ['serial-1'] },
   },
   send_to_phone: {
-    input: { sessionIds: ['s1'] },
-    output: { handoffUrl: 'https://example/handoff', expiresAt: '2026-12-01T00:15:00-08:00' },
+    input: { sessionIds: ['s1'], show: 'qr' },
+    output: {
+      handoffUrl: 'https://example/handoff',
+      expiresAt: '2026-12-01T00:15:00-08:00',
+      shownAs: 'both',
+      qrShownIn: 'browser',
+    },
   },
   sync_passes: {
     input: { sessionIds: ['s1'] },
@@ -684,6 +708,31 @@ const toolSamples: Record<
     output: { ics: 'BEGIN:VCALENDAR' },
   },
   forget_me: { input: { confirm: true }, output: { forgotten: true } },
+  show_my_tech: {
+    input: { top: 5 },
+    output: {
+      services: [{ service: 'Amazon S3', depth: 2, projects: 3 }],
+      technologies: [{ technology: '.NET', group: 'platform', projects: 2, score: 40 }],
+      sources: { folders: 1, githubRepositories: 4 },
+    },
+  },
+  find_sessions_by_tech: {
+    input: { tech: '.NET', limit: 10 },
+    output: { groups: [{ tech: '.NET', sessions: [normalisedSample], totalMatched: 1 }] },
+  },
+  connect_github: {
+    input: {},
+    output: {
+      state: 'waiting',
+      userCode: 'WDJB-MJHT',
+      verificationUri: 'https://github.com/login/device',
+    },
+  },
+  scan_github: {
+    input: { owners: ['octo-org'], includeForks: false, maxRepositories: 50 },
+    output: { scanned: 4, skipped: 1, services: ['Amazon S3'], technologies: ['.NET'] },
+  },
+  disconnect_github: { input: {}, output: { disconnected: true } },
 };
 
 // ----------------------------------------------------------------------------------

@@ -1,7 +1,8 @@
 # Required check workflow (ADR-018).
 #
-# One job, triggered only on a pull request into main (build plan 11.1). There is
-# no push trigger and no schedule trigger anywhere. Every action is pinned by
+# One job, triggered on a pull request into main and on a push to develop (build
+# plan 11.1, ADR-018 amended 20 October 2026: once the standing pull request was
+# merged, develop had no CI). No other push branch and no schedule trigger. Every action is pinned by
 # commit SHA, and the Terraform, tflint and Trivy binaries are pinned by version.
 # The steps run in the build plan 11.1 order: the Node checks first, then the
 # secret and dependency scans, then the offline Terraform checks of the infra
@@ -15,6 +16,8 @@ name: check
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [develop]
 
 permissions:
   contents: read

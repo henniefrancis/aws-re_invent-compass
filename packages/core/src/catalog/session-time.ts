@@ -180,3 +180,60 @@ export function computeSessionInterval(
     endMs,
   };
 }
+
+const WALL_CLOCK = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
+
+/**
+ * The wall-clock time of an instant in a zone, written `YYYY-MM-DDTHH:MM:SS` with no zone
+ * suffix, or undefined when the instant or the zone is not usable. The live Events API keeps
+ * personal time this way, in the event time zone (compass-power task 55).
+ */
+export function toZoneWallClock(instant: string, zone: string): string | undefined {
+  const ms = Date.parse(instant);
+  const formatter = formatterFor(zone);
+  if (Number.isNaN(ms) || formatter === null) {
+    return undefined;
+  }
+  return new Date(wallClockMs(formatter, ms)).toISOString().slice(0, 19);
+}
+
+/**
+ * The instant of a `YYYY-MM-DDTHH:MM:SS` wall-clock time in a zone, as ISO 8601 with the
+ * zone's offset, or undefined when the value or the zone is not usable.
+ */
+export function fromZoneWallClock(local: string, zone: string): string | undefined {
+  const match = WALL_CLOCK.exec(local);
+  const formatter = formatterFor(zone);
+  if (match === null || formatter === null) {
+    return undefined;
+  }
+  const [year, month, day, hour, minute, second] = match.slice(1).map(Number) as [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+  ];
+  const localMs = Date.UTC(year, month - 1, day, hour, minute, second);
+  if (new Date(localMs).toISOString().slice(0, 19) !== local) {
+    return undefined;
+  }
+  return renderWithOffset(formatter, localToInstant(formatter, localMs));
+}
+
+/**
+ * 00:00 on the day before an instant's date in a zone, as ISO 8601 with the zone's offset, or
+ * undefined when the instant or the zone is not usable. Layovers may start on the badge
+ * pickup day, the day before the event (compass-power task 56).
+ */
+export function startOfDayBefore(instant: string, zone: string): string | undefined {
+  const ms = Date.parse(instant);
+  const formatter = formatterFor(zone);
+  if (Number.isNaN(ms) || formatter === null) {
+    return undefined;
+  }
+  const local = new Date(wallClockMs(formatter, ms));
+  const dayBefore = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() - 1);
+  return renderWithOffset(formatter, localToInstant(formatter, dayBefore));
+}

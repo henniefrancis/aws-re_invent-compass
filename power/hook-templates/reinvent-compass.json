@@ -8,7 +8,7 @@
       "matcher": "kiro_powers",
       "action": {
         "type": "command",
-        "command": "npx --yes reinvent-compass@0.0.0 hook pre-write-guardrail"
+        "command": "npx --yes reinvent-compass@0.1.0 hook pre-write-guardrail"
       },
       "timeout": 30
     },
@@ -19,7 +19,7 @@
       "matcher": ".*(reservesessions|cancelreservation|associatefavorites|disassociatefavorite|createpersonaltime|updatepersonaltime|deletepersonaltime)$",
       "action": {
         "type": "command",
-        "command": "npx --yes reinvent-compass@0.0.0 hook pre-write-guardrail"
+        "command": "npx --yes reinvent-compass@0.1.0 hook pre-write-guardrail"
       },
       "timeout": 30
     }

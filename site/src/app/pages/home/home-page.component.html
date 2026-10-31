@@ -1,21 +1,22 @@
-<section class="hero stack" aria-labelledby="home-title">
-  <h1 id="home-title" tabindex="-1">{{ productName }}</h1>
-  <p class="hero__tagline">{{ tagline }}</p>
-  <p>{{ intro }}</p>
-</section>
-
-<section class="stack" aria-labelledby="home-actions">
-  <h2 id="home-actions">Try it, then install it</h2>
-  <p class="measure">{{ tryIt }}</p>
-  <div class="cluster">
-    <a class="button" routerLink="/demo">Try the demo</a>
-    <a class="button button--secondary" routerLink="/install">Install Compass</a>
+<section class="hero" aria-labelledby="home-title">
+  <div class="hero__copy">
+    <h1 id="home-title" class="hero__title" tabindex="-1">{{ productName }}</h1>
+    <p class="hero__tagline">{{ tagline }}</p>
+    <p class="hero__intro">{{ intro }}</p>
+    <div class="cluster hero__actions">
+      <a class="button" routerLink="/demo">Try the demo</a>
+      <a class="button button--secondary" routerLink="/install">Install Compass</a>
+    </div>
+    <p class="hero__note">{{ tryIt }}</p>
   </div>
+  <figure class="hero__pass">
+    <app-sample-pass [pass]="heroPass" />
+  </figure>
 </section>
 
 <section class="stack" aria-labelledby="home-seat">
   <h2 id="home-seat">The seat is released before the session starts</h2>
-  <p class="measure">{{ seatRule.text }}. {{ seatRuleSource }}</p>
+  <p>{{ seatRule.text }}. {{ seatRuleSource }}</p>
   <div class="grid-3">
     <div class="card">
       <p>{{ mostToolsLead }}</p>
@@ -34,7 +35,7 @@
     height="140"
     alt="A timeline: the seat is released at 10:20, ten minutes before the session starts at 10:30."
   />
-  <p class="measure">{{ firstTimerLoss }}</p>
+  <p>{{ firstTimerLoss }}</p>
 </section>
 
 <section class="stack" aria-labelledby="home-metaphor">
@@ -58,7 +59,7 @@
 </section>
 
 <section class="stack" aria-labelledby="home-acts">
-  <h2 id="home-acts">Plan, Board, Fly</h2>
+  <h2 id="home-acts">Plan, Boarding, Fly</h2>
   <div class="grid-3">
     @for (act of acts; track act.id) {
       <article class="card">
@@ -90,6 +91,7 @@
 
 <section class="stack" aria-labelledby="home-unofficial">
   <h2 id="home-unofficial">Unofficial, and proud of it</h2>
-  <p class="measure">{{ unofficial }}</p>
-  <p class="big-time">{{ disclaimer }}</p>
+  <p class="lead">
+    {{ unofficial }} <strong>{{ disclaimer }}</strong>
+  </p>
 </section>

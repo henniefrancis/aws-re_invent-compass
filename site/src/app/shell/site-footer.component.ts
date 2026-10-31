@@ -1,14 +1,12 @@
 import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { SITE_LINKS, footerItems } from '../../lib/content/links';
-import { NOTICE } from '../../lib/content/notice';
+import { NOTICE, NOTICE_HEADING } from '../../lib/content/notice';
 
+/** The footer (Requirement 4.2): the Notice under its heading, centred, with no links. */
 @Component({
   selector: 'app-site-footer',
-  imports: [RouterLink],
   templateUrl: './site-footer.component.html',
 })
 export class SiteFooterComponent {
+  protected readonly heading = NOTICE_HEADING;
   protected readonly notice = NOTICE.text;
-  protected readonly items = footerItems(SITE_LINKS);
 }

@@ -16,7 +16,7 @@ The playbook caps CI minutes, even though standard runners are free for public r
 | CodeQL        | Default setup                                            |                                                                                                                                                                                                                                                                                                     |
 | Dependabot    | Monthly, `open-pull-requests-limit: 0` until after 1 Nov |                                                                                                                                                                                                                                                                                                     |
 
-- No deploy workflow, no push trigger, no cron. Actions are pinned by SHA.
+- No deploy workflow, no cron. **Amended 20 October 2026 (owner decision):** `check.yml` also runs on pushes to `develop`, because once the standing pull request into `main` was merged, develop had no CI. No other push trigger. Actions are pinned by SHA.
 - Soft cap: 300 minutes for the project; expected use about 150. Check usage before every push.
 
 ## Consequences

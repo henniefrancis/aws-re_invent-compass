@@ -230,7 +230,9 @@ describe('Property 34: invalid layovers never reach S1', () => {
         );
         const start = Date.parse(spec.startKind === 'offset' ? startText : 'x');
         const end = Date.parse(spec.endKind === 'offset' ? endText : 'x');
-        const windowStart = Date.parse(fake.events.window.start);
+        // Layovers open on the badge pickup day (task 56). The fake window starts at midnight
+        // and no daylight saving change falls on the day before, so that is 24 hours earlier.
+        const windowStart = Date.parse(fake.events.window.start) - 24 * 3_600_000;
         const windowEnd = Date.parse(fake.events.window.end);
         const valid =
           spec.startKind === 'offset' &&

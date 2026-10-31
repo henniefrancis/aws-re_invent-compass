@@ -3,7 +3,10 @@ import { describe, expect, test } from 'vitest';
 import {
   TIME_NOT_AVAILABLE,
   dayHeading,
+  shortDay,
+  formatDateInZone,
   formatInZone,
+  formatInZone24,
   formatWallClock,
   offsetLabel,
   timezoneNote,
@@ -100,6 +103,9 @@ describe('time formatting examples', () => {
 
   test('builds a day heading from an event local date', () => {
     expect(dayHeading('2026-11-30')).toBe('Monday 30 November');
+    expect(shortDay('2026-11-30')).toBe('Mon, 30 Nov 2026');
+    expect(shortDay('2026-12-01')).toBe('Tue, 1 Dec 2026');
+    expect(shortDay('2026-12-31')).toBe('Thu, 31 Dec 2026');
     expect(dayHeading('2026-12-03')).toBe('Thursday 3 December');
   });
 
@@ -152,5 +158,15 @@ describe('Property 9: Event local time formatting preserves the wall clock', () 
       }),
       { numRuns: 200 },
     );
+  });
+});
+
+describe('24-hour and date in a zone', () => {
+  test('write the wall clock with two digits and the date as day, short month, year', () => {
+    expect(formatInZone24('2026-12-03T21:05:00Z', 'America/Los_Angeles')).toBe('13:05');
+    expect(formatInZone24('2026-12-03T08:00:00Z', 'UTC')).toBe('08:00');
+    expect(formatInZone24('2026-12-03T00:00:00Z', 'UTC')).toBe('00:00');
+    expect(formatDateInZone('2026-12-03T21:05:00Z', 'America/Los_Angeles')).toBe('3 Dec 2026');
+    expect(formatDateInZone('2026-12-04T03:00:00Z', 'America/Los_Angeles')).toBe('3 Dec 2026');
   });
 });

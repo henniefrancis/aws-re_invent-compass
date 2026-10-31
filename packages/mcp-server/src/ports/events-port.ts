@@ -28,6 +28,11 @@ export interface CatalogFilter {
   level?: string;
   type?: string;
   day?: string;
+  /**
+   * Whole words, any of which must appear in the title, abstract, topics or services (task 44).
+   * An empty list matches nothing.
+   */
+  words?: string[];
 }
 
 /** Read-only view of the cached catalog. Abstracts never appear here. */

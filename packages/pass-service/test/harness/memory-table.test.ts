@@ -29,6 +29,16 @@ describe('Feature: pass-service, in-memory table', () => {
     expect(await table.get(key('A', 'a'))).toEqual({ pk: 'A', sk: 'a', version: 2, x: 1 });
   });
 
+  test('setIfEquals needs the item and the equal attribute', async () => {
+    const table = createMemoryTable();
+    expect(await table.setIfEquals(key('A', 'a'), 'status', 'active', { x: 1 })).toBe('conflict');
+    await table.put({ pk: 'A', sk: 'a', status: 'voided' });
+    expect(await table.setIfEquals(key('A', 'a'), 'status', 'active', { x: 1 })).toBe('conflict');
+    await table.put({ pk: 'A', sk: 'a', status: 'active' });
+    expect(await table.setIfEquals(key('A', 'a'), 'status', 'active', { x: 1 })).toBe('ok');
+    expect(await table.get(key('A', 'a'))).toEqual({ pk: 'A', sk: 'a', status: 'active', x: 1 });
+  });
+
   test('set changes an existing item and ignores a missing one', async () => {
     const table = createMemoryTable();
     await table.set(key('A', 'a'), { x: 1 });

@@ -1,14 +1,26 @@
 import { verify } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { JWT } from 'google-auth-library';
 import fc from 'fast-check';
 import { describe, expect, test, vi } from 'vitest';
-import { formatEventDayTime, formatEventTime } from '../../src/apple/format-time.js';
-import { boardingClosesAt } from '../../src/apple/pass-template.js';
+import { formatEventDate, formatEventTime24 } from '../../src/apple/format-time.js';
+import { backFields, boardingClosesAt, shortRoom } from '../../src/apple/pass-template.js';
 import {
   GENERIC_OBJECT_URL,
   createGoogleWalletClient,
 } from '../../src/google/google-wallet-client.js';
-import { buildGenericObject, googleObjectId } from '../../src/google/google-object.js';
+import {
+  GOOGLE_BACKGROUND,
+  buildGenericObject,
+  googleObjectId,
+} from '../../src/google/google-object.js';
+import {
+  GOOGLE_CLASS_MODULES,
+  GOOGLE_DETAIL_MODULES,
+  GOOGLE_FRONT_ROWS,
+  GOOGLE_IMAGES,
+  GOOGLE_MAX_TEXT_MODULES,
+} from '../../src/google/google-layout.js';
 import { SAVE_URL_PREFIX, saveLink, signSaveJwt } from '../../src/google/save-jwt.js';
 import { WALLET_SCOPE, createGoogleTokenSource } from '../../src/google/token-source.js';
 import { createFakeSecrets } from '../helpers/fake-secrets.js';
@@ -62,6 +74,8 @@ const tokens = { accessToken: () => Promise.resolve('fake-access-token') };
 // Property tests do real work (signing, TLS, many records) and the machine may be busy.
 vi.setConfig({ testTimeout: 120_000 });
 
+const BASE = 'https://compass.example.test';
+
 describe('Feature: pass-service, Google generic object', () => {
   // Feature: pass-service, Property 21: Google objects follow the fixed mapping
   test('Property 21: objects follow the fixed mapping', () => {
@@ -75,7 +89,7 @@ describe('Feature: pass-service, Google generic object', () => {
           const serial = '33333333-3333-4333-8333-333333333333';
           const obj = buildGenericObject(
             { serialNumber: serial, fields, state, timezone: TZ },
-            { issuerId, classSuffix },
+            { issuerId, classSuffix, publicBaseUrl: BASE },
           );
           expect(obj.id).toBe(`${issuerId}.${serial}`);
           expect(obj.id).toBe(googleObjectId(issuerId, serial));
@@ -85,20 +99,131 @@ describe('Feature: pass-service, Google generic object', () => {
           expect(obj.header.defaultValue.value).toBe(fields.title);
           expect(obj.subheader.defaultValue.value).toBe(fields.sessionCode);
           expect(obj.cardTitle.defaultValue.value).toBe('Compass boarding pass');
-          const bodies = Object.fromEntries(obj.textModulesData.map((m) => [m.id, m.body]));
-          expect(bodies.gate).toBe(fields.venue === '' ? 'Venue not published' : fields.venue);
-          expect(bodies.boardingCloses).toBe(
-            formatEventTime(boardingClosesAt(fields.startsAt), TZ),
+          // The front rows first, in reading order, then the Apple back in the template's
+          // detail order, without the name (task 47).
+          const back = backFields(fields, TZ);
+          const onClass = new Set<string>(GOOGLE_CLASS_MODULES);
+          const details = GOOGLE_DETAIL_MODULES.filter(
+            (id) => !onClass.has(id) && back.some((f) => f.key === id),
           );
-          expect(bodies.starts).toBe(formatEventDayTime(fields.startsAt, TZ));
-          expect(bodies.notice).toBe('Unofficial. Your badge is your ticket.');
+          expect(obj.textModulesData.map((m) => m.id)).toEqual([
+            ...GOOGLE_FRONT_ROWS.flat(),
+            ...details,
+          ]);
+          for (const module of obj.textModulesData.slice(GOOGLE_FRONT_ROWS.flat().length)) {
+            const field = back.find((f) => f.key === module.id);
+            expect(module).toEqual({ id: field?.key, header: field?.label, body: field?.value });
+          }
+          // Google takes at most 10 text modules from an object (task 47.7).
+          expect(obj.textModulesData.length).toBeLessThanOrEqual(GOOGLE_MAX_TEXT_MODULES);
+          expect(obj.textModulesData.some((m) => onClass.has(m.id))).toBe(false);
+          expect(obj.textModulesData.some((m) => m.id === 'roomFull')).toBe(fields.room !== '');
+          expect(obj.textModulesData.some((m) => m.id === 'walk')).toBe(
+            fields.walkFromPrevious !== undefined,
+          );
+          expect(obj.textModulesData.some((m) => m.id === 'next')).toBe(
+            fields.nextConnection !== undefined,
+          );
+          expect(obj.textModulesData.map((m) => m.header)).not.toContain('NAME');
+          const bodies = Object.fromEntries(obj.textModulesData.map((m) => [m.id, m.body]));
+          expect(bodies.terminal).toBe(fields.venue === '' ? 'Venue not published' : fields.venue);
+          expect(bodies.gate).toBe(
+            shortRoom(fields.room) === '' ? 'Room not published' : shortRoom(fields.room),
+          );
+          expect(bodies.date).toBe(
+            `${formatEventDate(fields.startsAt, TZ)} | ${formatEventTime24(fields.startsAt, TZ)}-${formatEventTime24(fields.endsAt, TZ)}`,
+          );
+          expect(bodies.boardingCloses).toBe(
+            formatEventTime24(boardingClosesAt(fields.startsAt), TZ),
+          );
+          // Google refuses a wide logo without a logo (task 47.8).
+          expect(obj.logo.sourceUri.uri).toBe(`${BASE}/wallet/logo-v1.png`);
+          expect(obj.logo.contentDescription.defaultValue.value).toBe('Compass icon');
+          expect(obj.wideLogo.sourceUri.uri).toBe(`${BASE}/wallet/wide-logo-v1.png`);
+          expect(obj.heroImage.sourceUri.uri).toBe(`${BASE}/wallet/hero-v1.png`);
+          expect(obj.wideLogo.contentDescription.defaultValue.value).toBe('Compass icon');
+          expect(obj.heroImage.contentDescription.defaultValue.value).toMatch(/logo/);
+          expect(obj.hexBackgroundColor).toBe(GOOGLE_BACKGROUND);
           expect(obj.validTimeInterval).toEqual({ end: { date: fields.endsAt } });
-          expect(JSON.stringify(obj)).not.toMatch(/barcode|logo/i);
+          expect(JSON.stringify(obj)).not.toMatch(/barcode/i);
         },
       ),
       { numRuns: 200 },
     );
   });
+});
+
+test('a pass with every detail writes its per-pass modules in the template order, without the name (tasks 47 and 47.7)', () => {
+  const fields = samplePassFields();
+  const full = {
+    ...fields,
+    room: 'Venetian, Murano 3201',
+    walkFromPrevious: { minutes: 12, fromVenue: 'MGM Grand' },
+    nextConnection: {
+      sessionCode: 'SVS302',
+      startsAt: fields.endsAt,
+      venue: 'Wynn',
+      walkMinutes: 15,
+    },
+    attendeeName: 'Sample Attendee',
+  };
+  const obj = buildGenericObject(
+    {
+      serialNumber: '55555555-5555-4555-8555-555555555555',
+      fields: full,
+      state: 'ACTIVE',
+      timezone: TZ,
+    },
+    { issuerId: '3388000000099999999', classSuffix: 'compass', publicBaseUrl: BASE },
+  );
+  // The fixed texts are on the class (task 47.7): the object keeps 8 of Google's 10.
+  expect(obj.textModulesData.map((m) => m.id)).toEqual([
+    ...GOOGLE_FRONT_ROWS.flat(),
+    'roomFull',
+    'walk',
+    'next',
+    'timezone',
+  ]);
+  expect(obj.textModulesData.map((m) => m.header)).toEqual([
+    'TERMINAL',
+    'GATE',
+    'DATE',
+    'BOARDING CLOSES',
+    'ROOM',
+    'WALK FROM PREVIOUS',
+    'NEXT SESSION',
+    'TIMES',
+  ]);
+  expect(GOOGLE_DETAIL_MODULES.filter((id) => !GOOGLE_CLASS_MODULES.includes(id as never))).toEqual(
+    ['roomFull', 'walk', 'next', 'timezone'],
+  );
+  expect(JSON.stringify(obj)).not.toContain('Sample Attendee');
+});
+
+test('the Google card is the blue at the top of the hero, and white text reads on it (task 47)', () => {
+  expect(GOOGLE_BACKGROUND).toBe('#2035E2');
+  const linear = (hex: string): number => {
+    const c = Number.parseInt(hex, 16) / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const [r, g, b] = [1, 3, 5].map((i) => linear(GOOGLE_BACKGROUND.slice(i, i + 2))) as [
+    number,
+    number,
+    number,
+  ];
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  expect(1.05 / (luminance + 0.05)).toBeGreaterThan(7);
+});
+
+test('the Google images are PNGs at the sizes Google recommends (task 47)', () => {
+  const size = (name: string): number[] => {
+    const png = readFileSync(new URL(`../../artwork/google/${name}`, import.meta.url));
+    expect(png.subarray(1, 4).toString('ascii')).toBe('PNG');
+    return [png.readUInt32BE(16), png.readUInt32BE(20)];
+  };
+  expect(size(GOOGLE_IMAGES.logo)).toEqual([660, 660]);
+  expect(size(GOOGLE_IMAGES.wideLogo)).toEqual([1280, 400]);
+  expect(size(GOOGLE_IMAGES.hero)).toEqual([1032, 812]);
 });
 
 describe('Feature: pass-service, Google REST client', () => {
@@ -109,7 +234,7 @@ describe('Feature: pass-service, Google REST client', () => {
       state: 'ACTIVE',
       timezone: TZ,
     },
-    { issuerId: '3388000000099999999', classSuffix: 'compass' },
+    { issuerId: '3388000000099999999', classSuffix: 'compass', publicBaseUrl: BASE },
   );
 
   // Feature: pass-service, Property 22: Google REST calls use the documented endpoints
@@ -203,57 +328,103 @@ describe('Feature: pass-service, Save to Google Wallet link', () => {
     return JSON.parse(Buffer.from(part, 'base64url').toString('utf8')) as Record<string, unknown>;
   }
 
-  // Feature: pass-service, Property 23: Save links carry a verifiable RS256 JWT
-  test('Property 23: links carry a verifiable RS256 JWT with exactly the documented claims', async () => {
-    const secrets = googleSecrets();
-    const client = createGoogleWalletClient({
+  function objectsOf(count: number): { id: string; classId: string }[] {
+    return Array.from({ length: count }, (_, i) => ({
+      id: `3388000000099999999.00000000-0000-4000-8000-${String(i).padStart(12, '0')}`,
+      classId: '3388000000099999999.compass',
+    }));
+  }
+
+  /** Checks one link's token and returns its objects. */
+  function checkLink(url: string, iat: number): { id: string; classId: string }[] {
+    expect(url.startsWith(SAVE_URL_PREFIX)).toBe(true);
+    const jwt = url.slice(SAVE_URL_PREFIX.length);
+    const [h, p, s] = jwt.split('.') as [string, string, string];
+    expect(decode(h)).toEqual({ alg: 'RS256', typ: 'JWT' });
+    const claims = decode(p);
+    expect(Object.keys(claims)).toEqual(['iss', 'aud', 'typ', 'iat', 'origins', 'payload']);
+    expect(claims).toMatchObject({
+      iss: throwawayPki().google.clientEmail,
+      aud: 'google',
+      typ: 'savetowallet',
+      iat,
+      origins: [],
+    });
+    expect(
+      verify(
+        'RSA-SHA256',
+        Buffer.from(`${h}.${p}`),
+        throwawayPki().google.publicKey,
+        Buffer.from(s, 'base64url'),
+      ),
+    ).toBe(true);
+    return (claims.payload as { genericObjects: { id: string; classId: string }[] }).genericObjects;
+  }
+
+  function saveClient() {
+    return createGoogleWalletClient({
       http: fakeHttp([200]).http,
       tokens,
-      secrets,
+      secrets: googleSecrets(),
     });
+  }
+
+  // Feature: pass-service, Property 23: Save links carry a verifiable RS256 JWT
+  test('Property 23: links carry verifiable RS256 JWTs, each within the safe length, in order', async () => {
+    const client = saveClient();
     await fc.assert(
       fc.asyncProperty(
         fc.integer({ min: 1, max: 80 }),
         fc.integer({ min: 1_700_000_000, max: 2_000_000_000 }),
         async (count, iat) => {
-          const objects = Array.from({ length: count }, (_, i) => ({
-            id: `3388000000099999999.00000000-0000-4000-8000-${String(i).padStart(12, '0')}`,
-            classId: '3388000000099999999.compass',
-          }));
-          const { url, oversize } = await client.saveUrl(objects, iat);
-          expect(url.startsWith(SAVE_URL_PREFIX)).toBe(true);
-          const jwt = url.slice(SAVE_URL_PREFIX.length);
-          const [h, p, s] = jwt.split('.') as [string, string, string];
-          expect(decode(h)).toEqual({ alg: 'RS256', typ: 'JWT' });
-          expect(decode(p)).toEqual({
-            iss: throwawayPki().google.clientEmail,
-            aud: 'google',
-            typ: 'savetowallet',
-            iat,
-            origins: [],
-            payload: { genericObjects: objects },
-          });
-          expect(Object.keys(decode(p))).toEqual([
-            'iss',
-            'aud',
-            'typ',
-            'iat',
-            'origins',
-            'payload',
-          ]);
-          expect(
-            verify(
-              'RSA-SHA256',
-              Buffer.from(`${h}.${p}`),
-              throwawayPki().google.publicKey,
-              Buffer.from(s, 'base64url'),
-            ),
-          ).toBe(true);
-          expect(oversize).toBe(jwt.length > 1800);
+          const objects = objectsOf(count);
+          const links = await client.saveLinks(objects, iat);
+          const held = links.flatMap((link) => checkLink(link.url, iat));
+          expect(held).toEqual(objects);
+          expect(links.map((link) => link.count).reduce((a, b) => a + b, 0)).toBe(count);
+          for (const link of links) {
+            expect(link.url.length - SAVE_URL_PREFIX.length).toBeLessThanOrEqual(1800);
+            expect(link.oversize).toBe(false);
+            expect(link.count).toBeGreaterThanOrEqual(1);
+          }
+          // Greedy: a link is closed only because the next pass would not have fitted.
+          expect(links.length).toBe(Math.ceil(count / links[0]!.count));
         },
       ),
       { numRuns: 100 },
     );
+  });
+
+  test('1, 8, 9 and 12 passes: one link up to 8, then split, every token at most 1800 long', async () => {
+    const client = saveClient();
+    const lengths: Record<number, number[]> = {};
+    for (const count of [1, 8, 9, 12]) {
+      const links = await client.saveLinks(objectsOf(count), 1_800_000_000);
+      lengths[count] = links.map((link) => link.url.length - SAVE_URL_PREFIX.length);
+      expect(links.flatMap((link) => checkLink(link.url, 1_800_000_000))).toEqual(objectsOf(count));
+    }
+    expect(lengths[1]).toHaveLength(1);
+    expect(lengths[8]).toHaveLength(1);
+    expect(lengths[9]).toHaveLength(2);
+    expect(lengths[12]).toHaveLength(2);
+    for (const each of Object.values(lengths).flat()) {
+      expect(each).toBeLessThanOrEqual(1800);
+    }
+  });
+
+  test('a single object that is alone over the safe length is its own link and is flagged', async () => {
+    const huge = { id: `x.${'a'.repeat(1900)}`, classId: 'x.compass' };
+    const objects = [objectsOf(1)[0]!, huge, objectsOf(2)[1]!];
+    const links = await saveClient().saveLinks(objects, 1_800_000_000);
+    expect(links.map((link) => [link.count, link.oversize])).toEqual([
+      [1, false],
+      [1, true],
+      [1, false],
+    ]);
+  });
+
+  test('no objects make no links', async () => {
+    expect(await saveClient().saveLinks([], 1_800_000_000)).toEqual([]);
   });
 
   test('the oversize flag turns on above 1800 characters and the link is still returned', () => {

@@ -283,7 +283,7 @@ export async function startLocalHarness(options: HarnessOptions): Promise<Harnes
         state: 'ACTIVE',
         timezone: config.eventWindow.timezone,
       },
-      { issuerId: issuer, classSuffix },
+      { issuerId: issuer, classSuffix, publicBaseUrl: config.publicBaseUrl },
     );
     const first = await google.insert(object);
     const second = await google.insert(object);

@@ -360,7 +360,7 @@ Every dependency is pinned to an exact version. The versions below are the exact
 | passkit-generator               | 3.7.0     | prod, pass-service                        | Apple Wallet pass building                                                                                           | ADR-006                  |
 | ical-generator                  | 11.1.2    | prod, core                                | Local .ics generation                                                                                                | ADR-006, tech.md         |
 | @napi-rs/keyring                | 2.1.1     | prod, core                                | OS keychain token storage with memory fallback                                                                       | tech.md                  |
-| @modelcontextprotocol/sdk       | 1.32.1    | prod, mcp-server                          | Local stdio MCP server and CLI                                                                                       | ADR-006                  |
+| @modelcontextprotocol/sdk       | 1.32.2    | prod, mcp-server                          | Local stdio MCP server and CLI                                                                                       | ADR-006                  |
 | fast-check                      | 4.10.2    | dev, root                                 | Property-based testing                                                                                               | Requirements 4.12, 6.1   |
 | esbuild                         | 0.28.2    | dev, root                                 | Lambda and MCP bundle step in CI build                                                                               | build plan 11.1          |
 | @aws-sdk/client-dynamodb        | 3.1152.0  | prod, pass-service                        | DynamoDB client                                                                                                      | build plan 3, 7.2        |
@@ -641,3 +641,42 @@ The thirteen properties map one to one to thirteen property-based tests. Generat
 ### Build and acceptance gate (Requirement 12)
 
 The acceptance gate is the full CI job: `tsc -b` compiles every package; `vitest --coverage` passes at 100 percent; the hash check, placeholder safety check and dash check pass over the real committed files; actionlint is clean; the synthetic catalog validates against the live schemas; and a consumer fixture that imports a shared type from `@compass/contracts` resolves and compiles. gitleaks and `npm audit --omit=dev --audit-level=high` run as the security backstop for Requirement 12.10. These gate checks run the same scanners the property-based tests exercise, so the universal properties and the concrete repository state are both verified.
+
+## Post-SP3 change: binary media types (19 October 2026, task 16)
+
+The contract first listed only `application/vnd.apple.pkpass`, `application/vnd.apple.pkpasses` and `text/calendar` as binary media types. API Gateway decides whether to turn a base64 Lambda body back into bytes from the first media type of the request `Accept` header only ([Content type conversions](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-payload-encodings-workflow.html)). The site's Add to Apple Wallet button is a plain link, so Safari asks with `Accept: text/html,...` first; on dev the bundle came back as base64 text and Wallet refused it, while the same URL with `Accept: application/vnd.apple.pkpasses` returned a zip.
+
+Deviation: the list now also holds `'*/*'`, as AWS documents for clients whose Accept order cannot be controlled ([Lambda proxy binary media](https://docs.aws.amazon.com/apigateway/latest/developerguide/lambda-proxy-binary-media.html)). This was pass-service design Open Question 6's planned follow-up. Effects: every request body now reaches the Lambdas base64-encoded with `isBase64Encoded: true`, which the pass service's body reader already decodes; JSON responses are returned with `isBase64Encoded: false` and pass through as text. The three named types stay in the list, so the infra test that looks for them still holds. The JSON routes are rechecked on dev in the same SP3 run.
+
+## Post-SP3 change: vertical bar in pass text (19 October 2026, task 18)
+
+On a real iPhone every live pass lacked its ROOM line. Real catalog rooms are written like "Level 1 | Academy 409", and `|` is not in the PassFields character allowlist, so the S4 Pass_Builder's fallback sent an empty room and the Apple template left the ROOM field out.
+
+Deviation: `normalisePassText` now also turns a vertical bar into a comma. After the whitespace collapse it splits the text on `|`, trims each part, drops empty parts and joins the rest with `, `, so "Level 1 | Academy 409" becomes "Level 1, Academy 409", repeated bars count as one and bars at either end disappear. The allowlist and the PassFields schema are unchanged, so the pass service, which validates with the same schema, needs no change, and raw text with a bar is still refused. The showcase copy of the helper (`site/src/lib/demo/pass-text.ts`) gets the same step, and its equality property test now includes `|`. The pass service builds its calendar LOCATION from the same validated room, so that gains the room too; the Google object shows only the venue. The local calendar and itinerary page clean their text with `cleanDisplayText`, which never refused `|`, so this change does not touch them.
+
+## Post-SP3 change: the show_schedule tool contract (19 October 2026, task 17)
+
+SP3 in Kiro showed that no MCP tool lists the attendee's current schedule with its ids (compass-power design "Post-SP3 change: show_schedule", task 33). `mcpTools` gains an eighteenth entry beyond build plan section 8.1, `show_schedule`: input `z.object({})`, output `z.object({ schedule: ScheduleWireSchema, notInCatalog: z.array(z.string()) })`. It reuses the shared wire schedule shape rather than declaring a new one (rule 4 of `mcp-tools.ts`), carries no secret, and strips unknown fields like every other tool schema.
+
+## Post-merge change: CI on develop pushes (20 October 2026, task 19)
+
+Deviation from "no push trigger" (ADR-018, build plan 11.1): `check.yml` now also runs on pushes to `develop`. With PR #1 merged there was no open pull request into `main`, so develop had no CI. The trigger is limited to the one integration branch; there is still no schedule and no deploy workflow. When a pull request from develop into main is open, a push runs the check twice (once per trigger); that is accepted, since a run takes about six minutes and the repository is public.
+
+## Owner change: tech and GitHub tool contracts (20 October 2026, task 20)
+
+`mcpTools` grows from eighteen to twenty-three entries for compass-power tasks 41 to 45 (design "Owner change: your tech and your GitHub"). Every schema strips unknown fields and carries no secret, no path and no repository name.
+
+- `show_my_tech`: input `{ top?: number }`; output `{ services: { service, depth, projects }[], technologies: { technology, group, projects, score }[], sources: { folders, githubRepositories } }`.
+- `find_sessions_by_tech`: input `{ tech?: string, limit?: number }`; output `{ groups: { tech, sessions: NormalisedSession[], totalMatched }[] }`.
+- `connect_github`: input `{}`; output `{ state: 'notConfigured' | 'waiting' | 'connected' | 'failed', userCode?, verificationUri? }`.
+- `scan_github`: input `{ owners?: string[], includeForks?: boolean, maxRepositories?: number }`; output `{ scanned: number, skipped: number, technologies: string[], services: string[] }`.
+- `disconnect_github`: input `{}`; output `{ disconnected: boolean }`.
+- `ScanRepoOutput` gains an optional `technologies: { technology, score }[]`, so older outputs still parse.
+
+## Owner change: send_to_phone show (21 October 2026, task 21)
+
+`send_to_phone` input: `{ sessionIds?: string[], show?: 'link' | 'qr' | 'both' }`. Output: `{ handoffUrl, expiresAt, shownAs?: 'link' | 'qr' | 'both', qrShownIn?: 'browser' | 'chat' }`. The new output fields are optional so older outputs still parse. compass-power task 48 implements it.
+
+## Owner change: issue all passes or one (21 October 2026, task 22)
+
+`issue_boarding_passes` (1 to 10 `sessionIds`) is replaced by `issue_all_boarding_passes` (input `{}`) and `issue_boarding_pass` (input `{ sessionId?: string }`), both with the output `{ issued: string[], serials?: string[] }`. `mcpTools` has twenty-four entries. compass-power task 51 implements them.

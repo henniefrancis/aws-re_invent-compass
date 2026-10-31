@@ -3,13 +3,15 @@
 // The verdict panel, the rebooking and swap panel and the page notes are decided here, so the
 // component only binds them. Reasons are copied exactly as the rules engine returned them.
 
-import { GUIDED_CLASH } from './demo-catalog';
+import { DEMO_SOURCE, GUIDED_CLASH } from './demo-catalog';
 import type { DemoDeps } from './demo-deps';
 import type { DemoState, SwapStep } from './demo-state';
 import type { RebookOption } from './rules-port';
 
 export const DEMO_TEXT = {
-  madeUp: 'These sessions are made up. Nothing in this demo touches a real schedule.',
+  sessionNote:
+    'These are real re:Invent 2026 sessions, shown by code, title, time, venue and room only. Your week, seats and reservations here are simulated. Nothing in this demo touches a real schedule.',
+  credit: `Session data: ${DEMO_SOURCE.name}, catalog as of ${DEMO_SOURCE.asOf}.`,
   walkNote:
     'Walk times are the rules engine walk plus a buffer. The Leave now alarm in the sample calendar uses the same number.',
   unavailable: 'The demo cannot run in this build.',

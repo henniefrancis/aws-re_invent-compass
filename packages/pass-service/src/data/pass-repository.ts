@@ -25,6 +25,10 @@ export interface PassRepository {
   /** Replaces the mutable fields when the stored version equals the expected one. */
   save(rec: PassRecord, expectedVersion: number): Promise<'ok' | 'conflict'>;
   setGoogleState(serial: string, state: GoogleState): Promise<void>;
+  /** Marks the Google object active only while the pass is active. True when it applied. */
+  activateGoogle(serial: string): Promise<boolean>;
+  /** Notes when a failed Google insert may be tried again. */
+  setGoogleRetryAfter(serial: string, retryAfterMs: number): Promise<void>;
   /** Deletes the pass and its marker. True when a pass was deleted. */
   delete(serial: string): Promise<boolean>;
 }
@@ -99,7 +103,8 @@ export function createPassRepository(table: TableClient): PassRepository {
         updateTagMs: rec.updateTagMs,
         expiresAtMs: rec.expiresAtMs,
         ttl: ttlOf(rec.expiresAtMs),
-        googleState: rec.googleState,
+        // googleState is not written here: only its own setters change it, so a versioned save
+        // built from an older read can never undo an insert that finished meanwhile.
         ...(rec.voidedAt === undefined ? {} : { voidedAt: rec.voidedAt }),
       });
       if (outcome === 'ok') {
@@ -115,6 +120,18 @@ export function createPassRepository(table: TableClient): PassRepository {
 
     async setGoogleState(serial, state) {
       await table.set(passKey(serial), { googleState: state });
+    },
+
+    async activateGoogle(serial) {
+      return (
+        (await table.setIfEquals(passKey(serial), 'status', 'active', {
+          googleState: 'active',
+        })) === 'ok'
+      );
+    },
+
+    async setGoogleRetryAfter(serial, retryAfterMs) {
+      await table.set(passKey(serial), { googleRetryAfterMs: retryAfterMs });
     },
 
     async delete(serial) {

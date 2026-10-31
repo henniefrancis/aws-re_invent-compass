@@ -84,7 +84,7 @@ describe('Property 38: hook tool names resolve whatever the server prefix', () =
   test('the tool groups have the documented sizes and sync_passes is a write tool', () => {
     expect(AWSEVENTS_WRITE_TOOLS).toHaveLength(7);
     expect(SCHEDULE_WRITE_TOOLS).toHaveLength(5);
-    expect(COMPASS_WRITE_TOOLS).toHaveLength(9);
+    expect(COMPASS_WRITE_TOOLS).toHaveLength(10);
     expect(COMPASS_WRITE_TOOLS).toContain('sync_passes');
   });
 });
@@ -202,6 +202,16 @@ describe('pre-write guardrail examples', () => {
 
     const allow = arrange({ ageMinutes: 1, verdict: { decision: 'allow', reasons: [] } });
     expect(await preWriteGuardrail(reserve([TRIPLE.a]), allow.deps)).toEqual({ exitCode: 0 });
+  });
+
+  test('a session code is judged like its id (compass-power task 40)', async () => {
+    const block = arrange({
+      ageMinutes: 1,
+      verdict: { decision: 'block', reasons: ['It clashes.'] },
+    });
+    const byCode = await preWriteGuardrail(reserve([TRIPLE.codes.a.toLowerCase()]), block.deps);
+    expect(byCode.exitCode).toBe(2);
+    expect(byCode.stderr).toContain('It clashes.');
   });
 
   test('fails open with the note when it cannot judge', async () => {

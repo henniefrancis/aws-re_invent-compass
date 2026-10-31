@@ -2,7 +2,15 @@
   "venues": [
     {
       "venue": {
-        "name": "Caesars Forum"
+        "name": "Caesars Forum",
+        "coordinates": {
+          "lat": 36.1189571,
+          "lon": -115.1661889
+        }
+      },
+      "coordinatesSource": {
+        "kind": "estimate",
+        "basis": "The point of this venue in the OSRM foot table used for the walking times below, on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124). It is a point on the resort, not a door. Not an official AWS location."
       },
       "nameSource": {
         "kind": "official",
@@ -12,7 +20,15 @@
     },
     {
       "venue": {
-        "name": "Caesars Palace"
+        "name": "Caesars Palace",
+        "coordinates": {
+          "lat": 36.1166277,
+          "lon": -115.1767568
+        }
+      },
+      "coordinatesSource": {
+        "kind": "estimate",
+        "basis": "The point of this venue in the OSRM foot table used for the walking times below, on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124). It is a point on the resort, not a door. Not an official AWS location."
       },
       "nameSource": {
         "kind": "official",
@@ -22,7 +38,15 @@
     },
     {
       "venue": {
-        "name": "Encore"
+        "name": "Encore",
+        "coordinates": {
+          "lat": 36.1294358,
+          "lon": -115.1648801
+        }
+      },
+      "coordinatesSource": {
+        "kind": "estimate",
+        "basis": "The point of this venue in the OSRM foot table used for the walking times below, on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124). It is a point on the resort, not a door. Not an official AWS location."
       },
       "nameSource": {
         "kind": "official",
@@ -32,7 +56,15 @@
     },
     {
       "venue": {
-        "name": "MGM Grand"
+        "name": "MGM Grand",
+        "coordinates": {
+          "lat": 36.1027891,
+          "lon": -115.1694006
+        }
+      },
+      "coordinatesSource": {
+        "kind": "estimate",
+        "basis": "The point of this venue in the OSRM foot table used for the walking times below, on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124). It is a point on the resort, not a door. Not an official AWS location."
       },
       "nameSource": {
         "kind": "official",
@@ -42,7 +74,15 @@
     },
     {
       "venue": {
-        "name": "The Venetian"
+        "name": "The Venetian",
+        "coordinates": {
+          "lat": 36.1219124,
+          "lon": -115.1662288
+        }
+      },
+      "coordinatesSource": {
+        "kind": "estimate",
+        "basis": "The point of this venue in the OSRM foot table used for the walking times below, on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124). It is a point on the resort, not a door. Not an official AWS location."
       },
       "nameSource": {
         "kind": "official",
@@ -76,7 +116,15 @@
     },
     {
       "venue": {
-        "name": "Wynn"
+        "name": "Wynn",
+        "coordinates": {
+          "lat": 36.1266219,
+          "lon": -115.1654043
+        }
+      },
+      "coordinatesSource": {
+        "kind": "estimate",
+        "basis": "The point of this venue in the OSRM foot table used for the walking times below, on OpenStreetMap data (https://routing.openstreetmap.de/routed-foot/table/v1/driving/-115.1661889,36.1189571;-115.1767568,36.1166277;-115.1648801,36.1294358;-115.1694006,36.1027891;-115.1693352,36.1217073;-115.1654043,36.1266219;-115.1662288,36.1219124). It is a point on the resort, not a door. Not an official AWS location."
       },
       "nameSource": {
         "kind": "official",

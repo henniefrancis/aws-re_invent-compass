@@ -9,7 +9,7 @@
 // https://developers.google.com/wallet/generic/rest/v1/genericobject/patch
 import type { SecretsProvider } from '../credentials/secrets-provider.js';
 import type { GenericObject } from './google-object.js';
-import { saveLink, signSaveJwt } from './save-jwt.js';
+import { SAFE_JWT_LENGTH, saveLink, signSaveJwt, type SaveJwtClaims } from './save-jwt.js';
 import type { GoogleTokenSource } from './token-source.js';
 
 export const GENERIC_OBJECT_URL =
@@ -22,10 +22,15 @@ export interface GoogleWalletClient {
   /** A 409 falls back to one patch. */
   insert(obj: GenericObject): Promise<GoogleResult>;
   patch(objectId: string, obj: Partial<GenericObject>): Promise<GoogleResult>;
-  saveUrl(
+  /**
+   * The Save to Google Wallet links for these objects, in order. Each link holds as many
+   * objects as keep its signed token within SAFE_JWT_LENGTH, measured on the token itself.
+   * `oversize` is true only for a link that is still over (one object that alone is too long).
+   */
+  saveLinks(
     objects: { id: string; classId: string }[],
     nowSeconds: number,
-  ): Promise<{ url: string; oversize: boolean }>;
+  ): Promise<{ url: string; oversize: boolean; count: number }[]>;
 }
 
 export interface GoogleClientDeps {
@@ -79,20 +84,38 @@ export function createGoogleWalletClient(deps: GoogleClientDeps): GoogleWalletCl
 
     patch,
 
-    async saveUrl(objects, nowSeconds) {
+    async saveLinks(objects, nowSeconds) {
       const google = await deps.secrets.google();
-      const jwt = signSaveJwt(
-        {
-          iss: google.serviceAccount.client_email,
-          aud: 'google',
-          typ: 'savetowallet',
-          iat: nowSeconds,
-          origins: [],
-          payload: { genericObjects: objects },
-        },
-        google.serviceAccount.private_key,
-      );
-      return saveLink(jwt);
+      const sign = (group: SaveJwtClaims['payload']['genericObjects']): string =>
+        signSaveJwt(
+          {
+            iss: google.serviceAccount.client_email,
+            aud: 'google',
+            typ: 'savetowallet',
+            iat: nowSeconds,
+            origins: [],
+            payload: { genericObjects: group },
+          },
+          google.serviceAccount.private_key,
+        );
+      const links: { url: string; oversize: boolean; count: number }[] = [];
+      let group: typeof objects = [];
+      let jwt = '';
+      for (const object of objects) {
+        const grown = sign([...group, object]);
+        if (group.length > 0 && grown.length > SAFE_JWT_LENGTH) {
+          links.push({ ...saveLink(jwt), count: group.length });
+          group = [object];
+          jwt = sign(group);
+        } else {
+          group = [...group, object];
+          jwt = grown;
+        }
+      }
+      if (group.length > 0) {
+        links.push({ ...saveLink(jwt), count: group.length });
+      }
+      return links;
     },
   };
 }

@@ -10,6 +10,7 @@ import {
   HOST,
   LOCAL_CSP,
   REQUIRED_CSP,
+  REQUIRED_PERMISSIONS_POLICY,
   SECURITY_HEADERS,
   contentType,
   createStaticServer,
@@ -69,6 +70,16 @@ describe('the Required_CSP', () => {
   });
 });
 
+describe('the Permissions-Policy', () => {
+  test('lets only the site itself use the location and switches the rest off', () => {
+    expect(REQUIRED_PERMISSIONS_POLICY).toBe(
+      'accelerometer=(), camera=(), geolocation=(self), gyroscope=(), microphone=(), payment=(), usb=()',
+    );
+    expect(REQUIRED_PERMISSIONS_POLICY).not.toContain('*');
+    expect(SECURITY_HEADERS['Permissions-Policy']).toBe(REQUIRED_PERMISSIONS_POLICY);
+  });
+});
+
 describe('resolveSitePath', () => {
   test('maps the root, extensionless paths and files', () => {
     expect(resolveSitePath('/')).toEqual({ ok: true, path: 'index.html' });
@@ -119,6 +130,8 @@ describe('contentType', () => {
     expect(contentType('a.css')).toBe('text/css; charset=utf-8');
     expect(contentType('a.svg')).toBe('image/svg+xml');
     expect(contentType('a.ico')).toBe('image/x-icon');
+    expect(contentType('a.webp')).toBe('image/webp');
+    expect(contentType('pass-background.jpg')).toBe('image/jpeg');
     expect(contentType('a.json')).toBe('application/json; charset=utf-8');
     expect(contentType('a.txt')).toBe('text/plain; charset=utf-8');
     expect(contentType('a.bin')).toBe('application/octet-stream');

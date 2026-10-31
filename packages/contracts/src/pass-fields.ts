@@ -455,9 +455,10 @@ function isSafeText(value: string): boolean {
 
 /**
  * Normalise raw free text before PassFields validation. This is a pre-pass used
- * by the S4 pass builder: it maps typographic punctuation to ASCII and collapses
- * whitespace so a human-friendly title (with curly quotes, a long dash or an
- * ellipsis) can pass the allowlist. It does NOT validate; a value that still
+ * by the S4 pass builder: it maps typographic punctuation to ASCII, collapses
+ * whitespace and turns a vertical bar into a comma, so a human-friendly title
+ * (with curly quotes, a long dash or an ellipsis) or a catalog room written with
+ * a bar can pass the allowlist. It does NOT validate; a value that still
  * fails after normalisation is handled by the caller (S4 falls back to a generic
  * title). Typographic characters are referenced by escape sequence so this source
  * file contains no raw em or en dash.
@@ -478,8 +479,13 @@ export function normalisePassText(value: string): string {
       // Any run of whitespace, including the non-breaking space (U+00A0) and other
       // Unicode spaces, collapses to a single ASCII space.
       .replace(/[\s\u00A0]+/g, ' ')
-      // Trim leading and trailing whitespace.
-      .trim()
+      // A vertical bar, as in a catalog room "Level 1 | Academy 409", becomes a
+      // comma and a space ("Level 1, Academy 409"); repeated bars count as one and
+      // bars at either end disappear. Splitting also trims the result.
+      .split('|')
+      .map((part) => part.trim())
+      .filter((part) => part !== '')
+      .join(', ')
   );
 }
 

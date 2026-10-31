@@ -17,6 +17,7 @@ import {
   findResource,
   FIXTURES_LOCATION,
   SAMPLE_REPO_LOCATION,
+  GITHUB_WORKER_LOCATION,
   SCAN_WORKER_LOCATION,
   VENUES_LOCATION,
 } from '../runtime/resources.js';
@@ -104,6 +105,7 @@ export async function main(io: MainIo, host: Host = {}): Promise<number> {
   const version = await readVersion(root);
   const environment = async (): Promise<RuntimeEnvironment> => {
     const worker = await findOptionalResource(root, SCAN_WORKER_LOCATION, exists);
+    const githubWorker = await findOptionalResource(root, GITHUB_WORKER_LOCATION, exists);
     const fixtures = await findOptionalResource(root, FIXTURES_LOCATION, exists);
     return {
       homeDir: host.homeDir ?? homedir(),
@@ -114,6 +116,7 @@ export async function main(io: MainIo, host: Host = {}): Promise<number> {
       execFile: host.execFile ?? defaultExecFile,
       venuesPath: fileURLToPath(await findResource(root, VENUES_LOCATION, exists)),
       ...(worker === undefined ? {} : { scanWorkerPath: fileURLToPath(worker) }),
+      ...(githubWorker === undefined ? {} : { githubWorkerPath: fileURLToPath(githubWorker) }),
       ...(fixtures === undefined ? {} : { fixturesRoot: fileURLToPath(fixtures) }),
     };
   };

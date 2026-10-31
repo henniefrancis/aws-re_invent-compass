@@ -7,7 +7,14 @@ import { checkIdentifier } from '../safety/identifiers.js';
 import { labelUntrusted } from '../safety/labelled-data.js';
 import { describeTargets } from '../safety/targets.js';
 import type { ToolContext, ToolOutcome } from '../server/types.js';
-import { confirmMessage, ensureSignedIn, humanConfirms, readFreshSchedule } from './common.js';
+import {
+  confirmMessage,
+  ensureSignedIn,
+  humanConfirms,
+  readFreshSchedule,
+  readOnlyReply,
+  catalogTargets,
+} from './common.js';
 
 /** remove_standby. */
 export async function removeStandby(
@@ -32,12 +39,16 @@ export async function removeStandby(
       text: 'That session is not on your standby list, so nothing was removed.',
     };
   }
-  if (
-    !(await humanConfirms(
-      ctx,
-      confirmMessage('Remove this from your standby list?', targets.found),
-    ))
-  ) {
+  const question = confirmMessage('Remove this from your standby list?', targets.found);
+  const readOnly = readOnlyReply(
+    ctx,
+    'remove this from your standby list.',
+    catalogTargets(targets.found),
+  );
+  if (readOnly !== undefined) {
+    return { ok: true, structured: { removed: false }, text: readOnly };
+  }
+  if (!(await humanConfirms(ctx, question))) {
     return {
       ok: true,
       structured: { removed: false },

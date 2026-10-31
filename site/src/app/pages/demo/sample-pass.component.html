@@ -6,16 +6,38 @@
   [attr.height]="layout().height"
   [attr.viewBox]="'0 0 ' + layout().width + ' ' + layout().height"
 >
+  <defs>
+    <linearGradient id="pass-card-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#05052e" />
+      <stop offset="1" stop-color="#1d2390" />
+    </linearGradient>
+  </defs>
   <rect
     class="pass__card"
+    fill="url(#pass-card-gradient)"
     x="1"
     y="1"
-    rx="10"
+    rx="14"
     [attr.width]="layout().width - 2"
-    [attr.height]="layout().height - 2"
+    [attr.height]="layout().cardHeight - 2"
   />
+  <image
+    href="artwork/logo.svg"
+    [attr.x]="layout().logo.x"
+    [attr.y]="layout().logo.y"
+    [attr.width]="layout().logo.width"
+    [attr.height]="layout().logo.height"
+  />
+  <path class="pass__arrow" [attr.d]="arrowPath()" />
   @for (line of layout().lines; track $index) {
-    <text [attr.x]="line.x" [attr.y]="line.y" [attr.class]="'pass__text pass__text--' + line.kind">
+    <text
+      [attr.x]="line.x"
+      [attr.y]="line.y"
+      [attr.text-anchor]="line.anchor"
+      [attr.class]="
+        'pass__text pass__text--' + line.kind + (line.onCard ? ' pass__text--card' : '')
+      "
+    >
       {{ line.text }}
     </text>
   }

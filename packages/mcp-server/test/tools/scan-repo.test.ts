@@ -53,7 +53,14 @@ describe('scan_repo', () => {
           { service: 'Amazon S3', depth: 2 },
           { service: 'Amazon SQS', depth: 2 },
         ],
+        technologies: [
+          { technology: 'Terraform', score: 2 },
+          { technology: 'TypeScript', score: 1 },
+        ],
       });
+      expect(outcome.text).toContain('Other technology (2), most used first:');
+      expect(outcome.text).toContain('- Terraform (tool): score 2.');
+      expect(fake.techProfile.sources).toHaveLength(1);
       expect(outcome.text).toContain('Amazon S3: building (depth 2), suggested level 300.');
       expect(outcome.text).toContain('Python files were not analysed.');
       expect(outcome.text).toContain('1 AWS references did not match a known service');

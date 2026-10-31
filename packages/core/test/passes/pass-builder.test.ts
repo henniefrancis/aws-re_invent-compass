@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, test } from 'vitest';
 import { createPassFieldsSchema } from '@compass/contracts';
-import { buildPass, type BuildPassInput } from '../../src/passes/pass-builder.js';
+import { buildPass, fitRoom, type BuildPassInput } from '../../src/passes/pass-builder.js';
 import { PassError } from '../../src/passes/redaction.js';
 import {
   NUM_RUNS,
@@ -269,6 +269,34 @@ describe('Feature: boarding-passes, Property 6: empty venue and room are sent as
     });
     expect(fields.venue).toBe('');
     expect(fields.room).toBe('');
+  });
+
+  test('a catalog room written with a vertical bar is kept as a comma (SP3)', () => {
+    const fields = build({
+      session: makeSession({ venue: 'Venetian', room: 'Level 1 | Academy 409' }),
+    });
+    expect(fields.room).toBe('Level 1, Academy 409');
+  });
+
+  test('a long catalog room keeps its leading parts within 40 characters (task 11)', () => {
+    const long = build({
+      session: makeSession({
+        venue: 'Caesars Palace',
+        room: "Promenade South | Octavius 4 | Content Hub | Builders' Session",
+      }),
+    });
+    expect(long.room).toBe('Promenade South, Octavius 4, Content Hub');
+    expect(long.room).toHaveLength(40);
+    const hub = build({
+      session: makeSession({
+        venue: 'MGM Grand',
+        room: "Level 3 | Chairman's 363 | Content Hub | Blue Theater",
+      }),
+    });
+    expect(hub.room).toBe("Level 3, Chairman's 363, Content Hub");
+    expect(fitRoom('Level 2, Ballroom E, Keynote')).toBe('Level 2, Ballroom E, Keynote');
+    expect(fitRoom(`${'a'.repeat(41)}, b`)).toBe('a'.repeat(41));
+    expect(fitRoom('')).toBe('');
   });
 });
 

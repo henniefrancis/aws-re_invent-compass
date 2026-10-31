@@ -4,7 +4,7 @@
 
 This spec (S7, showcase-site) covers the public website of re:Invent Compass and its `/board` hand-off page. It owns `site/**` only.
 
-In the airline metaphor the site is the departures hall and the gate. The departures hall tells the story ("Plan like a spec. Board like a flight."), lets anyone try a click-through demo on made-up sessions, and explains how to install Compass and what leaves the attendee's machine. The gate is `/board`: the page a phone opens after scanning the QR code that Compass prints on the computer, where the attendee adds unofficial boarding passes to Apple Wallet or Google Wallet, or downloads a calendar file.
+In the airline metaphor the site is the departures hall and the gate. The departures hall tells the story ("From your code to your seat, on time."), lets anyone try a click-through demo on made-up sessions, and explains how to install Compass and what leaves the attendee's machine. The gate is `/board`: the page a phone opens after scanning the QR code that Compass prints on the computer, where the attendee adds unofficial boarding passes to Apple Wallet or Google Wallet, or downloads a calendar file.
 
 The site is plan on a computer, board on any device (ADR-005). It is a static Angular 22 application, prerendered to files and served from S3 behind CloudFront at the distribution's default domain. It has no sign-in, no cookies, no analytics and no third-party requests. The demo runs the real rules engine (`@compass/core/rules`, owned by S2) in the browser on sessions copied from the synthetic catalog (ADR-016). The `/board` page reads a 15-minute hand-off capability from the URL fragment only (ADR-011), calls one hand-off route from `contracts/compass-api.openapi.yaml`, and never stores, logs or shares that capability.
 
@@ -96,12 +96,13 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 
 #### Acceptance Criteria
 
-1. THE Shell SHALL render on every page a skip link to the main content as the first focusable element, a header with the product name and links to Home, Demo, Install and Privacy, exactly one `<main>` landmark, and a footer.
-2. THE Shell footer SHALL show on every page the Notice exactly as written, and links to the repository, the Builder Center post and the video, in the same order on every page.
+1. THE Shell SHALL render on every page a skip link to the main content as the first focusable element, a header with the product logo as the link home, a main navigation of four groups (Product: Try the demo and Install; Project: Repository, Documentation, Builder Center post and Video; About: The Inspiration and The Creator; Legal: Privacy, Disclaimer, and Copyright and licence; each item with a one-line description) and a "Try the demo" button, exactly one `<main>` landmark, and a footer (amended 21 October 2026 by owner decisions, tasks 26 and 28).
+2. THE Shell footer SHALL show on every page, centred and compact, the heading "Disclaimer Notice" with the Notice exactly as written under it, and no links: the repository, the Builder Center post and the video are in the Project group of the main navigation (amended 21 October 2026 by owner decision, task 27).
 3. WHERE the Builder Center post URL or the video URL is not yet configured, THE Shell SHALL show that item as plain text saying it is coming soon, and SHALL NOT render a link to an unknown address.
 4. WHEN the user navigates to a page within the Site, THE Shell SHALL set the document title to `<page name> | re:Invent Compass` and SHALL move keyboard focus to the page's single `<h1>` heading.
-5. THE Shell SHALL NOT use fixed or sticky positioned elements, or menus that open over content.
+5. THE Shell SHALL NOT use fixed or sticky positioned elements. Each navigation group SHALL be a disclosure: a button with `aria-expanded` that shows or hides its panel, one panel open at a time, closed by a second press, by Escape (focus returns to its button), by a click outside the header and by any navigation. On wide screens a panel MAY open over the content below the header; on narrow screens a "Menu" button shows the groups in the page flow (amended 21 October 2026 by owner decision, task 26: it said no menus that open over content).
 6. THE Site SHALL set `lang="en"` on the `<html>` element and SHALL include `<meta name="referrer" content="no-referrer">` in the document head.
+7. THE Site SHALL use the look of the Compass QR page and pass: the owner's Pass Designer gradient behind the page, the main content on a dark card, white text and the pass's orange for links and buttons, with every text and graphic pairing meeting WCAG 2.2 AA and no AWS brand colour (owner request of 21 October 2026, task 25).
 
 ### Requirement 5: Home page story
 
@@ -109,10 +110,10 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 
 #### Acceptance Criteria
 
-1. THE Home_Page SHALL show the product name and the tagline "Plan like a spec. Board like a flight."
-2. THE Home_Page SHALL tell the "Seat released at" story: a reserved seat is held only until 10 minutes before the session starts, and Compass shows "Seat released at 10:20" where most tools show "Starts 10:30", attributing the rule to the official re:Invent 2026 FAQ.
+1. THE Home_Page SHALL show the product name and the tagline "From your code to your seat, on time." (amended 20 October 2026 by owner decision, task 24: it was "Plan like a spec. Board like a flight.")
+2. THE Home_Page SHALL tell the "Boarding closes at" story (worded "Seat released at" until 31 October 2026, owner decision to match the pass): a reserved seat is held only until 10 minutes before the session starts, and Compass shows "Seat released at 10:20" where most tools show "Starts 10:30", attributing the rule to the official re:Invent 2026 FAQ.
 3. THE Home_Page SHALL show the airline metaphor table with the terms and meanings from the product steering.
-4. THE Home_Page SHALL present the three acts Plan, Board and Fly with content from `CONCEPT.md` section 3, using the scanner list from the build plan and product steering (Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3 and boto3) where `CONCEPT.md` differs.
+4. THE Home_Page SHALL present the three acts Plan, Boarding and Fly (amended 20 October 2026, task 24: the second act was Board) with content from `CONCEPT.md` section 3, using the scanner list from the build plan and product steering (Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3 and boto3) where `CONCEPT.md` differs.
 5. THE Home_Page SHALL state in plain words the principles "The badge is the ticket", "A human approves every write" and "Local first".
 6. THE Home_Page SHALL link to the Demo_Page and the Install_Page as its two primary actions.
 7. THE Home_Page SHALL state that Compass passes are unofficial, carry the text "Unofficial. Your badge is your ticket." and never replace the attendee's badge.
@@ -199,7 +200,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 #### Acceptance Criteria
 
 1. WHEN the user chooses a reserved session in the Demo_Week, THE Demo_Page SHALL show a Sample_Pass for it.
-2. THE Sample_Pass SHALL show the session code; the title as `normalisePassText` leaves it and, when that is longer than 80 characters, its first 77 characters followed by three ASCII dots (the ellipsis character is not in the pass text allowlist); the gate (venue and room, or "Venue not published"); "Seat released at" with the boarding closes time; the walk from the previous commitment where known; the next connection where known; the label "Sample pass. Made-up session."; and the disclaimer "Unofficial. Your badge is your ticket."
+2. THE Sample_Pass SHALL show, as on the Apple pass (amended 20 October 2026): the owner's logo; SESSION with the session code; TERMINAL with the venue or "Venue not published"; GATE with the short room (the part of the room after the first comma) or "Room not published"; FLIGHT NAME with the title as `normalisePassText` leaves it and, when that is longer than 80 characters, its first 77 characters followed by three ASCII dots (the ellipsis character is not in the pass text allowlist); DATE with the event date and the 24-hour start and end times in the event timezone; BOARDING CLOSES with the 24-hour boarding closes time from the Rules_Engine; and, as small lines under the card face, the walk from the previous commitment where known, the next connection where known, the label "Sample pass. Made-up session." and the disclaimer "Unofficial. Your badge is your ticket." Label text on the card SHALL reach a contrast of 4.5:1 against the card background.
 3. THE Sample_Pass SHALL show no barcode, no QR code, no AWS logo and no AWS brand colour.
 4. THE Sample_Pass fields SHALL validate against the PassFields schema from `@compass/contracts` built for the demo event window.
 5. THE Sample_Pass SHALL be rendered as inline SVG with `role="img"` and an accessible name that states every field shown.
@@ -376,3 +377,52 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 3. THE stream SHALL commit locally after each top-level task with Conventional Commits scoped `showcase-site`, subject and body passed through multiple `-m` flags, with no Co-Authored-By trailer and no AI attribution, and SHALL NOT push, merge, open a pull request or tag.
 4. THE stream SHALL provide `site/README.md` covering the build, the tests, the output folder for the release script, the Required_CSP, the content sources and the artwork manifest.
 5. THE stream SHALL save two or three screenshots of the Site working (the Home_Page, the blocked clash in the demo on a phone profile, and the Board_Page Ready state with mocked data) to `docs/article/screenshots/showcase-site/` for the Builder Center post.
+
+### Requirement 24: About the creator
+
+**User Story:** As a visitor, I want to know who built Compass, so that I know it is a community project with a real person behind it.
+
+#### Acceptance Criteria
+
+1. THE Site SHALL have an About_Page at `/about`, titled "The Creator", reached from the About group of the main navigation (renamed by the owner on 21 October 2026, task 28).
+2. THE About_Page SHALL say that re:Invent Compass was built by Hennie Francis as an entry in the re:Invent Catalog API Builder Challenge, then introduce Hennie from the owner's biography (cloud and technology strategist, community work, speaking, aviation and conference swag), show the owner's photo with a text alternative and, under the photo, a small "Connect with Hennie" heading over image links to the owner's website, LinkedIn, GitHub, AWS Community South Africa and AWS Builder Center profile, each image named by its link text (owner answers of 22 October 2026, tasks 34 and 35, recorded in `docs/story/creator-and-inspiration.md`).
+
+### Requirement 25: The Inspiration
+
+**User Story:** As a visitor, I want to know what inspired Compass, so that I understand why it works the way it does.
+
+#### Acceptance Criteria
+
+1. THE Site SHALL have an Inspiration_Page at `/inspiration`, titled "The Inspiration", reached from the About group with the description "What inspired the project direction".
+2. THE Inspiration_Page SHALL say that the project started from a first-time attendee's worry: a reserved seat is only held until 10 minutes before the session starts, and re:Invent already works like an airline, so Compass plans the week like a spec and boards it like a flight. The page SHALL tell the owner's story in the owner's words, as recorded in `docs/story/creator-and-inspiration.md` (owner answers of 22 October 2026, task 34): the campus map and walking times, the aviation geek's eye, planning like a spec with Kiro, representing South Africa, how the project grew, and who it is for.
+
+### Requirement 26: Documentation
+
+**User Story:** As a builder, I want one place that points to the project's documentation, so that I can read how Compass is built and run.
+
+#### Acceptance Criteria
+
+1. THE Site SHALL have a Documentation_Page at `/documentation`, titled "Documentation", reached from the Project group.
+2. THE Documentation_Page SHALL link, in the repository, to the README, the build plan, the architecture decision records, the runbooks and the Kiro specs, each with a one-line description, and SHALL build every address from the repository address in `links.ts`.
+
+### Requirement 27: Legal pages
+
+**User Story:** As a visitor, I want the disclaimer and the copyright terms written out, so that I know what Compass is, what it is not and who owns it.
+
+#### Acceptance Criteria
+
+1. THE Site SHALL have a Disclaimer_Page at `/disclaimer` and a Copyright_Page at `/copyright`, reached with Privacy from the Legal group of the main navigation.
+2. THE Disclaimer_Page SHALL state the Notice exactly as written; that a Compass pass is unofficial and is not a ticket, and the badge is the ticket; that session details come from the AWS Events API and can change, so the official re:Invent app is the source of truth; that the software is provided "as is", without warranties, as the Apache License 2.0 says; and that AWS and re:Invent are trademarks of Amazon.com, Inc. or its affiliates, and Apple Wallet and Google Wallet of their owners, used only to describe compatibility.
+3. THE Copyright_Page SHALL state "Copyright 2026 Hennie Francis"; that the code is licensed under the Apache License 2.0, which lets anyone use, change and share it as long as they keep the copyright notice, the licence and the NOTICE file and say what they changed; that the name "re:Invent Compass" and its logo identify the original project and are not licensed for derivative works, so a fork must use a different name; and SHALL link to the LICENSE and NOTICE files in the repository.
+
+### Requirement 28: More legal pages
+
+**User Story:** As a visitor, I want the terms, the accessibility promise, the security policy and the open-source credits written out, so that I know the rules, what to expect and who to thank.
+
+#### Acceptance Criteria
+
+1. THE Legal group of the main navigation SHALL hold, in order, Terms of use (`/terms`), Privacy, Disclaimer, Copyright and licence, Security (`/security`), Accessibility (`/accessibility`) and Open-source credits (`/credits`), each prerendered.
+2. THE Terms_Page SHALL say, in plain English and dated 22 October 2026: the terms cover the website, the Compass MCP server and the Kiro Power; Compass is free and open source, provided as is under the Apache License 2.0 and used at your own risk; Compass does not guarantee a seat, because AWS re:Invent decides seats, sessions and times and the official re:Invent app is the source of truth; Compass passes are unofficial and are not tickets, and your badge is your ticket; a hand-off link and its QR code work for 15 minutes and give access to your passes, so do not share them; do not misuse the pass service (no automated mass requests, no attempts to read other people's passes, no attempts to break its security) and report security problems privately; you are responsible for your AWS Builder ID and for what you approve, and by default Compass does not change your re:Invent schedule; and the terms may change, with the date showing the last change.
+3. THE Accessibility_Page SHALL state the WCAG 2.2 AA aim of Requirement 19, what it means for a visitor, how the site is tested (Requirement 22.3), that the passes themselves are drawn by Apple Wallet and Google Wallet, and how to report a barrier through the repository's issues.
+4. THE Security_Page SHALL summarise SECURITY.md (private reporting, what to include, the acknowledgement, scope, secrets) and the read-only default and labelled catalog data, and SHALL link to the private reporting form and to SECURITY.md.
+5. THE Credits_Page SHALL list the main open-source libraries Compass runs on and is tested with, each with what it does and its licence; a test SHALL check every licence against the installed package.

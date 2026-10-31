@@ -168,6 +168,12 @@ describe('findOutputIssues', () => {
     ]);
   });
 
+  test('a Notice hidden inside nested comment markers is still missing (CodeQL alert 2)', () => {
+    // One pass would remove the inner comment and leave `<!-- Notice -->` behind.
+    const nested = `<html lang="en"><body><h1>x</h1><!-<!-- x -->- ${NOTICE_TEXT} --></body></html>`;
+    expect(rules(nested)).toEqual(['notice-missing']);
+  });
+
   test('noindex belongs on the board page only', () => {
     const noindex = '<meta name="robots" content="noindex">';
     expect(rules(page('', noindex), { expectNoindex: true })).toEqual([]);
@@ -272,12 +278,21 @@ describe('runCli', () => {
         Promise.resolve(map[path.split(/[\\/]/).slice(1).join('/')] ?? ''),
     });
 
-  test('lists the five prerendered route files', () => {
+  test('lists the fourteen prerendered route files', () => {
     expect(routes).toEqual([
       'index.html',
       'demo/index.html',
       'install/index.html',
       'privacy/index.html',
+      'about/index.html',
+      'inspiration/index.html',
+      'documentation/index.html',
+      'disclaimer/index.html',
+      'copyright/index.html',
+      'terms/index.html',
+      'security/index.html',
+      'accessibility/index.html',
+      'credits/index.html',
       'board/index.html',
     ]);
   });
@@ -285,7 +300,7 @@ describe('runCli', () => {
   test('passes a clean build', async () => {
     const result = await run(files());
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('ok: 6 HTML files');
+    expect(result.stdout).toContain('ok: 15 HTML files');
   });
 
   test('fails and names the file and the rule', async () => {

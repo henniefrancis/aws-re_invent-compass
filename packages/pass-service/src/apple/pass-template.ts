@@ -1,25 +1,77 @@
-// The fixed server template of every Apple pass (Requirement 9). Pure: the same input
-// always gives the same pass.json. Client text appears only as field values; no client
-// string is ever a date (review H1): every date here is built from `Date.parse` and written
-// in the canonical 24-character toISOString() form.
+// The fixed server template of every Apple pass (Requirement 9): the owner's Pass Designer
+// event ticket (task 44). Pure: the same input always gives the same pass.json.
+// Client text appears only as field values and semantic tags; no client string is ever a date
+// (review H1): every date here is built from `Date.parse` and written in the canonical
+// 24-character toISOString() form.
 //
 // Pass keys: https://developer.apple.com/documentation/walletpasses/pass
 import type { PassFields } from '@compass/contracts';
-import { formatEventDayTime, formatEventTime, timezoneName } from './format-time.js';
+import {
+  formatEventDate,
+  formatEventDayTime24,
+  formatEventTime24,
+  timezoneName,
+} from './format-time.js';
 
-export const DISCLAIMER = 'Unofficial. Your badge is your ticket.';
-export const INDEPENDENT_NOTICE =
-  're:Invent Compass is an independent community project, not affiliated with AWS.';
+import { STATIC_BACK, type StaticBackKey } from './pass-texts.js';
+
+// The fixed texts live in pass-texts.ts, shared with the Google class (task 47.7).
+export {
+  DISCLAIMER,
+  INDEPENDENT_NOTICE,
+  PLANS_NOTICE,
+  PRIVACY_NOTICE,
+  SEAT_RULE,
+  UNOFFICIAL_NOTICE,
+} from './pass-texts.js';
+/** The issuer Wallet names on the pass and the Lock Screen (owner decision, task 44). */
+export const ORGANIZATION_NAME = 'AWS Community South Africa';
 export const NO_VENUE = 'Venue not published';
+export const NO_ROOM = 'Room not published';
+/** The region semantic tag: re:Invent is held in Las Vegas (task 42). */
+export const EVENT_REGION = 'Las Vegas';
+/**
+ * The arrow between the terminal and the gate (tasks 43 and 44), where the boarding pass drew its
+ * transit arrow. A rightwards arrow, U+2192.
+ */
+export const ARROW = '→';
+/**
+ * The pass colours from the owner's Pass Designer design (task 44): black background, white
+ * values and orange labels. Their closeness to the AWS colours is an accepted owner deviation
+ * (design, "Post-SP3 change: Pass Designer event ticket").
+ */
+export const PASS_COLOURS = {
+  background: 'rgb(0, 0, 0)',
+  foreground: 'rgb(254, 255, 255)',
+  label: 'rgb(240, 151, 64)',
+} as const;
 
 const MINUTE_MS = 60_000;
 const BOARDING_CLOSES_BEFORE_MS = 10 * MINUTE_MS;
 const RELEVANT_BEFORE_MS = 40 * MINUTE_MS;
 
+export type TextAlignment =
+  | 'PKTextAlignmentLeft'
+  | 'PKTextAlignmentCenter'
+  | 'PKTextAlignmentRight'
+  | 'PKTextAlignmentNatural';
+
 export interface PassField {
   key: string;
-  label: string;
+  label?: string;
   value: string;
+  textAlignment?: TextAlignment;
+}
+
+/** The event semantic tags (task 42), kept for Siri and the system. */
+export interface PassSemantics {
+  eventType: 'PKEventTypeGeneric';
+  eventName: string;
+  venueName: string;
+  venueRegionName: string;
+  venueRoom: string;
+  eventStartDate: string;
+  eventEndDate: string;
 }
 
 export interface PassJson {
@@ -29,7 +81,6 @@ export interface PassJson {
   serialNumber: string;
   organizationName: string;
   description: string;
-  logoText: string;
   sharingProhibited: true;
   backgroundColor: string;
   foregroundColor: string;
@@ -39,8 +90,8 @@ export interface PassJson {
   expirationDate: string;
   voided?: true;
   relevantDates: { startDate: string; endDate: string }[];
-  boardingPass: {
-    transitType: 'PKTransitTypeGeneric';
+  semantics: PassSemantics;
+  eventTicket: {
     headerFields: PassField[];
     primaryFields: PassField[];
     secondaryFields: PassField[];
@@ -76,13 +127,42 @@ export function relevantInterval(fields: PassFields): { startDate: string; endDa
   };
 }
 
-function field(key: string, label: string, value: string): PassField {
-  return { key, label, value };
+function field(
+  key: string,
+  label: string,
+  value: string,
+  textAlignment?: TextAlignment,
+): PassField {
+  return textAlignment === undefined ? { key, label, value } : { key, label, value, textAlignment };
 }
 
-function backFields(input: PassTemplateInput): PassField[] {
-  const { fields, timezone } = input;
-  const back: PassField[] = [];
+/**
+ * The room as the front shows it: the part after the first comma, which is the room itself
+ * without the level or area ("Academy 409" from "Level 1, Academy 409"), or the whole room
+ * when it has one part (task 32).
+ */
+export function shortRoom(room: string): string {
+  const parts = room
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part !== '');
+  const [first = '', second] = parts;
+  return second ?? first;
+}
+
+/**
+ * The back, in the owner's Pass Designer order (task 44): about, unofficial pass and the seat
+ * rule; then the per-pass room, walk, next session and name when there is data; then the times,
+ * what to do when plans change, and privacy. The Google object shows the same texts in its
+ * details (task 47).
+ */
+export function backFields(fields: PassFields, timezone: string): PassField[] {
+  const fixed = (key: StaticBackKey): PassField =>
+    field(key, STATIC_BACK[key].label, STATIC_BACK[key].value);
+  const back: PassField[] = [fixed('about'), fixed('unofficial'), fixed('seatRule')];
+  if (fields.room !== '') {
+    back.push(field('roomFull', 'ROOM', fields.room));
+  }
   if (fields.walkFromPrevious !== undefined) {
     const from =
       fields.walkFromPrevious.fromVenue === ''
@@ -99,7 +179,7 @@ function backFields(input: PassTemplateInput): PassField[] {
       field(
         'next',
         'NEXT SESSION',
-        `${next.sessionCode} at ${formatEventDayTime(next.startsAt, timezone)}, ${venue}, ${next.walkMinutes} min walk`,
+        `${next.sessionCode} at ${formatEventDayTime24(next.startsAt, timezone)}, ${venue}, ${next.walkMinutes} min walk`,
       ),
     );
   }
@@ -108,57 +188,72 @@ function backFields(input: PassTemplateInput): PassField[] {
   }
   back.push(
     field('timezone', 'TIMES', `All times are ${timezoneName(fields.startsAt, timezone)}.`),
-    field('disclaimerBack', 'NOTICE', DISCLAIMER),
-    field('independent', 'ABOUT', INDEPENDENT_NOTICE),
+    fixed('plans'),
+    fixed('privacy'),
   );
   return back;
 }
 
+/**
+ * The event semantic tags (task 42). The dates are canonical, built from Date.parse, never a
+ * client string.
+ */
+export function passSemantics(fields: PassFields): PassSemantics {
+  return {
+    eventType: 'PKEventTypeGeneric',
+    eventName: fields.title,
+    venueName: fields.venue === '' ? NO_VENUE : fields.venue,
+    venueRegionName: EVENT_REGION,
+    venueRoom: fields.room === '' ? NO_ROOM : fields.room,
+    eventStartDate: canonical(fields.startsAt),
+    eventEndDate: canonical(fields.endsAt),
+  };
+}
+
 export function buildPassJson(input: PassTemplateInput): PassJson {
   const { fields, timezone } = input;
-  const auxiliary: PassField[] = [];
-  if (fields.room !== '') {
-    auxiliary.push(field('room', 'ROOM', fields.room));
-  }
-  auxiliary.push(
-    field('starts', 'STARTS', formatEventDayTime(fields.startsAt, timezone)),
-    field('ends', 'ENDS', formatEventDayTime(fields.endsAt, timezone)),
-    field('notice', 'NOTICE', DISCLAIMER),
-  );
+  const closes = formatEventTime24(boardingClosesAt(fields.startsAt), timezone);
+  const venue = fields.venue === '' ? NO_VENUE : fields.venue;
+  const gate = shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room);
   const expiration = input.status === 'voided' ? input.voidedAt : fields.endsAt;
   return {
     formatVersion: 1,
     passTypeIdentifier: input.apple.passTypeIdentifier,
     teamIdentifier: input.apple.teamIdentifier,
     serialNumber: input.serialNumber,
-    organizationName: 're:Invent Compass (unofficial)',
-    description: 'Unofficial boarding pass',
-    logoText: 'Compass',
+    organizationName: ORGANIZATION_NAME,
+    description: 'Unofficial Boarding Pass',
     sharingProhibited: true,
-    backgroundColor: 'rgb(14, 62, 74)',
-    foregroundColor: 'rgb(255, 255, 255)',
-    labelColor: 'rgb(190, 226, 232)',
+    backgroundColor: PASS_COLOURS.background,
+    foregroundColor: PASS_COLOURS.foreground,
+    labelColor: PASS_COLOURS.label,
     webServiceURL: input.webServiceUrl,
     authenticationToken: input.authToken,
     expirationDate: canonical(expiration),
     ...(input.status === 'voided' ? { voided: true as const } : {}),
     relevantDates: [relevantInterval(fields)],
-    boardingPass: {
-      transitType: 'PKTransitTypeGeneric',
-      headerFields: [
+    semantics: passSemantics(fields),
+    // The owner's Pass Designer layout (task 44), over the owner's Pass Designer gradient (background.png):
+    // the logo and the session code; the flight name; terminal, arrow and gate; then the date
+    // and boarding closes. The alignments are the design's.
+    eventTicket: {
+      headerFields: [field('session', 'SESSION', fields.sessionCode, 'PKTextAlignmentNatural')],
+      primaryFields: [field('title', 'FLIGHT NAME', fields.title, 'PKTextAlignmentNatural')],
+      secondaryFields: [
+        field('terminal', 'TERMINAL', venue, 'PKTextAlignmentLeft'),
+        { key: 'arrow', value: ARROW, textAlignment: 'PKTextAlignmentCenter' },
+        field('gate', 'GATE', gate, 'PKTextAlignmentRight'),
+      ],
+      auxiliaryFields: [
         field(
-          'boardingCloses',
-          'BOARDING CLOSES',
-          formatEventTime(boardingClosesAt(fields.startsAt), timezone),
+          'date',
+          'DATE',
+          `${formatEventDate(fields.startsAt, timezone)} | ${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)}`,
+          'PKTextAlignmentLeft',
         ),
+        field('boardingCloses', 'BOARDING CLOSES', closes, 'PKTextAlignmentNatural'),
       ],
-      primaryFields: [
-        field('session', 'SESSION', fields.sessionCode),
-        field('gate', 'GATE', fields.venue === '' ? NO_VENUE : fields.venue),
-      ],
-      secondaryFields: [field('title', 'TITLE', fields.title)],
-      auxiliaryFields: auxiliary,
-      backFields: backFields(input),
+      backFields: backFields(fields, timezone),
     },
   };
 }

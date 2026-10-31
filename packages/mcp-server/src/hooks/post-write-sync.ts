@@ -9,7 +9,7 @@ import { identifyTool, SCHEDULE_WRITE_TOOLS } from './tool-names.js';
 
 /** The reminder. */
 export const SYNC_REMINDER =
-  'Your schedule changed. Run sync_passes so your boarding passes match it.';
+  'Your schedule changed. Run sync_passes so your Boarding Passes match it.';
 
 /** The post-write sync hook. */
 export function postWriteSync(raw: string): HookDecision {

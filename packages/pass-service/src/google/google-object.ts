@@ -1,13 +1,33 @@
 // The Google Wallet generic object built from PassFields (Requirement 14.1). Pure.
 //
 // Field names follow the GenericObject reference: `cardTitle`, `header` and `subheader` are
-// LocalizedString values, `textModulesData` holds TextModuleData entries, `validTimeInterval`
-// is a TimeInterval of DateTime values. No `barcode` and no `logo` are set (an image needs a
-// public URL; Google then shows the first letter of the card title).
+// LocalizedString values, `textModulesData` holds TextModuleData entries, `logo`, `wideLogo` and
+// `heroImage` are Image values, `validTimeInterval` is a TimeInterval of DateTime values. No
+// `barcode` is set. The class template (scripts/google-wallet-class.mjs) puts the terminal and
+// gate, then the date and boarding closes on the front and orders the details (task 47).
 // https://developers.google.com/wallet/generic/rest/v1/genericobject
+// https://developers.google.com/wallet/generic/resources/template
 import type { PassFields } from '@compass/contracts';
-import { formatEventDayTime, formatEventTime } from '../apple/format-time.js';
-import { DISCLAIMER, NO_VENUE, boardingClosesAt } from '../apple/pass-template.js';
+import { formatEventDate, formatEventTime24 } from '../apple/format-time.js';
+import {
+  NO_ROOM,
+  NO_VENUE,
+  backFields,
+  boardingClosesAt,
+  shortRoom,
+} from '../apple/pass-template.js';
+import {
+  GOOGLE_CLASS_MODULES,
+  GOOGLE_DETAIL_MODULES,
+  GOOGLE_IMAGES,
+  GOOGLE_IMAGE_PATH,
+} from './google-layout.js';
+
+/**
+ * The blue at the top of the hero image, so the card runs into the picture (task 47). White
+ * text measures about 7.9:1 on it. The Apple pass stays black.
+ */
+export const GOOGLE_BACKGROUND = '#2035E2';
 
 export type GoogleObjectState = 'ACTIVE' | 'INACTIVE';
 
@@ -21,6 +41,11 @@ export interface TextModule {
   body: string;
 }
 
+export interface GoogleImage {
+  sourceUri: { uri: string };
+  contentDescription: LocalizedString;
+}
+
 export interface GenericObject {
   id: string;
   classId: string;
@@ -28,6 +53,9 @@ export interface GenericObject {
   cardTitle: LocalizedString;
   header: LocalizedString;
   subheader: LocalizedString;
+  logo: GoogleImage;
+  wideLogo: GoogleImage;
+  heroImage: GoogleImage;
   textModulesData: TextModule[];
   hexBackgroundColor: string;
   validTimeInterval: { end: { date: string } };
@@ -44,15 +72,30 @@ function localized(value: string): LocalizedString {
   return { defaultValue: { language: 'en-US', value } };
 }
 
+function image(publicBaseUrl: string, file: string, description: string): GoogleImage {
+  return {
+    sourceUri: { uri: `${publicBaseUrl}${GOOGLE_IMAGE_PATH}${file}` },
+    contentDescription: localized(description),
+  };
+}
+
 export function googleObjectId(issuerId: string, serialNumber: string): string {
   return `${issuerId}.${serialNumber}`;
 }
 
 export function buildGenericObject(
   input: GenericObjectInput,
-  google: { issuerId: string; classSuffix: string },
+  google: { issuerId: string; classSuffix: string; publicBaseUrl: string },
 ): GenericObject {
   const { fields, timezone } = input;
+  const back = new Map(backFields(fields, timezone).map((field) => [field.key, field]));
+  // The class carries the fixed texts (task 47.7), so the object stays within 10 modules.
+  const onClass = new Set<string>(GOOGLE_CLASS_MODULES);
+  const details = GOOGLE_DETAIL_MODULES.filter((id) => !onClass.has(id)).flatMap((id) => {
+    const field = back.get(id);
+    // Every back field has a label; only the unlabelled arrow is not a back field.
+    return field === undefined ? [] : [{ id, header: field.label as string, body: field.value }];
+  });
   return {
     id: googleObjectId(google.issuerId, input.serialNumber),
     classId: `${google.issuerId}.${google.classSuffix}`,
@@ -60,17 +103,36 @@ export function buildGenericObject(
     cardTitle: localized('Compass boarding pass'),
     header: localized(fields.title),
     subheader: localized(fields.sessionCode),
+    // Google refuses a wide logo without a logo: "logo must be set if wide_logo is set" (task 47.8).
+    logo: image(google.publicBaseUrl, GOOGLE_IMAGES.logo, 'Compass icon'),
+    wideLogo: image(google.publicBaseUrl, GOOGLE_IMAGES.wideLogo, 'Compass icon'),
+    heroImage: image(
+      google.publicBaseUrl,
+      GOOGLE_IMAGES.hero,
+      're:Invent Compass logo on a blue to pink gradient',
+    ),
+    // The front rows (GOOGLE_FRONT_ROWS) hold the Apple pass's secondary and auxiliary fields
+    // (tasks 40 and 47); the details follow.
     textModulesData: [
-      { id: 'gate', header: 'Gate', body: fields.venue === '' ? NO_VENUE : fields.venue },
+      { id: 'terminal', header: 'TERMINAL', body: fields.venue === '' ? NO_VENUE : fields.venue },
+      {
+        id: 'gate',
+        header: 'GATE',
+        body: shortRoom(fields.room) === '' ? NO_ROOM : shortRoom(fields.room),
+      },
+      {
+        id: 'date',
+        header: 'DATE',
+        body: `${formatEventDate(fields.startsAt, timezone)} | ${formatEventTime24(fields.startsAt, timezone)}-${formatEventTime24(fields.endsAt, timezone)}`,
+      },
       {
         id: 'boardingCloses',
-        header: 'Boarding closes',
-        body: formatEventTime(boardingClosesAt(fields.startsAt), timezone),
+        header: 'BOARDING CLOSES',
+        body: formatEventTime24(boardingClosesAt(fields.startsAt), timezone),
       },
-      { id: 'starts', header: 'Starts', body: formatEventDayTime(fields.startsAt, timezone) },
-      { id: 'notice', header: 'Notice', body: DISCLAIMER },
+      ...details,
     ],
-    hexBackgroundColor: '#0e3e4a',
+    hexBackgroundColor: GOOGLE_BACKGROUND,
     validTimeInterval: { end: { date: fields.endsAt } },
   };
 }

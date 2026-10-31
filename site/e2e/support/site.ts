@@ -82,11 +82,40 @@ export async function expectNoAxeViolations(page: Page): Promise<void> {
   ).toEqual([]);
 }
 
+/**
+ * Opens a group of the main navigation. On narrow screens the Menu button shows the groups first
+ * (task 26).
+ */
+export async function openNav(page: Page, group: string): Promise<void> {
+  const toggle = page.getByRole('button', { name: 'Menu' });
+  if (await toggle.isVisible()) {
+    await toggle.click();
+  }
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: group }).click();
+}
+
 /** The pages with a plain path. The board page needs a fixture and a fragment. */
 export const PAGES = [
   { path: '/', h1: 're:Invent Compass', title: 'Home | re:Invent Compass' },
   { path: '/demo', h1: 'Demo', title: 'Demo | re:Invent Compass' },
   { path: '/install', h1: 'Install', title: 'Install | re:Invent Compass' },
+  { path: '/about', h1: 'The Creator', title: 'The Creator | re:Invent Compass' },
+  { path: '/inspiration', h1: 'The Inspiration', title: 'The Inspiration | re:Invent Compass' },
+  { path: '/documentation', h1: 'Documentation', title: 'Documentation | re:Invent Compass' },
+  { path: '/disclaimer', h1: 'Disclaimer', title: 'Disclaimer | re:Invent Compass' },
+  { path: '/terms', h1: 'Terms of use', title: 'Terms of use | re:Invent Compass' },
+  { path: '/security', h1: 'Security', title: 'Security | re:Invent Compass' },
+  { path: '/accessibility', h1: 'Accessibility', title: 'Accessibility | re:Invent Compass' },
+  {
+    path: '/credits',
+    h1: 'Open-source credits',
+    title: 'Open-source credits | re:Invent Compass',
+  },
+  {
+    path: '/copyright',
+    h1: 'Copyright and licence',
+    title: 'Copyright and licence | re:Invent Compass',
+  },
   {
     path: '/privacy',
     h1: 'Privacy: what leaves your machine',

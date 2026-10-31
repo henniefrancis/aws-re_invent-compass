@@ -69,7 +69,7 @@ describe('the sample calendar of the starter week', () => {
 
   test('uses the fixed demo instant and .invalid UIDs', () => {
     expect(text.match(/DTSTAMP:(\S+)/g)).toEqual(
-      Array.from({ length: 4 }, () => 'DTSTAMP:20261201T020000Z'),
+      Array.from({ length: 4 }, () => 'DTSTAMP:20261130T020000Z'),
     );
     for (const event of demoCalendarEvents(starter, deps)) {
       expect(event.uid.endsWith(`@${UID_DOMAIN}`)).toBe(true);
@@ -84,7 +84,7 @@ describe('the sample calendar of the starter week', () => {
     for (const e of events) {
       byUid[e.uid.split('@')[0] as string] = e;
     }
-    expect(byUid['syn-003']?.alarms).toEqual([
+    expect(byUid['INV530-R1']?.alarms).toEqual([
       { minutesBeforeStart: 10, description: 'Boarding closes' },
     ]);
     const comfortable = makeDeps({
@@ -92,13 +92,13 @@ describe('the sample calendar of the starter week', () => {
         status: 'ok',
         connections: [
           {
-            from: 'AIM321',
-            to: 'BWP213',
+            from: 'INV530-R1',
+            to: 'CMP325-R',
             result: { classification: 'comfortable', walkingMinutes: 10, reason: 'x' },
           },
           {
-            from: 'BWP213',
-            to: 'DAT204',
+            from: 'CMP325-R',
+            to: 'AIM433',
             result: { classification: 'comfortable', walkingMinutes: 40, reason: 'y' },
           },
         ],
@@ -106,17 +106,17 @@ describe('the sample calendar of the starter week', () => {
       }),
     });
     const walked = demoCalendarEvents(starter, comfortable);
-    const leaving = walked.find((e) => e.uid.startsWith('syn-002@'));
+    const leaving = walked.find((e) => e.uid.startsWith('AIM433@'));
     expect(leaving?.alarms).toEqual([
       { minutesBeforeStart: 10, description: 'Boarding closes' },
       { minutesBeforeStart: 50, description: 'Leave now' },
     ]);
     expect(leaving?.description).toContain('walk plus buffer: 40 minutes');
-    expect(byUid['syn-003']?.description).toContain(
+    expect(byUid['INV530-R1']?.description).toContain(
       'The walk from the previous session is unknown',
     );
-    expect(byUid['syn-003']?.description).toContain('Made-up session');
-    expect(byUid['syn-003']?.description).toContain('Unofficial. Your badge is your ticket.');
+    expect(byUid['INV530-R1']?.description).toContain('Real session');
+    expect(byUid['INV530-R1']?.description).toContain('Unofficial. Your badge is your ticket.');
   });
 
   test('no Leave now alarm when the connection is impossible, and the description says so (QA L4)', () => {
@@ -125,13 +125,13 @@ describe('the sample calendar of the starter week', () => {
         status: 'ok',
         connections: [
           {
-            from: 'AIM321',
-            to: 'BWP213',
+            from: 'INV530-R1',
+            to: 'CMP325-R',
             result: { classification: 'impossible', walkingMinutes: 75, reason: 'x' },
           },
           {
-            from: 'BWP213',
-            to: 'DAT204',
+            from: 'CMP325-R',
+            to: 'AIM433',
             result: { classification: 'tight', walkingMinutes: 75, reason: 'y' },
           },
         ],
@@ -140,13 +140,13 @@ describe('the sample calendar of the starter week', () => {
     });
     const events = demoCalendarEvents(starter, impossible);
     const byCode = (code: string) => events.find((e) => e.summary.startsWith(code));
-    expect(byCode('BWP213')?.alarms).toEqual([
+    expect(byCode('CMP325-R')?.alarms).toEqual([
       { minutesBeforeStart: 10, description: 'Boarding closes' },
     ]);
-    expect(byCode('BWP213')?.description).toContain(
+    expect(byCode('CMP325-R')?.description).toContain(
       'does not fit in the time available, so there is no Leave now alarm',
     );
-    expect(byCode('DAT204')?.alarms.map((a) => a.description)).toEqual([
+    expect(byCode('AIM433')?.alarms.map((a) => a.description)).toEqual([
       'Boarding closes',
       'Leave now',
     ]);
@@ -161,7 +161,7 @@ describe('the sample calendar of the starter week', () => {
           start: '2026-12-04T14:00:00-08:00',
           end: '2026-12-04T14:30:00-08:00',
         },
-        { type: 'add', sessionId: 'syn-008' },
+        { type: 'add', sessionId: 'ACT053' },
       ],
       deps,
     );
@@ -170,10 +170,12 @@ describe('the sample calendar of the starter week', () => {
     expect(layover?.alarms).toEqual([]);
     expect(layover?.uid).toBe(`layover-2026-12-04T14-00-00-08-00@${UID_DOMAIN}`);
     expect(layover?.location).toBe('Venue not published');
-    expect(layover?.description).toContain('Made-up layover');
-    const lone = demoCalendarEvents(run([{ type: 'add', sessionId: 'syn-008' }], deps), deps);
+    expect(layover?.description).toContain('Sample layover');
+    const lone = demoCalendarEvents(run([{ type: 'add', sessionId: 'ACT053' }], deps), deps);
     expect(lone[0]?.location).toBe('Venue not published');
-    expect(events.find((e) => e.summary.startsWith('BWP213'))?.location).toContain('MGM Grand');
+    expect(events.find((e) => e.summary.startsWith('TNC334-R'))?.location).toContain(
+      'Caesars Palace',
+    );
   });
 
   test('sessions missing from the catalog still make an event named by title or key', () => {
@@ -205,7 +207,7 @@ describe('the sample calendar of the starter week', () => {
   });
 
   test('an empty week is a valid calendar with no event', () => {
-    const empty = serialiseCalendar([], '20261201T020000Z');
+    const empty = serialiseCalendar([], '20261130T020000Z');
     expect(parse(empty).getAllSubcomponents('vevent')).toHaveLength(0);
   });
 });
@@ -247,7 +249,7 @@ describe('Property 15: The sample calendar is valid RFC 5545 with the right alar
         const events = parse(text).getAllSubcomponents('vevent');
         expect(events).toHaveLength(state.commitments.length);
         for (const event of events) {
-          expect(event.getFirstPropertyValue('dtstamp')?.toString()).toBe('2026-12-01T02:00:00Z');
+          expect(event.getFirstPropertyValue('dtstamp')?.toString()).toBe('2026-11-30T02:00:00Z');
           expect(String(event.getFirstPropertyValue('uid')).endsWith('.invalid')).toBe(true);
         }
       }),
@@ -313,7 +315,7 @@ describe('Property 15: The sample calendar is valid RFC 5545 with the right alar
                 alarms: [],
               },
             ],
-            '20261201T020000Z',
+            '20261130T020000Z',
           );
           expect(text.replace(/\r\n/g, '')).not.toMatch(/[\r\n]/);
           for (const line of text.split('\r\n')) {

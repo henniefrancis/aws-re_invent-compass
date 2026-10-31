@@ -288,7 +288,11 @@ function idToken(env: Env): IdTokenConfig {
 function apns(env: Env, allowAnyHost: boolean): ApiConfig['apns'] {
   const enabled = boolean(env, 'APNS_ENABLED', true);
   const host = raw(env, 'APNS_HOST') ?? DEFAULT_APNS_HOST;
-  if (!(allowAnyHost ? HOST_PATTERN.test(host) : APNS_HOSTS.includes(host))) {
+  // An exact match against the allow-list, never a substring test.
+  const allowed = allowAnyHost
+    ? HOST_PATTERN.test(host)
+    : APNS_HOSTS.some((candidate) => candidate === host);
+  if (!allowed) {
     throw new ConfigError('APNS_HOST');
   }
   const pushType = raw(env, 'APNS_PUSH_TYPE');

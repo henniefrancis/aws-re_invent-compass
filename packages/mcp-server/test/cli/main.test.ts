@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PassThrough } from 'node:stream';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { defaultExecFile, ignoreBrokenPipe, main, readVersion } from '../../src/cli/main.js';
 import type { Host, MainIo } from '../../src/cli/main.js';
 import { startStdioServer } from '../../src/cli/stdio.js';
@@ -14,10 +14,22 @@ import { connect } from '../support/connect.js';
 import { installNetworkGuard } from '../support/network-guard.js';
 import type { NetworkGuard } from '../support/network-guard.js';
 import { repoRoot } from '../support/fake-catalog.js';
+import { createPrivateCheckout, type PrivateCheckout } from '../support/private-checkout.js';
 import { testEnvironment } from '../support/runtime-env.js';
 
 let temp: string;
 let guard: NetworkGuard;
+
+// A private checkout copy (tasks 35 and 36): main never reads the dist/ folder that the pack
+// smoke test rebuilds.
+let checkout: PrivateCheckout;
+beforeAll(async () => {
+  checkout = await createPrivateCheckout();
+});
+afterAll(async () => {
+  await checkout.remove();
+});
+
 beforeEach(async () => {
   temp = await mkdtemp(join(tmpdir(), 'compass-main-'));
   guard = installNetworkGuard();
@@ -51,6 +63,7 @@ const host = (): Host => ({
   platform: 'linux',
   cwd: temp,
   tempRoot: temp,
+  moduleUrl: checkout.moduleUrl,
 });
 
 describe('readVersion', () => {
@@ -135,7 +148,7 @@ describe('main', () => {
       .filter((line) => line.trim() !== '')
       .map((line) => JSON.parse(line) as { id?: number; result?: { tools?: unknown[] } });
     expect(messages.every((m) => 'result' in m || 'method' in m)).toBe(true);
-    expect(messages.find((m) => m.id === 2)?.result?.tools).toHaveLength(17);
+    expect(messages.find((m) => m.id === 2)?.result?.tools).toHaveLength(24);
   });
 
   test('a start-up failure exits 1 with a fixed message', async () => {

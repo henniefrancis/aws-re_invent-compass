@@ -14,6 +14,9 @@ export default defineConfig({
   testMatch: '**/*.spec.ts',
   retries: 0,
   fullyParallel: true,
+  // Two workers on a local machine: with more, axe in Firefox can pass the 30 s test timeout
+  // while seven browser profiles share the CPU (seen on 21 October). CI keeps the default.
+  workers: process.env['CI'] ? undefined : 2,
   forbidOnly: true,
   // CI also writes the HTML report that the e2e workflow uploads as an artifact.
   reporter: process.env['CI']

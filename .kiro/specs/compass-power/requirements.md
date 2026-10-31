@@ -14,7 +14,7 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 
 ## Glossary
 
-- **Compass_Server**: The local stdio MCP server in `packages/mcp-server`, built on `@modelcontextprotocol/sdk` 1.32.1.
+- **Compass_Server**: The local stdio MCP server in `packages/mcp-server`, built on `@modelcontextprotocol/sdk` 1.32.2 (1.32.1 until 30 October 2026, ADR-032).
 - **CLI**: The `reinvent-compass` command in the same package: no arguments starts the Compass_Server; `demo` runs the simulated flow; `hook <name>` is what Kiro hooks call.
 - **Tool**: One of the seventeen MCP tools defined in `mcpTools` in `packages/contracts/src/mcp-tools.ts`.
 - **Read_Tool**: `refresh_catalog`, `find_sessions`, `scan_repo`, `check_itinerary`. These may be auto-approved by the attendee.
@@ -129,7 +129,7 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 
 1. THE Week_Spec `requirements.md` SHALL state the attendee's goals as EARS statements, including the 10-minute boarding rule and the meal layover goal.
 2. THE Week_Spec `design.md` SHALL show the itinerary by day with, for each pick, its session code, catalog title, type, level, gate (venue and room), times, reason, the connection from the previous commitment (classification, walking minutes and reason), the day's layovers and the day's energy result or count-only result.
-3. THE Week_Spec `tasks.md` SHALL contain exactly one task per API action, each naming the Compass Tool that performs it, and a final task "Issue boarding passes" that names `issue_boarding_passes`.
+3. THE Week_Spec `tasks.md` SHALL contain exactly one task per API action, each naming the Compass Tool that performs it, and a final task "Issue Boarding Passes" that names `issue_boarding_passes`.
 4. THE Week_Spec SHALL render every catalog-derived string as a single line of quoted data, with control characters and line breaks removed, Markdown control characters escaped, and em dashes and en dashes replaced by hyphens.
 5. THE Week_Spec SHALL include from the scan only service display names and Depth, never file names, paths or contents.
 6. THE Week_Spec SHALL state the event timezone once per view and show every time in event local time.
@@ -240,9 +240,10 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 1. WHEN `add_standby` is called, THE Compass_Server SHALL send AssociateFavorites once through the Confirmed_Write, SHALL report per-session results, and SHALL state that standby is a backup and not a reservation.
 2. WHEN `remove_standby` is called, THE Compass_Server SHALL send DisassociateFavorite once through the Confirmed_Write and SHALL return `removed: true` only when the confirmed schedule no longer lists the favorite.
 3. WHEN `add_layover` is called with the action `create`, `update` or `delete`, THE Compass_Server SHALL send CreatePersonalTime, UpdatePersonalTime or DeletePersonalTime once through the Confirmed_Write, SHALL ask the human to confirm first where the client can ask, and SHALL report `done: true` only when the confirmed schedule shows the change (for `create` it SHALL return the `personalTimeId` of the new entry whose title, start and end match the request; `update` and `delete` SHALL check the `personalTimeId` with the Identifier_Check and SHALL change nothing for an id that is not on the schedule) (release gate, TAM B5).
-4. IF a layover's end is not after its start, or either time is outside the event window or lacks an offset, THEN THE Compass_Server SHALL refuse with a plain-English reason and SHALL NOT call S1.
+4. IF a layover's end is not after its start, or either time is outside the layover window (from 00:00 on the badge pickup day, the day before the event start, in the event time zone, to the event end; amended 29 October 2026, task 56) or lacks an offset, THEN THE Compass_Server SHALL refuse with a plain-English reason and SHALL NOT call S1.
 5. WHEN a requested layover overlaps a commitment, THE Compass_Server SHALL include a warning naming the overlap and SHALL still create the layover.
 6. THE Compass_Server SHALL treat a layover title as the attendee's own text and SHALL show it back only inside a Labelled_Data_Block.
+7. THE Compass_Server SHALL send and read layover times as wall-clock times in the event time zone, whatever the attendee's own time zone, because the live Events API keeps personal time that way (added 29 October 2026, task 55).
 
 ### Requirement 15: Boarding pass tools
 
@@ -441,3 +442,75 @@ R2.12. **Sync and cancel safety.** `sync_passes` SHALL ask the human about any i
 R2.13. **Low findings.** THE `send_to_phone` structured result SHALL NOT carry the hand-off fragment; every success SHALL carry the untrusted-text note in its metadata; the schedule snapshot SHALL be written through the production file system adapter; `ensureDir` SHALL refuse a link from the app folder down; a response body SHALL be aborted at the byte cap; a search text over 200 characters, more than 20 goals and an invalid level SHALL be refused with fixed messages; and a request that does not match a tool schema SHALL be answered with a fixed message.
 
 R2.14. **Output hygiene.** THE tool text SHALL carry the QR code once and without escape codes; the demo SHALL add colour codes only on a terminal; `export_calendar` SHALL report unknown session ids; a suggested layover SHALL take its words from the rules context; and the `.gitignore` entry SHALL keep the file line ending.
+
+## Post-SP3 amendments (19 October 2026)
+
+These came from driving Compass from Kiro during SP3. They take precedence over the criteria above where they differ.
+
+P1.1. **Read the schedule with its ids.** THE Compass_Server SHALL offer an eighteenth Tool, `show_schedule`, a Read_Tool with no input that reads the attendee's fresh schedule and returns the reserved sessions, the standby list (favorites) and the personal time, each with the id the Write_Tools take (`sessionId`, `personalTimeId`), with codes, catalog titles, venues and times taken from the cached catalog. It SHALL write nothing to the Events API or the pass service. This replaces "seventeen" with "eighteen" in Requirement 8.2 and the glossary entry for Tool, and adds `show_schedule` to the Read_Tools.
+
+P1.2. **Ids in the text.** WHEN `add_layover` creates or updates a layover that the schedule confirms, THE text SHALL carry the `personalTimeId`, and WHEN it deletes one, THE text SHALL name the id deleted, because some clients show the model only the text and not `structuredContent`.
+
+P1.3. **Untrusted text stays labelled.** THE `show_schedule` text SHALL show catalog titles only inside a catalog Labelled_Data_Block and layover titles and locations only inside an attendee Labelled_Data_Block.
+
+P1.4. **Plain descriptions.** THE `show_schedule` description SHALL say it takes no input; THE `check_itinerary` description SHALL say it checks commitments the caller passes in and SHALL point to `show_schedule` for the current schedule; THE `export_calendar` description SHALL say that with no input it reads the live schedule.
+
+P1.5. **Approval.** `show_schedule` reads the attendee's schedule, so it SHALL NOT be in the recommended `autoApprove` list (which stays at the three tools of R2.8), and the README and the Power SHALL say it is approved per call.
+
+## Owner amendments: your tech and your GitHub (20 October 2026)
+
+The owner asked that Compass learn every technology the attendee works on, not only AWS services, from local folders and from their GitHub accounts, read-only and with consent, and use that list to find and plan sessions. These take precedence over the criteria above where they differ.
+
+P2.1. **All technology, AWS first.** THE Scanner SHALL report, besides AWS services, the languages, frameworks and tools a scanned folder uses (for example .NET, C#, Node.js, JavaScript, TypeScript, Python, Java, Go, React, Angular, Docker, Kubernetes and Terraform), from file extensions and package manifests, with a score per technology. AWS services SHALL always be listed before other technology. THE Scanner SHALL also count the AWS SDK for .NET (NuGet `AWSSDK.*` package references and `new Amazon<Name>Client(` in C#) as AWS service evidence, with every identifier taken from an official source.
+
+P2.2. **Names only.** No file name, path, repository name or file content SHALL leave the Scanner; only technology and service names, counts, depths and scores.
+
+P2.3. **A dev folder of projects.** WHEN the scanned folder is not itself a git repository but holds git repositories one or two levels down, THE Compass_Server SHALL scan each repository as its own project, each with its own limits and time budget, up to 50 projects, and say how many it scanned and how many it skipped.
+
+P2.4. **Tech profile on the device.** Every scan SHALL add to one Tech_Profile kept on the attendee's machine (app-data folder, file mode 0600, a `simulated` subfolder in simulated mode). A project scanned again SHALL replace its earlier entry, keyed by a one-way hash of its folder or repository, so no path or repository name is stored. `forget_me` SHALL delete the Tech_Profile.
+
+P2.5. **What tech do I work on.** THE Compass_Server SHALL offer a Read_Tool `show_my_tech` that lists the Tech_Profile: AWS services first (depth, suggested level, number of projects), then other technology ranked by the number of projects and then by score, with how many folders and GitHub repositories it came from. It SHALL accept an optional `top` count for "the most". It reads only the local profile.
+
+P2.6. **Find sessions by tech.** THE Compass_Server SHALL offer a Read_Tool `find_sessions_by_tech`. Given a technology (any common spelling, for example ".NET", "dotnet" or "C#"), it SHALL return cached catalog sessions whose title, abstract, topics or services match that technology's search words, matched as whole words. Given none, it SHALL use the top technologies of the Tech_Profile and group the sessions by technology. Session text SHALL stay inside a catalog Labelled_Data_Block.
+
+P2.7. **Plans use your tech.** `plan_week` SHALL rank sessions by the whole Tech_Profile (AWS services and other technology), not only the last scan.
+
+P2.8. **GitHub, read-only, with consent.** THE Compass_Server SHALL offer `connect_github`, `scan_github` and `disconnect_github`. Compass SHALL reach GitHub only through a GitHub App whose only permissions are Contents: read and Metadata: read, signed in with GitHub's device flow, so the token can never write. The attendee chooses which accounts, organisations and repositories the app may read when they install it on GitHub; an organisation's owner must approve an install there. `scan_github` SHALL list the repositories it is about to read and SHALL read no repository content until the human confirms (listing the repository names the app may read, which the confirmation needs, is allowed before it); a client that cannot ask SHALL be refused. Forks SHALL be left out unless asked for.
+
+P2.9. **GitHub data stays on the device.** Repository archives SHALL be read in memory inside the scan worker, under a hard time and size budget per repository, and SHALL never be written to disk. Only the Tech_Profile entry of each repository is kept. The GitHub tokens SHALL live in the OS keychain (memory only if there is none), SHALL be sent only to `github.com` and `api.github.com`, and SHALL never be logged. An archive download SHALL follow a redirect only to `codeload.github.com` and SHALL not send the token there. `disconnect_github` and `forget_me` SHALL delete the tokens and say where to revoke the app on GitHub.
+
+P2.10. **Approval and modes.** `show_my_tech` and `find_sessions_by_tech` read nothing of the attendee beyond the local profile and the cached catalog, but the profile is the attendee's data, so neither SHALL be in the recommended `autoApprove` list, which stays at three. `connect_github`, `scan_github` and `disconnect_github` SHALL be approved per call. In simulated mode the GitHub tools SHALL say that GitHub is not used and make no request. None of these tools writes to the Events API, so the read-only default (P1, task 37) is unchanged.
+
+## Owner amendments: link or QR code (21 October 2026)
+
+The owner asked that the attendee choose how passes reach the phone: a link, a QR code, or both. Kiro does not show the PNG image a tool returns, and the text QR wraps until it cannot be scanned, so the QR code is shown on a page in the attendee's browser instead. These take precedence over Requirement 15.4 where they differ.
+
+P3.1. **Ask first.** `send_to_phone` SHALL take an optional `show` of `link`, `qr` or `both`. WHEN `show` is missing, THE Compass_Server SHALL create no hand-off, make no Events API or Compass API call, and reply asking the attendee to choose a link, a QR code or both.
+
+P3.2. **Link.** WHEN `show` is `link`, THE reply SHALL give the board link and its expiry and SHALL NOT carry a QR code.
+
+P3.3. **QR code on a browser page.** WHEN `show` is `qr` or `both`, THE Compass_Server SHALL write a self-contained page holding the QR code as inline SVG, the expiry and the disclaimer into a new private temporary folder (file mode 0600), and SHALL open it in the default browser through the browser opener (`execFile`, never a shell). The page SHALL carry the Content-Security-Policy `default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'`, no script and no external resource. WHEN `show` is `qr`, THE reply SHALL NOT print the link; it SHALL say to scan the QR code in the browser.
+
+P3.4. **Fallback.** IF the page cannot be written or the browser cannot be opened, THEN THE reply SHALL carry the text QR code and the PNG QR code instead and SHALL say the browser could not be opened.
+
+P3.5. **Lifetime.** THE page SHALL be deleted when its link expires, when a newer page replaces it, when the server exits or is stopped by SIGTERM, SIGINT or SIGHUP, and by `forget_me`; a page left behind by a killed server SHALL be removed the next time a page is shown. The link and the page's path SHALL never be written to a log.
+
+P3.6. **The Power asks.** THE Power SHALL tell the agent to ask "Link or QR code?" before calling `send_to_phone`, unless the attendee already said which.
+
+P3.7. **Branded page.** THE QR page SHALL carry the title "re:Invent Compass Boarding Pass", the owner's icon (`site/public/artwork/favicon.svg`) as its favicon and the owner's full logo (`site/public/artwork/logo.svg`) above "Scan with your phone camera", in the pass colours. Both images SHALL be inline `data:image/svg+xml` URLs inside the existing Content-Security-Policy, so the page still loads nothing from outside itself and runs no script (owner request of 21 October 2026, task 49).
+
+P3.8. **Expired link on the page.** WHEN the link expires while the QR page is open, THE page SHALL hide the QR code and the scan text and SHALL show a red banner saying the link has expired and to ask Compass for a new one, without any script (the page keeps its Content Security Policy).
+
+## Owner amendments: one confirmation for all passes (21 October 2026)
+
+In the dev test, Kiro called `issue_boarding_passes` once per session, so the owner confirmed once per pass, and the tool took at most ten sessions a call. The owner decided to replace it with two tools. These take precedence over Requirement 15.1 to 15.3 and over the tool list of Requirement 2 where they differ.
+
+P4.1. **All passes at once.** THE Compass_Server SHALL offer a Write_Tool `issue_all_boarding_passes` with no input. It SHALL read the fresh confirmed schedule and issue a Boarding Pass for every reserved session the catalog knows, after one confirmation that lists them all. WHEN nothing is reserved, it SHALL issue nothing, ask nothing and say so.
+
+P4.2. **One pass.** THE Compass_Server SHALL offer a Write_Tool `issue_boarding_pass` with an optional `sessionId` (a catalog id or a session code). WITH a `sessionId`, it SHALL issue that session's pass after one confirmation only WHEN the fresh schedule lists it as reserved, and otherwise refuse without a pass call. WITHOUT a `sessionId`, WHERE the client supports elicitation, it SHALL ask which reserved session with a single-choice list and issue that one; WHERE it does not, it SHALL return the reserved sessions as labelled catalog data and ask the attendee to name one, issuing nothing.
+
+P4.3. **The old tool goes.** `issue_boarding_passes` SHALL be removed from the contract, the server, the hooks, the descriptions, the Power and the docs. There are twenty-four tools. Both new tools are Write_Tools and SHALL never be auto-approved.
+
+P4.4. **Time to answer.** A confirmation or choice asked through elicitation SHALL wait up to five minutes. IF the attendee does not answer in that time, THEN the tool SHALL change nothing and SHALL say that the confirmation timed out, not that the attendee declined.
+
+P4.5. **One confirmation, from the client.** The owner's rule: "when multiple passes are issued, only 1 confirm, when single passes are issued, each confirm". The client's approval of the tool call (Kiro always asks, because these Write_Tools are never auto-approved) is that confirmation, so `issue_all_boarding_passes` and `issue_boarding_pass` SHALL NOT ask a second confirmation of their own. This takes precedence over "after one confirmation" in P4.1 and P4.2. `issue_boarding_pass` without a `sessionId` still asks which session through the pick list.

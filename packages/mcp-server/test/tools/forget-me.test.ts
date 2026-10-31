@@ -25,6 +25,7 @@ function setup(elicit?: ToolContext['elicit']) {
       },
       truncated: false,
       pythonAnalysed: false,
+      technologies: [],
     },
     taxonomy: [],
     root: '/scanned',
@@ -44,6 +45,25 @@ describe('forget_me', () => {
     expect(text).toContain('voided');
     expect(text).toContain('stay on the phone until you remove them yourself');
     expect(text).not.toMatch(/deleted from (your|the) phone/i);
+  });
+
+  // Feature: compass-power, task 48 (P3.5): forget_me removes the QR page, only on success.
+  test('the QR page is cleared on success and left alone on failure', async () => {
+    for (const ok of [true, false]) {
+      const { fake, ctx } = setup();
+      let cleared = 0;
+      fake.runtime.qrPage = {
+        show: () => Promise.resolve(true),
+        clear: () => {
+          cleared += 1;
+          return Promise.resolve();
+        },
+      };
+      if (!ok)
+        fake.passes.forgetResult = { ok: false, summary: 'The service could not confirm it.' };
+      await forgetMe({ confirm: true }, ctx);
+      expect(cleared).toBe(ok ? 1 : 0);
+    }
   });
 
   test('on failure nothing local is touched and the text says nothing was deleted', async () => {

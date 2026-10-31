@@ -1,0 +1,230 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "expiresAt": "2026-11-30T08:15:00-08:00",
+    "sessions": [
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000001",
+        "sessionCode": "ANT398",
+        "title": "Serverless APIs: Hands on workshop",
+        "startsAt": "2026-11-30T08:30:00-08:00",
+        "venue": "The Venetian",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000001",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-1.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000002",
+        "sessionCode": "ARC121",
+        "title": "Edge delivery: From zero to production",
+        "startsAt": "2026-11-30T10:00:00-08:00",
+        "venue": "Caesars Forum",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000002",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-2.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000003",
+        "sessionCode": "BWP447",
+        "title": "Edge delivery: Patterns and practice",
+        "startsAt": "2026-11-30T10:00:00-08:00",
+        "venue": "Wynn",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000003",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-3.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000004",
+        "sessionCode": "ARC296",
+        "title": "Data lakes: Deep dive",
+        "startsAt": "2026-11-30T10:00:00-08:00",
+        "venue": "MGM Grand",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000004",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-4.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000005",
+        "sessionCode": "BWP330",
+        "title": "Identity and access: From zero to production",
+        "startsAt": "2026-11-30T10:00:00-08:00",
+        "venue": "Encore",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000005",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-5.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000006",
+        "sessionCode": "BWP355",
+        "title": "Identity and access: Patterns and practice",
+        "startsAt": "2026-11-30T11:30:00-08:00",
+        "venue": "Caesars Palace",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000006",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-6.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000007",
+        "sessionCode": "BWP291",
+        "title": "Observability: Deep dive",
+        "startsAt": "2026-11-30T11:30:00-08:00",
+        "venue": "The Venetian",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000007",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-7.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000008",
+        "sessionCode": "BWP439",
+        "title": "Zero-downtime deploys: A builder guide",
+        "startsAt": "2026-11-30T11:30:00-08:00",
+        "venue": "Caesars Forum",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000008",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-8.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000009",
+        "sessionCode": "ANT226",
+        "title": "Machine learning pipelines: Hands on workshop",
+        "startsAt": "2026-11-30T11:30:00-08:00",
+        "venue": "Wynn",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000009",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-9.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000010",
+        "sessionCode": "BWP315",
+        "title": "Data lakes: A builder guide",
+        "startsAt": "2026-11-30T13:00:00-08:00",
+        "venue": "MGM Grand",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000010",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-10.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000011",
+        "sessionCode": "ARC335",
+        "title": "Cost optimisation: Patterns and practice",
+        "startsAt": "2026-11-30T13:00:00-08:00",
+        "venue": "Encore",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000011",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-11.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000012",
+        "sessionCode": "CMP436",
+        "title": "Cost optimisation: Hands on workshop",
+        "startsAt": "2026-11-30T14:30:00-08:00",
+        "venue": "Caesars Palace",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000012",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-12.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000013",
+        "sessionCode": "SEC209",
+        "title": "Zero-downtime deploys: Lessons from the field",
+        "startsAt": "2026-11-30T14:30:00-08:00",
+        "venue": "The Venetian",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000013",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-13.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000014",
+        "sessionCode": "SEC246",
+        "title": "Container platforms: Patterns and practice",
+        "startsAt": "2026-11-30T14:30:00-08:00",
+        "venue": "Caesars Forum",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000014",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-14.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000015",
+        "sessionCode": "BWP285",
+        "title": "Event-driven systems: Deep dive",
+        "startsAt": "2026-11-30T14:30:00-08:00",
+        "venue": "Wynn",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000015",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-15.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000016",
+        "sessionCode": "CMP180",
+        "title": "Identity and access: Lessons from the field",
+        "startsAt": "2026-11-30T14:30:00-08:00",
+        "venue": "MGM Grand",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000016",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-16.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000017",
+        "sessionCode": "DEV225",
+        "title": "Container platforms: Deep dive",
+        "startsAt": "2026-11-30T14:30:00-08:00",
+        "venue": "Encore",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000017",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-17.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000018",
+        "sessionCode": "CMP236",
+        "title": "Edge delivery: From zero to production",
+        "startsAt": "2026-11-30T14:30:00-08:00",
+        "venue": "Caesars Palace",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000018",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-18.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000019",
+        "sessionCode": "CMP160",
+        "title": "Data lakes: From zero to production",
+        "startsAt": "2026-11-30T16:00:00-08:00",
+        "venue": "The Venetian",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000019",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-19.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000020",
+        "sessionCode": "SEC108",
+        "title": "Zero-downtime deploys: From zero to production",
+        "startsAt": "2026-11-30T16:00:00-08:00",
+        "venue": "Caesars Forum",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000020",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-20.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000021",
+        "sessionCode": "AIM482",
+        "title": "Container platforms: Patterns and practice",
+        "startsAt": "2026-11-30T16:00:00-08:00",
+        "venue": "Wynn",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000021",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-21.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000022",
+        "sessionCode": "SEC431",
+        "title": "Identity and access: Hands on workshop",
+        "startsAt": "2026-12-01T08:30:00-08:00",
+        "venue": "MGM Grand",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000022",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-22.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000023",
+        "sessionCode": "CMP429",
+        "title": "Zero-downtime deploys: Patterns and practice",
+        "startsAt": "2026-12-01T10:00:00-08:00",
+        "venue": "Encore",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000023",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-23.made-up-signature"
+      },
+      {
+        "serialNumber": "00000000-0000-4000-8000-000000000024",
+        "sessionCode": "AIM321",
+        "title": "Identity and access: Deep dive",
+        "startsAt": "2026-12-01T11:30:00-08:00",
+        "venue": "Caesars Palace",
+        "applePath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/apple/pass/00000000-0000-4000-8000-000000000024",
+        "googleSaveUrl": "https://pay.google.com/gp/v/save/eyJhbGciOiJSUzI1NiJ9.made-up-session-24.made-up-signature"
+      }
+    ],
+    "apple": {
+      "bundlePaths": []
+    },
+    "google": null,
+    "calendarPath": "/api/v1/handoffs/AbCdEfGhIjKlMnOpQrStUw/calendar.ics"
+  }
+}

@@ -57,7 +57,7 @@ Prod is served on `reinvent-compass.vegas`, dev on `dev.reinvent-compass.vegas` 
 
 ## The budget alert
 
-The account budget (`compass-account-monthly`, 40 USD by default) emails you at 50, 80 and 100 percent of actual spend.
+The account budget (`compass-account-monthly`, 60 USD by default) emails you at 50, 80 and 100 percent of actual spend.
 
 1. Open Cost Explorer and group by service. The expected shape is WAF first (about USD 13 an environment), then Secrets Manager, KMS and API Gateway (see plan section 7.4).
 2. A spike in Lambda, API Gateway or CloudFront means traffic: check the alarms above, then consider the kill switch.

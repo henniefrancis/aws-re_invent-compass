@@ -26,6 +26,7 @@ export default defineConfig({
         'packages/*/src/**/*.ts',
         'spikes/src/**/*.ts',
         '.github/scripts/*.mjs',
+        'scripts/google-wallet-class.mjs',
         'fixtures/synthetic/generate.ts',
       ],
       exclude: [

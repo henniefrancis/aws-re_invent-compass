@@ -1,5 +1,6 @@
 // Which directories the scanner never enters and which files it may read
-// (Requirements 1.3 and 1.8).
+// (Requirements 1.3 and 1.8; compass-power task 41.2 adds the technology manifests, the
+// .NET project files and C# source).
 
 /** Directory names the scanner skips entirely. */
 export const EXCLUDED_DIRECTORIES: ReadonlySet<string> = new Set([
@@ -18,7 +19,7 @@ export const EXCLUDED_DIRECTORIES: ReadonlySet<string> = new Set([
   'venv',
 ]);
 
-/** File extensions the scanner reads. */
+/** File extensions the scanner reads. `.sln` is read for technology only. */
 export const SUPPORTED_EXTENSIONS: readonly string[] = [
   '.tf',
   '.ts',
@@ -29,10 +30,35 @@ export const SUPPORTED_EXTENSIONS: readonly string[] = [
   '.mjs',
   '.cjs',
   '.py',
+  '.cs',
+  '.csproj',
+  '.fsproj',
+  '.sln',
 ];
 
-/** Exact file names the scanner reads. */
-export const SUPPORTED_NAMES: ReadonlySet<string> = new Set(['package.json', 'requirements.txt']);
+/** Exact file names the scanner reads. All but `package.json` and `requirements.txt` are read for technology only. */
+export const SUPPORTED_NAMES: ReadonlySet<string> = new Set([
+  'package.json',
+  'requirements.txt',
+  'pyproject.toml',
+  'Pipfile',
+  'pom.xml',
+  'build.gradle',
+  'build.gradle.kts',
+  'go.mod',
+  'Cargo.toml',
+  'Gemfile',
+  'composer.json',
+  'global.json',
+  'Dockerfile',
+  'docker-compose.yml',
+  'docker-compose.yaml',
+  'compose.yml',
+  'compose.yaml',
+  'Chart.yaml',
+  'kustomization.yaml',
+  'kustomization.yml',
+]);
 
 /** True when a directory with this name is never entered. */
 export function isExcludedDirectory(name: string): boolean {

@@ -7,14 +7,20 @@
 // one byte to detect "too large", probes the first 8 KiB for a NUL byte, and decodes the
 // rest as UTF-8. It stops after the file cap and reports `truncated`.
 //
-// File names and paths stay inside the walker: the only things that leave are the text of
-// each readable file (consumed by the detectors) and counts.
+// A regular file of a type it does not read (not excluded, not ignored, not a link) is yielded
+// by name only, with no text, so the technology count can use its extension (compass-power task
+// 41.1). Name-only files do not count toward `filesRead` or the file cap.
+//
+// File names and paths stay inside the scanner: the only things that leave it are counts and
+// names of services and technologies; the text and names yielded here are consumed by the
+// detectors and the technology count.
 
 import { join } from 'node:path';
 import { isExcludedDirectory, isSupportedFile } from './file-filter.js';
 import { isIgnored, parseGitignore } from './gitignore.js';
 import type { GitignoreRule } from './gitignore.js';
 import type { ScanFs } from './scan-fs.js';
+import type { SourceFile } from './source-file.js';
 
 /** Why a path was skipped. */
 export type SkipReason =
@@ -43,11 +49,8 @@ export const DEFAULT_WALK_LIMITS: WalkLimits = {
   maxMillis: 15000,
 };
 
-/** One readable file. Internal to the scanner: never returned by `scanRepo`. */
-export interface WalkedFile {
-  relativePath: string;
-  text: string;
-}
+/** One walked file. Kept as a name for `SourceFile`; internal to the scanner, never returned by `scanRepo`. */
+export type WalkedFile = SourceFile;
 
 /** What the walk saw, without any name or path. */
 export interface WalkSummary {
@@ -72,21 +75,42 @@ function isProductionFile(name: string): boolean {
   return name === 'prod.tfvars' || name === 'production.tfvars' || name.endsWith('.prod.tfvars');
 }
 
+/**
+ * The walker's production rule for one file path (`a/b/c.tf`), shared with the GitHub archive
+ * reader: a production tfvars file, or a `prod` or `production` folder directly inside an
+ * `envs`, `environments` or `stages` folder.
+ */
+export function productionMarkerFor(relativePath: string): boolean {
+  if (isProductionFile(relativePath.slice(relativePath.lastIndexOf('/') + 1))) {
+    return true;
+  }
+  // Every folder but the first has a parent at `index - 1`.
+  return relativePath
+    .split('/')
+    .slice(0, -1)
+    .some(
+      (part, index, folders) =>
+        index > 0 &&
+        PRODUCTION_DIRECTORIES.has(part) &&
+        ENVIRONMENT_PARENTS.has(String(folders[index - 1])),
+    );
+}
+
 // Names in one directory are unique, so two names are never equal.
 function byName(a: string, b: string): number {
   return a < b ? -1 : 1;
 }
 
 /**
- * Walks `root` and yields each readable file. The generator's return value is the
- * summary. Throws FolderNotFoundError when `root` is missing or not a directory.
+ * Walks `root` and yields each readable file with its text and each file of an unsupported type
+ * by name only. The generator's return value is the summary. Throws FolderNotFoundError when `root` is missing or not a directory.
  */
 export async function* walk(
   root: string,
   fs: ScanFs,
   limits: WalkLimits = DEFAULT_WALK_LIMITS,
   now: () => number = Date.now,
-): AsyncGenerator<WalkedFile, WalkSummary> {
+): AsyncGenerator<SourceFile, WalkSummary> {
   let resolved: string | undefined;
   try {
     resolved = await fs.realpath(root);
@@ -138,7 +162,7 @@ export async function* walk(
     relDir: string,
     parentRules: readonly GitignoreRule[],
     depth: number,
-  ): AsyncGenerator<WalkedFile, void> {
+  ): AsyncGenerator<SourceFile, void> {
     if (depth > limits.maxDepth) {
       summary.truncated = true;
       return;
@@ -177,8 +201,10 @@ export async function* walk(
       } else if (isProductionFile(name)) {
         summary.productionMarker = true;
         summary.skipped.unsupportedType += 1;
+        yield { relativePath: relPath };
       } else if (!isSupportedFile(name)) {
         summary.skipped.unsupportedType += 1;
+        yield { relativePath: relPath };
       } else if (stat.size > limits.maxFileBytes) {
         summary.skipped.tooLarge += 1;
       } else {

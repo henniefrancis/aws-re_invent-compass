@@ -25,7 +25,7 @@ export interface WeekItemView {
   readonly gate: string;
   /** Event local wall clock, such as "10:00 AM to 11:00 AM". */
   readonly timeRange: string;
-  /** "Seat released at 10:20 AM", or the reason the engine gives. */
+  /** "Boarding closes at 10:20 AM", or the reason the engine gives. */
   readonly boarding: string;
 }
 
@@ -86,7 +86,7 @@ function timeRange(startsAt: string, endsAt: string): string {
 /** The boarding line for a session, from the engine's answer. */
 export function boardingText(result: BoardingResult): string {
   return result.status === 'closes'
-    ? `Seat released at ${formatInZone(result.at, zone)}`
+    ? `Boarding closes at ${formatInZone(result.at, zone)}`
     : result.reason;
 }
 

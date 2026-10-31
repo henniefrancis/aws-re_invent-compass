@@ -21,15 +21,15 @@ async function demoFlow(page: Page): Promise<void> {
   await page.goto('/demo');
   await page.getByRole('button', { name: 'Start with a sample week' }).click();
   await expect(page.getByRole('status')).toContainText('Sample week loaded');
-  await page.getByRole('button', { name: /^Add ARC228, / }).click();
-  await expect(page.getByRole('heading', { name: 'ARC228 was blocked' })).toBeVisible();
+  await page.getByRole('button', { name: /^Add CMP340, / }).click();
+  await expect(page.getByRole('heading', { name: 'CMP340 was blocked' })).toBeVisible();
   await page.getByRole('button', { name: 'Start the safe swap' }).click();
   await page.getByRole('button', { name: 'Reserve the repeat' }).click();
   await page.getByRole('button', { name: 'Confirm the schedule' }).click();
   await page.getByRole('button', { name: 'Cancel the original' }).click();
   await expect(page.getByText('The swap is done.')).toBeVisible();
-  await page.getByRole('button', { name: /Show sample pass for BWP213/ }).click();
-  await expect(page.getByRole('img', { name: /Boarding pass for BWP213/ })).toBeVisible();
+  await page.getByRole('button', { name: /Show sample pass for TNC334-R/ }).click();
+  await expect(page.getByRole('img', { name: /Boarding pass. Session TNC334-R./ })).toBeVisible();
 }
 
 test.describe('under the Required_CSP', () => {
@@ -78,7 +78,7 @@ test.describe('under the Required_CSP', () => {
     const violations = await watchCsp(page);
     const record = watch(page);
     for (const [name, heading] of [
-      ['ready-three-bundles', 'Your boarding passes are ready'],
+      ['ready-many-sessions', 'Your boarding passes are ready'],
       ['not-found', 'This link has expired'],
       ['rate-limited', 'Too many tries'],
       ['server-error', 'We could not load your passes'],

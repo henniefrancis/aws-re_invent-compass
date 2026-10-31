@@ -193,6 +193,22 @@ This plan turns the S4 design into a sequence of coding steps under `packages/co
     - Re-run the relevant snapshot or render tests to generate the output shown in the captures; only after they pass, make one local commit with multiple `-m` flags scoped `boarding-passes` that stages the files under `docs/article/screenshots/boarding-passes/`. Never push, never open a PR, never tag.
     - Example: `git commit -m "docs(boarding-passes): add feature screenshots for the Builder Center post" -m "Capture the terminal QR hand-off, the offline itinerary page and a sync run for the article."`
 
+- [x] 11. Shorten a long room instead of dropping it (dev test of 20 October, design "Post-SP3 change: long rooms")
+  - [x] 11.1 In the Pass_Builder, when the normalised room is longer than the 40-character PassFields limit, drop comma-separated parts from the end until it fits; only a single part that is still too long falls back to the empty room
+    - Why: real catalog rooms such as "Promenade South | Octavius 4 | Content Hub | Builders' Session" normalise to 59 characters, so MAM411 and many other passes had no room at all. Shortened, it reads "Promenade South, Octavius 4, Content Hub" (40 characters)
+    - Tests: a long four-part room keeps its leading parts within 40 characters, a room that fits is unchanged, a single over-long part gives the empty room, and the fields still pass the PassFields schema
+  - [x] 11.2 Commit after the full gate passes, scoped `boarding-passes`
+
+- [x] 12. Write "Boarding Pass" as the product name wherever users read it (owner decision of 20 October, design "Post-SP3 change: Boarding Pass name")
+  - [x] 12.1 Replace "boarding pass" and "boarding passes" in user-facing text with "Boarding Pass" and "Boarding Passes": the MCP tool descriptions and titles, confirmations, replies, error messages, the post-write hook and the demo (`packages/mcp-server/src`), the spec renderer's next actions (`packages/core/src/spec/render.ts`), the Power (`power/POWER.md`, `power/plugin.json`, `power/skills/plan-my-week/SKILL.md`) and the package READMEs (`packages/mcp-server/README.md`, `packages/pass-service/README.md`). Identifiers stay: the `issue_boarding_passes` tool, this spec folder, the `/board` route and code names. Fence exception (like task 10): these files are outside `packages/core/src/passes/**`, because the wording follows the pass across the product
+  - [x] 12.2 Tests that assert the old wording follow; commit after the full gate passes, scoped `boarding-passes`
+
+- [x] 13. Render the hand-off QR code as SVG too (owner request of 21 October, design "Owner change: SVG QR code for a browser page")
+  - [x] 13.1 `HandoffRenders` gains `svg`, made with `QRCode.toString` from the same href, error correction and quiet zone; the QR failure path covers it
+    - Tests: the SVG is an `<svg` document with path data, it does not contain the link or the hand-off id as text, and a failing render gives `handoff.qr_failed`
+    - _Requirements: 5.6_
+  - [x] 13.2 Commit with compass-power task 48 (scoped `compass-power`)
+
 ## Notes
 
 - Tasks are executed sequentially in numeric order, one at a time, directly in this chat session, never delegated to a subagent, with files saved after each step.

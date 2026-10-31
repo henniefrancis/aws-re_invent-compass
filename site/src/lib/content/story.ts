@@ -4,9 +4,9 @@ export const PRODUCT_NAME = 're:Invent Compass';
 
 export const TAGLINE: ContentBlock = quoted(
   'tagline',
-  'Plan like a spec. Board like a flight.',
-  'README.md',
-  'Title',
+  'From your code to your seat, on time.',
+  '.kiro/steering/product.md',
+  'Product',
 );
 
 export const INTRO: ContentBlock = quoted(
@@ -39,7 +39,7 @@ export const MOST_TOOLS_SHOW: ContentBlock = quoted(
 
 export const COMPASS_SHOWS: ContentBlock = quoted(
   'compass-shows',
-  'Seat released at 10:20',
+  'Boarding closes at 10:20',
   '.kiro/steering/product.md',
   'The problem we solve',
 );
@@ -81,14 +81,14 @@ export const DISCLAIMER: ContentBlock = quoted(
 
 export const UNOFFICIAL_STATEMENT: ContentBlock = summary(
   'unofficial-statement',
-  'Compass passes are unofficial. Every pass says the line above, and a pass never replaces your badge.',
+  'Compass passes are unofficial and never replace your badge. Every pass says so:',
   '.kiro/steering/product.md',
   'Product principles, 1',
 );
 
 export const TRY_IT: ContentBlock = summary(
   'try-it',
-  'The demo runs on made-up sessions, with no install and no sign-in.',
-  '.kiro/steering/product.md',
-  'Devices (ADR-005)',
+  'The demo runs on a small snapshot of real sessions from the AWS Events API, with no install and no sign-in.',
+  'docs/hackathon-rules.md',
+  'Compliance, rule 11',
 );

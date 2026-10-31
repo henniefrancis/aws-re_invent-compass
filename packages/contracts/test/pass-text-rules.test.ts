@@ -185,6 +185,26 @@ describe('Feature: foundation-contracts, normalisePassText', () => {
     expect(normalisePassText('  a\u00A0\u00A0b\n\tc  ')).toBe('a b c');
   });
 
+  test('E: a vertical bar becomes a comma, so a real catalog room is accepted', () => {
+    // The raw room, as the catalog writes it, fails the allowlist.
+    const raw = 'Level 1 | Academy 409';
+    expect(PassFieldsSchema.safeParse({ ...BASE, room: raw }).success).toBe(false);
+
+    const normalised = normalisePassText(raw);
+    expect(normalised).toBe('Level 1, Academy 409');
+    const result = PassFieldsSchema.safeParse({ ...BASE, room: normalised });
+    expect(result.success).toBe(true);
+    expect(result.data?.room).toBe('Level 1, Academy 409');
+  });
+
+  test('E: bare, repeated and edge vertical bars', () => {
+    expect(normalisePassText('Level 1|Academy 409')).toBe('Level 1, Academy 409');
+    expect(normalisePassText('a || b | | c')).toBe('a, b, c');
+    expect(normalisePassText(' | Level 1 | ')).toBe('Level 1');
+    expect(normalisePassText('|')).toBe('');
+    expect(normalisePassText('Level\u00A01\u00A0|\nAcademy')).toBe('Level 1, Academy');
+  });
+
   test('E: a title failing on a curly quote or em dash passes after normalisation', () => {
     // A raw title with a curly apostrophe and an em dash fails the allowlist directly.
     const raw = 'It\u2019s a plan \u2014 reserve, board, and go';

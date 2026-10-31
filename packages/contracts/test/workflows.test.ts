@@ -37,12 +37,15 @@ function usesLines(text: string): string[] {
 }
 
 describe('Feature: foundation-contracts, CI workflows', () => {
-  test('check.yml triggers only on pull_request into main, with no push or schedule', () => {
-    expect(checkYml).toMatch(/on:\s*\n\s*pull_request:/);
-    expect(checkYml).toMatch(/branches:\s*\[main\]/);
-    // No push or schedule trigger. (Match a trigger key at indented top level.)
-    expect(/\n\s{2}push:/.test(checkYml)).toBe(false);
-    expect(/\n\s{2}schedule:/.test(checkYml)).toBe(false);
+  test('check.yml triggers on pull_request into main and on push to develop only, with no schedule', () => {
+    // ADR-018 amendment (20 October 2026): develop pushes run the check too.
+    const text = checkYml.replaceAll('\r\n', '\n');
+    const triggers = /\non:\n([\s\S]*?)\n(?=\S)/.exec(text)?.[1]?.trimEnd();
+    expect(triggers).toBe(
+      ['  pull_request:', '    branches: [main]', '  push:', '    branches: [develop]'].join('\n'),
+    );
+    // No schedule trigger. (Match a trigger key at indented top level.)
+    expect(/\n\s{2}schedule:/.test(text)).toBe(false);
   });
 
   test('e2e.yml triggers only on workflow_dispatch', () => {
@@ -72,28 +75,71 @@ describe('Feature: foundation-contracts, CI workflows', () => {
       .join('\n');
   }
 
-  test('publish.yml scopes id-token: write to the job, not the workflow', () => {
+  // The text of one job in publish.yml, from its `  <name>:` key to the next job or the end.
+  function publishJob(name: string): string {
+    const body = nonCommentLines(publishYml).replaceAll('\r\n', '\n');
+    const start = body.indexOf(`\n  ${name}:\n`);
+    expect(start, `job ${name} not found`).toBeGreaterThan(-1);
+    const rest = body.slice(start + 1);
+    const next = /\n {2}[\w-]+:\n/.exec(rest.slice(rest.indexOf('\n') + 1));
+    return next === null ? rest : rest.slice(0, rest.indexOf('\n') + 1 + next.index);
+  }
+
+  test('publish.yml has a verify job without id-token or environment and a publish job that holds them', () => {
     const body = nonCommentLines(publishYml);
     // The top-level permissions block grants only contents: read (no id-token).
     const topLevel = body.slice(0, body.indexOf('jobs:'));
     expect(/id-token:\s*write/.test(topLevel)).toBe(false);
     expect(topLevel).toMatch(/permissions:\s*\n\s*contents:\s*read/);
-    // The job carries id-token: write and the npm-publish environment.
-    const jobSection = body.slice(body.indexOf('jobs:'));
-    expect(jobSection).toMatch(/id-token:\s*write/);
-    expect(jobSection).toMatch(/environment:\s*npm-publish/);
+
+    const verify = publishJob('verify');
+    expect(/id-token/.test(verify)).toBe(false);
+    expect(/environment:/.test(verify)).toBe(false);
+    expect(verify).toMatch(/permissions:\s*\n\s*contents:\s*read\s*\n\s*steps:/);
+
+    const publish = publishJob('publish');
+    expect(publish).toMatch(/needs:\s*verify/);
+    expect(publish).toMatch(/if:\s*startsWith\(github\.ref,\s*'refs\/tags\/v'\)/);
+    expect(publish).toMatch(/id-token:\s*write/);
+    expect(publish).toMatch(/environment:\s*npm-publish/);
   });
 
-  test('publish.yml runs npm ci and the full test suite before publishing', () => {
-    // Search only actual run: step commands, not the comment header.
-    const runCommands = publishYml.split(/\r?\n/).filter((l) => l.trimStart().startsWith('run:'));
-    const joined = runCommands.join('\n');
-    const ciAt = joined.indexOf('npm ci');
-    const testAt = joined.indexOf('npm test');
-    const publishAt = joined.indexOf('npm publish');
-    expect(ciAt).toBeGreaterThan(-1);
-    expect(testAt).toBeGreaterThan(ciAt);
-    expect(publishAt).toBeGreaterThan(testAt);
+  test('publish.yml verify job runs npm ci, the type check, lint and tests before packing and uploading', () => {
+    const verify = publishJob('verify');
+    const order = [
+      'npm ci',
+      'npx tsc -b',
+      'npm run lint',
+      'npm test',
+      'does not match version',
+      'npm run build',
+      'check-pack.mjs',
+      'npm pack --workspace packages/mcp-server',
+      'actions/upload-artifact@',
+    ];
+    let previous = -1;
+    for (const marker of order) {
+      const at = verify.indexOf(marker);
+      expect(at, `missing in verify: ${marker}`).toBeGreaterThan(previous);
+      previous = at;
+    }
+    expect(/npm publish/.test(verify)).toBe(false);
+  });
+
+  test('publish.yml publish job runs no repository code and publishes the downloaded tarball with provenance', () => {
+    const publish = publishJob('publish');
+    expect(/actions\/checkout/.test(publish)).toBe(false);
+    expect(/npm (ci|install|run|test)\b/.test(publish)).toBe(false);
+    expect(/npx /.test(publish)).toBe(false);
+    expect(publish).toMatch(/registry-url:\s*https:\/\/registry\.npmjs\.org/);
+    const downloadAt = publish.indexOf('actions/download-artifact@');
+    const publishAt = publish.indexOf('npm publish "${tarball}" --provenance --access public');
+    expect(downloadAt).toBeGreaterThan(-1);
+    expect(publishAt).toBeGreaterThan(downloadAt);
+    expect(/--workspace/.test(publish)).toBe(false);
+    // npm must support trusted publishing (11.5.1 or later), checked before the publish.
+    expect(publish.indexOf('11.5.1')).toBeGreaterThan(-1);
+    expect(publish.indexOf('11.5.1')).toBeLessThan(downloadAt);
   });
 
   test('check.yml and e2e.yml checkouts do not persist credentials', () => {

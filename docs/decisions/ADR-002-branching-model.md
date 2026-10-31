@@ -26,6 +26,7 @@ Status: Accepted (owner, kickoff answer 2, 2026-10-15). The `develop` integratio
 - A stream that needs a new dependency asks the integrator, who adds it and rebases (ADR-007).
 - The first docs commit (9540f52, 2026-10-15) was pushed straight to `main` before this decision, when the repo was set up.
 - Each push and PR needs the owner's go (playbook section 3). The owner merges the `release/*` PR into `main` and tags it.
+- Update, 29 October 2026: release 0.1.0 used no `release/*` branch. The owner opened the PR from `develop` into `main`, ran `release.sh prod` from `main`, and tagged `v0.1.0` after prod answered its health check (see `docs/runbooks/release.md`).
 
 ## Source
 

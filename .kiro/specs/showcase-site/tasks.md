@@ -367,6 +367,133 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
   - [x] 18.2 Commit
     - After `npx eslint .`, `npx prettier --check .` and `npm run check:dash` pass with zero errors, commit the screenshots with scope `showcase-site` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
+- [x] 19. Strip HTML comments until none remain in the build output check (CodeQL alert 2, design "Post-CodeQL change")
+  - [x] 19.1 In `site/scripts/check-build-output.mjs`, repeat the comment removal until the text stops changing before looking for the Notice text
+    - Why: CodeQL js/incomplete-multi-character-sanitization. This script only checks our own prerendered pages at build time, so it is not a security boundary, but a crafted nested comment could have hidden the Notice from the check
+    - Tests: a page whose Notice sits only inside nested comment markers fails the check; the normal pages still pass
+  - [x] 19.2 Commit after the full gate passes, scoped `showcase-site`. Do not push
+
+- [x] 20. Show the owner's artwork on the hand-off page (owner decision of 20 October, design "Post-SP3 change: board artwork")
+  - [x] 20.1 Add `site/public/artwork/pass-background.jpg` (the owner's own picture, 24 KB) and show it as a decorative banner at the top of the Board_Page, `alt=""`, with width and height set, cropped with `object-fit: cover` so the glow line shows
+    - Why: Apple Wallet cannot show the picture on a boarding pass, so the attendee sees it where they add their passes. The text stays on the existing solid panel, so contrast does not depend on the picture
+    - Same origin, so the CSP `img-src 'self'` already allows it; forced-colours mode keeps the panel border
+    - Tests: the banner is present, decorative (empty alt, hidden from assistive technology) and same-origin; the build output check and the budgets still pass
+  - [x] 20.2 Commit after the full gate passes, scoped `showcase-site`
+
+- [x] 21. Use the owner's logo in the header and the owner's favicon (owner decision of 20 October, design "Post-SP3 change: owner logo")
+  - [x] 21.1 The header brand link shows `artwork/logo.svg` with `alt="re:Invent Compass"` (an image link named by its alt text) instead of the product name in text; `artwork/favicon.svg` is the owner's new map icon
+  - [x] 21.2 In `logo.svg`, the year "2026" used AWS's Amazon Ember Display typeface, which visitors do not have installed and which is AWS brand material; it now uses a free heavy sans-serif stack (Segoe UI Black, Arial Black, Arial, sans-serif). ARTWORK.md lists both files as the owner's artwork
+  - [x] 21.3 Tests: the header image has the product name as alt text, both SVGs have no script and no external reference, the static check still finds no AWS mark; build, budgets and a browser check at desktop and phone width; commit scoped `showcase-site`
+
+- [x] 22. Make the demo's sample pass look like the final Apple pass (tracker SD1, design "Post-SP3 change: sample pass matches the Apple pass", Requirement 11 amended 20 October 2026)
+  - [x] 22.1 Face: owner logo and SESSION code on top, TERMINAL, an arrow and GATE (short room) in the large row, FLIGHT NAME, DATE with the 24-hour time range and BOARDING CLOSES (24-hour, from the rules port); card colours #232F3F with white values and a purple label that reaches 4.5:1; no barcode or QR code
+  - [x] 22.2 Under the face: "Sample pass. Made-up session.", the walk from the previous session, the next connection and "Unofficial. Your badge is your ticket."; long venue and room values are wrapped and shortened with "..."
+  - [x] 22.3 `SamplePass` and its accessible name use the new field names; `acts.ts` describes the new fields; tests updated, including a contrast check of the label colour
+- [x] 23. Say "This link is not complete" once on the hand-off page (tracker BM1, design "Post-SP3 change: board message shown once")
+  - [x] 23.1 Find why the sentence shows twice; the live region is visible and repeats the message, which itself repeats the heading
+  - [x] 23.2 Fix it: the message no longer repeats the heading, the live region is visually hidden and carries the heading plus the message, and a test covers it
+- [x] 24. New tagline and the "Boarding" step on the home page (owner decision of 20 October, design "Post-SP3 change: tagline and Boarding step", Requirements 4.1 and 4.4 amended)
+  - [x] 24.1 The tagline is "From your code to your seat, on time." in `.kiro/steering/product.md`, `CONCEPT.md`, the site (`TAGLINE`, now quoted from `.kiro/steering/product.md` because README.md is the owner's to change), the page description in `src/index.html` and `site/README.md`
+  - [x] 24.2 The three acts are Plan, Boarding and Fly: the home heading, the act title, `CONCEPT.md` "Act 2: Boarding" (the act cites it) and `site/README.md`; the act line and `site/ARTWORK.md` say "Boarding Pass" (the metaphor row keeps the airline term "Boarding pass" it quotes from product steering). The demo and board pages are out of scope (another stream is changing them)
+  - [x] 24.3 Tests follow the new wording; site unit tests and the site build pass; commit after the full gate passes, scoped `showcase-site`
+
+- [x] 25. Give the site the QR page's look (owner request of 21 October, design "Post-SP3 change: the QR page look", Requirement 4.7 added, 11.2 colours follow the Pass Designer pass)
+  - [x] 25.1 New token values (dark card, white ink, orange brand, a new `onHero` token) and a `page` gradient (the pass gradient) behind the page; `color-scheme: dark`; `.site-main` is the card; the hero is navy to blue
+  - [x] 25.2 The sample pass is black with orange labels, as the owner's pass; the home timeline image uses the new palette
+  - [x] 25.4 The owner asked for a modern, slick front page that works on every browser and device: the hero shows the Boarding Pass beside the promise (on narrow screens below it), built by `SamplePassComponent` from `HERO_PASS` (`src/lib/content/hero-pass.ts`), which a test proves equal to the demo's own pass for BWP213; the sample pass card is a dark navy-to-blue gradient; a larger type scale with tight display tracking; pill buttons; lighter one-pixel card borders; a rounded table whose terms never break mid-word on a phone; and system colours for the new orange and muted text in forced colour mode
+  - [x] 25.5 The e2e tests that still expected the pre-task-22 pass wording ("Boarding pass for", "Gate: MGM Grand", "Seat released at 12:50 PM") and a pass with no image now expect the final wording and the owner's logo; the Install page keeps the space after each option label
+  - [x] 25.3 Contrast, token and denylist tests pass with the new palette; site unit tests, the site build and a visual check of every page; commit after the full gate passes, scoped `showcase-site`
+
+- [x] 26. A grouped main menu, an About page, wider content and one disclaimer line (owner request of 21 October, design "Post-SP3 change: grouped menu and About page", Requirements 4.1 and 4.5 amended, 24 added)
+  - [x] 26.1 `navGroups(links)` in `src/lib/content/links.ts` gives the three groups and their described items (the Builder Center post and the video stay plain "coming soon" text until their addresses are known); `src/lib/shell/menu.ts` holds the open and close rules; both are unit tested
+  - [x] 26.2 The header shows the groups as disclosure buttons with panels, a "Try the demo" button and, on narrow screens, a "Menu" button; panels close on a second press, Escape, a click outside and navigation
+  - [x] 26.3 The About_Page at `/about` (prerendered, in the build output check) with the placeholder text of Requirement 24
+  - [x] 26.4 The page card is about 70 percent of a wide window (at least the old 64rem), and the home page says the disclaimer once
+  - [x] 26.5 e2e tests open the Product group before choosing Install; site unit tests, the build, screenshots at phone and desktop widths and the e2e suite on all seven profiles; commit after the full gate passes, scoped `showcase-site`
+
+- [x] 27. A compact footer: "Disclaimer Notice" over the Notice, centred, no links (owner request of 21 October, design "Post-SP3 change: compact footer", Requirement 4.2 amended)
+  - [x] 27.1 The footer shows the heading and the Notice only; `footerItems` goes, its link item type stays as the type of the navigation items, and its tests move to the navigation test
+  - [x] 27.2 e2e tests check the heading and the Notice in every footer and the repository link in the Project group; site unit tests, the build, a screenshot and the e2e suite on all seven profiles; commit after the full gate passes, scoped `showcase-site`
+
+- [x] 28. About and Legal groups, Documentation, The Inspiration, Disclaimer and Copyright pages (owner request of 21 October, design "Post-SP3 change: About, Legal and Documentation", Requirements 4.1 and 24.1 amended, 25 to 27 added)
+  - [x] 28.1 `navGroups`: Project gains Documentation; About is The Inspiration and The Creator; a Legal group holds Privacy, Disclaimer, and Copyright and licence
+  - [x] 28.2 Content blocks with their sources for the four pages (NOTICE and LICENSE become content sources); `documentationLinks(links)` builds the repository addresses
+  - [x] 28.3 The pages at `/inspiration`, `/documentation`, `/disclaimer` and `/copyright`, prerendered and in the build output check
+  - [x] 28.4 Tests (groups, provenance, addresses, the build check) and the e2e page list; site unit tests, the build, screenshots and the e2e suite on all seven profiles; commit after the full gate passes, scoped `showcase-site`
+
+- [x] 29. A plainer Board_Page and steadier local e2e runs (owner request of 21 October, design "Post-SP3 change: board page and local e2e workers")
+  - [x] 29.1 The banner picture above the Board_Page heading is removed, with its test and `public/artwork/pass-background.jpg` (nothing else used it); the hand-off panel is centred in the page card and its state heading is centred
+  - [x] 29.2 Local e2e runs use two workers: with more, axe in Firefox could pass the 30 s timeout while seven profiles shared the CPU. CI keeps its default. The one root unit test that failed once on 21 October could not be reproduced in seven runs, two of them under load; it ran while another session was editing the same checkout
+  - [x] 29.3 The board actions are badges: the official "Add to Apple Wallet" badge (US English, downloaded by the owner under the Apple Wallet Marketing Artwork License Agreement), the official two-line "Add to Google Wallet" badge (from the Google Wallet brand guidelines, downloaded with the owner's go) and the owner's "Add to Calendar" button, each shown unchanged at one height with its label as the image's alt text; several Apple bundles get a visible "Bundle N of M" caption. The Google and calendar labels follow the badges ("Add to Google Wallet", "Add to Calendar"). ARTWORK.md lists the two vendor badges, and the artwork name rule allows Apple and Google only in them
+
+- [x] 30. Wallet badges side by side with the calendar below (owner request of 21 October, design "Post-SP3 change: board page and local e2e workers")
+  - [x] 30.1 The Apple and Google badges share one row, top-aligned, and the calendar button takes the row below; the badges scale down a little on narrow screens (2.5rem to 3.25rem high) so both fit side by side on a phone; board, accessibility and layout e2e tests; commit scoped `showcase-site`
+
+- [x] 31. Higher-quality badges at one size (owner request of 21 October, design "Post-SP3 change: board page and local e2e workers")
+  - [x] 31.1 `apple-wallet.svg`, `google-wallet.svg` and `calendar.svg` are the owner's higher-quality files from `docs/previews` at one size (680 by 216, 701 by 217 and 681 by 230). The wallet badges are still Apple's and Google's official badges (the owner confirmed), so no licence risk is open. The Apple file's four linked shadow images, which it named but did not include and a browser would not load, are removed; tests and commit scoped `showcase-site`
+
+- [x] 32. Terms of use, Accessibility, Security and Open-source credits pages (owner request of 22 October, tracker LEG1, design "Post-SP3 change: more legal pages", Requirement 28 added; the requirements added on 21 October are renumbered 24 to 27, because 18 to 21 already existed)
+  - [x] 32.1 Content with sources (SECURITY.md becomes a content source); `issuesUrl` and `securityPolicyUrl` in `links.ts`; the credits list with a test against the installed packages
+  - [x] 32.2 The four pages, the Legal group in the order of 28.1, prerendering and the build output check
+  - [x] 32.3 Tests, the e2e page list, screenshots and the e2e suite; commit after the full gate passes, scoped `showcase-site`
+
+- [x] 33. Text fills the page card, headings centred (owner request of 22 October, design "Post-SP3 change: full-width text and centred headings")
+  - [x] 33.1 Remove the 40rem `.measure` cap so running text, lists and tables use the card's full width inside its equal left and right padding; text stays left-aligned
+  - [x] 33.2 Centre page headings (`h1`, `h2`) and the line under a page title on every page; the home hero keeps its own layout
+  - [x] 33.3 Site tests, the e2e layout, reflow and a11y suites, and a look at the pages in the browser; commit scoped `showcase-site`
+
+- [x] 34. The Creator and The Inspiration pages written in full (owner request of 22 October, tracker ABT1, design "Post-SP3 change: The Creator and The Inspiration", Requirements 24.2 and 25.2 amended)
+  - [x] 34.1 Record the owner's answers and the biography excerpts in `docs/story/creator-and-inspiration.md`, a new content source
+  - [x] 34.2 The Inspiration_Page: the story in sections with headings, quoted from the source
+  - [x] 34.3 The About_Page: introduction, biography, the creator links (in `links.ts`) and a link to the Inspiration_Page
+  - [x] 34.4 The owner's full photo, not cropped, in `public/artwork` (one named raster exception to the svg, txt and ico rule and to the no-AWS-marks rule, because the owner may use the Community Builder logo; listed in ARTWORK.md), with a text alternative
+  - [x] 34.5 Tests, the e2e suite and a look at both pages in the browser; commit scoped `showcase-site`
+
+- [x] 35. Owner review of The Creator and The Inspiration (owner request of 22 October, design "Post-SP3 change: owner review of The Creator and The Inspiration", Requirement 24.2 amended)
+  - [x] 35.1 The Inspiration_Page: the line to remember in normal weight, no caption under it, no "Meet the creator" link, and the story as plain paragraphs without section headings
+  - [x] 35.2 The About_Page: on wide screens the photo column takes 30 percent of the card and the text 70 percent, the photo filling its column; the opening line without the roles, no "Find Hennie online" section and no story link; a "Connect with Hennie" heading at half the `h2` size under the photo, over the five owner-supplied link icons from `docs/previews` (cropped by the owner to the icon only), side by side in one row, each opening in a new tab with a title naming its site, converted to WebP and listed in ARTWORK.md
+  - [x] 35.3 The Project menu's outside links (Repository, and the Builder Center post and Video once their addresses are known) open in a new tab, with hidden text "(opens in a new tab)" for screen readers
+  - [x] 35.4 Site tests, the e2e suite and the local preview for the owner's review before any push; commit scoped `showcase-site`
+
+- [x] 36. Board page: Apple, Google and calendar buttons on each session (owner decision of 29 October, pass-service task 50 and its design section)
+  - [x] 36.1 `site/src/lib/board/handoff-view.ts`: validate the new per-session fields with the same strictness as today (each `applePath` and `calendarPath` must be exactly this hand-off's route for that session's serial; each `googleSaveUrl` must pass the Google prefix and token check); the top `google` is `{ saveUrl }` or null; refuse the whole view on any mismatch
+  - [x] 36.2 The board page keeps the top actions and adds, under each session, the Apple, Google and calendar buttons that session has, with accessible names that name the session (for example "Add ANT398 to Apple Wallet"), 44 by 44 pixel targets and reflow at 320 pixels
+  - [x] 36.3 Unit tests, e2e fixtures and e2e tests (a11y, CSP, forced colours, layout); full gate and the e2e suite; the owner reviews the page on the local preview before any push; commit scoped `showcase-site`
+
+- [x] 37. Board page shows the wallet of the attendee's phone (owner idea of 30 October)
+  - [x] 37.1 When the board page loads, read the browser's own identity on the device (`navigator.userAgentData` where present, else `navigator.userAgent`); nothing is sent anywhere. An iPhone shows only the Apple Wallet buttons; an Android phone shows only the Google Wallet buttons; any other device (a computer, an iPad, or anything not clearly one of the two) shows both, as today. Calendar buttons always show. When the phone's own wallet has no button in this view, the page shows both wallets (QA review of 30 October)
+  - [x] 37.2 No control to show the other wallet (owner decision of 30 October, after review): the phone sees only its own wallet; the device line joins the lead line on a phone, for example "Choose how to add your passes. Showing Apple Wallet for your iPhone."
+  - [x] 37.3 The rule applies to the top buttons and to every session's buttons, together with the top or per-session rule of pass-service task 51; the device help line reads well in each case
+  - [x] 37.4 Unit tests for the detection with real user agent strings (iPhone Safari, iPhone Chrome, Android Chrome, Samsung Internet, iPadOS Safari that reports a Mac, desktop Chrome, Firefox and Safari), e2e on the existing device profiles; owner review on the local preview; full gate and e2e; commit scoped `showcase-site`
+
+- [x] 38. Board page type on a phone (owner request of 30 October)
+  - [x] 38.1 Below 48rem the board state heading scales with the screen so "Your boarding passes are ready" fits one line at 375 pixels, and the board text is 0.9375rem; owner review on the local preview; full gate and e2e (layout, reflow at 320 pixels); commit scoped `showcase-site`
+
+- [x] 39. Board page polish from the owner's review of 30 October
+  - [x] 39.1 The board state heading and the "Your sessions" heading use the logo's "re:Invent" gradient (left to right `#ff9d00` to `#ab28b0`), with plain system text in forced colours mode
+  - [x] 39.2 Each session card shows its time in the top left corner, written like "Mon, 30 Nov 2026, 10:00 AM", and its session code in the top right corner, both at 0.75rem close to the edges, with the title below across the full width at the same 0.5rem side margins, the wallet button centred and 0.375rem under it; the small code uses the gradient with a lighter purple end (`#cc55d0`, 4.75:1 on the card) so it meets 4.5:1; the card stays readable at 320 pixels
+  - [x] 39.3 No calendar button on a session: the week's calendar file at the top covers every session (pass-service task 52)
+  - [x] 39.4 Owner review on the local preview; full gate and e2e; commit scoped `showcase-site`
+
+- [x] 40. Walk from here: live walking time to the next session on the board page (tracker L01, owner decisions of 31 October, ADR-037)
+  - [x] 40.1 The board page marks the next upcoming session (the first that has not started, by the event's own time) and gives it a "Walk from here" button. Only when the attendee taps it does the page ask the browser for the location, once (`navigator.geolocation.getCurrentPosition`, no watching, no storage). Nothing about the location leaves the phone: no request, no log, no storage
+  - [x] 40.2 The estimate is worked out on the phone: the straight-line distance to the session's venue (coordinates from `data/venues.json`, OpenStreetMap, with their source), times a walking detour factor, at the same 66.7 metres a minute the venue walking times use, plus time to get into the venue and to the room; it shows the walking minutes and a "leave by" time, and says plainly that it is an estimate. The numbers and their basis are recorded in ADR-037
+  - [x] 40.3 A "Directions" link opens walking directions to the venue in Apple Maps on an iPhone and Google Maps elsewhere; the page says that Maps receives the location only when it is opened
+  - [x] 40.4 Denied or unavailable location, a session with no venue, a venue without coordinates, and a location far from Las Vegas (more than 20 km) each give a short plain message and no estimate; the button works by keyboard and is announced to screen readers; the strict CSP holds
+  - [x] 40.5 Owner review on the local preview; full gate and e2e (geolocation mocked in Playwright); commit on the L01 branch
+- [ ] 41. Real sessions in the click-through demo (tracker RD1, owner decision of 31 October)
+  - [x] 41.1 Pick 15 to 20 real sessions from the owner's cached catalog (2,359 sessions, fetched 29 October 2026) that keep the demo's story: a clash, a true repeat of a session, a missing meal break, a session at each of the six official venues, the starter week, and the guided clash. Keep only code, title, start, end, venue and room (owner decision of 20 October), with a credit to the AWS Events API
+  - [x] 41.2 A small script makes the snapshot from the cache so it can be refreshed; the snapshot, not the cache, is committed
+  - [x] 41.3 Replace the 15 made-up sessions in `site/src/lib/demo/demo-catalog.ts` and every place that names them (starter week, guided clash, copy, tests, e2e), keeping the demo's behaviour; the credit shows on the demo page and the Legal and Privacy pages say where the session data comes from
+  - [x] 41.4 Owner review on the local preview; full gate and e2e; commit on the RD1 branch
+
+- [x] 42. "Boarding closes" everywhere on the site (owner decision of 31 October, to match the pass)
+  - The home page story, the timeline graphic, the demo week view and their tests say "Boarding closes at 10:20" instead of "Seat released at 10:20"; the product steering line the home page quotes, Requirement 2 of the home page, `CONCEPT.md`, `site/README.md` and `site/ARTWORK.md` match; the seat rule itself (held until 10 minutes before the start) is unchanged
+
+- [ ] 43. Demo session cards look like the board's (owner request of 31 October)
+  - [x] 43.1 Each session in the demo's session list and in "Your week" uses the board's card layout: the date and time (for example "Mon, 30 Nov 2026, 11:30 AM to 12:30 PM") small in the top left corner, the session code small in the top right in the gradient, the title across the full width, then the venue and room and "Boarding closes at ...", and the buttons centred; the card styles are shared with the board page, not copied; the reading order still gives the code with the title
+  - [x] 43.2 Owner review on the local preview; full gate and e2e; commit scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

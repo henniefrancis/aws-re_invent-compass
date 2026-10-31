@@ -49,7 +49,16 @@ describe('registry', () => {
     const fake = createFakeRuntime();
     const connection = await connect(fake.runtime);
     const listed = await connection.client.listTools();
-    const read = ['refresh_catalog', 'find_sessions', 'scan_repo', 'check_itinerary'];
+    const read = [
+      'refresh_catalog',
+      'find_sessions',
+      'scan_repo',
+      'check_itinerary',
+      'show_schedule',
+      'show_my_tech',
+      'find_sessions_by_tech',
+      'scan_github',
+    ];
     const scheduleWrites = [
       'reserve_with_guardrails',
       'cancel_reservation',
@@ -59,7 +68,8 @@ describe('registry', () => {
     ];
     const writes = [
       ...scheduleWrites,
-      'issue_boarding_passes',
+      'issue_all_boarding_passes',
+      'issue_boarding_pass',
       'send_to_phone',
       'sync_passes',
       'forget_me',
@@ -81,7 +91,8 @@ describe('registry', () => {
         expect(tool.description).toContain('changes your real re:Invent schedule');
       }
     }
-    expect(DESCRIPTIONS.issue_boarding_passes).toContain(ISSUE_SENTENCE);
+    expect(DESCRIPTIONS.issue_all_boarding_passes).toContain(ISSUE_SENTENCE);
+    expect(DESCRIPTIONS.issue_boarding_pass).toContain(ISSUE_SENTENCE);
     expect(DESCRIPTIONS.send_to_phone).toContain(HANDOFF_SENTENCE);
     expect(DESCRIPTIONS.sync_passes).toContain(SYNC_SENTENCE);
     expect(DESCRIPTIONS.forget_me).toContain(FORGET_SENTENCE);

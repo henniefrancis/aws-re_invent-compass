@@ -1,6 +1,6 @@
 # re:Invent Compass
 
-**Plan like a spec. Board like a flight.**
+**From your code to your seat, on time.**
 
 A Kiro Power that turns a first-timer's re:Invent week into a Kiro spec, then issues unofficial boarding passes for every reserved seat so the right information is on their lock screen at the right moment.
 
@@ -16,7 +16,7 @@ The single most expensive first-timer mistake is invisible in every catalog:
 
 > A reserved seat is only held until **10 minutes before the session starts**. After that it is released to the walk-up line. (Official re:Invent 2026 FAQ)
 
-So the time that matters is not "Starts 10:30". It is **"Seat released at 10:20"**, plus the walk from wherever you are now.
+So the time that matters is not "Starts 10:30". It is **"Boarding closes at 10:20"**, plus the walk from wherever you are now.
 
 ## 2. The insight: re:Invent already works like an airline
 
@@ -45,10 +45,10 @@ Everyone at re:Invent has flown to get there. The metaphor needs no explaining.
   - `tasks.md`: each task is one API action (reserve, favorite, personal time). The attendee runs them in Kiro and approves each write.
 - **First-timer guardrails as hooks.** A Kiro `PreToolUse` hook checks every reservation against the rules (connection time, boarding time, clashes, no lunch) before it is sent. A `PostToolUse` hook re-reads the schedule after every write.
 
-### Act 2: Board (on the phone)
+### Act 2: Boarding (on the phone)
 
 - The final task issues a boarding pass for each reserved session: Apple Wallet and Google Wallet.
-- Each pass shows: session code and title, venue and room, **"Seat released at"**, walk time from the previous session, and the next connection.
+- Each pass shows: session code and title, venue and room, **"Boarding closes"**, walk time from the previous session, and the next connection.
 - Every pass says clearly: **"Unofficial. Your badge is your ticket."** No AWS logos or branding.
 - Fallback with no setup: a calendar file (`.ics`) with alarms set to "leave now" and "boarding closes".
 
@@ -142,7 +142,7 @@ Eight Kiro specs (S0 to S7) in the build plan, section 8. **Never cut:** the 12-
 | 21 Oct       | First dev deploy                                                        |
 | 25 Oct       | Real iPhone and Android checks                                          |
 | 28 Oct       | Feature freeze                                                          |
-| 29 Oct       | Site freeze, `release/1.0.0`, TAM and CTO reviews                       |
+| 29 Oct       | Site freeze, TAM and CTO reviews (0.1.0)                                |
 | 30 Oct       | Release gate and production release (owner runs it)                     |
 | 31 Oct       | Demo video, README and post final                                       |
 | **1 Nov**    | **Submit** (hackathon deadline 6 Nov stays as buffer)                   |
@@ -159,7 +159,7 @@ The full register (16 risks with owner, likelihood and mitigation) is in build p
 2. The Power activates. Compass scans the repo: "You run Lambda, DynamoDB and Step Functions at production depth. You have never touched Bedrock."
 3. Kiro writes `.kiro/specs/my-reinvent-week/`. We scroll the design: reasons, connection times, a lunch layover.
 4. They run the tasks. One reservation is blocked: "Likely impossible connection: the walk from The Venetian to Wynn is 40 minutes, an estimate, and you have 30. Try the repeat on Friday." They accept the safe swap.
-5. The final task issues boarding passes. They scan the QR code with an iPhone and add them to Wallet. Cut to the lock screen at the Venetian: "DAT302, Seat released at 10:20, 6 min walk."
+5. The final task issues boarding passes. They scan the QR code with an iPhone and add them to Wallet. Cut to the lock screen at the Venetian: "DAT302, Boarding closes at 10:20, 6 min walk."
 6. They cancel a session. Compass voids the pass: it leaves the main Wallet view and moves to expired passes. `GetSchedule` confirms the cancellation. (No wallet lets anyone delete a pass remotely; voiding is the closest, and every pass also expires at its session end.)
 7. On the showcase site, on a phone, anyone can try the clash demo with no install.
 

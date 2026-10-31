@@ -1,0 +1,40 @@
+# ADR-036 Board page buttons: at the top for 8 sessions or fewer, on each session above that
+
+Status: Accepted, 2026-10-30 (owner decision). Implemented in pass-service tasks 48 to 52 and showcase-site tasks 36 to 39. Supersedes the multi-link Google split of pass-service task 48.
+
+## Context
+
+The board page is where an attendee adds the Boarding Passes Compass issued. They scan a QR code or open a link on their phone, and the page offers Apple Wallet, Google Wallet and a calendar file. A week at re:Invent can hold many reserved sessions, so the page has to work for 2 passes and for 20 or more. Each wallet limits how many passes one tap can add, and the limits differ.
+
+**Google Wallet.** A "Save to Google Wallet" button is a link that carries a signed JSON Web Token (JWT). Google's documentation says "the safe length of an encoded JWT is 1800 characters", because browsers can cut off a longer link ([Issuing passes for web, email, SMS](https://developers.google.com/wallet/generic/web)). For links that would be too long, Google's FAQ advises creating the classes and objects through the API before making the save link ([Google Wallet API FAQ](https://developers.google.com/pay-wallet/products/wallet/tickets/events/resources/faq)). Compass does this: it inserts each pass object through the API when the pass is issued, so the token only has to name each object by its id and class. Even so, each pass adds roughly 130 to 150 characters to the token. Measured on 29 and 30 October 2026 with production-length ids (recorded in the pass-service design), 8 passes gave a token of 1,782 and 1,796 characters, 9 passes went over 1,800 (1,930), and a token for one pass was about 730 to 750 characters. The length depends on the ids, so 8 passes sit close to the limit: Compass measures every signed token rather than trusting the count, and falls back when the single link would not fit (below). Google states this length as a safe limit, not a hard one: a longer link may work, but Compass does not rely on it.
+
+**Apple Wallet.** Several passes can be added in one tap from a `.pkpasses` bundle in Safari. Apple introduced this at WWDC21 and describes all the passes in the bundle being added in a single download ([What's new in Wallet and Apple Pay, WWDC21](https://developer.apple.com/videos/play/wwdc2021/10092/)). Apple's documentation states no maximum number of passes per bundle. A developer report on Apple's forums says bundles of more than 10 passes failed to download in Safari while 10 or fewer worked ([Apple Developer Forums thread 712743](https://developer.apple.com/forums/thread/712743)); that is a report, not an Apple statement. Compass caps a bundle at 10 passes for that reason, and for a second, measured one: each Compass pass is about 400 KB with its artwork, so a 10-pass bundle is about 4 MB, or about 5.3 MB once base64-encoded for the API response. AWS Lambda returns at most 6 MB from a synchronous call ([Lambda quotas](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html)), so larger bundles would not fit through the Compass API in any case. Compass has tested a two-pass bundle on a real iPhone (`docs/spikes-results.md`, SP3); the 10-pass ceiling itself has not been tested on a device.
+
+**Calendar.** A calendar file has no such limit. One `.ics` file can hold the whole week, and every calendar app imports it in one go.
+
+**The first designs.** Showing one "add all" button for each wallet breaks for Google above about 8 passes. Splitting Google into several links, each labelled with the passes it holds, worked but put several Google buttons on the page, which the owner found confusing. Showing both the "add all" buttons and a set of buttons on every session gave two ways to do the same thing.
+
+## Decision
+
+- **8 sessions or fewer: buttons at the top only.** One Apple button (a single bundle, well inside the 10-pass cap), one Google button (a single token, measured to be inside Google's 1,800-character safe length) and one calendar file for the week. The sessions on the page have no buttons of their own.
+- **More than 8 sessions: buttons on each session.** Every session has its own Apple and Google button, each for that one pass. A one-pass Google token is about 730 to 750 characters, far inside the safe length. The top keeps only the calendar file for the whole week, because a calendar has no size limit and one import is easier than many, so sessions have no calendar button of their own (owner, 30 October 2026).
+- **The threshold is 8**, the number of passes that fit one Google link with Compass's ids. It is one named constant in the pass service, so the top always covers every pass.
+- **One fallback for 8 or fewer.** If the single Google link cannot be made (for example, one pass's Google object could not be created yet), the Google buttons move onto the sessions that have a Google object, so no pass loses its Google button. Apple and the calendar stay at the top.
+- **Only the phone's own wallet (showcase-site task 37, owner, 30 October 2026).** When the board page loads, it reads the browser's own description of the device (`navigator.userAgentData` where the browser offers it, otherwise `navigator.userAgent`). This happens on the device, and nothing is sent anywhere. An iPhone sees only the Apple Wallet buttons and an Android phone only the Google Wallet buttons, because neither wallet app is available on the other platform. Every other device (a computer, an iPad, an Android tablet, or anything that is not clearly one of the two) sees both, so a wallet is never hidden on a guess. The calendar button always shows. There is no control to show the other wallet: on a phone it would only add buttons that cannot be used there (owner, 30 October 2026). A browser that does not identify itself clearly as an iPhone or an Android phone sees both wallets. If the phone's own wallet has nothing to add in this hand-off (for example, passes issued for Google Wallet only, opened on an iPhone), the page shows both wallets rather than a page with no wallet button.
+- **The pass service decides.** The hand-off view returns either the top actions or the per-session ones, and the board page shows what it receives. One route serves a single Apple pass for the per-session buttons. It sits behind the same checks as the bundle route: the hand-off id, its expiry, its read limit, and only the hand-off's own active passes.
+
+## Consequences
+
+- A short week is one tap per wallet. A long week is one tap per session per wallet, plus one calendar import for the whole week.
+- No Google link that Compass shows goes over Google's stated safe length.
+- No Apple bundle goes over 10 passes or over the Lambda response limit.
+- The per hand-off read limit is 30 plus 2 for each pass, so every button on the page can be used once.
+- If Google raises its safe length, or a longer link is shown to work on current phones, the threshold can be raised in one place. Before any such change, test it on a real Android phone.
+- Not confirmed: a 10-pass Apple bundle on a real iPhone, and the exact point at which a longer Google link fails on current Android phones.
+
+## Sources
+
+- Google Wallet: [Issuing passes for web, email, SMS](https://developers.google.com/wallet/generic/web) and the [Google Wallet API FAQ](https://developers.google.com/pay-wallet/products/wallet/tickets/events/resources/faq), checked 30 October 2026.
+- Apple Wallet: [WWDC21, What's new in Wallet and Apple Pay](https://developer.apple.com/videos/play/wwdc2021/10092/) and [Apple Developer Forums thread 712743](https://developer.apple.com/forums/thread/712743), checked 30 October 2026.
+- AWS: [Lambda quotas](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html), checked 30 October 2026.
+- Compass measurements: the Google token lengths in `.kiro/specs/pass-service/design.md` ("Measured Google save token lengths"); the pass size in the same design ("Post-SP3 change: poster event ticket"); the two-pass bundle test in `docs/spikes-results.md` (SP3).

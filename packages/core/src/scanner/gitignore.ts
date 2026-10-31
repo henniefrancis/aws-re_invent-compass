@@ -41,6 +41,30 @@ function withinLimits(pattern: string): boolean {
   );
 }
 
+/**
+ * Removes trailing spaces unless the first of them is escaped with `\`, as git does.
+ * A loop, not a regular expression, so a long run of spaces costs linear time.
+ */
+function trimTrailingSpaces(line: string): string {
+  let end = line.length;
+  while (end > 0 && line[end - 1] === ' ') {
+    end -= 1;
+  }
+  if (end < line.length && end > 0 && line[end - 1] === '\\') {
+    end += 1;
+  }
+  return line.slice(0, end);
+}
+
+/** Removes every trailing `/`, in linear time. */
+function trimTrailingSlashes(line: string): string {
+  let end = line.length;
+  while (end > 0 && line[end - 1] === '/') {
+    end -= 1;
+  }
+  return line.slice(0, end);
+}
+
 /** Parses the text of one `.gitignore` file that lives in `base` (relative to the scan root). */
 export function parseGitignore(text: string, base: string): GitignoreRule[] {
   const rules: GitignoreRule[] = [];
@@ -48,7 +72,7 @@ export function parseGitignore(text: string, base: string): GitignoreRule[] {
     if (rules.length >= MAX_RULES_PER_FILE) {
       break;
     }
-    let line = raw.replace(/(?<!\\) +$/, '');
+    let line = trimTrailingSpaces(raw);
     if (line === '' || line.startsWith('#')) {
       continue;
     }
@@ -60,7 +84,7 @@ export function parseGitignore(text: string, base: string): GitignoreRule[] {
     let directoryOnly = false;
     if (line.endsWith('/')) {
       directoryOnly = true;
-      line = line.replace(/\/+$/, '');
+      line = trimTrailingSlashes(line);
     }
     const anchored = line.includes('/');
     line = line.replace(/^\/+/, '');

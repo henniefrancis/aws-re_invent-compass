@@ -28,6 +28,7 @@ import { buildSamplePass } from '../../../lib/demo/sample-pass';
 import { REAL_ENGINE } from '../../../lib/demo/rules-port';
 import { DEMO_VENUE_DATA } from '../../../lib/demo/venue-data';
 import { buildCatalogView, buildWeekView, timezoneStatement } from '../../../lib/demo/week-view';
+import { shortDay } from '../../../lib/time/time-format';
 import { SamplePassComponent } from './sample-pass.component';
 
 /**
@@ -46,6 +47,8 @@ export class DemoPage {
   private readonly panels = viewChild<ElementRef<HTMLElement>>('panels');
 
   protected readonly text = DEMO_TEXT;
+  /** "Mon, 30 Nov 2026" for a card's corner, as on the board page (task 43). */
+  protected readonly shortDay = shortDay;
   protected readonly available = this.deps !== null;
   protected readonly timezone = timezoneStatement();
   protected readonly hint = this.deps === null ? '' : guidedHint(this.deps);

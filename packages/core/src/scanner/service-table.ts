@@ -18,6 +18,18 @@
 // aws_msk_cluster, aws_mskconnect_connector, aws_appsync_graphql_api); and the aws-cdk-lib module
 // READMEs (aws-efs, aws-ssm, aws-opensearchservice, aws-redshift, aws-msk, aws-appsync).
 //
+// Added on 20 October 2026 (compass-power task 41.3): the AWS SDK for .NET. `nugetPackages` are
+// NuGet package ids; every one was confirmed to exist that day by a 200 answer from
+// https://api.nuget.org/v3-flatcontainer/<lowercase id>/index.json (a made-up id answered 404).
+// `dotnetClientNames` are the <Name> in `new Amazon<Name>Client(`; every one was read that day from
+// the namespace page of the AWS SDK for .NET V4 API reference
+// (https://docs.aws.amazon.com/sdkfornet/v4/apidocs/items/<folder>/N<folder>.html), for example
+// AmazonS3Client, AmazonDynamoDBClient, AmazonIdentityManagementServiceClient (folder IAM),
+// AmazonSimpleNotificationServiceClient (folder SNS) and AmazonSimpleSystemsManagementClient
+// (folder SSM). The Amazon.Lambda.* packages are the AWS Lambda for .NET libraries (Core, the
+// ASP.NET Core server and hosting, the runtime, the System.Text.Json serializer, API Gateway and
+// SQS event types, and Annotations). NuGet ids are compared without regard to case, as NuGet does.
+//
 // Terraform matching rule: a prefix that ends in `_` matches any type that starts with
 // it; a prefix without a trailing `_` matches only that exact type. The longest matching
 // prefix wins, so `aws_cloudwatch_event_` (EventBridge) beats `aws_cloudwatch_`.
@@ -33,7 +45,13 @@ export type ServiceKey = string;
 
 /** The kinds of identifier a detector can produce. */
 export type IdentifierKind =
-  'terraformType' | 'cdkModule' | 'sdkPackage' | 'sdkClientName' | 'boto3Name';
+  | 'terraformType'
+  | 'cdkModule'
+  | 'sdkPackage'
+  | 'sdkClientName'
+  | 'boto3Name'
+  | 'nugetPackage'
+  | 'dotnetClientName';
 
 /** One service and every identifier that points at it. */
 export interface ServiceEntry {
@@ -45,6 +63,10 @@ export interface ServiceEntry {
   /** The `<Name>` in `new <Name>Client(`. */
   sdkClientNames: string[];
   boto3Names: string[];
+  /** AWS SDK for .NET NuGet package ids, for example `AWSSDK.S3`. */
+  nugetPackages: string[];
+  /** The `<Name>` in `new Amazon<Name>Client(` (AWS SDK for .NET). */
+  dotnetClientNames: string[];
   taxonomyCandidates: string[];
 }
 
@@ -58,6 +80,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-api-gateway', '@aws-sdk/client-apigatewayv2'],
     sdkClientNames: ['ApiGateway', 'ApiGatewayV2'],
     boto3Names: ['apigateway', 'apigatewayv2'],
+    nugetPackages: ['AWSSDK.APIGateway', 'AWSSDK.ApiGatewayV2'],
+    dotnetClientNames: ['APIGateway', 'ApiGatewayV2'],
     taxonomyCandidates: ['Amazon API Gateway', 'networking'],
   },
   {
@@ -68,6 +92,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-appsync'],
     sdkClientNames: ['AppSync'],
     boto3Names: ['appsync'],
+    nugetPackages: ['AWSSDK.AppSync'],
+    dotnetClientNames: ['AppSync'],
     taxonomyCandidates: ['AWS AppSync'],
   },
   {
@@ -78,6 +104,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-athena'],
     sdkClientNames: ['Athena'],
     boto3Names: ['athena'],
+    nugetPackages: ['AWSSDK.Athena'],
+    dotnetClientNames: ['Athena'],
     taxonomyCandidates: ['Amazon Athena', 'analytics'],
   },
   {
@@ -93,6 +121,13 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     ],
     sdkClientNames: ['Bedrock', 'BedrockRuntime', 'BedrockAgent', 'BedrockAgentRuntime'],
     boto3Names: ['bedrock', 'bedrock-runtime', 'bedrock-agent', 'bedrock-agent-runtime'],
+    nugetPackages: [
+      'AWSSDK.Bedrock',
+      'AWSSDK.BedrockRuntime',
+      'AWSSDK.BedrockAgent',
+      'AWSSDK.BedrockAgentRuntime',
+    ],
+    dotnetClientNames: ['Bedrock', 'BedrockRuntime', 'BedrockAgent', 'BedrockAgentRuntime'],
     taxonomyCandidates: ['Amazon Bedrock', 'machine-learning'],
   },
   {
@@ -103,6 +138,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-cloudfront'],
     sdkClientNames: ['CloudFront'],
     boto3Names: ['cloudfront'],
+    nugetPackages: ['AWSSDK.CloudFront'],
+    dotnetClientNames: ['CloudFront'],
     taxonomyCandidates: ['Amazon CloudFront', 'networking'],
   },
   {
@@ -113,6 +150,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-cloudwatch', '@aws-sdk/client-cloudwatch-logs'],
     sdkClientNames: ['CloudWatch', 'CloudWatchLogs'],
     boto3Names: ['cloudwatch', 'logs'],
+    nugetPackages: ['AWSSDK.CloudWatch', 'AWSSDK.CloudWatchLogs'],
+    dotnetClientNames: ['CloudWatch', 'CloudWatchLogs'],
     taxonomyCandidates: ['Amazon CloudWatch'],
   },
   {
@@ -123,6 +162,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-cognito-identity-provider', '@aws-sdk/client-cognito-identity'],
     sdkClientNames: ['CognitoIdentityProvider', 'CognitoIdentity'],
     boto3Names: ['cognito-idp', 'cognito-identity'],
+    nugetPackages: ['AWSSDK.CognitoIdentityProvider', 'AWSSDK.CognitoIdentity'],
+    dotnetClientNames: ['CognitoIdentityProvider', 'CognitoIdentity'],
     taxonomyCandidates: ['Amazon Cognito', 'security'],
   },
   {
@@ -133,6 +174,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-dynamodb', '@aws-sdk/lib-dynamodb'],
     sdkClientNames: ['DynamoDB'],
     boto3Names: ['dynamodb'],
+    nugetPackages: ['AWSSDK.DynamoDBv2', 'AWSSDK.DynamoDBStreams'],
+    dotnetClientNames: ['DynamoDB', 'DynamoDBStreams'],
     taxonomyCandidates: ['Amazon DynamoDB', 'database'],
   },
   {
@@ -153,6 +196,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-ec2'],
     sdkClientNames: ['EC2'],
     boto3Names: ['ec2'],
+    nugetPackages: ['AWSSDK.EC2'],
+    dotnetClientNames: ['EC2'],
     taxonomyCandidates: ['Amazon EC2', 'compute'],
   },
   {
@@ -163,6 +208,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-ecr'],
     sdkClientNames: ['ECR'],
     boto3Names: ['ecr'],
+    nugetPackages: ['AWSSDK.ECR'],
+    dotnetClientNames: ['ECR'],
     taxonomyCandidates: ['Amazon ECR', 'containers'],
   },
   {
@@ -173,6 +220,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-ecs'],
     sdkClientNames: ['ECS'],
     boto3Names: ['ecs'],
+    nugetPackages: ['AWSSDK.ECS'],
+    dotnetClientNames: ['ECS'],
     taxonomyCandidates: ['Amazon ECS', 'containers'],
   },
   {
@@ -183,6 +232,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-efs'],
     sdkClientNames: ['EFS'],
     boto3Names: ['efs'],
+    nugetPackages: ['AWSSDK.ElasticFileSystem'],
+    dotnetClientNames: ['ElasticFileSystem'],
     taxonomyCandidates: ['Amazon EFS', 'storage'],
   },
   {
@@ -193,6 +244,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-eks'],
     sdkClientNames: ['EKS'],
     boto3Names: ['eks'],
+    nugetPackages: ['AWSSDK.EKS'],
+    dotnetClientNames: ['EKS'],
     taxonomyCandidates: ['Amazon EKS', 'containers'],
   },
   {
@@ -203,6 +256,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-elasticache'],
     sdkClientNames: ['ElastiCache'],
     boto3Names: ['elasticache'],
+    nugetPackages: ['AWSSDK.ElastiCache'],
+    dotnetClientNames: ['ElastiCache'],
     taxonomyCandidates: ['Amazon ElastiCache', 'database'],
   },
   {
@@ -213,6 +268,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-eventbridge', '@aws-sdk/client-scheduler'],
     sdkClientNames: ['EventBridge', 'Scheduler'],
     boto3Names: ['events', 'scheduler'],
+    nugetPackages: ['AWSSDK.EventBridge', 'AWSSDK.Scheduler', 'AWSSDK.CloudWatchEvents'],
+    dotnetClientNames: ['EventBridge', 'Scheduler', 'CloudWatchEvents'],
     taxonomyCandidates: ['Amazon EventBridge'],
   },
   {
@@ -223,6 +280,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-glue'],
     sdkClientNames: ['Glue'],
     boto3Names: ['glue'],
+    nugetPackages: ['AWSSDK.Glue'],
+    dotnetClientNames: ['Glue'],
     taxonomyCandidates: ['AWS Glue', 'analytics'],
   },
   {
@@ -233,6 +292,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-iam'],
     sdkClientNames: ['IAM'],
     boto3Names: ['iam'],
+    nugetPackages: ['AWSSDK.IdentityManagement'],
+    dotnetClientNames: ['IdentityManagementService'],
     taxonomyCandidates: ['AWS IAM', 'security'],
   },
   {
@@ -243,6 +304,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-kinesis', '@aws-sdk/client-firehose'],
     sdkClientNames: ['Kinesis', 'Firehose'],
     boto3Names: ['kinesis', 'firehose'],
+    nugetPackages: ['AWSSDK.Kinesis', 'AWSSDK.KinesisFirehose'],
+    dotnetClientNames: ['Kinesis', 'KinesisFirehose'],
     taxonomyCandidates: ['Amazon Kinesis', 'analytics'],
   },
   {
@@ -253,6 +316,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-kms'],
     sdkClientNames: ['KMS'],
     boto3Names: ['kms'],
+    nugetPackages: ['AWSSDK.KeyManagementService'],
+    dotnetClientNames: ['KeyManagementService'],
     taxonomyCandidates: ['AWS KMS', 'security'],
   },
   {
@@ -263,6 +328,18 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-lambda'],
     sdkClientNames: ['Lambda'],
     boto3Names: ['lambda'],
+    nugetPackages: [
+      'AWSSDK.Lambda',
+      'Amazon.Lambda.Core',
+      'Amazon.Lambda.AspNetCoreServer',
+      'Amazon.Lambda.AspNetCoreServer.Hosting',
+      'Amazon.Lambda.RuntimeSupport',
+      'Amazon.Lambda.Serialization.SystemTextJson',
+      'Amazon.Lambda.APIGatewayEvents',
+      'Amazon.Lambda.SQSEvents',
+      'Amazon.Lambda.Annotations',
+    ],
+    dotnetClientNames: ['Lambda'],
     taxonomyCandidates: ['AWS Lambda', 'compute'],
   },
   {
@@ -273,6 +350,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-kafka'],
     sdkClientNames: ['Kafka'],
     boto3Names: ['kafka', 'kafkaconnect'],
+    nugetPackages: ['AWSSDK.Kafka', 'AWSSDK.KafkaConnect'],
+    dotnetClientNames: ['Kafka', 'KafkaConnect'],
     taxonomyCandidates: ['Amazon MSK', 'analytics'],
   },
   {
@@ -283,6 +362,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-opensearch'],
     sdkClientNames: ['OpenSearch'],
     boto3Names: ['opensearch', 'opensearchserverless', 'es'],
+    nugetPackages: ['AWSSDK.OpenSearchService', 'AWSSDK.OpenSearchServerless'],
+    dotnetClientNames: ['OpenSearchService', 'OpenSearchServerless'],
     taxonomyCandidates: ['Amazon OpenSearch Service', 'analytics'],
   },
   {
@@ -293,6 +374,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-rds'],
     sdkClientNames: ['RDS'],
     boto3Names: ['rds'],
+    nugetPackages: ['AWSSDK.RDS', 'AWSSDK.RDSDataService'],
+    dotnetClientNames: ['RDS', 'RDSDataService'],
     taxonomyCandidates: ['Amazon RDS', 'database'],
   },
   {
@@ -303,6 +386,12 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-redshift'],
     sdkClientNames: ['Redshift'],
     boto3Names: ['redshift', 'redshift-data', 'redshift-serverless'],
+    nugetPackages: [
+      'AWSSDK.Redshift',
+      'AWSSDK.RedshiftDataAPIService',
+      'AWSSDK.RedshiftServerless',
+    ],
+    dotnetClientNames: ['Redshift', 'RedshiftDataAPIService', 'RedshiftServerless'],
     taxonomyCandidates: ['Amazon Redshift', 'analytics', 'database'],
   },
   {
@@ -313,6 +402,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-route-53'],
     sdkClientNames: ['Route53'],
     boto3Names: ['route53'],
+    nugetPackages: ['AWSSDK.Route53'],
+    dotnetClientNames: ['Route53'],
     taxonomyCandidates: ['Amazon Route 53', 'networking'],
   },
   {
@@ -323,6 +414,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-s3', '@aws-sdk/lib-storage'],
     sdkClientNames: ['S3'],
     boto3Names: ['s3'],
+    nugetPackages: ['AWSSDK.S3'],
+    dotnetClientNames: ['S3'],
     taxonomyCandidates: ['Amazon S3', 'storage'],
   },
   {
@@ -333,6 +426,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-sagemaker', '@aws-sdk/client-sagemaker-runtime'],
     sdkClientNames: ['SageMaker', 'SageMakerRuntime'],
     boto3Names: ['sagemaker', 'sagemaker-runtime'],
+    nugetPackages: ['AWSSDK.SageMaker', 'AWSSDK.SageMakerRuntime'],
+    dotnetClientNames: ['SageMaker', 'SageMakerRuntime'],
     taxonomyCandidates: ['Amazon SageMaker AI', 'Amazon SageMaker', 'machine-learning'],
   },
   {
@@ -343,6 +438,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-secrets-manager'],
     sdkClientNames: ['SecretsManager'],
     boto3Names: ['secretsmanager'],
+    nugetPackages: ['AWSSDK.SecretsManager'],
+    dotnetClientNames: ['SecretsManager'],
     taxonomyCandidates: ['AWS Secrets Manager', 'security'],
   },
   {
@@ -353,6 +450,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-sns'],
     sdkClientNames: ['SNS'],
     boto3Names: ['sns'],
+    nugetPackages: ['AWSSDK.SimpleNotificationService'],
+    dotnetClientNames: ['SimpleNotificationService'],
     taxonomyCandidates: ['Amazon SNS'],
   },
   {
@@ -363,6 +462,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-sqs'],
     sdkClientNames: ['SQS'],
     boto3Names: ['sqs'],
+    nugetPackages: ['AWSSDK.SQS'],
+    dotnetClientNames: ['SQS'],
     taxonomyCandidates: ['Amazon SQS'],
   },
   {
@@ -373,6 +474,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-ssm'],
     sdkClientNames: ['SSM'],
     boto3Names: ['ssm'],
+    nugetPackages: ['AWSSDK.SimpleSystemsManagement'],
+    dotnetClientNames: ['SimpleSystemsManagement'],
     taxonomyCandidates: ['AWS Systems Manager'],
   },
   {
@@ -383,6 +486,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: ['@aws-sdk/client-sfn'],
     sdkClientNames: ['SFN'],
     boto3Names: ['stepfunctions'],
+    nugetPackages: ['AWSSDK.StepFunctions'],
+    dotnetClientNames: ['StepFunctions'],
     taxonomyCandidates: ['AWS Step Functions'],
   },
   {
@@ -409,6 +514,8 @@ export const SERVICE_TABLE: readonly ServiceEntry[] = [
     sdkPackages: [],
     sdkClientNames: [],
     boto3Names: [],
+    nugetPackages: [],
+    dotnetClientNames: [],
     taxonomyCandidates: ['Amazon VPC', 'networking'],
   },
 ];
@@ -425,6 +532,8 @@ function buildIndexes(): Indexes {
     sdkPackage: new Map(),
     sdkClientName: new Map(),
     boto3Name: new Map(),
+    nugetPackage: new Map(),
+    dotnetClientName: new Map(),
   };
   for (const entry of SERVICE_TABLE) {
     for (const prefix of entry.terraformPrefixes) {
@@ -434,6 +543,8 @@ function buildIndexes(): Indexes {
     for (const id of entry.sdkPackages) exact.sdkPackage.set(id, entry.key);
     for (const id of entry.sdkClientNames) exact.sdkClientName.set(id, entry.key);
     for (const id of entry.boto3Names) exact.boto3Name.set(id, entry.key);
+    for (const id of entry.nugetPackages) exact.nugetPackage.set(id.toLowerCase(), entry.key);
+    for (const id of entry.dotnetClientNames) exact.dotnetClientName.set(id, entry.key);
   }
   terraform.sort((a, b) => b[0].length - a[0].length);
   return { terraform, exact };
@@ -453,6 +564,9 @@ export function resolveService(kind: IdentifierKind, identifier: string): Servic
       }
     }
     return undefined;
+  }
+  if (kind === 'nugetPackage') {
+    return INDEXES.exact.nugetPackage.get(identifier.toLowerCase());
   }
   return INDEXES.exact[kind].get(identifier);
 }

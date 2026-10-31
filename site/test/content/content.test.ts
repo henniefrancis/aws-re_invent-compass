@@ -1,3 +1,16 @@
+import { ABOUT_BIO, ABOUT_BUILT_BY } from '../../src/lib/content/about';
+import { INSPIRATION_BLOCKS } from '../../src/lib/content/inspiration';
+import {
+  ACCESSIBILITY_BLOCKS,
+  SECURITY_BLOCKS,
+  TERMS_BLOCKS,
+} from '../../src/lib/content/more-legal';
+import {
+  COPYRIGHT_BLOCKS,
+  COPYRIGHT_LINE,
+  DISCLAIMER_BLOCKS,
+  licenceLinks,
+} from '../../src/lib/content/legal';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
@@ -21,14 +34,14 @@ import {
 } from '../../src/lib/content/install';
 import {
   COMING_SOON,
-  NAV_ITEMS,
+  documentationLinks,
+  navGroups,
   SITE_LINKS,
-  footerItems,
   privateReportingUrl,
   type SiteLinks,
 } from '../../src/lib/content/links';
 import { METAPHOR_HEADERS, METAPHOR_ROWS } from '../../src/lib/content/metaphor';
-import { NOTICE } from '../../src/lib/content/notice';
+import { NOTICE, NOTICE_HEADING } from '../../src/lib/content/notice';
 import { PRINCIPLES, principleBlocks } from '../../src/lib/content/principles';
 import { PRIVACY_SECTIONS, privacyBlocks } from '../../src/lib/content/privacy';
 import * as story from '../../src/lib/content/story';
@@ -50,6 +63,15 @@ const storyBlocks: readonly ContentBlock[] = [
   story.DISCLAIMER,
   story.UNOFFICIAL_STATEMENT,
   story.TRY_IT,
+  ABOUT_BUILT_BY,
+  ...ABOUT_BIO,
+  ...INSPIRATION_BLOCKS,
+  ...DISCLAIMER_BLOCKS,
+  COPYRIGHT_LINE,
+  ...COPYRIGHT_BLOCKS,
+  ...TERMS_BLOCKS,
+  ...ACCESSIBILITY_BLOCKS,
+  ...SECURITY_BLOCKS,
 ];
 
 const installBlocks: readonly ContentBlock[] = [
@@ -124,9 +146,9 @@ describe('content provenance', () => {
     );
   });
 
-  test('the story states the seat release rule with its official source', () => {
-    expect(story.TAGLINE.text).toBe('Plan like a spec. Board like a flight.');
-    expect(story.COMPASS_SHOWS.text).toBe('Seat released at 10:20');
+  test('the story states the boarding rule with its official source', () => {
+    expect(story.TAGLINE.text).toBe('From your code to your seat, on time.');
+    expect(story.COMPASS_SHOWS.text).toBe('Boarding closes at 10:20');
     expect(story.MOST_TOOLS_SHOW.text).toBe('Starts 10:30');
     expect(story.DISCLAIMER.text).toBe('Unofficial. Your badge is your ticket.');
     expect(story.SEAT_RULE_SOURCE.text).toContain('official re:Invent 2026 FAQ');
@@ -139,7 +161,7 @@ describe('content provenance', () => {
   });
 
   test('the acts and principles are the three the home page promises', () => {
-    expect(ACTS.map((a) => a.title)).toEqual(['Plan', 'Board', 'Fly']);
+    expect(ACTS.map((a) => a.title)).toEqual(['Plan', 'Boarding', 'Fly']);
     expect(PRINCIPLES.map((p) => p.title.text)).toEqual([
       'The badge is the ticket',
       'A human approves every write',
@@ -177,7 +199,10 @@ describe('no impersonation and the product voice', () => {
       ...allBlocks.map((b) => b.text),
       COPIED_MESSAGE,
       COPY_FAILED_MESSAGE,
-      ...footerItems(SITE_LINKS).map((i) => i.label),
+      ...navGroups(SITE_LINKS).flatMap((g) => [
+        g.label,
+        ...g.items.flatMap((i) => [i.label, i.description]),
+      ]),
       ...kiroImportOptions(SITE_LINKS).flatMap((o) => [o.label, o.value, o.note]),
     ];
     for (const text of strings) {
@@ -226,6 +251,31 @@ describe('no impersonation and the product voice', () => {
   });
 });
 
+describe('demo session data attribution', () => {
+  const rules = readFileSync(join(REPO_ROOT, 'docs/hackathon-rules.md'), 'utf8');
+  const byId = new Map(allBlocks.map((b) => [b.id, b]));
+
+  test('the Disclaimer and Privacy pages credit the AWS Events API and name the owner decision', () => {
+    expect(rules).toContain('the session catalog is public');
+    expect(rules).toContain(
+      'code, title, times, venue and room only, credited to the AWS Events API',
+    );
+    for (const id of ['disclaimer-demo-data', 'privacy-site-session-data']) {
+      expect(byId.get(id)?.source, id).toBe('docs/hackathon-rules.md');
+    }
+    expect(byId.get('disclaimer-demo-data')?.text).toContain('credited to the AWS Events API');
+    expect(byId.get('privacy-site-session-data')?.text).toContain('no personal data');
+    expect(byId.get('privacy-site-demo')?.text).toContain('real sessions');
+  });
+
+  test('no site copy still calls the web demo sessions made up', () => {
+    // The terminal demo (npx reinvent-compass demo) really does run on synthetic data.
+    for (const block of allBlocks.filter((b) => b.id !== 'install-cmd-demo')) {
+      expect(block.text.toLowerCase(), block.id).not.toMatch(/made[- ]up|synthetic|fictional/);
+    }
+  });
+});
+
 describe('links and footer', () => {
   const known: SiteLinks = {
     ...SITE_LINKS,
@@ -239,45 +289,95 @@ describe('links and footer', () => {
     );
   });
 
-  test('the footer keeps a fixed order', () => {
-    expect(footerItems(SITE_LINKS).map((i) => i.label)).toEqual([
-      'Repository',
-      'Builder Center post',
-      'Video',
-      'Install',
-      'Privacy',
-    ]);
-    expect(footerItems(known).map((i) => i.label)).toEqual(
-      footerItems(SITE_LINKS).map((i) => i.label),
-    );
+  test('the footer is the Notice under its heading (task 27)', () => {
+    expect(NOTICE_HEADING).toBe('Disclaimer Notice');
   });
 
-  test('an unknown address becomes coming soon text with no link', () => {
-    const items = footerItems(SITE_LINKS);
-    expect(items[1]).toEqual({
+  test('an unknown address becomes coming soon text with no link, a known one a link', () => {
+    const project = (links: typeof SITE_LINKS) => navGroups(links)[1]?.items ?? [];
+    expect(project(SITE_LINKS)[2]).toEqual({
       kind: 'pending',
       label: 'Builder Center post',
       text: `Builder Center post (${COMING_SOON})`,
+      description: 'How Compass was built with Kiro',
     });
-    expect(items[2]?.kind).toBe('pending');
-  });
-
-  test('a known address becomes a link', () => {
-    const items = footerItems(known);
-    expect(items[1]).toEqual({
+    expect(project(known)[2]).toEqual({
       kind: 'external',
       label: 'Builder Center post',
       href: 'https://example.invalid/post',
+      description: 'How Compass was built with Kiro',
     });
-    expect(items[0]).toEqual({
+    expect(project(known)[0]).toMatchObject({
       kind: 'external',
       label: 'Repository',
       href: 'https://github.com/henniefrancis/aws-re_invent-compass',
     });
   });
 
-  test('the navigation has Home, Demo, Install and Privacy', () => {
-    expect(NAV_ITEMS.map((n) => n.label)).toEqual(['Home', 'Demo', 'Install', 'Privacy']);
+  test('the navigation has Product, Project, About and Legal, each item described (task 28)', () => {
+    const groups = navGroups(SITE_LINKS);
+    expect(groups.map((g) => [g.label, g.items.map((i) => i.label)])).toEqual([
+      ['Product', ['Try the demo', 'Install']],
+      ['Project', ['Repository', 'Documentation', 'Builder Center post', 'Video']],
+      ['About', ['The Inspiration', 'The Creator']],
+      [
+        'Legal',
+        [
+          'Terms of use',
+          'Privacy',
+          'Disclaimer',
+          'Copyright and licence',
+          'Security',
+          'Accessibility',
+          'Open-source credits',
+        ],
+      ],
+    ]);
+    expect(groups[2]?.items[0]?.description).toBe('What inspired the project direction');
+    for (const item of groups.flatMap((g) => g.items)) {
+      expect(item.description.length, item.label).toBeGreaterThan(0);
+    }
+    // Unknown addresses stay plain text; known ones become links.
+    const project = (links: typeof SITE_LINKS) => navGroups(links)[1]?.items ?? [];
+    expect(project(SITE_LINKS).map((i) => i.kind)).toEqual([
+      'external',
+      'internal',
+      'pending',
+      'pending',
+    ]);
+    const known = {
+      ...SITE_LINKS,
+      builderCenterPost: 'https://example.invalid/post',
+      video: 'https://example.invalid/video',
+    };
+    expect(project(known).map((i) => i.kind)).toEqual([
+      'external',
+      'internal',
+      'external',
+      'external',
+    ]);
+  });
+
+  test('documentation and licence links all point into the repository (tasks 28)', () => {
+    const docs = documentationLinks(SITE_LINKS);
+    expect(docs.map((d) => d.label)).toEqual([
+      'README',
+      'Build plan',
+      'Architecture decision records',
+      'Runbooks',
+      'Kiro specs',
+    ]);
+    for (const link of [...docs, ...licenceLinks(SITE_LINKS)]) {
+      expect(link.href.startsWith(SITE_LINKS.repository), link.label).toBe(true);
+    }
+    for (const doc of docs) {
+      expect(doc.description.length, doc.label).toBeGreaterThan(0);
+    }
+    expect(licenceLinks(SITE_LINKS).map((l) => l.href)).toEqual([
+      `${SITE_LINKS.repository}/blob/main/LICENSE`,
+      `${SITE_LINKS.repository}/blob/main/NOTICE`,
+    ]);
+    expect(COPYRIGHT_LINE.text).toBe('Copyright 2026 Hennie Francis');
   });
 });
 

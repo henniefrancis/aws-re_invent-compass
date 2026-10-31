@@ -34,6 +34,39 @@ export function formatEventDayTime(iso: string, timezone: string): string {
   );
 }
 
+/** The named parts of an instant in the event timezone, with a 24-hour clock. */
+function partsOf(iso: string, timezone: string): Record<string, string> {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone,
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(instant(iso));
+  return Object.fromEntries(parts.map((part) => [part.type, part.value]));
+}
+
+/** For example "13:05" (24-hour, Apple pass task 32). */
+export function formatEventTime24(iso: string, timezone: string): string {
+  const parts = partsOf(iso, timezone);
+  return `${parts['hour']}:${parts['minute']}`;
+}
+
+/** For example "Thu 13:05" (24-hour, Apple pass task 32). */
+export function formatEventDayTime24(iso: string, timezone: string): string {
+  const parts = partsOf(iso, timezone);
+  return `${parts['weekday']} ${parts['hour']}:${parts['minute']}`;
+}
+
+/** For example "3 Dec 2026" (Apple pass task 36). */
+export function formatEventDate(iso: string, timezone: string): string {
+  const parts = partsOf(iso, timezone);
+  return `${parts['day']} ${parts['month']} ${parts['year']}`;
+}
+
 /** The generic long name of the zone, for example "Pacific Time". */
 export function timezoneName(iso: string, timezone: string): string {
   const parts = new Intl.DateTimeFormat('en-US', {

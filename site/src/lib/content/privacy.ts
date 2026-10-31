@@ -7,6 +7,8 @@ import { quoted, summary, type ContentBlock } from './content-block';
 const PLAN = 'docs/architecture/build-plan.md';
 const PRODUCT = '.kiro/steering/product.md';
 const SITE = '.kiro/specs/showcase-site/requirements.md';
+const WALK = 'docs/decisions/ADR-037-walk-from-here.md';
+const MCP_README = 'packages/mcp-server/README.md';
 
 export interface PrivacySection {
   readonly id: 'stays' | 'leaves' | 'handoff' | 'site' | 'rights' | 'party';
@@ -55,6 +57,12 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         'The result of the code scan stays in memory. The week spec gets service names and depth only, with no file paths.',
         PLAN,
         '4.2 (P7)',
+      ),
+      summary(
+        'privacy-tech-list',
+        'Your tech list, the AWS services and other technology from the folders and GitHub repositories you scan, stays in a folder on your computer. Each project is stored under a one-way hash, so no path or repository name is kept. forget_me deletes it.',
+        MCP_README,
+        'What leaves your machine',
       ),
       summary(
         'privacy-generated-files',
@@ -109,6 +117,12 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         'When you add a pass to a wallet, Apple (the push token) and Google (the pass object) also process data. Google acts as a processor.',
         PLAN,
         '4.2 (P15, P16)',
+      ),
+      summary(
+        'privacy-github',
+        'If you connect GitHub, Compass uses a GitHub App that can only read code. Your GitHub tokens stay in your computer keychain and go only to github.com and api.github.com. Repository archives are read in memory on your computer and never saved, and nothing about your repositories goes to Compass or AWS.',
+        MCP_README,
+        'What leaves your machine',
       ),
       quoted('privacy-no-human', 'No human reads server data in normal operation.', PLAN, '4.2'),
     ],
@@ -167,15 +181,27 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-site-demo',
-        'The demo runs in your browser on made-up sessions. Nothing in it touches a real schedule.',
+        'The demo runs in your browser. It uses a small snapshot of real sessions from the AWS Events API, copied into the website. It never connects to the API, and nothing in it touches a real schedule.',
         SITE,
         'Requirements 2 and 7',
+      ),
+      summary(
+        'privacy-site-session-data',
+        'The session catalog is public. The demo snapshot holds only the session code, title, start and end times, venue and room, so it has no speakers, no attendees and no personal data.',
+        'docs/hackathon-rules.md',
+        'Compliance, rule 11',
       ),
       summary(
         'privacy-site-board',
         'The board page keeps your hand-off link in the memory of the page only. It removes the link from the address bar as soon as it has read it, and it never stores, logs or shares it.',
         SITE,
         'Requirement 16',
+      ),
+      summary(
+        'privacy-site-walk',
+        'On the board page, Walk from here asks your phone for its location only when you tap it. The walking time is worked out on your phone. Compass does not send your location anywhere, save it or log it. Your phone may use its own location service to find it. The Directions link opens Apple Maps or Google Maps, and that app gets your location only when you open the link.',
+        WALK,
+        'Decision and Privacy',
       ),
     ],
   },

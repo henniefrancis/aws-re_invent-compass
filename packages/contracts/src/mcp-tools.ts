@@ -26,6 +26,7 @@ import { CommitmentSchema } from './domain/commitment.js';
 import { VerdictSchema } from './domain/verdict.js';
 import { BulkResultSchema } from './wire/bulk-result.js';
 import { PersonalTimeInputSchema } from './wire/personal-time.js';
+import { ScheduleWireSchema } from './wire/schedule.js';
 
 /**
  * A session id array bounded to the Events API limit of 1 to 10 ids, with
@@ -101,6 +102,87 @@ const ScanRepoOutput = z.object({
       }),
     )
     .optional(),
+  // Other technology found, by display name and score (task 20). Optional, so older outputs parse.
+  technologies: z
+    .array(
+      z.object({
+        technology: z.string(),
+        score: z.number(),
+      }),
+    )
+    .optional(),
+});
+
+// show_my_tech: list the attendee's tech profile, kept on their machine: AWS services first,
+// then other technology (task 20). top narrows the list to the most used.
+const ShowMyTechInput = z.object({
+  top: z.number().optional(),
+});
+const ShowMyTechOutput = z.object({
+  services: z.array(
+    z.object({
+      service: z.string(),
+      depth: z.number(),
+      projects: z.number(),
+    }),
+  ),
+  technologies: z.array(
+    z.object({
+      technology: z.string(),
+      group: z.string(),
+      projects: z.number(),
+      score: z.number(),
+    }),
+  ),
+  sources: z.object({
+    folders: z.number(),
+    githubRepositories: z.number(),
+  }),
+});
+
+// find_sessions_by_tech: find cached catalog sessions on one technology, or on the top
+// technologies of the profile when none is given, grouped by technology (task 20).
+const FindSessionsByTechInput = z.object({
+  tech: z.string().optional(),
+  limit: z.number().optional(),
+});
+const FindSessionsByTechOutput = z.object({
+  groups: z.array(
+    z.object({
+      tech: z.string(),
+      sessions: z.array(NormalisedSessionSchema),
+      totalMatched: z.number(),
+    }),
+  ),
+});
+
+// connect_github: start or report the GitHub device sign-in for the read-only GitHub App
+// (task 20). The user code is shown to the human; no token is ever modelled.
+const ConnectGithubInput = z.object({});
+const ConnectGithubOutput = z.object({
+  state: z.enum(['notConfigured', 'waiting', 'connected', 'failed']),
+  userCode: z.string().optional(),
+  verificationUri: z.string().optional(),
+});
+
+// scan_github: read the attendee's GitHub repositories, read-only and after they confirm, into
+// the tech profile (task 20). Only counts and names of technology come back, never a repository.
+const ScanGithubInput = z.object({
+  owners: z.array(z.string()).optional(),
+  includeForks: z.boolean().optional(),
+  maxRepositories: z.number().optional(),
+});
+const ScanGithubOutput = z.object({
+  scanned: z.number(),
+  skipped: z.number(),
+  services: z.array(z.string()),
+  technologies: z.array(z.string()),
+});
+
+// disconnect_github: delete the GitHub tokens on this machine (task 20). No arguments.
+const DisconnectGithubInput = z.object({});
+const DisconnectGithubOutput = z.object({
+  disconnected: z.boolean(),
 });
 
 // plan_week: suggest a week of commitments from goals, level and a per-day cap. The
@@ -121,6 +203,16 @@ const CheckItineraryInput = z.object({
 });
 const CheckItineraryOutput = z.object({
   verdict: VerdictSchema,
+});
+
+// show_schedule: read the attendee's live schedule with the ids the write tools take (SP3,
+// compass-power task 33). No arguments. The output reuses the wire schedule (reserved and
+// standby session ids, personal time with its personalTimeId) and lists the schedule ids the
+// cached catalog does not know.
+const ShowScheduleInput = z.object({});
+const ShowScheduleOutput = z.object({
+  schedule: ScheduleWireSchema,
+  notInCatalog: z.array(z.string()),
 });
 
 // reserve_with_guardrails: reserve 1 to 10 sessions after the guardrail passes. The
@@ -181,26 +273,35 @@ const AddLayoverOutput = z.object({
   personalTimeId: z.string().optional(),
 });
 
-// issue_boarding_passes: issue passes for 1 to 10 reserved sessions. The output
-// lists the session ids issued and their serials. No secret material is returned.
-const IssueBoardingPassesInput = z.object({
-  sessionIds: SessionIdBatch,
+// issue_all_boarding_passes and issue_boarding_pass (foundation-contracts task 22) replace
+// issue_boarding_passes. The first takes no input and issues a pass for every reserved
+// session after one confirmation; the second issues one, for the given sessionId or, without
+// one, for the reserved session the attendee picks. Both list the session ids issued and their
+// serials. No secret material is returned.
+const IssueAllBoardingPassesInput = z.object({});
+const IssueBoardingPassInput = z.object({
+  sessionId: z.string().optional(),
 });
-const IssueBoardingPassesOutput = z.object({
+const IssuedPassesOutput = z.object({
   issued: z.array(z.string()),
   serials: z.array(z.string()).optional(),
 });
 
 // send_to_phone: open a 15-minute hand-off to the phone. sessionIds optionally
-// narrows the hand-off to specific passes. The output carries the hand-off url (the
-// capability lives in the url fragment, typed here as a plain string) and its
-// expiry.
+// narrows the hand-off to specific passes. show picks a link, a QR code on a browser
+// page, or both (foundation-contracts task 21); without it the server asks and creates
+// nothing. The output carries the hand-off url (the capability lives in the url
+// fragment, typed here as a plain string), its expiry, what was shown and where the QR
+// code went. The two new output fields are optional, so older outputs still parse.
 const SendToPhoneInput = z.object({
   sessionIds: z.array(z.string()).max(80).optional(),
+  show: z.enum(['link', 'qr', 'both']).optional(),
 });
 const SendToPhoneOutput = z.object({
   handoffUrl: z.string(),
   expiresAt: z.string(),
+  shownAs: z.enum(['link', 'qr', 'both']).optional(),
+  qrShownIn: z.enum(['browser', 'chat']).optional(),
 });
 
 // sync_passes: reconcile issued passes against the live schedule. sessionIds
@@ -234,9 +335,11 @@ const ForgetMeOutput = z.object({
 });
 
 /**
- * The seventeen MCP tools (build plan section 8.1), each with its input and output
- * zod object schema. S3 iterates this record by key to register the tools. The
- * record is frozen with `as const` so the key set is fixed and McpToolName is exact.
+ * The twenty-four MCP tools (build plan section 8.1, plus show_schedule from SP3, the five
+ * tech and GitHub tools of task 20, and the two pass-issuing tools of task 22 that replace
+ * issue_boarding_passes), each with its input and output zod object schema. S3 iterates this record by key to register the
+ * tools. The record is frozen with `as const` so the key set is fixed and McpToolName is
+ * exact.
  */
 export const mcpTools = {
   sign_in: { input: SignInInput, output: SignInOutput },
@@ -246,6 +349,7 @@ export const mcpTools = {
   scan_repo: { input: ScanRepoInput, output: ScanRepoOutput },
   plan_week: { input: PlanWeekInput, output: PlanWeekOutput },
   check_itinerary: { input: CheckItineraryInput, output: CheckItineraryOutput },
+  show_schedule: { input: ShowScheduleInput, output: ShowScheduleOutput },
   reserve_with_guardrails: {
     input: ReserveWithGuardrailsInput,
     output: ReserveWithGuardrailsOutput,
@@ -257,14 +361,17 @@ export const mcpTools = {
   add_standby: { input: AddStandbyInput, output: AddStandbyOutput },
   remove_standby: { input: RemoveStandbyInput, output: RemoveStandbyOutput },
   add_layover: { input: AddLayoverInput, output: AddLayoverOutput },
-  issue_boarding_passes: {
-    input: IssueBoardingPassesInput,
-    output: IssueBoardingPassesOutput,
-  },
+  issue_all_boarding_passes: { input: IssueAllBoardingPassesInput, output: IssuedPassesOutput },
+  issue_boarding_pass: { input: IssueBoardingPassInput, output: IssuedPassesOutput },
   send_to_phone: { input: SendToPhoneInput, output: SendToPhoneOutput },
   sync_passes: { input: SyncPassesInput, output: SyncPassesOutput },
   export_calendar: { input: ExportCalendarInput, output: ExportCalendarOutput },
   forget_me: { input: ForgetMeInput, output: ForgetMeOutput },
+  show_my_tech: { input: ShowMyTechInput, output: ShowMyTechOutput },
+  find_sessions_by_tech: { input: FindSessionsByTechInput, output: FindSessionsByTechOutput },
+  connect_github: { input: ConnectGithubInput, output: ConnectGithubOutput },
+  scan_github: { input: ScanGithubInput, output: ScanGithubOutput },
+  disconnect_github: { input: DisconnectGithubInput, output: DisconnectGithubOutput },
 } as const;
 
 /**

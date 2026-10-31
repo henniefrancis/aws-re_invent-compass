@@ -2,15 +2,23 @@ import { describe, expect, test } from 'vitest';
 import fc from 'fast-check';
 import { createNodeScanFs } from '../../src/scanner/scan-fs.js';
 import { isExcludedDirectory, isSupportedFile } from '../../src/scanner/file-filter.js';
-import { DEFAULT_WALK_LIMITS, FolderNotFoundError, walk } from '../../src/scanner/walker.js';
+import {
+  DEFAULT_WALK_LIMITS,
+  FolderNotFoundError,
+  productionMarkerFor,
+  walk,
+} from '../../src/scanner/walker.js';
 import { MemoryScanFs } from '../support/memory-scan-fs.js';
 import type { MemoryTree } from '../support/memory-scan-fs.js';
 import { drain } from '../support/drain.js';
 
 async function run(tree: MemoryTree, limits = DEFAULT_WALK_LIMITS) {
   const fs = new MemoryScanFs(tree);
-  const result = await drain(walk(fs.root, fs, limits));
-  return { ...result, fs };
+  const { files: all, summary } = await drain(walk(fs.root, fs, limits));
+  // Read files carry text; files of an unsupported type are yielded by name only.
+  const files = all.filter((f) => f.text !== undefined);
+  const names = all.filter((f) => f.text === undefined).map((f) => f.relativePath);
+  return { files, names, summary, fs };
 }
 
 describe('file filter', () => {
@@ -37,17 +45,147 @@ describe('file filter', () => {
     expect(isSupportedFile('notes.md')).toBe(false);
     expect(isSupportedFile('other.json')).toBe(false);
   });
+
+  test('reads the technology manifests, .NET project files and C# source (task 41.2)', () => {
+    for (const name of [
+      'pyproject.toml',
+      'Pipfile',
+      'pom.xml',
+      'build.gradle',
+      'build.gradle.kts',
+      'go.mod',
+      'Cargo.toml',
+      'Gemfile',
+      'composer.json',
+      'global.json',
+      'Dockerfile',
+      'docker-compose.yml',
+      'docker-compose.yaml',
+      'compose.yml',
+      'compose.yaml',
+      'Chart.yaml',
+      'kustomization.yaml',
+      'kustomization.yml',
+      'App.csproj',
+      'Lib.fsproj',
+      'All.sln',
+      'Program.cs',
+    ]) {
+      expect(isSupportedFile(name)).toBe(true);
+    }
+    for (const name of [
+      'Main.java',
+      'main.go',
+      'lib.rs',
+      'App.fs',
+      'values.yaml',
+      'tsconfig.json',
+    ]) {
+      expect(isSupportedFile(name)).toBe(false);
+    }
+  });
+});
+
+describe('name-only entries (task 41.1)', () => {
+  test('every regular file of an unsupported type is yielded by name only, nothing else is', async () => {
+    const { files, names, summary } = await run(
+      {
+        '.gitignore': 'ignored.java\n',
+        'App.java': 'class App {}',
+        'ignored.java': 'x',
+        'node_modules/dep/index.go': 'x',
+        'link.go': { symlink: true },
+        'big.ts': 'x'.repeat(40),
+        'bin.ts': new Uint8Array([0, 1]),
+        'deploy/prod.tfvars': 'x',
+        'main.go': 'package main',
+        'src/a.ts': 'x',
+      },
+      { ...DEFAULT_WALK_LIMITS, maxFileBytes: 20 },
+    );
+    expect(files.map((f) => f.relativePath)).toEqual(['src/a.ts']);
+    expect(names).toEqual(['App.java', 'deploy/prod.tfvars', 'main.go']);
+    expect(summary.filesRead).toBe(1);
+    expect(summary.skipped).toEqual({
+      excludedDirectory: 1,
+      gitignored: 1,
+      tooLarge: 1,
+      binary: 1,
+      symlink: 1,
+      unsupportedType: 3,
+    });
+    expect(summary.productionMarker).toBe(true);
+  });
+
+  test('name-only entries do not count toward the file cap', async () => {
+    const { files, names, summary } = await run(
+      { 'a.md': 'x', 'b.ts': 'x', 'c.md': 'x', 'd.ts': 'x', 'e.md': 'x' },
+      { ...DEFAULT_WALK_LIMITS, maxFiles: 1 },
+    );
+    expect(files.map((f) => f.relativePath)).toEqual(['b.ts']);
+    expect(names).toEqual(['a.md', 'c.md']);
+    expect(summary).toMatchObject({ filesRead: 1, truncated: true });
+    const many = await run(
+      { 'a.md': 'x', 'b.md': 'x', 'c.md': 'x', 'd.ts': 'x' },
+      { ...DEFAULT_WALK_LIMITS, maxFiles: 1 },
+    );
+    expect(many.names).toHaveLength(3);
+    expect(many.summary).toMatchObject({ filesRead: 1, truncated: false });
+  });
+});
+
+describe('productionMarkerFor', () => {
+  test('matches the production tfvars names and a prod folder inside an environments folder', () => {
+    for (const path of [
+      'prod.tfvars',
+      'production.tfvars',
+      'deploy/app.prod.tfvars',
+      'envs/prod/main.tf',
+      'infra/environments/production/vars.tf',
+      'stages/prod/a/b.tf',
+    ]) {
+      expect(productionMarkerFor(path)).toBe(true);
+    }
+  });
+
+  test('does not match other names, a prod folder at the root or a file named prod', () => {
+    for (const path of [
+      '',
+      'dev.tfvars',
+      'prod.tf',
+      'prod/main.tf',
+      'envs/staging/main.tf',
+      'other/prod/main.tf',
+      'envs/prod',
+      'prod.tfvars/readme.md',
+    ]) {
+      expect(productionMarkerFor(path)).toBe(false);
+    }
+  });
+
+  test('agrees with the walker on every path of a tree', async () => {
+    const trees: MemoryTree[] = [
+      { 'envs/prod/main.tf': 'x' },
+      { 'a/app.prod.tfvars': 'x' },
+      { 'prod/main.tf': 'x', 'envs/dev/main.tf': 'x' },
+    ];
+    for (const tree of trees) {
+      const { summary } = await run(tree);
+      expect(Object.keys(tree).some(productionMarkerFor)).toBe(summary.productionMarker);
+    }
+  });
 });
 
 describe('walk discovery', () => {
   test('reads supported files in sorted order and reports the summary', async () => {
-    const { files, summary } = await run({
+    const { files, names, summary } = await run({
       'b.ts': 'b',
       'a.tf': 'a',
       'sub/c.py': 'c',
       'sub/notes.md': 'skip',
     });
     expect(files.map((f) => f.relativePath)).toEqual(['a.tf', 'b.ts', 'sub/c.py']);
+    expect(names).toEqual(['sub/notes.md']);
     expect(summary.filesRead).toBe(3);
     expect(summary.skipped.unsupportedType).toBe(1);
     expect(summary.truncated).toBe(false);

@@ -1,6 +1,6 @@
 import { cp, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import { weekSpecDirectory } from '@compass/core/spec';
 import { createRuntime } from '../../src/runtime/create-runtime.js';
 import { DEMO_STEP_TITLES } from '../../src/demo/run-demo.js';
@@ -9,11 +9,21 @@ import { PassThrough } from 'node:stream';
 import { connect, textOf } from '../support/connect.js';
 import { repoRoot } from '../support/fake-catalog.js';
 import { installNetworkGuard } from '../support/network-guard.js';
+import { createPrivateCheckout, type PrivateCheckout } from '../support/private-checkout.js';
 import type { NetworkGuard } from '../support/network-guard.js';
 import { testEnvironment } from '../support/runtime-env.js';
 import { TRIPLE } from '../support/triple.js';
 
 let guard: NetworkGuard;
+// The CLI demo below reads its resources from a private copy, not from the dist/ folder that
+// the pack smoke test rebuilds (compass-power task 36).
+let checkout: PrivateCheckout;
+beforeAll(async () => {
+  checkout = await createPrivateCheckout();
+});
+afterAll(async () => {
+  await checkout.remove();
+});
 beforeEach(() => {
   guard = installNetworkGuard();
 });
@@ -83,14 +93,14 @@ describe('the full flow over the real simulated stack (S1 simulated transport, S
     expect(reserveCalls).toEqual([[TRIPLE.a], [TRIPLE.aRepeat], [TRIPLE.b]]);
 
     // 10: issue passes for A-R and B only.
-    const issued = await ok('issue_boarding_passes', { sessionIds: [TRIPLE.aRepeat, TRIPLE.b] });
+    const issued = await ok('issue_all_boarding_passes');
     expect(issued.structuredContent).toMatchObject({ issued: [TRIPLE.aRepeat, TRIPLE.b] });
     expect((await runtime.passes.issuedRecord()).map((p) => p.sessionCode).sort()).toEqual(
       [TRIPLE.codes.aRepeat, TRIPLE.codes.b].sort(),
     );
 
     // 11: the phone link.
-    const phone = await ok('send_to_phone');
+    const phone = await ok('send_to_phone', { show: 'link' });
     const structuredLink = (phone.structuredContent as { handoffUrl: string }).handoffUrl;
     expect(structuredLink).not.toContain('#');
     const link = /https:\/\/compass\.invalid\/board#h=\S+/.exec(textOf(phone))?.[0] ?? '';
@@ -147,7 +157,13 @@ describe('the demo acceptance (Requirements 18.2, 18.3, 25.2)', () => {
     stderr.on('data', (c: Buffer) => err.push(c.toString()));
     const code = await main(
       { argv: ['demo', '--repo', copy], env: {}, stdin, stdout, stderr },
-      { homeDir: env.home, platform: 'linux', cwd: env.workspace, tempRoot: env.workspace },
+      {
+        homeDir: env.home,
+        platform: 'linux',
+        cwd: env.workspace,
+        tempRoot: env.workspace,
+        moduleUrl: checkout.moduleUrl,
+      },
     );
     expect(code).toBe(0);
     const headings = [...out.join('').matchAll(/^Step (\d+) of 10: (.+)$/gm)];

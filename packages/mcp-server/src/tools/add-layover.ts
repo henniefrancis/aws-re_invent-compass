@@ -5,13 +5,16 @@
 // Validation happens before the write and, for the offsets and the order, before any call at
 // all: both times need an offset, the end must be after the start, and both must be inside the
 // event window (read from the Schedule_Snapshot, or from S1 only when there is none, never
-// guessed). Update and delete also check the personal time id with the Identifier_Check and
-// look the entry up in the fresh schedule, so the confirmation names what will change. An
+// guessed), widened to start at 00:00 on the badge pickup day, the day before the event, in the
+// event time zone (task 56). Update and delete also check the personal time id with the
+// Identifier_Check and look the entry up in the fresh schedule, so the confirmation names what
+// will change. An
 // overlap with a commitment is a warning; the layover is still written. Every action asks the
 // human to confirm (Schedule_Write_Tools). The title is the attendee's own text and is shown
 // only inside a Labelled_Data_Block.
 
 import type { PersonalTime, PersonalTimeInput, ScheduleWire } from '@compass/contracts';
+import { startOfDayBefore } from '@compass/core/catalog';
 import { CompassError } from '../ports/errors.js';
 import type { EventWindow } from '../ports/events-port.js';
 import { labelUntrusted } from '../safety/labelled-data.js';
@@ -22,6 +25,7 @@ import {
   ensureSignedIn,
   humanConfirms,
   readFreshSchedule,
+  readOnlyReply,
 } from './common.js';
 
 /** What the handler can do with personal time. */
@@ -64,7 +68,8 @@ async function validTimes(
     throw new CompassError('LayoverInvalid');
   }
   const window = await windowFor(ctx);
-  if (start < Date.parse(window.start) || end > Date.parse(window.end)) {
+  const opens = startOfDayBefore(window.start, window.timezone) ?? window.start;
+  if (start < Date.parse(opens) || end > Date.parse(window.end)) {
     throw new CompassError('LayoverInvalid');
   }
   return { start, end };
@@ -117,6 +122,31 @@ function declined(action: LayoverAction['action']): ToolOutcome<'add_layover'> {
   };
 }
 
+/**
+ * Asks before a layover write, or in read-only live mode (task 37) says what it would have done.
+ * Undefined means go ahead.
+ */
+async function confirmOrStop(
+  ctx: ToolContext,
+  action: LayoverAction['action'],
+  question: string,
+  readOnlyData: { attendee: Record<string, string>; warnings?: readonly string[] },
+): Promise<ToolOutcome<'add_layover'> | undefined> {
+  // Read-only reply (task 40): the attendee's own text and the catalog warnings stay labelled.
+  const readOnly = readOnlyReply(
+    ctx,
+    `${action} a layover.`,
+    [
+      labelUntrusted('attendee', readOnlyData.attendee),
+      labelUntrusted('catalog', { warnings: readOnlyData.warnings ?? [] }),
+    ].join('\n'),
+  );
+  if (readOnly !== undefined) {
+    return { ok: true, structured: { action, done: false }, text: readOnly };
+  }
+  return (await humanConfirms(ctx, question)) ? undefined : declined(action);
+}
+
 function unconfirmed(action: LayoverAction['action']): ToolOutcome<'add_layover'> {
   return {
     ok: true,
@@ -148,7 +178,16 @@ function matches(entry: PersonalTime, personalTime: PersonalTimeInput): boolean 
   );
 }
 
-function summaryLines(headline: string, warnings: readonly string[], title: string): string {
+/**
+ * The result text. A confirmed layover's `personalTimeId` sits beside its title inside the
+ * attendee block, because some clients show the model only the text (post-SP3 P1.2).
+ */
+function summaryLines(
+  headline: string,
+  warnings: readonly string[],
+  title: string,
+  personalTimeId?: string,
+): string {
   return [
     headline,
     ...(warnings.length > 0
@@ -157,7 +196,10 @@ function summaryLines(headline: string, warnings: readonly string[], title: stri
           labelUntrusted('catalog', warnings),
         ]
       : []),
-    labelUntrusted('attendee', { title }),
+    labelUntrusted(
+      'attendee',
+      personalTimeId === undefined ? { title } : { personalTimeId, title },
+    ),
   ].join('\n');
 }
 
@@ -170,17 +212,26 @@ async function createLayover(
   const fresh = await readFreshSchedule(ctx);
   const warnings = await overlapsOf(personalTime, undefined, ctx, fresh);
 
-  const approved = await humanConfirms(
+  const stop = await confirmOrStop(
     ctx,
+    'create',
     [
       `Add a layover from ${personalTime.startDateTime} to ${personalTime.endDateTime}? This changes your real re:Invent schedule.`,
       labelUntrusted('attendee', { title: personalTime.title }),
       ...warnings.map((warning) => `Warning: ${warning}`),
       'Go ahead?',
     ].join('\n'),
+    {
+      attendee: {
+        title: personalTime.title,
+        from: personalTime.startDateTime,
+        to: personalTime.endDateTime,
+      },
+      warnings,
+    },
   );
-  if (!approved) {
-    return declined('create');
+  if (stop !== undefined) {
+    return stop;
   }
 
   const written = await ctx.runtime.events.createPersonalTime(personalTime);
@@ -204,6 +255,7 @@ async function createLayover(
         : 'The layover is on your schedule and your schedule confirms it.',
       warnings,
       personalTime.title,
+      entry?.personalTimeId,
     ),
   };
 }
@@ -227,17 +279,28 @@ async function updateLayover(
   }
   const warnings = await overlapsOf(personalTime, personalTimeId, ctx, fresh);
 
-  const approved = await humanConfirms(
+  const stop = await confirmOrStop(
     ctx,
+    'update',
     [
       `Change the layover (id ${personalTimeId}) now from ${current.startDateTime} to ${current.endDateTime} so that it runs from ${personalTime.startDateTime} to ${personalTime.endDateTime}? This changes your real re:Invent schedule.`,
       labelUntrusted('attendee', { was: current.title, now: personalTime.title }),
       ...warnings.map((warning) => `Warning: ${warning}`),
       'Go ahead?',
     ].join('\n'),
+    {
+      attendee: {
+        personalTimeId,
+        was: current.title,
+        now: personalTime.title,
+        from: personalTime.startDateTime,
+        to: personalTime.endDateTime,
+      },
+      warnings,
+    },
   );
-  if (!approved) {
-    return declined('update');
+  if (stop !== undefined) {
+    return stop;
   }
 
   const written = await ctx.runtime.events.updatePersonalTime(personalTimeId, personalTime);
@@ -260,6 +323,7 @@ async function updateLayover(
         : 'The layover is changed and your schedule confirms it.',
       warnings,
       personalTime.title,
+      personalTimeId,
     ),
   };
 }
@@ -280,16 +344,25 @@ async function deleteLayover(
     };
   }
 
-  const approved = await humanConfirms(
+  const stop = await confirmOrStop(
     ctx,
+    'delete',
     [
       `Delete the layover (id ${personalTimeId}) from ${current.startDateTime} to ${current.endDateTime}? This changes your real re:Invent schedule.`,
       labelUntrusted('attendee', { title: current.title }),
       'Go ahead?',
     ].join('\n'),
+    {
+      attendee: {
+        personalTimeId,
+        title: current.title,
+        from: current.startDateTime,
+        to: current.endDateTime,
+      },
+    },
   );
-  if (!approved) {
-    return declined('delete');
+  if (stop !== undefined) {
+    return stop;
   }
 
   const written = await ctx.runtime.events.deletePersonalTime(personalTimeId);
@@ -302,8 +375,8 @@ async function deleteLayover(
     ok: true,
     structured: { action: 'delete', done: gone, personalTimeId },
     text: gone
-      ? 'The layover is deleted and your schedule confirms it.'
-      : 'The delete was sent, but your schedule still lists the layover, so it is not confirmed.',
+      ? `The layover (id ${personalTimeId}) is deleted and your schedule confirms it.`
+      : `The delete was sent, but your schedule still lists the layover (id ${personalTimeId}), so it is not confirmed.`,
   };
 }
 

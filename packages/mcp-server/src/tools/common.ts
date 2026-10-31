@@ -4,6 +4,8 @@ import type { Commitment, NormalisedSession, ScheduleWire } from '@compass/contr
 import type { ScheduleView } from '@compass/core/passes';
 import { CompassError } from '../ports/errors.js';
 import type { CatalogView, EventWindow } from '../ports/events-port.js';
+import { labelUntrusted } from '../safety/labelled-data.js';
+import { READ_ONLY_MESSAGE } from '../server/error-messages.js';
 import type { ToolContext } from '../server/types.js';
 
 /** Throws NotSignedIn unless the attendee is signed in. Simulated mode is signed in at once. */
@@ -97,6 +99,27 @@ export function confirmMessage(
     'Go ahead?',
   ];
   return lines.join('\n');
+}
+
+/**
+ * When Compass is read-only (the live default, compass-power task 37), the reply a schedule write
+ * tool gives instead of asking: that nothing changed, the action it would have taken, and the
+ * catalog or attendee data it would have acted on. `data` must already be labelled (task 40), so
+ * no catalog title reaches the model as plain text. Undefined when writes are on.
+ */
+export function readOnlyReply(ctx: ToolContext, action: string, data: string): string | undefined {
+  if (ctx.runtime.readOnly !== true) {
+    return undefined;
+  }
+  return [READ_ONLY_MESSAGE, `Compass would have done this: ${action}`, data].join('\n');
+}
+
+/** The sessions a write acts on and the guardrail warnings, as one labelled catalog block. */
+export function catalogTargets(
+  targets: readonly ActingOn[],
+  warnings: readonly string[] = [],
+): string {
+  return labelUntrusted('catalog', { actingOn: targets, warnings });
 }
 
 /**

@@ -488,7 +488,7 @@ function formatLocal(instant: string, timezone: string): string; // 'Tue 1 Dec 1
 
 - `requirements.md`: an introduction, then EARS goals, for example "WHEN a reserved session is on my itinerary, I SHALL be at its gate before boarding closes (start minus 10 minutes)", "WHILE a day has sessions over lunch, my itinerary SHALL keep a 30 minute layover between 11:30 and 14:00", and one goal per scanned service with its depth and level.
 - `design.md`: "All times are in <timezone>." once, then one section per day: picks in time order with code, quoted title, type, level, gate (or "Venue not published"), times, boarding closes, reason, the connection into it, then layovers and the energy line.
-- `tasks.md`: numbered checkbox tasks, one per API action: "Reserve DAT302 with `reserve_with_guardrails`", "Add DAT302-R to standby with `add_standby`", "Add the lunch layover on Tue 1 Dec 12:00 to 12:30 with `add_layover`"; walk-up picks get no task; the final task is "Issue boarding passes with `issue_boarding_passes`".
+- `tasks.md`: numbered checkbox tasks, one per API action: "Reserve DAT302 with `reserve_with_guardrails`", "Add DAT302-R to standby with `add_standby`", "Add the lunch layover on Tue 1 Dec 12:00 to 12:30 with `add_layover`"; walk-up picks get no task; the final task is "Issue Boarding Passes with `issue_boarding_passes`".
 - Catalog strings pass through `sanitiseCatalogText`: control characters and line breaks become spaces, runs of spaces collapse, `\`, `` ` ``, `*`, `_`, `[`, `]`, `<`, `>`, `#` and `|` are backslash-escaped, U+2013 and U+2014 become `-`, and the value is wrapped in double quotes. A title therefore can never start a heading, a task or a link.
 
 ### Component 4: Spec writer (`packages/core/src/spec/write.ts`, `diff.ts`, `gitignore-entry.ts`)
@@ -566,7 +566,7 @@ function runStdioServer(runtime: Runtime): Promise<void>;
 
 `createCompassServer` iterates `Object.keys(mcpTools)` and registers each with `inputSchema: mcpTools[k].input`, `outputSchema: mcpTools[k].output` and the `TOOL_SPECS` entry. A registry test asserts the two key sets are equal. `results.ts` parses every success `structured` with `mcpTools[k].output` before returning (a failure is a bug and returns a fixed internal error). `elicit` is defined only when `getClientCapabilities()?.elicitation` is present.
 
-Descriptions start with the airline-plain purpose; schedule write tools end with "This changes your real re:Invent schedule. Compass checks it first and asks you to approve it."; `issue_boarding_passes` says "This creates real boarding passes on the Compass pass service."; `send_to_phone` says "This creates a real 15-minute link to your passes."; `forget_me` says "This really deletes your passes and local Compass data."
+Descriptions start with the airline-plain purpose; schedule write tools end with "This changes your real re:Invent schedule. Compass checks it first and asks you to approve it."; `issue_boarding_passes` says "This creates real Boarding Passes on the Compass pass service."; `send_to_phone` says "This creates a real 15-minute link to your passes."; `forget_me` says "This really deletes your passes and local Compass data."
 
 Initialisation reads nothing: the catalog, schedule and tokens are loaded on the first tool call that needs them (cold start budget).
 
@@ -876,7 +876,7 @@ function readStdin(
 | `issue_boarding_passes`, `send_to_phone`, `forget_me`                                                    | exit 0, no output                                                                                                                        | exit 0, no output |
 | malformed input, unknown tool, missing or stale (over 15 minutes) snapshot, missing catalog, invalid ids | exit 0, stdout note: "Compass could not check this call here. The Compass server still checks it."                                       | exit 0, no output |
 
-The reminder is "Your schedule changed. Run sync_passes so your boarding passes match it." The guardrail uses the same `RulesPort.checkReservation` path as the server, the snapshot's schedule and window, and the catalog cache (S1 `readCache`; simulated mode reads the synthetic catalog fixtures). The hook makes no network request and no write. `exit-policy.ts` is the only place that maps a decision kind to an exit code, so SP1 changes one table.
+The reminder is "Your schedule changed. Run sync_passes so your Boarding Passes match it." The guardrail uses the same `RulesPort.checkReservation` path as the server, the snapshot's schedule and window, and the catalog cache (S1 `readCache`; simulated mode reads the synthetic catalog fixtures). The hook makes no network request and no write. `exit-policy.ts` is the only place that maps a decision kind to an exit code, so SP1 changes one table.
 
 ### Component 14: Power (`power/`)
 
@@ -1218,7 +1218,7 @@ _For any_ sequence of calls to the Read_Tools, `plan_week` and `check_itinerary`
 
 ### Property 20: Spec tasks match the API actions, ending with issue
 
-_For any_ plan result, `tasks.md` holds exactly one reserve task per reservable pick, one standby task per standby, one layover task per layover and no task for walk-up picks, each naming its Compass tool, and its last task is "Issue boarding passes with `issue_boarding_passes`".
+_For any_ plan result, `tasks.md` holds exactly one reserve task per reservable pick, one standby task per standby, one layover task per layover and no task for walk-up picks, each naming its Compass tool, and its last task is "Issue Boarding Passes with `issue_boarding_passes`".
 
 **Validates: Requirements 6.3**
 
@@ -1546,3 +1546,179 @@ These follow the CTO review (the same numbering as the requirements amendments) 
 - **M6.** The `find_sessions` adapter filters on the cached wire `services` itself (any match, case-insensitive).
 - **M8.** The rules adapter uses S2 `connectionsForDay(schedule, context)`, `energyForDay(schedule, context)` and `withContextDefaults`.
 - **L1, L2, L5.** The registry catches every handler throw; `limit` and `maxPerDay` refuse negative and non-integer values; the platform is injected into `src`.
+
+## Post-CodeQL change: linear gitignore trimming (20 October 2026, task 32)
+
+The first CodeQL scan of `main` flagged `parseGitignore` (js/polynomial-redos). Trailing spaces and trailing slashes are now trimmed with loops instead of regular expressions, so a long run of either costs linear time. Behaviour is unchanged: a trailing space escaped with a backslash is kept, as git does. The existing rule limits (`MAX_RULE_LENGTH`, `MAX_STARS_PER_RULE`) still apply after trimming.
+
+## Post-SP3 change: show_schedule and layover ids in text (19 October 2026, task 33)
+
+During SP3 the owner drove Compass from Kiro and hit two gaps. No tool listed the current reservations, standby list or layovers with their ids: asked to "check my itinerary", Kiro could only call `export_calendar` with no input and dig the ids out of the `.ics` UIDs (`session-<id>`, `layover-<id>`). And `add_layover` returned the new `personalTimeId` only in `structuredContent`, which Kiro does not show the model, so a later update or delete could not find it.
+
+Options weighed. (a) Put the schedule into the `export_calendar` or `check_itinerary` text: no contract change, but `export_calendar` also writes a file each time and `check_itinerary` is the guardrail, so neither is where an agent looks for "my schedule", and SP3 showed Kiro already misreads both. (b) A new read tool: one S0 contract entry (foundation-contracts task 17), one handler, one registry line and the docs. Chosen: (b), plus the id in the `add_layover` text, the narrowest fix for the second gap.
+
+- **`show_schedule` (Read_Tool).** Input `{}`. Output `{ schedule: ScheduleWire, notInCatalog: string[] }`, reusing the shared wire shape. The handler checks the sign-in, reads the fresh schedule through `readFreshSchedule` (which writes the Schedule_Snapshot, as `check_itinerary` does) and the cached catalog. The text is a count line, a catalog Labelled_Data_Block `{ reserved, standby }` where each session is `{ sessionId, code, title, venue, room, startsAt, endsAt }` in start order (sessions without a time last), an attendee Labelled_Data_Block `{ layovers }` where each entry is `{ personalTimeId, title, startDateTime, endDateTime, location }` in start order, and, when the cache does not know some ids, a line pointing to `refresh_catalog` with those ids in a catalog block. Personal time descriptions are not shown. Class `read` (`readOnlyHint: true`); not a schedule write, so it does not take the write lock.
+- **Approval.** `show_schedule` reads nothing beyond the attendee's own schedule, but that is still the attendee's data, and the README rule is that only tools that read nothing of the attendee are recommended for `autoApprove`. It is approved per call, like `scan_repo`; the list stays at three.
+- **`add_layover` text.** A confirmed create or update puts `personalTimeId` beside the title inside the attendee block (the id comes from the Events API, so it stays inside a block); a delete names the id in the headline (the id was checked by the Identifier_Check before any call). The structured result is unchanged.
+- **Descriptions.** `show_schedule`: "What is on my schedule: the sessions you have reserved, your standby (favourites) list and your layovers, each with the id the other tools take. Use it when the attendee asks what they have booked. Takes no input. Nothing is changed. (Task 34 wording; task 33 had "Show your live re:Invent schedule: ...".)" `check_itinerary` now says it checks commitments you pass in and points to `show_schedule`. `export_calendar` says that with no input it reads your live schedule.
+- **Count.** The server now registers eighteen tools. The hooks need no change: `show_schedule` is not a write, so neither matcher names it, and `identifyTool` resolves it from `mcpTools` like every other tool.
+
+## Post-SP3 change: show_schedule, round 2 (20 October 2026, task 34)
+
+Found when the owner tried `show_schedule` on dev with a live Builder ID schedule.
+
+- **One listing per session.** The Events API keeps a reserved session in the favourites. `show_schedule` now lists a reserved session only under reserved; the standby list and its count leave reserved ids out, and one sentence explains that reserved sessions also stay in the Events favourites (so removing them from standby is not needed). `structured.schedule` is unchanged, so callers that need the raw lists still have them. `notInCatalog` is de-duplicated.
+- **Description.** "What is on my schedule: the sessions you have reserved, your standby (favourites) list and your layovers, each with the id the other tools take. Use it when the attendee asks what they have booked. Takes no input. Nothing is changed." It names the attendee's words, because a client without the Power's skill text chooses tools from descriptions alone.
+
+## Post-SP3 change: read-only by default (20 October 2026, task 37)
+
+Owner decisions: Compass reads the attendee's real Builder ID data (catalog, sessions, reservations, standby list, layovers) but must never change the re:Invent schedule by accident. Writes stay possible only as a deliberate choice, so the 12-operation design and the guarded booking remain for attendees who opt in.
+
+- **Default.** Live mode is read-only. `COMPASS_ALLOW_WRITES=1` in the MCP server's environment turns writes on, and the server logs one line saying so. Simulated mode never calls the Events API, so its made-up bookings stay on.
+- **Hard guard.** The runtime wraps the Events adapter: when read-only, every Events API write throws `ReadOnly` before any request. No tool, hook or future code path can write through it.
+- **Clear replies.** The five schedule write tools check before the confirmation question and answer with the action they would have taken, that nothing changed, and that the attendee can make the change in the re:Invent app. They still run the guardrail first, so the checks (clashes, walks, the 10-minute release) work on real data.
+- **Passes stay on.** Issue, send-to-phone and sync write only to Compass's own pass service and the local snapshot, never to the Events API (owner decision). `forget_me` deletes local data only.
+- The official `awsevents` write tools are already blocked by the pre-write hook in every mode.
+
+## Post-SP3 change: codes, walk-up sessions, no write invitations (20 October 2026, task 38)
+
+- **Codes as ids.** Attendees and agents use session codes such as SVS339. Before a tool with `sessionId` or `sessionIds` runs, the server replaces a value that is not a catalog id with the id of the one session whose code matches it, ignoring letter case. An unknown or shared code is left as given, so the tool still reports it as unknown. With no cached catalog the input is left alone.
+- **Walk-up sessions.** A session with `isReservable: false` needs no reservation. `reserve_with_guardrails` blocks it first, with the reason, and suggests walking up or adding it to the standby list; when Compass is read-only it suggests the favourites in the re:Invent app instead, since the standby tool would not write (task 39).
+- **No write invitations.** The read-only reply says to make the change in the re:Invent app and no longer names `COMPASS_ALLOW_WRITES`; the setting is documented for the attendee only. The Power skill forbids the agent to change Compass's settings or offer to.
+
+## Post-SP3 change: pre-release review fixes (20 October 2026, task 40)
+
+- **Labelled read-only replies.** In read-only mode the reply goes to the model, not only to the human, so the sessions acted on, the guardrail warnings and the layover text are returned inside labelled data blocks like every other catalog-derived text. The prompt-injection test covers all five schedule tools in read-only mode.
+- **Writes-on is visible.** With `COMPASS_ALLOW_WRITES=1` in live mode, the schedule tools, `show_schedule` and `sign_in` start with "Writes are on: Compass can change your real re:Invent schedule after you approve each change." The agent-facing Power text no longer names the setting; the MCP server README documents it for the attendee.
+- **Hook and codes.** `sessionIdResolver(catalog)` is the one code-to-id mapping, used by the server before a tool runs and by the pre-write hook.
+
+## Owner change: your tech and your GitHub (20 October 2026, tasks 41 to 45)
+
+Requirements P2.1 to P2.10. The flow the owner described: scan, build a tech list, ask "What tech do I work on (the most)?", ask "Find me sessions on .NET", and plan with it.
+
+### Scanner: all technology, AWS first (task 41)
+
+- **Source files.** `packages/core/src/scanner/source-file.ts` defines `SourceFile { relativePath: string; text?: string }`. `text` is present only for files the Scanner reads; a file it only counts by extension has no text. The walker yields a name-only entry for every regular file it does not read (not excluded, not ignored, not a link), so languages are counted without reading their files. `analyseFiles(files: AsyncGenerator<SourceFile, WalkSummary>, options)` runs the AWS detectors and the Tech_Detectors over the stream and returns the `ScanResult`; `scanRepo` is `analyseFiles(walk(...))`, and the GitHub archive reader produces the same stream. `productionMarkerFor(relativePath)` is the walker's production rule, exported so both producers share it.
+- **Tech_Table.** `packages/core/src/scanner/tech-table.ts`: one entry per technology with `key`, `displayName`, `group` (`language`, `framework`, `platform` or `tool`), `searchWords` (the catalog phrases `find_sessions_by_tech` matches), `aliases` and its signals: file extensions, manifest file names, and npm, PyPI, NuGet, Maven or Gradle and Ruby package names. Aliases (".NET", "dotnet", "C#" and so on) resolve to one key. The table is sorted by key (structural test).
+- **Tech_Detectors.** Pure over one file's text, like the AWS detectors: `package.json` (dependencies and devDependencies), `requirements.txt`, `pyproject.toml`, `Pipfile`, `*.csproj` and `*.fsproj` (`PackageReference Include`), `pom.xml`, `build.gradle(.kts)`, `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`, `Dockerfile` and compose files, Helm `Chart.yaml` and `kustomization.yaml`. A malformed manifest counts nothing and never throws. `isSupportedFile` gains these names; the AWS detectors' `accepts` is unchanged, so they never see them.
+- **Score.** Per technology: `files` (files counted by extension) and `declarations` (manifest declarations and manifest files). Score = files + 5 x declarations. `ScanResult.technologies: TechFinding[]` is sorted by score (highest first), then key; a technology with score 0 is left out.
+- **AWS SDK for .NET.** The Service_Table gains `nugetPackages` (`AWSSDK.S3`, `AWSSDK.DynamoDBv2`, `Amazon.Lambda.Core` and so on) and `dotnetClientNames` (the `<Name>` in `new Amazon<Name>Client(`), each checked on nuget.org or in the AWS SDK for .NET API reference and recorded in the table's source comment. A new `dotnet` detector reads `*.csproj` (dependency declarations) and `*.cs` (clients), so a .NET project can reach `building` depth.
+
+### Projects in a dev folder (task 41)
+
+`scan_repo` looks for git repositories (a folder holding `.git`) at depth 1 and 2 under the folder, unless the folder itself is one. With none it scans the folder as one project, as before. With some, it scans each repository on its own through the scan runner (its own worker, limits and 20 second budget), in name order, up to 50, and stops starting new ones after 120 seconds in all. The reply names no folder: "Scanned 12 projects (3 skipped: over the limit of 50)". `lastScan` keeps the merged result for compatibility; the Tech_Profile is the record that counts.
+
+### Tech_Profile (task 42)
+
+`packages/mcp-server/src/state/tech-profile.ts`, stored as `tech-profile.json` beside the Schedule_Snapshot with the same file system adapter, modes and atomic write.
+
+```
+{ version: 1, mode, sources: [ { id, kind: "folder" | "github", scannedAt,
+    services: [ { key, depth, level?, score } ], technologies: [ { key, files, declarations, score } ] } ] }
+```
+
+- `id` is SHA-256 of `folder:<resolved path>` or `github:<repository id>`, so no path or name is stored. A source scanned again replaces its entry. At most 500 sources; the oldest is dropped first.
+- `mergeProfile(sources)` gives per service the deepest depth and the number of projects, and per technology the total score and the number of projects. Ranking for "the most": AWS services by depth, then projects; other technology by projects, then score, then key.
+- The store is a port on the Runtime (`techProfile`), so tests use an in-memory one. `forget_me` removes the file after the pass service confirms, with the Schedule_Snapshot.
+
+### show_my_tech (task 43)
+
+Read_Tool. Input `{ top?: number }` (1 to 50, default all). Text: one count line ("From 2 folders and 14 GitHub repositories."), then "AWS services" lines (display name, depth, suggested level, projects), then "Other technology" lines (display name, group, projects, score), AWS first. An empty profile says to run `scan_repo` or `scan_github`. Structured: `{ services: [{ service, depth, projects }], technologies: [{ technology, group, projects, score }], sources: { folders, githubRepositories } }`. Description leads with the attendee's words: "What tech do I work on, and what do I use the most: ..."
+
+### find_sessions_by_tech and the planner (task 44)
+
+- **Input** `{ tech?: string; limit?: number }`. `tech` (at most 100 characters) resolves through the Tech_Table aliases and the Service_Table display names; an unknown value is searched as one literal word. With no `tech`, the top five technologies and top five AWS services of the profile are searched, five sessions each.
+- **Matching.** The Events adapter's `CatalogFilter` gains `words?: string[]`: a session matches when any word appears in its title, abstract, topics or services as a whole word, case-insensitive: where a search word starts or ends with a letter or digit, the text next to it must not be a letter or digit, and where it starts or ends with a mark that side is not checked, so ".NET" matches "ASP.NET", "C#" matches, and "net" does not match "network" (`adapters/word-match.ts`, `indexOf` only, linear). AWS services also match by catalog service label, as `find_sessions` does.
+- **Output** `{ groups: [{ tech, sessions: NormalisedSession[], totalMatched }] }`; the text has one catalog Labelled_Data_Block per group with the same session fields as `find_sessions`.
+- **Planner.** `PlannerInput` gains an optional `techs: { displayName, sessionIds, projects }[]`: `plan_week` finds each technology's matching sessions with the same search as `find_sessions_by_tech` (the planner itself never sees abstracts), a matching session adds 2 x min(projects, 3), and the pick reason says "Matches your work with <tech>" when no AWS service matched. At most the top 10 technologies are used. `plan_week` builds AWS findings and techs from the merged Tech_Profile (taxonomy labels recomputed from the cached catalog), falling back to `lastScan` when the profile is empty.
+
+### GitHub, read-only (task 45)
+
+- **GitHub App.** The owner registers a public GitHub App "re:Invent Compass (unofficial)" with only Contents: read and Metadata: read, no webhook, device flow enabled, installable on any account. Its client ID and slug are build constants in `packages/mcp-server/src/config/github.ts`; `COMPASS_GITHUB_CLIENT_ID` and `COMPASS_GITHUB_APP_SLUG` can replace them for a self-hosted app. With no client ID the GitHub tools say GitHub scanning is not set up in this build. The client ID is public, so no secret ships.
+- **Sign-in (`connect_github`).** `POST https://github.com/login/device/code` with `client_id`, then the text shows the user code and `https://github.com/login/device`, opens that page with the browser opener, and gives the install link `https://github.com/apps/<slug>/installations/new`. Polling `POST https://github.com/login/oauth/access_token` (`grant_type` `urn:ietf:params:oauth:grant-type:device_code`) runs in the background at the given interval, adding 5 seconds on `slow_down`, until success, `access_denied`, `expired_token` or 15 minutes. Calling `connect_github` again reports the state. The `ghu_` access token (8 hours) and `ghr_` refresh token (6 months) go to the GitHub_Token_Store: keychain service `reinvent-compass`, accounts `github-access` (with its expiry, as the Events store does) and `github-refresh`, memory only when there is no keychain, both registered with the redacting logger. A device-flow token refreshes without a client secret (`grant_type=refresh_token`). Docs checked 20 October 2026: GitHub "Generating a user access token for a GitHub App" and "Refreshing user access tokens".
+- **Listing.** `GET https://api.github.com/user/installations` then `GET /user/installations/{id}/repositories` (`per_page=100`, paged), headers `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2026-03-10`, `Authorization: Bearer`. Input `{ owners?: string[]; includeForks?: boolean; maxRepositories?: number }` (default 50, at most 200). Archived repositories are included; forks only with `includeForks`.
+- **Consent.** Before reading, the human confirms a message naming the accounts and up to 20 repositories ("and 31 more"). A client that cannot ask is refused, and nothing is read on decline.
+- **Reading.** For each repository, in its own GitHub scan worker (`dist/github-scan-worker.js`, 60 second budget, the same pattern as security review H1; a checkout without the bundle reads in the server thread): `GET /repos/{owner}/{repo}/tarball` with `redirect: 'manual'`; the `Location` must be `https://codeload.github.com/...` and is fetched without the Authorization header. The body is streamed through gunzip into a small tar reader (`ustar` and PAX long names; the top folder GitHub adds is dropped) that applies `isExcludedDirectory`, `isSupportedFile`, the file size limit, the binary probe and `maxFiles`, and yields `SourceFile`s to `analyseFiles`. The download stops at 100 MB compressed or 500 MB unpacked. Nothing is written to disk. A repository that fails or times out is counted as skipped and the rest go on; the whole scan stops starting repositories after 300 seconds.
+- **Result.** Each repository becomes a `github` source in the Tech_Profile. The text gives the counts and the merged tech list, names only.
+- **`disconnect_github`.** Clears both tokens and says the app can be removed at `https://github.com/settings/installations` and its authorisation at `https://github.com/settings/apps/authorizations` (a GitHub App user token can be revoked by the app only with its client secret, which Compass does not have).
+- **Threat model additions.** A hostile repository (ReDoS, a tar bomb, deep paths, links): the worker budget, the size caps and links skipped. Token theft: keychain, redaction, fixed hosts, no token on the redirect. Over-reach: the app has no write permission, so even a stolen token cannot change code. The privacy page lists the GitHub hosts.
+
+### Security review (20 October 2026)
+
+A read-only review of the GitHub and tech-list code found no Critical or High issue. Fixed before the commit:
+
+- **M1.** A GitHub repository is read only in the bundled `github-scan-worker.js`, which has the 60 second budget and a 512 MB heap limit (`resourceLimits`). Without the bundle (a source checkout) nothing is read and the repository counts as skipped; there is no unbudgeted fallback.
+- **M2.** The Tech_Profile accepts only keys of the Service_Table and the Tech_Table, a real ISO time, levels 100 to 400 and at most 200 keys per project and 500 projects. A file with anything else reads as empty, so text planted in it never reaches the model.
+- **L2.** Two `connect_github` calls at once share one device code.
+- **L3.** The sign-in poll timer is `unref`'d, so it never keeps the server alive.
+- **L6.** `COMPASS_GITHUB_CLIENT_ID` prints one warning line, because Compass cannot check another app is read-only.
+- **L7.** Profile changes are queued, so two scans that finish together never lose a write.
+
+Accepted: **L1** (the project ids are unsalted hashes, so someone who already has the 0600 file could test a guessed path or repository id), **L4** (listing repository names before the confirmation, now stated in P2.8) and **L5** (the confirmation names 20 repositories and counts the rest; `owners` narrows a large list). Owner checks before launch: the GitHub App has only Contents: read and Metadata: read, expiring user tokens on, device flow on, no webhook and no callback URL.
+
+### Tool count and contracts
+
+Twenty-three tools: `show_my_tech`, `find_sessions_by_tech`, `connect_github`, `scan_github` and `disconnect_github` join the eighteen. Classes: the first two `read`; `connect_github` and `disconnect_github` `local action`; `scan_github` `read` (it reads the attendee's code and asks first, like `scan_repo`). The contracts come from foundation-contracts task 20 and land in the same commit as the handlers.
+
+## Owner change: link or QR code (21 October 2026, task 48)
+
+Requirements P3.1 to P3.6. In Kiro the attendee saw the link but no QR code: Kiro does not render the PNG image content a tool returns, and the text QR (two characters per module, about 98 columns) wraps in the chat until it cannot be scanned.
+
+- **The choice.** `send_to_phone` takes `show: 'link' | 'qr' | 'both'`. Without it the handler stops after the identifier check and replies "Link or QR code?" with no hand-off, no sign-in check and no network call, so a missing choice costs nothing. The Power tells the agent to ask first.
+- **The QR page (`src/adapters/qr-page.ts`, `QrPagePort`).** `show({ svg, expiresAt })` deletes any earlier page, makes a new folder with `mkdtemp` under the OS temp folder (`compass-qr-` prefix), writes `board-qr.html` with flag `wx` and mode `0o600`, and opens it through `createLocalPageOpener` in `src/runtime/browser-opener.ts`: the same platform commands as the sign-in opener, run with `execFile`, given the `file:` URL of that one path. It returns `true` only when the opener reports success. A timer (unref'd, so it never keeps the server alive) deletes the folder at `expiresAt`; `clear()` deletes it at once and is called by `forget_me` and on process exit. Nothing is logged. The page is built from the SVG the Handoff_Builder renders (boarding-passes Requirement 5.6), so the board link itself never appears as text in the page.
+- **The page.** A static HTML document: `Content-Security-Policy` `default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'`, `referrer` `no-referrer`, a heading "Scan with your phone camera", the SVG at a fixed size on a white background with its quiet zone, "This code works until HH:MM UTC.", the sharing note and "Unofficial. Your badge is your ticket." No script, font, image or link.
+- **Replies.** `link`: the link and expiry, the sharing note and the disclaimer. `qr`: "Scan the QR code in your browser with your phone camera before ..."; no link. `both`: the link and the browser line. When the page could not be shown (no `qrPage` in the runtime, or `show` returned `false`), the reply says so and carries the text QR and the PNG, as before. The structured output adds `shownAs` and, when a QR code was asked for, `qrShownIn` (`browser` or `chat`).
+- **Wiring.** `createRuntime` builds the QR page in both modes (simulated passes still have a QR code, of a link that never resolves). Tests inject the file system, the opener and the timer.
+
+### Security review of the QR page (21 October 2026)
+
+No Critical or High finding. Fixed:
+
+- **M1, an open that hangs or fails silently.** `createLocalPageOpener` gives the command 5 seconds; a command that never returns (an `xdg-open` that waits for the browser) counts as failed, so the QR code goes to the chat. Because `rundll32` can report success without showing anything, the browser line ends with "If no page opened in your browser, ask for a link instead."
+- **M2, a page left by a stopped process.** `onProcessEnd` (`src/runtime/exit-hooks.ts`) runs the clean-up on `exit` and on SIGTERM, SIGINT and SIGHUP, once, then raises the signal again when nothing else listens for it, so the process still stops. A killed process cannot clean up, so the first page a server shows sweeps `compass-qr-` folders in the temp folder that are real folders (not links), belong to this user on POSIX, and are older than 20 minutes, longer than a hand-off lives. Folder ages use the real time, not the runtime clock, which simulated mode pins to the event week.
+- **M3, overlapping calls.** `show` and `clear` (and the expiry timer) run one at a time, so two calls cannot orphan a folder.
+- **L1, a blacklist SVG check.** `isPlainSvg` is now an allowlist of the exact shape the QR library makes (one `svg` with the SVG namespace and a numeric viewBox, holding only `path` elements with a hex fill or stroke and path data), and the CSP adds `base-uri 'none'; form-action 'none'`.
+
+Accepted: on Windows the file mode is not enforced, and the protection is the per-user `%TEMP%` folder (L2; the README says so). Deleting the page does not revoke the hand-off, which lives its 15 minutes on the service (L3). The .html handler may not be a browser (L4), which the hint covers.
+
+## Owner change: branded QR page (21 October 2026, task 49)
+
+The QR page carries the brand: the title "re:Invent Compass Boarding Pass", the owner's icon as the favicon and the owner's full logo above "Scan with your phone camera". The page keeps its Content-Security-Policy (`img-src data:`), so both SVGs are embedded as `data:image/svg+xml;base64` URLs, generated into `src/adapters/qr-brand.ts` by `scripts/make-qr-brand.mjs` from `site/public/artwork` (the npm package cannot read the site folder at run time). A test compares the module with the site files so they cannot drift. Both files were checked on 21 October: no script, no event handler and no external reference, only the SVG namespaces; an SVG shown through `<img>` or as a favicon cannot run script in any case. The colours follow the Apple pass: the Pass Designer gradient (dark navy, blue, magenta, orange) as a CSS gradient behind a dark card that keeps the logo and the text readable, with the heading in the pass label orange.
+
+### Expired link banner (21 October 2026, task 50)
+
+Requirement P3.8. Deleting the page file does not change a tab that already shows it, so an old QR code could stay on screen. The page now changes itself at the expiry with CSS only, because its CSP allows no script: the heading, the QR code, the expiry line and the sharing note sit in a `.live` block, and a red `.expired` banner ("This link has expired. Ask Compass for a new link or QR code.") starts hidden. One zero-length animation per element, with `animation-delay` set to the seconds left when the page is written and `animation-fill-mode: forwards`, hides the `.live` block and shows the banner at that moment. `qrPageHtml` takes the milliseconds left, rounded up to whole seconds. CSS animations run on the document timeline, so a tab in the background shows the banner as soon as it is seen again; if the computer sleeps, some browsers pause that timeline, and the banner then comes later than the expiry. The link itself still expires on the service at the same time either way.
+
+## Owner change: issue all passes or one (21 October 2026, task 51)
+
+Requirements P4.1 to P4.4. Approved by the owner in the PSH1 deploy session: "Yes, that design, replacing issue_boarding_passes."
+
+- **`issue_all_boarding_passes`** (`src/tools/issue-boarding-passes.ts`). No input. Reads the fresh schedule, keeps the reserved ids the catalog knows (an id the catalog does not know is skipped and counted in the text), asks once with every session listed, refreshes each through GetSession and issues them in one `passes.issue` call, which the adapter already splits into chunks (`MAX_ISSUE_CHUNK`). Nothing reserved: no question, nothing issued.
+- **`issue_boarding_pass`**. `sessionId` optional; codes resolve through `resolveSessionCodes` like every other `sessionId`. With an id: identifier check, catalog lookup (`UnknownSession`), fresh schedule, refusal when not reserved, one confirmation, one pass. Without an id: the reserved sessions the catalog knows are offered through `ctx.choose` as a single-choice list; the chosen one then goes through the same confirmation. A client without elicitation gets the reserved sessions as labelled catalog data and "Name one with issue_boarding_pass", and nothing is issued. With nothing reserved it says so.
+- **The choice.** `ToolContext` gains `choose?(question: { message, options: { value, label }[] })`, offered only when the client declares elicitation, like `elicit`. The server asks with a string property whose `enum` is the labels (`CODE Title`, the most widely supported single-select form) and maps the picked label back to its value; a label that is not offered counts as a decline.
+- **Five minutes to answer.** `elicitInput` is called with `{ timeout: 300000 }` (the SDK default is 60 seconds, which turned a slow Confirm in Kiro into "you did not confirm"). A request timeout (`RequestTimeout`, -32001) throws `CompassError('ConfirmTimedOut')`: "Nothing was changed, because the confirmation was not answered within 5 minutes. Ask again when you are ready." Every tool asks before it writes, so nothing has changed when it throws. Any other failure still counts as a decline.
+- **Everything that named the old tool**: the contract (foundation-contracts task 22), the registry, the hook's write-tool list, the descriptions and titles, `NoPassesIssued` ("Run issue_all_boarding_passes first."), the spec renderer's next action, the demo, the Power and the plan-my-week skill, and the mcp-server README. Twenty-four tools.
+
+### One confirmation for passes (21 October 2026, task 52)
+
+Requirement P4.5. In Kiro the owner still saw two prompts for `issue_all_boarding_passes`: Kiro's own tool approval, which always runs for a Write_Tool, and Compass's `humanConfirms`. Both pass tools drop `humanConfirms`, so the client's approval is the one confirmation: one for all passes, one per single pass. The pick list of `issue_boarding_pass` without a `sessionId` stays, because it chooses the session rather than confirming it. Issuing a pass changes no re:Invent schedule; the schedule writes, `send_to_phone`, `sync_passes` and `forget_me` keep their own confirmations. The descriptions say the client's approval is the confirmation, and the Power still says never to auto-approve either tool.
+
+## Owner change: the 0.1.0 release commit (25 October 2026, task 53)
+
+The owner gave the go for the release commit three days before the 28 October freeze, so CI tests the exact package that will ship (TAM H1, 20 October). One commit removes the `"private": true` safety catch from `packages/mcp-server/package.json`, sets the version to 0.1.0 in the package, the Power files, the hook template and every `npx` example (0.0.1 is spent by the owner's placeholder publish, ADR-018), and points the built-in `COMPASS_API_BASE_URL` at `https://reinvent-compass.vegas` (ADR-031). Nothing is published by this commit: `publish.yml` runs only on a `v0.1.0` tag, which the owner pushes after prod answers its health check, and the `npm-publish` environment waits for the owner's approval. Until prod is live, the built-in address does not answer; dev testing uses the `COMPASS_API_URL` override with `COMPASS_ALLOW_API_OVERRIDE=1`, as before. The site's install page keeps `packageVersion` null until the package is on npm, so it never shows a version that cannot be installed.
+
+## Owner change: refreshed wording proposals (26 October 2026, task 54)
+
+The proposals of 20 October for the owner's README and Builder Center drafts went stale as the product grew: more tools, the Pass Designer pass and its field names, the tagline, the GitHub tech scan, link or QR, the new site pages, Google Wallet publishing access and the 0.1.0 release commit. Task 54 rewrites `docs/proposals/read-only-wording.md` against the drafts as they are on 26 October, with current line numbers and paste-ready replacement text. The drafts stay the owner's: nothing is applied to them, and the owner pastes what they accept. Facts come only from the code, the specs and the runbooks on develop.
+
+## Owner change: layover times and badge pickup day (29 October 2026, tasks 55 and 56)
+
+The owner's live write run (LW1, 29 October) found two layover bugs. Everything else in the run worked: reserve, standby, issue a pass, send to phone, Add to Google Wallet, cancel and `sync_passes`.
+
+**Times (task 55).** The OpenAPI document says personal time is written `YYYY-MM-DDTHH:MM:SS` in UTC, so `toWireInstant` turned 07:00 PST into `15:00:00`. The live service and the re:Invent app read that value as a wall-clock time in the event's own time zone: the layover showed at 15:00, eight hours late. The read-back still matched, because Compass read the same value back as UTC, so the confirmation could not catch it. Compass now writes personal time as the wall-clock time in the event time zone (`eventWindow().timezone`, read from the API, America/Los_Angeles for re:Invent 2026) and reads a naive value back as that wall-clock time, giving it the zone's offset. The attendee's own time zone never enters: 7am means 7am in Las Vegas wherever the attendee is. The helpers sit beside `computeSessionInterval` in `session-time.ts` and use the same Intl offset lookup, so a time just after a daylight saving change resolves correctly. This is a deviation from the OpenAPI document, recorded in `docs/spikes-results.md` with the owner's observation; the simulated transport follows the live behaviour.
+
+**Badge pickup day (task 56).** The live event window starts 30 November at 05:30 PST, but badge pickup and registration open on Sunday 29 November, and attendees plan that day too. `add_layover` now accepts a layover from 00:00 on the day before the event start, in the event time zone, up to the event end. The window is still read from the API and never hard-coded; only the layover check widens it, and sessions and passes keep the event window.
+
+## CTO final review: package metadata and licences (29 October 2026, task 57)
+
+The CTO's final review found two High issues before the permanent 0.1.0 publish. (1) The package manifest had no `description`, `license`, `repository`, `homepage` or `bugs`, and npm provenance needs `repository.url` to match the GitHub repository; all five are now set (`Apache-2.0`, directory `packages/mcp-server`). (2) The build bundles the MCP SDK, zod and others with `legalComments: 'none'`, which stripped their licence notices. The build now copies the repository `LICENSE` and `NOTICE` into the package root (git ignores the copies) and writes `THIRD-PARTY-NOTICES.txt` from the esbuild metafile: each bundled third-party package once by name and version, sorted, with its licence field and full licence file text, or a plain line when none was shipped. The workspace packages `@compass/*` are left out. `legalComments` stays `'none'` because the notices file carries the full texts. `check-pack.mjs` requires the three new files.

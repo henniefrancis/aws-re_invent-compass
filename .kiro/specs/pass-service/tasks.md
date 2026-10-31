@@ -486,28 +486,28 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 25.3 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 26. Apply the SP2 result (waits on the owner)
-  - [ ] 26.1 Adjust the verifier configuration to the recorded SP2 result
+- [x] 26. Apply the SP2 result (done: the Cognito issuer is recorded in docs/spikes-results.md, dev runs `ID_TOKEN_VERIFIER=cognito` with that `ID_TOKEN_ISSUER` through the HCP workspace variables, and SP3 verified a live Builder ID token on dev on 19 October)
+  - [x] 26.1 Adjust the verifier configuration to the recorded SP2 result
     - Once the owner has recorded the SP2 result (design, Owner-run spike checklist): if it confirms the Cognito issuer, record the `ID_TOKEN_ISSUER` value in the README for S6 and keep `cognito`; if another OIDC issuer verified, document `oidc` with the issuer and `jwks_uri`, and add a test case built on that issuer's shape; if offline verification failed, stop and raise build plan 5.4 step 3 with the owner and integrator (no code change here). Never record a token or claim value other than `iss`, `aud`, `alg` and `token_use`
     - _Requirements: 4.2, 4.3, 4.9, 24.2, 24.6_
 
-  - [ ] 26.2 Commit
+  - [x] 26.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 27. Apply the SP3 result (waits on the owner)
-  - [ ] 27.1 Adjust the PassKit and APNs configuration to the recorded SP3 result
+- [x] 27. Apply the SP3 result (recorded 19 October)
+  - [x] 27.1 Adjust the PassKit and APNs configuration to the recorded SP3 result
     - Set the documented values for `PASSKIT_WEB_SERVICE_PATH` (path join), `APNS_PUSH_TYPE` (if a push type was needed) and the `apns-topic` behaviour; if `If-Modified-Since` was never sent, note it; if pushes never arrived, document `APNS_ENABLED=false` as the shipped setting for S6 and the SP3 fallback (passes expire at `expirationDate`; sync copy tells the attendee which pass to delete); if binary downloads failed through the dev edge, raise the binary media type question with the integrator; update tests only where a default changed
     - _Requirements: 13.2, 13.6, 24.3, 24.6_
 
-  - [ ] 27.2 Commit
+  - [x] 27.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
-- [ ] 28. Apply the SP4 result (waits on the owner)
-  - [ ] 28.1 Adjust the Google configuration to the recorded SP4 result
+- [x] 28. Apply the SP4 result (waits on the owner; applied 31 October 2026, no code change: see `docs/spikes-results.md` "SP4 result")
+  - [x] 28.1 Adjust the Google configuration to the recorded SP4 result
     - Record the `GOOGLE_WALLET_CLASS_SUFFIX` value for S6; if a duplicate insert does not answer 409, change the fallback condition to the recorded status and its test; if long save links failed, raise the several-save-URLs question with the integrator; if publishing access is not granted by 28 October, document "beta, test users" in the README (no code change); if access is refused, document `GOOGLE_WALLET_ENABLED=false` (cut-list item 10)
     - _Requirements: 14.3, 14.6, 14.7, 24.4, 24.6_
 
-  - [ ] 28.2 Commit
+  - [x] 28.2 Commit
     - After `npm test`, `npx eslint .` and `npx prettier --check .` all pass with zero errors, commit with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
 
 - [x] 29. Final checkpoint - Ensure all tests pass and coverage is complete
@@ -521,6 +521,141 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 
   - [x] 30.2 Commit
     - After `npx eslint .` and `npx prettier --check .` both pass with zero errors, commit the captures with scope `pass-service` (subject plus body via multiple `-m` flags, no attribution). Never push.
+
+- [x] 31. Make the APNS host check an explicit exact match (CodeQL alert 4, design "Post-CodeQL change")
+  - [x] 31.1 In `config.ts`, compare `APNS_HOST` to the allowed hosts with strict equality instead of `Array.prototype.includes`
+    - Why: CodeQL js/incomplete-url-substring-sanitization read `APNS_HOSTS.includes(host)` as a substring test. It is an array, so it was already an exact match (a false positive), but the explicit form says so and keeps the scan clean
+    - Tests: the existing config tests (an allowed host passes; `api.push.apple.com.evil.example` and a sandbox look-alike are refused) still pass; 100 percent coverage
+  - [x] 31.2 Commit after the full gate passes, scoped `pass-service`. Do not push
+
+- [x] 32. New Apple pass front (owner decision of 20 October, Requirement 9.12, design "Post-SP3 change: pass front layout")
+  - [x] 32.1 Lay out the front as: header SESSION (the session code); primary BOARDING CLOSES (24-hour) and GATE (the venue, or "Venue not published"); secondary TITLE; auxiliary DATE (for example "Thu 3 Dec"), TIME (start to end, 24-hour, for example "13:00-14:00"), ROOM (the short room) and NOTICE (the disclaimer, which Requirement 9.2 keeps on the front)
+    - The short room is the part after the first comma of the room (for example "Academy 409" from "Level 1, Academy 409"), or the whole room when it has one part; ROOM is left out when the room is empty. The back gains a ROOM line with the full room
+    - Every time on the Apple pass, front and back, is 24-hour in the event timezone. The Google object and the calendar keep their formats
+    - Why: the owner reviewed the live pass on 20 October and asked for the session code at the top right, the title near the top, and date, time and room in one row. Apple fixes the boarding pass row order (header, primary, secondary, auxiliary), so the title sits under the large row
+    - Tests: the field keys, labels and order of every row; 24-hour times across midnight and in the event timezone; the short and full room, and no ROOM when empty; the disclaimer on front and back
+  - [x] 32.2 Commit after the full gate passes, scoped `pass-service`; the owner redeploys dev and syncs the passes
+
+- [x] 33. Take the Apple pass colours from the owner's artwork (owner decision of 20 October, design "Post-SP3 change: pass colours")
+  - [x] 33.1 Set `backgroundColor` to `rgb(18, 8, 48)` (the deep indigo of the owner's picture), keep `foregroundColor` white, and set `labelColor` to `rgb(255, 176, 196)` (the pink of its glow line)
+    - Why: the owner wanted their own picture as the pass background. Apple shows a background image only on event tickets, and the pass stays a boarding pass (Requirement 9.1), so the pass takes the picture's colours and the picture itself goes on the hand-off page (showcase-site task 20)
+    - Contrast: white on the indigo is 19:1 and the pink labels 11:1 (WCAG AA needs 4.5:1)
+    - Tests: the three colours, and a contrast check of foreground and label against the background
+  - [x] 33.2 Commit after the full gate passes, scoped `pass-service`
+
+- [x] 34. Owner's second pass review: no logo text, no front notice, purple and pink (owner decision of 20 October, design "Post-SP3 change: pass review 2", Requirement 9.2 amended)
+  - [x] 34.1 Remove `logoText` ("Compass" was cut to "Comp..." between the logo and SESSION), so the top row is the logo and the session code
+  - [x] 34.2 Remove the NOTICE field from the front. The disclaimer stays on the back, and `organizationName` "re:Invent Compass (unofficial)" and `description` "Unofficial boarding pass" still say unofficial; Requirement 9.2 is amended to the back only
+  - [x] 34.3 Set `backgroundColor` to `rgb(140, 79, 255)` (#8C4FFF, Cyber Purple), keep `foregroundColor` white and set `labelColor` to `rgb(255, 0, 127)` (#FF007F, Electric Pink)
+    - Wallet takes one solid background colour and one label colour, so the owner's ranges (#8C4FFF to #A020F0, #E0115F to #FF007F) become these two values
+    - Accepted deviation (owner decision): the pink labels are 1.2:1 against the purple, under the WCAG 4.5:1 guideline, so the field labels are hard to read. The values (white, 4.49:1) carry the information. The contrast test now checks the values only and pins the label colour as an owner decision
+  - [x] 34.4 Put the short room in the gate label, for example "GATE - OCTAVIUS 4" above "Caesars Palace", and drop ROOM from the bottom row, which keeps DATE and TIME. Wallet has no smaller line under a field value, so the owner chose the label over a right-aligned ROOM column. The full room stays on the back
+  - [x] 34.5 Tests and commit after the full gate passes, scoped `pass-service`
+
+- [x] 35. Owner's third pass review (owner decisions of 20 October, design "Post-SP3 change: pass review 3", Requirements 9.7, 9.10 and 9.12 amended)
+  - [x] 35.1 GATE shows the short room (for example "Octavius 4"), or "Room not published"; the label is plain GATE again
+  - [x] 35.2 Bottom row: DATE "Thu, 3 Dec 2026" (left), TIME "13:00-14:00 PST" with the event timezone abbreviation (centred) and VENUE with the venue or "Venue not published" (right-aligned), using the PassKit `textAlignment` key
+    - Why PST: re:Invent runs on Las Vegas time; UTC would read eight hours off the venue clocks (owner chose PST)
+  - [x] 35.3 Colours: background `rgb(35, 47, 63)` (#232F3F), values white, labels `rgb(161, 102, 255)` (#A166FF)
+    - Accepted deviations (owner decisions): the background is one digit from AWS Squid Ink #232F3E (Requirement 9.10 note), and the labels are 3.78:1, under WCAG 4.5:1. White values are 13.6:1
+  - [x] 35.4 Tests and commit after the full gate passes, scoped `pass-service`
+
+- [x] 36. Owner's fourth pass review: one date and time field (owner decision of 20 October, design "Post-SP3 change: pass review 4", Requirement 9.12 amended)
+  - [x] 36.1 The bottom row is DATE (left) with "3 Dec 2026 | 13:00-14:00" (no weekday, no zone abbreviation) and VENUE (right-aligned); the separate TIME field goes. The zone is still named once on the back (Requirement 9.6)
+  - [x] 36.2 Remove the now unused zone abbreviation formatter; tests and commit after the full gate passes, scoped `pass-service`
+
+- [x] 37. Owner's fifth pass review: airline wording (owner decision of 20 October, design "Post-SP3 change: pass review 5", Requirement 9.12 amended)
+  - [x] 37.1 `logoText` is the session code (no heading), next to the logo where "Compass" was. Wallet has no colour key for the logo text, so it takes the value colour; the owner wanted purple, which only a purple foreground for every value would give
+  - [x] 37.2 Header (top right): BOARDING CLOSES with the 24-hour time. Primary: TERMINAL (the venue, or "Venue not published") and GATE (the short room). Secondary: FLIGHT NAME (the title). Auxiliary: DATE "3 Dec 2026 | 13:00-14:00"
+  - [x] 37.3 Tests and commit after the full gate passes, scoped `pass-service`
+
+- [x] 38. Use the owner's logo and icon on the pass (owner decision of 20 October, design "Post-SP3 change: owner artwork")
+  - [x] 38.1 `scripts/make-artwork.mjs` renders `site/public/artwork/logo.svg` into logo.png, logo@2x.png and logo@3x.png (160x50, 320x100, 480x150, the logo fitted to the height and left-aligned on a transparent canvas) and `site/public/artwork/favicon.svg` into icon.png, icon@2x.png and icon@3x.png (29, 58, 87, centred, transparent), with Playwright's Chromium (already a dev dependency), and writes `src/apple/artwork.ts`
+  - [x] 38.2 Remove the drawn artwork (`src/artwork/draw.ts`, `src/artwork/png.ts`, `scripts/make-artwork.ts`) and its tests; `src/artwork/render.ts` keeps the file list and the module writer
+  - [x] 38.3 Tests: the six images are PNGs of the documented sizes with transparent corners and visible ink, and the module header names the owner's SVGs; commit after the full gate passes, scoped `pass-service`
+
+- [x] 39. Owner's sixth pass review (owner decision of 20 October, design "Post-SP3 change: pass review 6", Requirement 9.12 amended)
+  - [x] 39.1 SESSION with the session code goes back to the header (top right); the logo text is removed, so the top row is the logo and SESSION
+  - [x] 39.2 The bottom row is DATE (left) and BOARDING CLOSES (right-aligned, 24-hour)
+  - [x] 39.3 Tests and commit after the full gate passes, scoped `pass-service`. Wallet draws the transit arrow (unchanged, `PKTransitTypeGeneric`) and picks every font size; a pass cannot set either
+
+- [x] 40. Align the Google Wallet object with the final Apple layout (tracker GP1, design "Post-SP3 change: Google layout", Requirement 14.1 amended)
+  - [x] 40.1 Text modules TERMINAL (venue, or "Venue not published"), GATE (the short room, or "Room not published"), DATE ("3 Dec 2026 | 13:00-14:00", 24-hour), BOARDING CLOSES (24-hour), ROOM (the full room, when there is one) and NOTICE (the disclaimer), reusing the Apple formatters and `shortRoom`; header the title (flight name), subheader the session code; background #232F3F. The Google class is unchanged
+  - [x] 40.2 Tests and commit after the full gate passes, scoped `pass-service`
+- [x] 41. Pass icon at 38 points (CTO review M3 of 20 October, design "Post-SP3 change: icon size")
+  - [x] 41.1 `make-artwork.mjs` renders `icon.png`, `icon@2x.png` and `icon@3x.png` at 38, 76 and 114 pixels, the size in Apple's current Wallet Human Interface Guidelines (29 points was the older PassKit guide); regenerate `src/apple/artwork.ts`; the artwork test sizes and the comments follow. The logo stays up to 160 by 50 points
+  - [x] 41.2 Tests and commit after the full gate passes, scoped `pass-service`
+- [x] 42. Issue the Apple pass as a poster event ticket with the owner's picture (owner decision of 20 October, design "Post-SP3 change: poster event ticket", Requirements 9.1, 9.2, 9.10 and 9.12 amended, 9.13 added)
+  - [x] 42.1 `buildPassJson` writes `eventTicket` instead of `boardingPass` (no `transitType`), with `preferredStyleSchemes` `["posterEventTicket", "eventTicket"]` and `semantics`: `eventType` `PKEventTypeGeneric`, `eventName` (the title), `venueName` (the venue, or "Venue not published"), `venueRegionName` "Las Vegas", `venueRoom` (the full room, or "Room not published"), `eventStartDate` and `eventEndDate` (canonical, built from `Date.parse`). The legacy fields keep the airline labels (header SESSION; primary TERMINAL and GATE; secondary FLIGHT NAME; auxiliary DATE and BOARDING CLOSES; the back unchanged), and `additionalInfoFields` carry BOARDING CLOSES and NOTICE so the poster layout still shows the seat release time and the disclaimer
+  - [x] 42.2 `make-artwork.mjs` also renders the owner's picture `site/public/artwork/pass-background.jpg` into `artwork@2x.png` (716 by 896 pixels, 358 by 448 points, cover-cropped and centred) and the logo into `primaryLogo@2x.png` and `primaryLogo@3x.png` (up to 126 by 30 points, fitted to the height and left-aligned); regenerate `src/apple/artwork.ts`. Only the 2x artwork ships: with 3x a 10-pass bundle would pass Lambda's 6 MB response limit once base64-encoded, so the whole artwork set stays under 420 KB (10 passes are about 4.2 MB, 5.6 MB in base64)
+  - [x] 42.3 Users read "Boarding Pass": `description` is "Unofficial Boarding Pass" and the calendar product name is "Boarding Passes"
+  - [x] 42.4 Tests (pass.json style, schemes, semantics with and without venue and room, additional info fields, image names, sizes and the artwork budget, a signed pass carries the new files) and commit after the full gate passes, scoped `pass-service`. Owner check on the iPhone: delete the old dev passes, issue new ones and confirm the poster layout (iOS 26 or later) and the legacy fallback
+
+- [x] 43. Show the room and the unblurred picture on iPhone: a poster generic pass with an event ticket fallback (owner decision of 21 October, design "Post-SP3 change: poster generic pass", Requirements 9.1 and 9.12 amended)
+  - [x] 43.1 `buildPassJson` writes `posterGeneric` (header SESSION; primary FLIGHT NAME, TERMINAL, an arrow, GATE; footer DATE and BOARDING CLOSES; the back fields) and keeps `eventTicket` as the fallback (header SESSION; primary FLIGHT NAME; secondary TERMINAL and GATE; auxiliary DATE and BOARDING CLOSES; additional info and back as before). `preferredStyleSchemes` is dropped, because the poster event ticket needs NFC, which this pass cannot have. The semantics stay
+  - [x] 43.2 Tests (both styles, field order, the arrow, no room and no venue, a signed bundle carries both styles and the artwork) and commit after the full gate passes, scoped `pass-service`. Owner check on iOS 27: remove the old dev pass, issue a new one, and confirm the picture is unblurred and the room shows as GATE
+
+- [x] 44. Use the owner's Pass Designer event ticket (owner decision of 21 October, design "Post-SP3 change: Pass Designer event ticket", Requirements 9.1, 9.2, 9.10, 9.12 and 9.13 amended)
+  - [x] 44.1 `buildPassJson` writes only `eventTicket`, in the layout, keys, labels, alignments, colours and back texts of the owner's design (`docs/previews/compass.pkpass`, read 21 October): header SESSION; primary FLIGHT NAME; secondary TERMINAL, the unlabelled arrow, GATE; auxiliary DATE and BOARDING CLOSES; back ABOUT, UNOFFICIAL PASS, BOARDING CLOSES, then ROOM, WALK FROM PREVIOUS, NEXT SESSION and NAME when known, then TIMES, IF YOUR PLANS CHANGE and PRIVACY. Organization name "AWS Community South Africa"; black, white and orange. The design's DISCLAIMER NOTICE field is dropped (ABOUT says it); the trailing spaces and the "Pacific TIme" sample are not copied; the times line stays generated. `posterGeneric` and the additional info fields go. The Google object background follows (#000000)
+  - [x] 44.2 `make-artwork.mjs` renders `background@2x.png` (686 by 1006 pixels, 343 by 503 points) from `pass-background.jpg` instead of the poster artwork and primary logo, and keeps the icon and the logo at Apple's sizes (the design's 8423 by 3645 pixel logos and airline-only footer images are not used). The set is 395 KB, under the 420 KB budget
+  - [x] 44.3 Tests (layout, alignments, the unlabelled arrow, the back order with and without per-pass data, colours and contrast, image sizes and budget, a signed pass keeps the design) and commit after the full gate passes, scoped `pass-service`. Owner check on the iPhone: remove the old dev pass, reissue, and compare with the Pass Designer preview
+  - [x] 44.4 Owner check of 21 October: the layout matches the design, but the background was the older photo. The background is now the design's own gradient (`packages/pass-service/artwork/pass-background.png`, kept out of the site's public folder, taken from `docs/previews/compass.pkpass`) as `background.png` at 1x (343 by 503 pixels): at 2x the gradient weighs 538 KB, over the budget, and Wallet blurs an event ticket background, so 1x looks the same. The set is 222 KB
+
+- [x] 45. Google Wallet publishing access outcome (tracker P05, decision date 28 October, build plan SP4 fallback and risk R4, ADR-010)
+  - [x] 45.1 Record what Google's page asks for (a complete business profile and one class, both done) and how the owner reads the status in `docs/runbooks/google-wallet-setup.md` (22 October)
+  - [x] 45.2 Record the outcome: approved on 21 October 2026 (Google's approval mail to the Admin account), confirmed by a read-only console check on 22 October (no Get publishing access box, business profile Approved, `compass-dev` Active, `compass-wallet` Developer). The "beta, test users" fallback is not needed: no code, infrastructure or wording change, `google_wallet_enabled` stays `true`, no test accounts. The owner's Android save on 22 October shows no "[TEST ONLY]" mark
+
+- [ ] 46. Prod Google key, prod Google class and the Apple certificate check (tracker PK1, TAM M3 of 20 October, part of release gate G03)
+  - [x] 46.1 Order the owner-run steps against `docs/runbooks/release.md` "First-time setup of an environment" and record them, with dates, in `docs/runbooks/google-wallet-setup.md` (22 October). Correct the `google-class.md` precondition: the service account needs no Cloud IAM role, only Developer access under Users in the Wallet console
+  - [x] 46.2 Owner, any day before the deploy: confirm the Pass Type ID certificate expiry (14 November 2027) in the Apple developer portal and record the date it was checked (confirmed by the owner on 29 October 2026)
+  - [ ] 46.3 Owner, on the prod deploy day after `scripts/release.sh prod` has created the secret containers: create a fresh `compass-wallet` JSON key, `scripts/load-secrets.sh prod google`, `scripts/check-secrets.sh prod`, `scripts/google-wallet-class.mjs --env prod` with the same key, then shred the key file. Record the results in the runbook
+
+- [x] 47. Make the Google Wallet pass look like the Apple pass (owner decisions of 22 October, design "Post-SP3 change: Google template", Requirement 14.1 amended, infra tasks 24 and 25)
+  - [x] 47.1 `make-artwork.mjs` also writes the Google images to `packages/pass-service/artwork/google/`: `wide-logo-v1.png` (the icon only, `favicon.svg`, 1280 by 400 pixels, fitted to the height, left-aligned, transparent) and `hero-v1.png` (the Pass Designer gradient, 1032 by 812 pixels, cover-cropped and centred, with the full logo `logo.svg` centred on it over a soft white glow). The version in the name gives a later artwork change a new URL, since Google caches images by URL
+  - [x] 47.2 `buildGenericObject` sets `wideLogo` and `heroImage` (`sourceUri.uri` is `<PUBLIC_BASE_URL>/wallet/<file>`, each with a `contentDescription`), keeps `cardTitle`, `header` and `subheader`, sets `hexBackgroundColor` to #2035E2 (the blue at the top of the hero, so the card runs into the picture; white text measures about 7.9:1 on it), and writes the text modules TERMINAL, GATE, DATE and BOARDING CLOSES for the front rows, then ROOM (when known), ABOUT, UNOFFICIAL PASS, BOARDING CLOSES (the seat rule), WALK FROM PREVIOUS and NEXT SESSION (when known), TIMES, IF YOUR PLANS CHANGE and PRIVACY for the details, with the Apple back texts. No NAME (Google keeps the object on its servers) and no NOTICE (ABOUT and UNOFFICIAL PASS say it, as on the Apple back)
+  - [x] 47.3 `scripts/google-wallet-class.mjs` sets `classTemplateInfo`: `cardTemplateOverride` with two `twoItems` rows (TERMINAL and GATE; DATE and BOARDING CLOSES) and `detailsTemplateOverride` listing the detail modules in order. The diff check compares nested values (a desired value matches when every key it names matches the class Google returns), so a second run still says "class: exists, left unchanged"
+  - [x] 47.4 Tests (the image URLs and descriptions, the modules with and without room, walk and next, no name, the save JWT under 1800 characters, the class template naming only module ids the object writes, the nested diff check) and commit after the full gate passes, scoped `pass-service`
+  - [x] 47.6 The owner's second dev run of the class script (24 October) printed "class: updated" again, so Google's copy of the class still differs from the template after a patch, and the script cannot say where because it never prints a response. `firstDifference` reports the first differing path and only the kind of value found there (missing, null, a list of n, a string), except a template `fieldPath`, which is layout data; the script prints "class: differs at <path> (found ...)" before it patches. Static tests. The owner's next run printed "class: differs at viewUnlockRequirement": Google returns its default `VIEW_UNLOCK_REQUIREMENT_UNSPECIFIED`, documented as the same as `UNLOCK_NOT_REQUIRED`, so the check treats the two as equal (`UNLOCK_REQUIRED_TO_VIEW` still patches) and names enum constants it finds. The run after that showed Google answers the setting in lowerCamelCase ("unlockNotRequired"), so enum values now compare without case or underscores. The owner's next run should print "class: exists, left unchanged"
+  - [x] 47.7 Keep each object within Google's 10 text modules. The owner's dev sync of 24 October issued two passes but both Google inserts failed fast (`GoogleWalletFailure` 2, 338 ms): an object carried up to 13 text modules, and Google documents at most 10 from the object and 10 from the class (it would not display more either). The five texts that are the same on every pass (ABOUT, UNOFFICIAL PASS, the seat rule, IF YOUR PLANS CHANGE, PRIVACY) move to the class `textModulesData`, taken from a new import-free `src/apple/pass-texts.ts` that the Apple back also uses; the object keeps the front four plus ROOM, WALK FROM PREVIOUS, NEXT SESSION and TIMES (at most 8). The details template names `class.` or `object.` per item, in the same order. Tests hold the object and the class at 10 or fewer. Owner: release dev, run the class script again, then `forget_me` and sync, since a failed Google insert is not retried
+  - [x] 47.8 Set the required `logo` next to the wide logo. A local diagnostic of 25 October (test objects built by `buildGenericObject`, set INACTIVE afterwards) showed Google refuses every object with `wideLogo` and no `logo`: HTTP 400 "logo must be set if wide_logo is set"; without the wide logo the same objects insert (200). `make-artwork.mjs` renders `logo-v1.png` (the icon on #2035E2, 660 by 660 pixels, 15 percent margin, which Google masks into a circle where the wide logo does not fit), the object sets `logo` with the wide logo and the hero, and `release.sh` ships it with the other two. Tests; confirm with the diagnostic before the release
+  - [x] 47.5 Owner, after infra task 25 is deployed with `scripts/release.sh dev`: update the dev class with `scripts/google-wallet-class.mjs --env dev` (a fresh `compass-wallet` key; or on the prod deploy day with the task 46.3 key, before `--env prod`), reissue a pass, save it on Android and compare it with the Apple pass. Record the result in `docs/runbooks/google-class.md`
+
+- [x] 48. Split the Google save link so every pass fits (final TAM review of 29 October, design "Final review: Google save links and insert retry")
+  - [x] 48.1 One signed save JWT holding every pass passes Google's safe length of 1800 characters at about 9 passes (measured 29 October: 1 pass 746, 8 passes 1782, 9 passes 1930, 12 passes 2374). `GoogleWalletClient` gets a method that returns one or more save links, filling each link with as many objects as keep its JWT within `SAFE_JWT_LENGTH` (measured on the signed token, not estimated), in the hand-off order
+  - [x] 48.2 The hand-off view returns `google: { saveUrl, saveUrls }`: `saveUrls` lists every link and `saveUrl` stays the first, so an older page still works. Update the contract schema in `packages/contracts/src/compass-api-schemas.ts`, the generated types and the Compass API OpenAPI document, and keep `GoogleSaveJwtOversize` counting any link that is still over (a single pass never is)
+  - [x] 48.3 The board page (`site/src/lib/board/handoff-view.ts` and its component) shows one Save to Google Wallet button per link, labelled with the passes it holds when there is more than one; tests for 1, 8, 9 and 12 passes; the owner reviews the board page on the local preview before any push
+  - [x] 48.4 Full gate, including `npm run test:site` and the e2e board tests; commit scoped `pass-service`
+
+- [x] 49. Retry Google inserts that did not finish (final TAM review of 29 October, finding 5, same design section)
+  - [x] 49.1 A pass whose Google insert failed or ran out of the insert budget keeps `googleState: 'none'` and so never gets a Google link. When a hand-off view is read, the service tries once more to insert such passes (the attendee asked for Google and Google is enabled), with the same concurrency limit and budget, marks each success `active`, and builds the links from the passes that are active; a failure is counted as `GoogleWalletFailure` and never stops the view
+  - [x] 49.2 An insert that Google answers with 409 (the object already exists) counts as inserted, so a retry after a lost response is safe
+  - [x] 49.3 Tests for the retry, the 409 case, the budget and the metrics; full gate; commit scoped `pass-service`
+
+- [x] 50. Apple, Google and calendar for each session in a hand-off (owner decision of 29 October, design "Owner change: buttons for each session", supersedes the board part of task 48)
+  - [x] 50.1 Contract (`contracts/compass-api.openapi.yaml`, then `npm run gen:copy` and `npm run gen:types`): each entry of the view's `sessions` gains `applePath` (or null), `googleSaveUrl` (or null) and `calendarPath` (or null). The top-level `google` goes back to `{ saveUrl }` and is present only when every Google pass fits in one link within `SAFE_JWT_LENGTH`; `saveUrls` is dropped. `apple.bundlePaths` and the top-level `calendarPath` stay as they are
+  - [x] 50.2 Two new routes, each checked exactly like the bundle route (hand-off id pattern, hash lookup, expiry, the read limit, active passes only, the serial must be one of the hand-off's own): `GET /api/v1/handoffs/{handoffId}/apple/pass/{serialNumber}` answers one signed `.pkpass` (`application/vnd.apple.pkpass`), and `GET /api/v1/handoffs/{handoffId}/calendar/{serialNumber}.ics` answers that session alone. A path is only given when the hand-off includes that platform and the pass has it; a serial that is not in the hand-off, not active or not valid is 404 with no detail. Wire both in `api-app.ts`, the handlers, the API Gateway OpenAPI in `infra/modules/api` and any route list or test that enumerates routes
+  - [x] 50.3 Google per session: one save link per pass with an active object (one object per JWT, about 700 characters), signed in the view; the top-level link is built only when all of them fit in one; task 49's retry runs first, as now
+  - [x] 50.4 The per hand-off read limit becomes 30 plus 3 for every pass in the hand-off (at most 80 passes), so every button on the page can be used once
+  - [x] 50.6 Review fixes (security M1 and L1, QA Low-1, Low-2 and Info-1 of 30 October): mark a Google object active only while the pass is still active (a conditional write); when the pass was voided meanwhile, patch the object INACTIVE and do not report it as added; a failed insert is not retried on a view for 60 seconds; the top Google link is given only when every Google pass in the hand-off has its object and they fit one link, and is not attempted above 8 passes; every per-session button's accessible name starts with its visible text (for example "Add to Apple Wallet: ANT398")
+  - [x] 50.5 Tests: routes (happy path, foreign serial, inactive pass, expired hand-off, platform not included, limit), view shape for 1, 8, 9 and 12 passes, Google top link present at 8 and absent when it would not fit, response schema tests; full gate; commit scoped `pass-service`
+
+- [x] 51. Top buttons or session buttons, never both (owner decision of 30 October, design "Owner change: top or per session")
+  - [x] 51.1 A hand-off of 8 sessions or fewer gets only the top actions: the Apple bundle, one Google link and the week's calendar, and every session's `applePath`, `googleSaveUrl` and `calendarPath` is null. When the one Google link cannot be made (a pass has no Google object, or the passes do not fit one link), the top `google` is null and the sessions that have a Google object get their own `googleSaveUrl` instead
+  - [x] 51.2 A hand-off of more than 8 sessions gets per-session actions: `apple.bundlePaths` is empty and the top `google` is null, and every session has the paths and link it qualifies for. The week's calendar file stays at the top in both cases (owner, 30 October), so the top `calendarPath` is kept. The bundle route stays
+  - [x] 51.3 One named threshold (8, the passes that fit one Google save link) replaces `MAX_TOP_LINK_PASSES`; update the site e2e fixtures so the 4 session hand-off has only top actions and the 24 session one only session actions; owner review on the local preview, then the full gate and e2e; commit scoped `pass-service`
+
+- [x] 52. Drop the per-session calendar (owner decision of 30 October, design "Owner change: top or per session")
+  - [x] 52.1 Remove `calendarPath` from each session in the hand-off view (contract source, generated copies, schemas, the API Gateway OpenAPI), the route `GET /api/v1/handoffs/{handoffId}/calendar/{serialNumber}.ics`, its handler, the harness route and their tests; the week calendar route stays
+  - [x] 52.2 The per hand-off read limit becomes 30 plus 2 for every pass (one Apple pass and one view of the page per pass, with room to spare); full gate; commit scoped `pass-service`
+
+- [x] 53. The venue of each session in the hand-off view (tracker L01, showcase-site task 40)
+  - [x] 53.1 Each session in the hand-off view carries its `venue` (the official venue name the pass shows as GATE) or null, from the pass record; contract source, generated copies, schemas and tests; the site validator accepts only a known venue name or null
+  - [x] 53.2 Full gate; commit on the L01 branch
+
+- [x] 54. Six new high npm advisories (CI audit of 31 October 2026)
+  - node-forge 1.4.0 to 1.4.2 (GHSA-7wch-p9px-956x, GHSA-jc66-7q78-782g, GHSA-8hrf-8g6f-7xwp, GHSA-hqq3-7jhf-c5jx, GHSA-5x38-2vff-x55p), a patch release that passkit-generator's `^1.4.0` range accepts
+  - joi 17.13.4 to 17.13.9 through a root `overrides` entry (GHSA-4528-x5fx-h6hg), because passkit-generator 3.7.0 pins joi exactly; npm's own suggestion, downgrading passkit-generator to 3.1.2, is refused
+  - `audit-check` passes with no new allowlist entry; full gate; commit scoped `pass-service`
 
 ## Notes
 

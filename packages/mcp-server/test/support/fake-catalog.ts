@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SessionWireSchema } from '@compass/contracts';
+import { containsAnyWord } from '../../src/adapters/word-match.js';
 import type { NormalisedSession, SessionWire } from '@compass/contracts';
 import type { CatalogFilter, CatalogView, PlannerSession } from '../../src/ports/events-port.js';
 
@@ -107,6 +108,7 @@ export function normaliseWire(wire: SessionWire): NormalisedSession {
 export function buildCatalogView(wires: readonly SessionWire[]): CatalogView {
   const byId = new Map<string, PlannerSession>();
   const labels = new Set<string>();
+  const wireById = new Map(wires.map((wire) => [wire.sessionId, wire]));
   for (const wire of wires) {
     byId.set(wire.sessionId, {
       session: normaliseWire(wire),
@@ -141,6 +143,13 @@ export function buildCatalogView(wires: readonly SessionWire[]): CatalogView {
           if (filter.level !== undefined && session.level !== filter.level) return false;
           if (filter.type !== undefined && session.type !== filter.type) return false;
           if (filter.day !== undefined && !session.startsAt?.startsWith(filter.day)) return false;
+          if (filter.words !== undefined) {
+            const wire = wireById.get(session.sessionId);
+            return containsAnyWord(
+              [session.title, wire?.abstract, ...(wire?.topics ?? []), ...services],
+              filter.words,
+            );
+          }
           return true;
         })
         .map(({ session }) => session);

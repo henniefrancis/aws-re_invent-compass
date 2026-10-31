@@ -13,7 +13,10 @@ const CURLY_SINGLE = [0x2018, 0x2019, 0x2032].map((code) => String.fromCharCode(
 const CURLY_DOUBLE = [0x201c, 0x201d, 0x2033].map((code) => String.fromCharCode(code));
 const ELLIPSIS = String.fromCharCode(0x2026);
 
-/** Map typographic punctuation to ASCII and collapse whitespace. It does not validate. */
+/**
+ * Map typographic punctuation to ASCII, collapse whitespace and turn a vertical bar into a comma
+ * ("Level 1 | Academy 409" becomes "Level 1, Academy 409"). It does not validate.
+ */
 export function normalisePassText(value: string): string {
   let text = value.split(EN_DASH).join('-').split(EM_DASH).join('-');
   for (const mark of CURLY_SINGLE) {
@@ -22,5 +25,12 @@ export function normalisePassText(value: string): string {
   for (const mark of CURLY_DOUBLE) {
     text = text.split(mark).join('"');
   }
-  return text.split(ELLIPSIS).join('...').replace(/\s+/g, ' ').trim();
+  return text
+    .split(ELLIPSIS)
+    .join('...')
+    .replace(/\s+/g, ' ')
+    .split('|')
+    .map((part) => part.trim())
+    .filter((part) => part !== '')
+    .join(', ');
 }

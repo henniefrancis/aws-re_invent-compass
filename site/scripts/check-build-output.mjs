@@ -22,6 +22,15 @@ export function expectedRouteFiles() {
     'demo/index.html',
     'install/index.html',
     'privacy/index.html',
+    'about/index.html',
+    'inspiration/index.html',
+    'documentation/index.html',
+    'disclaimer/index.html',
+    'copyright/index.html',
+    'terms/index.html',
+    'security/index.html',
+    'accessibility/index.html',
+    'credits/index.html',
     'board/index.html',
   ];
 }
@@ -222,7 +231,13 @@ export function findOutputIssues(html, { file, expectNoindex, requireContent = t
     if (!langOk) {
       add('html-lang', 'the html element must have lang="en"');
     }
-    const withoutComments = html.replace(/<!--[\s\S]*?-->/g, '');
+    // Repeat until stable, so nested or overlapping markers cannot leave a comment behind.
+    let withoutComments = html;
+    let previous;
+    do {
+      previous = withoutComments;
+      withoutComments = previous.replace(/<!--[\s\S]*?-->/g, '');
+    } while (withoutComments !== previous);
     if (!withoutComments.includes(NOTICE_TEXT)) {
       add('notice-missing', 'the Notice text is not on the page');
     }

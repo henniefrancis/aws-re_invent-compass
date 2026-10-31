@@ -25,7 +25,17 @@ const valid: Record<keyof typeof CompassApiResponseSchemas, unknown> = {
   CreateHandoffResponseSchema: { handoffId: 'abc', boardUrl: 'https://x.test/b', expiresAt: WHEN },
   HandoffViewSchema: {
     expiresAt: WHEN,
-    sessions: [{ serialNumber: SERIAL, sessionCode: 'ABC101', title: 'T', startsAt: WHEN }],
+    sessions: [
+      {
+        serialNumber: SERIAL,
+        sessionCode: 'ABC101',
+        title: 'T',
+        startsAt: WHEN,
+        venue: null,
+        applePath: null,
+        googleSaveUrl: null,
+      },
+    ],
     apple: { bundlePaths: ['/a'] },
     google: null,
     calendarPath: null,

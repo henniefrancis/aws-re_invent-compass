@@ -41,11 +41,13 @@ import {
   CacheWriteError,
   CatalogIncompleteError,
   filterCatalog,
+  fromZoneWallClock,
   normaliseSession,
   parseVenues,
   readCache,
   refreshCatalog,
   resolveEventWindow,
+  toZoneWallClock,
 } from '@compass/core/catalog';
 import type { CacheEntry, FsLike } from '@compass/core/catalog';
 import type { BulkResult, PersonalTimeInput, ScheduleWire } from '@compass/contracts';
@@ -59,6 +61,7 @@ import type {
   PlannerSession,
 } from '../ports/events-port.js';
 import { checkIdentifier, checkIdentifiers } from '../safety/identifiers.js';
+import { containsAnyWord } from './word-match.js';
 
 /** The sign-in side of S1, injected so the adapter works the same in live and simulated mode. */
 export interface AuthPort {
@@ -144,30 +147,39 @@ function plainBulk(annotated: AnnotatedBulkWriteResult): BulkResult {
   };
 }
 
-const NAIVE_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+/** A date-time with no zone: minutes, and optionally seconds and a fraction (QA Low-3). */
+const NAIVE_WALL_CLOCK = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::(\d{2})(?:\.\d+)?)?$/;
 
-/** The wire form of an instant: UTC, no zone suffix, as the Events API requires for personal time. */
-export function toWireInstant(instant: string): string {
-  const ms = Date.parse(instant);
-  if (Number.isNaN(ms)) {
+/**
+ * The wire form of a personal time instant: the wall-clock time in the event time zone, with no
+ * zone suffix. The OpenAPI document says UTC, but the live service and the re:Invent app read
+ * the value as event time, so 07:00 PST sent as 15:00 showed at 15:00 (compass-power task 55).
+ */
+export function toWireInstant(instant: string, eventTimezone: string): string {
+  const local = toZoneWallClock(instant, eventTimezone);
+  if (local === undefined) {
     throw new CompassError('LayoverInvalid');
   }
-  return new Date(ms).toISOString().slice(0, 19);
+  return local;
 }
 
-/** An instant with an explicit zone: a naive wire value is UTC, so it gets a `Z`. */
-function fromWireInstant(value: string): string {
-  return NAIVE_UTC.test(value) ? `${value}Z` : value;
+/** An instant with an explicit zone: a naive wire value is event time, so it gets the zone's offset. */
+function fromWireInstant(value: string, eventTimezone: string): string {
+  const naive = NAIVE_WALL_CLOCK.exec(value);
+  if (naive === null) {
+    return value;
+  }
+  return fromZoneWallClock(`${value.slice(0, 16)}:${naive[1] ?? '00'}`, eventTimezone) ?? value;
 }
 
 /** The schedule with personal time instants made explicit, so every reader compares real instants. */
-function readableSchedule(schedule: ScheduleWire): ScheduleWire {
+function readableSchedule(schedule: ScheduleWire, eventTimezone: string): ScheduleWire {
   return {
     ...schedule,
     personalTime: schedule.personalTime.map((entry) => ({
       ...entry,
-      startDateTime: fromWireInstant(entry.startDateTime),
-      endDateTime: fromWireInstant(entry.endDateTime),
+      startDateTime: fromWireInstant(entry.startDateTime, eventTimezone),
+      endDateTime: fromWireInstant(entry.endDateTime, eventTimezone),
     })),
   };
 }
@@ -192,13 +204,18 @@ function viewOf(entries: readonly CacheEntry[]): CatalogView {
     byId,
     labels: [...labels].sort(),
     filter: (filter) => {
-      const { services, ...rest } = filter;
+      const { services, words, ...rest } = filter;
       const wanted = services?.map((s) => s.toLowerCase());
       return filterCatalog(entries, rest)
         .filter(
           ({ wire }) =>
             wanted === undefined ||
             (wire.services ?? []).some((s) => wanted.includes(s.toLowerCase())),
+        )
+        .filter(
+          ({ session, wire }) =>
+            words === undefined ||
+            containsAnyWord([session.title, wire.abstract, wire.topics, wire.services], words),
         )
         .map(({ session }) => session);
     },
@@ -242,18 +259,48 @@ export function createEventsAdapter(deps: EventsAdapterDeps): EventsPort {
     return window;
   };
 
+  /**
+   * The schedule with its personal time read as event time. The event window is read only when
+   * there is personal time, so a plain schedule read stays one call. By the time a write reads
+   * back personal time the window is already known: the tool read the schedule first, and a
+   * personal time write reads the window before it sends.
+   */
+  const readable = async (schedule: ScheduleWire): Promise<ScheduleWire> =>
+    schedule.personalTime.length === 0
+      ? schedule
+      : readableSchedule(schedule, (await eventWindow()).timezone);
+
   const confirmed = async <W, R>(
     write: () => Promise<W>,
     result: (written: W) => R,
   ): Promise<ConfirmedWriteResult<R>> => {
     const outcome = await guard(() => confirmedWrite(write, () => getSchedule(ctx)));
-    return outcome.confirmed
-      ? {
-          kind: 'confirmed',
-          result: result(outcome.write),
-          schedule: readableSchedule(outcome.schedule.schedule),
-        }
-      : { kind: 'unconfirmed', result: result(outcome.write) };
+    if (outcome.confirmed) {
+      // The write was sent: if the event window cannot be read now, the change is unconfirmed,
+      // never an error that invites a second send (QA and security Low-2).
+      const schedule = await readable(outcome.schedule.schedule).catch(() => undefined);
+      if (schedule !== undefined) {
+        return { kind: 'confirmed', result: result(outcome.write), schedule };
+      }
+    }
+    return { kind: 'unconfirmed', result: result(outcome.write) };
+  };
+
+  /** Sends personal time with both times written in the event time zone. */
+  const personalTimeWrite = async (
+    input: PersonalTimeInput,
+    send: (wire: PersonalTimeInput) => Promise<unknown>,
+  ): Promise<ConfirmedWriteResult<null>> => {
+    const { timezone } = await eventWindow();
+    const wire = {
+      ...input,
+      startDateTime: toWireInstant(input.startDateTime, timezone),
+      endDateTime: toWireInstant(input.endDateTime, timezone),
+    };
+    return confirmed(
+      () => send(wire),
+      () => null,
+    );
   };
 
   return {
@@ -302,7 +349,7 @@ export function createEventsAdapter(deps: EventsAdapterDeps): EventsPort {
 
     eventWindow,
 
-    getSchedule: () => guard(async () => readableSchedule((await getSchedule(ctx)).schedule)),
+    getSchedule: () => guard(async () => readable((await getSchedule(ctx)).schedule)),
 
     getSession: (sessionId) => {
       requireIds([sessionId]);
@@ -340,27 +387,11 @@ export function createEventsAdapter(deps: EventsAdapterDeps): EventsPort {
     },
 
     createPersonalTime: (input: PersonalTimeInput) =>
-      confirmed(
-        () =>
-          createPersonalTime(ctx, {
-            ...input,
-            startDateTime: toWireInstant(input.startDateTime),
-            endDateTime: toWireInstant(input.endDateTime),
-          }),
-        () => null,
-      ),
+      personalTimeWrite(input, (wire) => createPersonalTime(ctx, wire)),
 
     updatePersonalTime: (id, input) => {
       requireIds([id]);
-      return confirmed(
-        () =>
-          updatePersonalTime(ctx, id, {
-            ...input,
-            startDateTime: toWireInstant(input.startDateTime),
-            endDateTime: toWireInstant(input.endDateTime),
-          }),
-        () => null,
-      );
+      return personalTimeWrite(input, (wire) => updatePersonalTime(ctx, id, wire));
     },
 
     deletePersonalTime: (id) => {

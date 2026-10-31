@@ -2,6 +2,17 @@
 
 Owner-run. The Google Wallet issuer and class are not AWS infrastructure and are not managed by Terraform.
 
+## What the class carries
+
+Besides `viewUnlockRequirement`, the class now carries a template (`classTemplateInfo`, pass-service task 47), so the Google pass looks as close as Google allows to the Apple pass:
+
+- Two front rows: TERMINAL and GATE, then DATE and BOARDING CLOSES.
+- The details in order: ROOM, ABOUT, UNOFFICIAL PASS, BOARDING CLOSES (the seat rule), WALK FROM PREVIOUS, NEXT SESSION, TIMES, IF YOUR PLANS CHANGE, PRIVACY.
+
+The class also carries the five texts that are the same on every pass (ABOUT, UNOFFICIAL PASS, the seat rule, IF YOUR PLANS CHANGE, PRIVACY, from `packages/pass-service/src/apple/pass-texts.ts`), because Google takes at most 10 text modules from each object (task 47.7). The template names text module ids (`packages/pass-service/src/google/google-layout.ts`): the fixed texts on the class, the rest on each object. The objects carry the rest: the icon as the wide logo, the gradient with the full logo as the hero image (both served from `<PUBLIC_BASE_URL>/wallet/`), and the card colour #2035E2.
+
+A class made before task 47 has no template. Run the script once per environment after a release that serves the images: it prints `class: differs at <path> (found ...)` and `class: updated`, and a second run prints `class: exists, left unchanged`. The differs line names where the class differed without printing Google's response (only a kind of value, a template field path or the unlock setting). The template applies to every pass of the class at once. The images and the colour live on each object, so a pass issued before the release keeps the old ones until the api Lambda next patches it; reissue a pass to see the full new look.
+
 ## Command
 
 ```
@@ -13,14 +24,15 @@ The class id is `<issuer id>.<suffix>`. The suffix defaults to `compass-<env>`, 
 ## Preconditions
 
 - The Google Pay and Wallet console issuer account exists and you have its numeric issuer id.
-- A service account with the Wallet Objects issuer role, and its downloaded key file, held locally. The same key is loaded into `compass/<env>/google-wallet` by `scripts/load-secrets.sh` (see `secrets.md`).
+- A service account with **Developer** access under **Users** in the Google Wallet console (it needs no Google Cloud IAM role), and its downloaded key file, held locally. The same key is loaded into `compass/<env>/google-wallet` by `scripts/load-secrets.sh` (see `secrets.md`).
 - Node.js 24 or later. The script has no dependencies.
 
 ## Steps
 
 1. Run the command above for `dev`.
 2. Read the two lines it prints: one for the issuer and one for the class.
-3. Repeat for `prod` after dev has been verified.
+3. Save a pass on Android and compare it with the Apple pass (task 47.5). Done on dev on 25 October 2026: the owner approved the Google pass (icon top left, blue card, the two front rows, the hero with the logo, the details) and confirmed the Apple pass is unchanged. Getting there took two fixes: each object stays within 10 text modules (task 47.7), and Google refuses a `wideLogo` without a `logo` ("logo must be set if wide_logo is set", task 47.8). Google also fetches every image during the insert, so the images must be live (a release) before the class update and the first pass.
+4. Repeat for `prod` after dev has been verified. The dev class was created on 18 October 2026 and given the template on 24 October 2026 (`class: updated`, then `class: exists, left unchanged` on the next run, after task 47.6 taught the diff check that Google answers the unlock setting as `unlockNotRequired`). Prod runs on the prod deploy day with a fresh key, in the order set out in `google-wallet-setup.md` "Prod key and prod class".
 
 ## Expected success outcome
 

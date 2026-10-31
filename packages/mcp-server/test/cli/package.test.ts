@@ -16,11 +16,23 @@ describe('the package manifest and the entry file', () => {
     expect(manifest.files).toEqual([
       'dist/bin.js',
       'dist/scan-worker.js',
+      'dist/github-scan-worker.js',
       'dist/data',
       'dist/sample-repo',
       'dist/fixtures',
       'README.md',
+      'LICENSE',
+      'NOTICE',
+      'THIRD-PARTY-NOTICES.txt',
     ]);
+    // CTO final review findings 1 and 2 (task 57): provenance needs the repository, and the
+    // licence must be declared.
+    expect(manifest.license).toBe('Apache-2.0');
+    expect(manifest.repository).toEqual({
+      type: 'git',
+      url: 'git+https://github.com/henniefrancis/aws-re_invent-compass.git',
+      directory: 'packages/mcp-server',
+    });
     expect(manifest.scripts).toEqual({
       build: 'node scripts/build.mjs',
       prepack: 'node scripts/build.mjs',
@@ -33,7 +45,9 @@ describe('the package manifest and the entry file', () => {
       'zod',
     ]);
     expect(manifest.engines).toEqual({ node: '>=24' });
-    expect(manifest.private).toBe(true);
+    // The safety catch came off in the 0.1.0 release commit (task 53); only a tag publishes.
+    expect(manifest.private).toBeUndefined();
+    expect(manifest.version).toBe('0.1.0');
   });
 
   test('bin.ts starts with the shebang line and only passes the process values to main', async () => {

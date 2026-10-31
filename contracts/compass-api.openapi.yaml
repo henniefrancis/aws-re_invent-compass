@@ -31,7 +31,7 @@
 #   - Request validation is enabled through x-amazon-apigateway-request-validators
 #     and each operation sets x-amazon-apigateway-request-validator.
 #   - Binary responses (.pkpass, .pkpasses, .ics) are declared in
-#     x-amazon-apigateway-binary-media-types.
+#     x-amazon-apigateway-binary-media-types, together with */* (see below).
 #
 # Errors use application/problem+json with the single Problem component. No error
 # example echoes request input. No account id, ARN, hostname or real domain
@@ -54,13 +54,17 @@ info:
     name: Apache-2.0
 
 # Binary media types so API Gateway returns the Apple pass bundles and the
-# calendar file as binary rather than attempting UTF-8 handling.
+# calendar file as binary rather than attempting UTF-8 handling. API Gateway
+# looks only at the first Accept media type, and a browser link sends
+# text/html first, so */* is listed too (SP3, 19 October 2026). Request bodies
+# then reach the Lambdas base64-encoded, which they decode.
 # API Gateway requires the x-api-key header on every method (see api_key below).
 x-amazon-apigateway-api-key-source: HEADER
 x-amazon-apigateway-binary-media-types:
   - application/vnd.apple.pkpass
   - application/vnd.apple.pkpasses
   - text/calendar
+  - '*/*'
 
 # Two request validators. Operations with a body validate the body and the
 # request parameters; parameter-only operations validate parameters only.
@@ -311,6 +315,36 @@ paths:
           description: The Apple pass bundle.
           content:
             application/vnd.apple.pkpasses:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/ProblemNotFound'
+      security:
+        - api_key: []
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: '${api_lambda_invoke_arn}'
+        passthroughBehavior: when_no_match
+
+  /api/v1/handoffs/{handoffId}/apple/pass/{serialNumber}:
+    parameters:
+      - $ref: '#/components/parameters/HandoffId'
+      - $ref: '#/components/parameters/PassSerialNumber'
+    get:
+      operationId: getHandoffApplePass
+      summary: Download one Apple pass.
+      description: >-
+        Returns one signed .pkpass for a pass in the hand-off. Authorised by the
+        hand-off capability, with the same checks as the bundle route. A serial
+        that is not in the hand-off, not active or not valid answers 404.
+      x-amazon-apigateway-request-validator: params-only
+      responses:
+        '200':
+          description: The Apple pass.
+          content:
+            application/vnd.apple.pkpass:
               schema:
                 type: string
                 format: binary
@@ -587,6 +621,13 @@ components:
       in: path
       required: true
       description: The hand-off identifier.
+      schema:
+        type: string
+    PassSerialNumber:
+      name: serialNumber
+      in: path
+      required: true
+      description: The pass serial number.
       schema:
         type: string
     BundleIndex:
@@ -898,7 +939,14 @@ components:
           items:
             type: object
             additionalProperties: false
-            required: [serialNumber, sessionCode, title, startsAt]
+            required:
+              - serialNumber
+              - sessionCode
+              - title
+              - startsAt
+              - venue
+              - applePath
+              - googleSaveUrl
             properties:
               serialNumber:
                 type: string
@@ -910,6 +958,18 @@ components:
               startsAt:
                 type: string
                 format: date-time
+              venue:
+                type: string
+                nullable: true
+                description: The venue name the pass shows (its TERMINAL), or null when the pass has none.
+              applePath:
+                type: string
+                nullable: true
+                description: The route for this session's own .pkpass, or null.
+              googleSaveUrl:
+                type: string
+                nullable: true
+                description: A Save to Google Wallet link for this session alone, or null.
         apple:
           type: object
           additionalProperties: false
@@ -923,6 +983,7 @@ components:
           nullable: true
           type: object
           additionalProperties: false
+          description: One link for every pass, present only when they all fit in one link.
           required: [saveUrl]
           properties:
             saveUrl:

@@ -4,9 +4,21 @@ import { mcpTools } from '@compass/contracts';
 import type { Commitment } from '@compass/contracts';
 import { CompassError } from '../../src/ports/errors.js';
 import { exportCalendar } from '../../src/tools/export-calendar.js';
-import { issueBoardingPasses } from '../../src/tools/issue-boarding-passes.js';
+import {
+  issueAllBoardingPasses,
+  issueBoardingPass,
+  NAME_ONE,
+  NOTHING_RESERVED,
+  WHICH_SESSION,
+} from '../../src/tools/issue-boarding-passes.js';
 import { PASS_DISCLAIMER } from '../../src/tools/pass-text.js';
-import { sendToPhone } from '../../src/tools/send-to-phone.js';
+import {
+  ASK_SHOW_MESSAGE,
+  NO_PAGE_HINT,
+  QR_IN_BROWSER,
+  QR_PAGE_FAILED,
+  sendToPhone,
+} from '../../src/tools/send-to-phone.js';
 import { syncPasses } from '../../src/tools/sync-passes.js';
 import type { ToolContext } from '../../src/server/types.js';
 import { connect } from '../support/connect.js';
@@ -25,15 +37,24 @@ const answering =
   () =>
     Promise.resolve(answer);
 
-describe('issue_boarding_passes', () => {
-  test('issues for reserved sessions after refreshing each one, with the disclaimer', async () => {
-    const { fake, ctx } = setup();
+// Feature: compass-power, P4.1: every reserved session after one confirmation.
+describe('issue_all_boarding_passes', () => {
+  // P4.5: the client's approval is the one confirmation, so Compass asks nothing itself.
+  test('issues every reserved session in one call, asking nothing of its own', async () => {
+    const questions: string[] = [];
+    const { fake, ctx } = setup((question) => {
+      questions.push(question.message);
+      return Promise.resolve('accept');
+    });
     fake.events.schedule.reserved.push(TRIPLE.aRepeat, TRIPLE.b);
-    const outcome = await issueBoardingPasses({ sessionIds: [TRIPLE.aRepeat, TRIPLE.b] }, ctx);
-    expect(outcome.ok && mcpTools.issue_boarding_passes.output.parse(outcome.structured)).toEqual({
+    const outcome = await issueAllBoardingPasses({}, ctx);
+    expect(
+      outcome.ok && mcpTools.issue_all_boarding_passes.output.parse(outcome.structured),
+    ).toEqual({
       issued: [TRIPLE.aRepeat, TRIPLE.b],
       serials: ['serial-1', 'serial-2'],
     });
+    expect(questions).toEqual([]);
     expect(fake.events.callsTo('getSession').map((c) => c.args[0])).toEqual([
       TRIPLE.aRepeat,
       TRIPLE.b,
@@ -43,100 +64,252 @@ describe('issue_boarding_passes', () => {
     expect(outcome.ok && outcome.text).not.toMatch(/delet/i);
   });
 
-  test('sessions that are not reserved are refused with no pass call', async () => {
+  test('reserved ids the catalog does not know are skipped', async () => {
     const { fake, ctx } = setup();
-    fake.events.schedule.reserved.push(TRIPLE.aRepeat);
-    const outcome = await issueBoardingPasses({ sessionIds: [TRIPLE.aRepeat, TRIPLE.b] }, ctx);
-    expect(outcome.ok && outcome.structured).toEqual({
-      issued: [TRIPLE.aRepeat],
-      serials: ['serial-1'],
-    });
-    expect(outcome.ok && outcome.text).toContain('refused because they are not reserved');
-    const none = setup();
-    const refused = await issueBoardingPasses({ sessionIds: [TRIPLE.b] }, none.ctx);
-    expect(refused.ok && refused.structured).toEqual({ issued: [], serials: [] });
-    expect(none.fake.passes.writeCalls).toEqual([]);
-    expect(none.fake.events.callsTo('getSession')).toEqual([]);
+    fake.events.schedule.reserved.push(TRIPLE.a, 'not-in-catalog');
+    const outcome = await issueAllBoardingPasses({}, ctx);
+    expect(outcome.ok && outcome.structured).toEqual({ issued: [TRIPLE.a], serials: ['serial-1'] });
   });
 
-  test('a decline issues nothing; bad ids, unknown sessions and sign-out are refused', async () => {
+  test('nothing reserved issues nothing; a client that would decline is never asked', async () => {
+    const questions: string[] = [];
+    const empty = setup((question) => {
+      questions.push(question.message);
+      return Promise.resolve('accept');
+    });
+    const outcome = await issueAllBoardingPasses({}, empty.ctx);
+    expect(outcome.ok && outcome.text).toBe(NOTHING_RESERVED);
+    expect(questions).toEqual([]);
+    expect(empty.fake.passes.writeCalls).toEqual([]);
+
     const declined = setup(answering('decline'));
     declined.fake.events.schedule.reserved.push(TRIPLE.a);
-    const outcome = await issueBoardingPasses({ sessionIds: [TRIPLE.a] }, declined.ctx);
-    expect(outcome.ok && outcome.text).toContain('did not confirm');
-    expect(declined.fake.passes.writeCalls).toEqual([]);
+    const issued = await issueAllBoardingPasses({}, declined.ctx);
+    expect(issued.ok && issued.structured).toEqual({ issued: [TRIPLE.a], serials: ['serial-1'] });
+
+    const signedOut = setup();
+    signedOut.fake.events.signedIn = false;
+    await expect(issueAllBoardingPasses({}, signedOut.ctx)).rejects.toMatchObject({
+      code: 'NotSignedIn',
+    });
+  });
+});
+
+// Feature: compass-power, P4.2: one pass, named or picked.
+describe('issue_boarding_pass', () => {
+  function withChoice(answer: { value: string } | 'decline' | 'cancel' | 'first') {
+    const made = setup(answering('accept'));
+    const asked: { message: string; options: readonly { value: string; label: string }[] }[] = [];
+    made.ctx.choose = (question) => {
+      asked.push(question);
+      return Promise.resolve(
+        answer === 'first' ? { value: question.options[0]?.value ?? '' } : answer,
+      );
+    };
+    return { ...made, asked };
+  }
+
+  test('with an id it issues that reserved session after one confirmation', async () => {
     const { fake, ctx } = setup();
-    await expect(issueBoardingPasses({ sessionIds: ['a/b'] }, ctx)).rejects.toMatchObject({
+    fake.events.schedule.reserved.push(TRIPLE.a, TRIPLE.b);
+    const outcome = await issueBoardingPass({ sessionId: TRIPLE.b }, ctx);
+    expect(outcome.ok && mcpTools.issue_boarding_pass.output.parse(outcome.structured)).toEqual({
+      issued: [TRIPLE.b],
+      serials: ['serial-1'],
+    });
+    expect(fake.events.callsTo('getSession').map((c) => c.args[0])).toEqual([TRIPLE.b]);
+  });
+
+  test('an id that is not reserved is refused with no pass call', async () => {
+    const { fake, ctx } = setup();
+    fake.events.schedule.reserved.push(TRIPLE.a);
+    const outcome = await issueBoardingPass({ sessionId: TRIPLE.b }, ctx);
+    expect(outcome.ok && outcome.structured).toEqual({ issued: [], serials: [] });
+    expect(outcome.ok && outcome.text).toContain('that session is not reserved');
+    expect(fake.passes.writeCalls).toEqual([]);
+    expect(fake.events.callsTo('getSession')).toEqual([]);
+  });
+
+  test('without an id it offers the reserved sessions and issues the one picked', async () => {
+    const { fake, ctx, asked } = withChoice({ value: TRIPLE.b });
+    fake.events.schedule.reserved.push(TRIPLE.a, TRIPLE.b, 'not-in-catalog');
+    const outcome = await issueBoardingPass({}, ctx);
+    expect(asked).toHaveLength(1);
+    expect(asked[0]?.message).toBe(WHICH_SESSION);
+    const a = syntheticCatalogView().byId.get(TRIPLE.a)?.session;
+    expect(asked[0]?.options).toHaveLength(2);
+    expect(asked[0]?.options[0]).toEqual({ value: TRIPLE.a, label: `${a?.code} ${a?.title}` });
+    expect(outcome.ok && outcome.structured).toEqual({ issued: [TRIPLE.b], serials: ['serial-1'] });
+  });
+
+  test('two sessions that read the same get the id added to the second label', async () => {
+    const { fake, ctx, asked } = withChoice('first');
+    // A session reserved twice in the list reads the same; the label must still be unique.
+    fake.events.schedule.reserved.push(TRIPLE.a, TRIPLE.a);
+    await issueBoardingPass({}, ctx);
+    const labels = asked[0]?.options.map((o) => o.label) ?? [];
+    expect(new Set(labels).size).toBe(2);
+    expect(labels[1]).toContain(`(id ${TRIPLE.a})`);
+  });
+
+  test('a declined or cancelled pick issues nothing', async () => {
+    for (const answer of ['decline', 'cancel'] as const) {
+      const { fake, ctx } = withChoice(answer);
+      fake.events.schedule.reserved.push(TRIPLE.a);
+      const outcome = await issueBoardingPass({}, ctx);
+      expect(outcome.ok && outcome.text).toContain('did not choose a session');
+      expect(fake.passes.writeCalls).toEqual([]);
+    }
+  });
+
+  test('a client that cannot ask gets the reserved sessions and nothing is issued', async () => {
+    const { fake, ctx } = setup();
+    fake.events.schedule.reserved.push(TRIPLE.a);
+    const outcome = await issueBoardingPass({}, ctx);
+    const text = outcome.ok ? outcome.text : '';
+    expect(text).toContain(NAME_ONE);
+    expect(text).toContain(TRIPLE.a);
+    expect(fake.passes.writeCalls).toEqual([]);
+  });
+
+  test('nothing reserved asks nothing; a named session is issued without a question of its own', async () => {
+    const empty = withChoice('first');
+    const outcome = await issueBoardingPass({}, empty.ctx);
+    expect(outcome.ok && outcome.text).toBe(NOTHING_RESERVED);
+    expect(empty.asked).toEqual([]);
+
+    const declined = setup(answering('decline'));
+    declined.fake.events.schedule.reserved.push(TRIPLE.a);
+    const issued = await issueBoardingPass({ sessionId: TRIPLE.a }, declined.ctx);
+    expect(issued.ok && issued.structured).toEqual({ issued: [TRIPLE.a], serials: ['serial-1'] });
+  });
+
+  test('over MCP the only question is the pick list, and the pick is issued', async () => {
+    const fake = createFakeRuntime({ catalog: syntheticCatalogView() });
+    fake.events.schedule.reserved.push(TRIPLE.a);
+    const connection = await connect(fake.runtime, { elicit: 'accept' });
+    const all = await connection.call('issue_all_boarding_passes', {});
+    expect(connection.questions).toEqual([]);
+    expect(all.structuredContent).toMatchObject({ issued: [TRIPLE.a] });
+    const result = await connection.call('issue_boarding_pass', {});
+    expect(connection.questions).toEqual([WHICH_SESSION]);
+    expect(result.structuredContent).toMatchObject({ issued: [TRIPLE.a] });
+    await connection.close();
+  });
+
+  test('bad ids, unknown sessions and sign-out are refused before any pass call', async () => {
+    const { fake, ctx } = setup();
+    await expect(issueBoardingPass({ sessionId: 'a/b' }, ctx)).rejects.toMatchObject({
       code: 'IdentifierRejected',
     });
     expect(fake.events.calls).toEqual([]);
-    await expect(issueBoardingPasses({ sessionIds: ['ghost'] }, ctx)).rejects.toMatchObject({
+    await expect(issueBoardingPass({ sessionId: 'ghost' }, ctx)).rejects.toMatchObject({
       code: 'UnknownSession',
     });
     fake.events.signedIn = false;
-    await expect(issueBoardingPasses({ sessionIds: [TRIPLE.a] }, ctx)).rejects.toMatchObject({
+    await expect(issueBoardingPass({ sessionId: TRIPLE.a }, ctx)).rejects.toMatchObject({
       code: 'NotSignedIn',
     });
+    expect(fake.passes.writeCalls).toEqual([]);
   });
 });
 
 // Feature: compass-power, Property 35: Passes are issued only for confirmed reservations
 describe('Property 35: passes are issued only for confirmed reservations', () => {
   const IDS = [TRIPLE.a, TRIPLE.aRepeat, TRIPLE.b];
-  test('the passes port receives exactly the requested sessions the schedule lists as reserved', async () => {
+  test('issue_all issues exactly the reserved sessions; issue_boarding_pass only a reserved one', async () => {
     await fc.assert(
-      fc.asyncProperty(
-        fc.subarray(IDS, { minLength: 1 }),
-        fc.subarray(IDS),
-        async (requested, reserved) => {
-          const { fake, ctx } = setup();
-          fake.events.schedule.reserved.push(...reserved);
-          const outcome = await issueBoardingPasses({ sessionIds: requested }, ctx);
-          const expected = requested.filter((id) => reserved.includes(id));
-          const issueCalls = fake.passes.calls.filter((c) => c.method === 'issue');
-          if (expected.length === 0) {
-            expect(issueCalls).toEqual([]);
-          } else {
-            expect(issueCalls).toHaveLength(1);
-            expect(issueCalls[0]?.args[0]).toEqual(expected);
-          }
-          expect(outcome.ok && outcome.structured).toMatchObject({ issued: expected });
-        },
-      ),
+      fc.asyncProperty(fc.constantFrom(...IDS), fc.subarray(IDS), async (requested, reserved) => {
+        const all = setup();
+        all.fake.events.schedule.reserved.push(...reserved);
+        const outcome = await issueAllBoardingPasses({}, all.ctx);
+        const issueCalls = all.fake.passes.calls.filter((c) => c.method === 'issue');
+        if (reserved.length === 0) {
+          expect(issueCalls).toEqual([]);
+        } else {
+          expect(issueCalls).toHaveLength(1);
+          expect(issueCalls[0]?.args[0]).toEqual(reserved);
+        }
+        expect(outcome.ok && outcome.structured).toMatchObject({ issued: reserved });
+
+        const one = setup();
+        one.fake.events.schedule.reserved.push(...reserved);
+        await issueBoardingPass({ sessionId: requested }, one.ctx);
+        const oneCalls = one.fake.passes.calls.filter((c) => c.method === 'issue');
+        expect(oneCalls).toHaveLength(reserved.includes(requested) ? 1 : 0);
+      }),
       { numRuns: 100 },
     );
   });
 });
 
 describe('send_to_phone', () => {
-  test('hands off all issued passes with the URL, expiry, text QR and a PNG image', async () => {
-    const { fake, ctx } = setup();
-    fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
-    fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
+  /** A QR page that records what it was asked to show and answers `opens`. */
+  function qrPageAnswering(opens: boolean) {
+    const shown: { svg: string; expiresAt: string }[] = [];
+    let cleared = 0;
+    return {
+      shown,
+      cleared: () => cleared,
+      port: {
+        show: (page: { svg: string; expiresAt: string }) => {
+          shown.push(page);
+          return Promise.resolve(opens);
+        },
+        clear: () => {
+          cleared += 1;
+          return Promise.resolve();
+        },
+      },
+    };
+  }
+
+  function seeded(elicit?: ToolContext['elicit']) {
+    const made = setup(elicit);
+    made.fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
+    made.fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
+    return made;
+  }
+
+  // Feature: compass-power, P3.1: without a choice nothing is created and nothing is called.
+  test('without show it asks and creates nothing, before any sign-in or service call', async () => {
+    const { fake, ctx } = seeded();
+    fake.events.signedIn = false;
     const outcome = await sendToPhone({}, ctx);
+    expect(outcome).toEqual({ ok: false, message: ASK_SHOW_MESSAGE });
+    expect(fake.passes.calls).toEqual([]);
+    expect(fake.events.calls).toEqual([]);
+  });
+
+  // Feature: compass-power, P3.2: a link and no QR code.
+  test('link gives the link and expiry, no QR code and no page', async () => {
+    const { fake, ctx } = seeded();
+    const page = qrPageAnswering(true);
+    fake.runtime.qrPage = page.port;
+    const outcome = await sendToPhone({ show: 'link' }, ctx);
     // The capability is in the link's fragment: the structured result has the link without it, and
     // the full link is only in the text (security L1).
     const full = fake.passes.handoffResult.boardUrl;
-    expect(outcome.ok && outcome.structured).toEqual({
+    expect(outcome.ok && mcpTools.send_to_phone.output.parse(outcome.structured)).toEqual({
       handoffUrl: full.split('#')[0],
       expiresAt: fake.passes.handoffResult.expiresAt,
+      shownAs: 'link',
     });
     expect(full).toContain('#');
     expect(JSON.stringify(outcome.ok && outcome.structured)).not.toContain(
       full.split('#')[1] ?? '#',
     );
-    expect(outcome.ok && outcome.text).toContain(full);
-    expect(outcome.ok && outcome.text).toContain(
+    const text = outcome.ok ? outcome.text : '';
+    expect(text).toContain(
+      `Open this link on your phone before ${fake.passes.handoffResult.expiresAt}: ${full}`,
+    );
+    expect(text).toContain(
       'Do not share this link or the QR code. Anyone who has it can see these passes until it expires.',
     );
-    // The QR is printed once, as plain text without escape codes (QA low).
-    expect(outcome.ok && outcome.text).not.toContain('##');
-    const text = outcome.ok ? outcome.text : '';
-    expect(text.split('QR-TEXT')).toHaveLength(2);
-    expect(text).not.toContain(String.fromCharCode(0x1b));
-    expect(outcome.ok && outcome.extra).toEqual([
-      { type: 'image', data: 'iVBORw==', mimeType: 'image/png' },
-    ]);
+    expect(text).toContain(PASS_DISCLAIMER);
+    expect(text).not.toContain('QR-TEXT');
+    expect(outcome.ok && outcome.extra).toBeUndefined();
+    expect(page.shown).toEqual([]);
     expect(fake.passes.calls.find((c) => c.method === 'handoff')?.args[0]).toEqual([
       'serial-1',
       'serial-2',
@@ -144,35 +317,106 @@ describe('send_to_phone', () => {
     expect(fake.stderr.join('')).not.toContain('compass.invalid');
   });
 
+  // Feature: compass-power, P3.3: the QR code on a browser page, and no link in the chat.
+  test('qr opens the page with the SVG and expiry, and prints no link', async () => {
+    const { fake, ctx } = seeded();
+    const page = qrPageAnswering(true);
+    fake.runtime.qrPage = page.port;
+    const outcome = await sendToPhone({ show: 'qr' }, ctx);
+    const { boardUrl, expiresAt, svg } = fake.passes.handoffResult;
+    expect(page.shown).toEqual([{ svg, expiresAt }]);
+    expect(outcome.ok && outcome.structured).toMatchObject({ shownAs: 'qr', qrShownIn: 'browser' });
+    const text = outcome.ok ? outcome.text : '';
+    expect(text).toContain(`${QR_IN_BROWSER} before ${expiresAt}. ${NO_PAGE_HINT}`);
+    expect(text).not.toContain(boardUrl);
+    expect(text).not.toContain(boardUrl.split('#')[1] ?? '#');
+    expect(text).not.toContain('QR-TEXT');
+    expect(outcome.ok && outcome.extra).toBeUndefined();
+    expect(fake.stderr.join('')).not.toContain('compass.invalid');
+  });
+
+  test('both gives the link and opens the page', async () => {
+    const { fake, ctx } = seeded();
+    const page = qrPageAnswering(true);
+    fake.runtime.qrPage = page.port;
+    const outcome = await sendToPhone({ show: 'both' }, ctx);
+    const text = outcome.ok ? outcome.text : '';
+    expect(text).toContain(fake.passes.handoffResult.boardUrl);
+    expect(text).toContain(QR_IN_BROWSER);
+    expect(page.shown).toHaveLength(1);
+    expect(outcome.ok && outcome.structured).toMatchObject({
+      shownAs: 'both',
+      qrShownIn: 'browser',
+    });
+  });
+
+  // Feature: compass-power, P3.4: the fallback when the page cannot be shown.
+  test('when the page cannot be shown, the text QR and the PNG go in the chat, once', async () => {
+    for (const qrPage of [qrPageAnswering(false).port, undefined]) {
+      const { fake, ctx } = seeded();
+      if (qrPage !== undefined) fake.runtime.qrPage = qrPage;
+      const outcome = await sendToPhone({ show: 'qr' }, ctx);
+      const text = outcome.ok ? outcome.text : '';
+      expect(text).toContain(QR_PAGE_FAILED);
+      expect(text.split('QR-TEXT')).toHaveLength(2);
+      expect(text).not.toContain('##');
+      expect(text).not.toContain(String.fromCharCode(0x1b));
+      expect(text).not.toContain(fake.passes.handoffResult.boardUrl);
+      expect(outcome.ok && outcome.extra).toEqual([
+        { type: 'image', data: 'iVBORw==', mimeType: 'image/png' },
+      ]);
+      expect(outcome.ok && outcome.structured).toMatchObject({ shownAs: 'qr', qrShownIn: 'chat' });
+    }
+  });
+
+  test('the confirmation says how the passes will be shown', async () => {
+    const questions: string[] = [];
+    const { fake, ctx } = seeded((question) => {
+      questions.push(question.message);
+      return Promise.resolve('accept');
+    });
+    fake.runtime.qrPage = qrPageAnswering(true).port;
+    for (const show of ['link', 'qr', 'both'] as const) await sendToPhone({ show }, ctx);
+    expect(questions[0]).toContain('shown as a link?');
+    expect(questions[1]).toContain('shown as a QR code in your browser?');
+    expect(questions[2]).toContain('shown as a link and a QR code in your browser?');
+  });
+
   test('narrows to the chosen sessions and refuses when none were issued', async () => {
-    const { fake, ctx } = setup();
-    fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
-    fake.passes.seed(TRIPLE.b, `${TRIPLE.codes.b}`);
-    await sendToPhone({ sessionIds: [TRIPLE.b] }, ctx);
+    const { fake, ctx } = seeded();
+    await sendToPhone({ sessionIds: [TRIPLE.b], show: 'link' }, ctx);
     expect(fake.passes.calls.find((c) => c.method === 'handoff')?.args[0]).toEqual(['serial-2']);
-    await expect(sendToPhone({ sessionIds: [TRIPLE.aRepeat] }, ctx)).rejects.toMatchObject({
+    await expect(
+      sendToPhone({ sessionIds: [TRIPLE.aRepeat], show: 'link' }, ctx),
+    ).rejects.toMatchObject({
       code: 'NoPassesIssued',
     });
     const empty = setup();
-    await expect(sendToPhone({}, empty.ctx)).rejects.toMatchObject({ code: 'NoPassesIssued' });
+    await expect(sendToPhone({ show: 'link' }, empty.ctx)).rejects.toMatchObject({
+      code: 'NoPassesIssued',
+    });
     expect(empty.fake.passes.writeCalls).toEqual([]);
   });
 
-  test('a decline creates no link; bad ids, unknown sessions and sign-out are refused', async () => {
-    const declined = setup(answering('cancel'));
-    declined.fake.passes.seed(TRIPLE.a, `${TRIPLE.codes.a}`);
-    const outcome = await sendToPhone({}, declined.ctx);
+  test('a decline creates no link or page; bad ids, unknown sessions and sign-out are refused', async () => {
+    const declined = seeded(answering('cancel'));
+    const page = qrPageAnswering(true);
+    declined.fake.runtime.qrPage = page.port;
+    const outcome = await sendToPhone({ show: 'qr' }, declined.ctx);
     expect(outcome.ok).toBe(false);
     expect(declined.fake.passes.writeCalls).toEqual([]);
+    expect(page.shown).toEqual([]);
     const { fake, ctx } = setup();
     await expect(sendToPhone({ sessionIds: ['..'] }, ctx)).rejects.toMatchObject({
       code: 'IdentifierRejected',
     });
-    await expect(sendToPhone({ sessionIds: ['ghost'] }, ctx)).rejects.toMatchObject({
+    await expect(sendToPhone({ sessionIds: ['ghost'], show: 'link' }, ctx)).rejects.toMatchObject({
       code: 'UnknownSession',
     });
     fake.events.signedIn = false;
-    await expect(sendToPhone({}, ctx)).rejects.toMatchObject({ code: 'NotSignedIn' });
+    await expect(sendToPhone({ show: 'link' }, ctx)).rejects.toMatchObject({
+      code: 'NotSignedIn',
+    });
   });
 });
 
@@ -436,8 +680,9 @@ describe('pass tool errors', () => {
       }),
     );
     const connection = await connect(fake.runtime);
-    const result = await connection.call('issue_boarding_passes', { sessionIds: [TRIPLE.a] });
+    const result = await connection.call('issue_boarding_pass', { sessionId: TRIPLE.a });
     expect(result.isError).toBe(true);
+    expect(JSON.stringify(result)).toContain('The pass service said no');
     expect(JSON.stringify(result)).not.toContain('person@example.com');
     await connection.close();
   });

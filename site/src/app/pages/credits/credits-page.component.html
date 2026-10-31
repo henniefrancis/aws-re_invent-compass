@@ -1,0 +1,20 @@
+<h1 tabindex="-1">{{ title }}</h1>
+<p class="lead">{{ intro }}</p>
+<table class="data-table data-table--wrap">
+  <thead>
+    <tr>
+      <th scope="col">Project</th>
+      <th scope="col">Used for</th>
+      <th scope="col">Licence</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (credit of credits; track credit.pkg) {
+      <tr>
+        <th scope="row">{{ credit.name }}</th>
+        <td>{{ credit.use }}</td>
+        <td>{{ credit.licence }}</td>
+      </tr>
+    }
+  </tbody>
+</table>

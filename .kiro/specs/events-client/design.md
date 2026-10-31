@@ -985,3 +985,7 @@ Each correctness property is implemented by a single property-based test, tagged
 ### Fixture coverage targets
 
 Fixtures drive both the property tests (as seed inputs) and the example tests, and include: all twelve operations' success shapes, every error status, a two-or-more-page catalog where a non-final page carries `nextToken` and the final page omits it, a bulk result with at least one unknown failure code, and a 401 expired-token response (Requirement 19).
+
+## Post-CodeQL review: PKCE challenge (20 October 2026, task 21)
+
+CodeQL js/insufficient-password-hash flagged `computeChallenge` because it applies SHA-256 to a secret. The input is the PKCE code verifier (32 bytes from `crypto.randomBytes`, 256 bits of entropy), not a password, and RFC 7636 section 4.2 defines the S256 method as exactly `BASE64URL(SHA256(ASCII(code_verifier)))`. The alert is dismissed as a false positive; the code stays as specified.

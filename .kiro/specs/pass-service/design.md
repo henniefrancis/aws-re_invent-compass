@@ -512,7 +512,7 @@ Fixed template (`boardingPass`, `transitType: PKTransitTypeGeneric`):
 
 `signPass` builds the file buffers in memory (`pass.json`, `icon.png`, `icon@2x.png`, `icon@3x.png`, `logo@2x.png`, `logo@3x.png` from `src/apple/artwork.ts`), constructs `new PKPass(buffers, {wwdr, signerCert, signerKey, signerKeyPassphrase}, props)`, calls `setBarcodes(null)`, `setExpirationDate(...)` and `setRelevantDates([...])`, and returns `getAsBuffer()`. `signBundle` signs each pass and returns `PKPass.pack(...passes).getAsBuffer()`. Every call runs inside the console guard.
 
-**Artwork.** `scripts/make-artwork.ts` draws an original compass-rose glyph and wordmark in an original palette with a tiny PNG encoder (`src/artwork/png.ts` over `node:zlib`), and writes `src/apple/artwork.ts` holding the PNGs as base64 constants, so the images are inside the bundle and importable in tests with no loader. Image sizes follow Apple's Wallet design guidance, checked against Apple's current pages when the task runs. No AWS logo, colour or wording is used.
+**Artwork.** Superseded by task 38 (see "Post-SP3 change: owner artwork"): `scripts/make-artwork.mjs` renders the owner's `logo.svg` and `favicon.svg` into the six PNGs and writes `src/apple/artwork.ts`. The original drawn compass glyph and PNG encoder were removed. (Original note: `scripts/make-artwork.ts` draws an original compass-rose glyph and wordmark in an original palette with a tiny PNG encoder (`src/artwork/png.ts` over `node:zlib`), and writes `src/apple/artwork.ts` holding the PNGs as base64 constants, so the images are inside the bundle and importable in tests with no loader. Image sizes follow Apple's Wallet design guidance, checked against Apple's current pages when the task runs. No AWS logo, colour or wording is used.)
 
 ### Component 12: APNs client (`src/apns/*`)
 
@@ -1247,3 +1247,194 @@ Each entry names the task that introduced it. Where this section and the text ab
 - Code review M3: the contract test validates every JSON and problem body against the OpenAPI document with ajv 6 (nullable on, `$ref`s resolved from the document's components) through `test/helpers/openapi-validator.ts`; the hand-written YAML tree reader stays for paths, methods and statuses.
 - CTO M2: the Compass API response schemas now live once in `@compass/contracts` (`packages/contracts/src/compass-api-schemas.ts`, exported from the index); `src/validation/response-schemas.ts` and core's `compass-api-schemas.ts` re-export them. HandoffView and SerialNumbers schemas are shared too.
 - CTO L4: `types: ["node"]` in the package tsconfig replaces `src/node-types.d.ts` (task 1 text superseded); a structural test guards it.
+
+## Post-CodeQL change: explicit APNS host match (20 October 2026, task 31)
+
+CodeQL flagged the APNS host allow-list check as an incomplete URL substring check. `APNS_HOSTS` is an array, so `includes` was already exact; the check now uses strict equality so the intent is explicit. No behaviour change.
+
+## Post-SP3 change: pass front layout (20 October 2026, task 32)
+
+Owner decision after seeing the live pass. Front, in Apple's fixed boarding-pass order:
+
+| Row | Apple slot      | Fields                                                   |
+| --- | --------------- | -------------------------------------------------------- |
+| 1   | headerFields    | SESSION: the session code                                |
+| 2   | primaryFields   | BOARDING CLOSES (24-hour), GATE (venue)                  |
+| 3   | secondaryFields | TITLE                                                    |
+| 4   | auxiliaryFields | DATE, TIME (start to end, 24-hour), ROOM (short), NOTICE |
+
+The short room is the part after the first comma (the room itself, without the level or area), or the whole room when it has one part. The full room is on the back. All Apple pass times are 24-hour ("13:00", "Thu 13:00"); the Google object and calendar are unchanged. NOTICE stays on the front because Requirement 9.2 requires the disclaimer there.
+
+## Post-SP3 change: pass colours (20 October 2026, task 33)
+
+The pass takes its colours from the owner's own artwork (`site/public/artwork/pass-background.jpg`): background `rgb(18, 8, 48)`, text white, labels `rgb(255, 176, 196)`. Apple's `background.png` is honoured only by the `eventTicket` style, so a boarding pass cannot show the picture itself; the owner chose to keep the boarding pass. The artwork is the owner's, so Requirement 9.10 (original artwork, no AWS colour scheme) still holds.
+
+## Post-SP3 change: pass review 2 (20 October 2026, task 34)
+
+Owner decisions after the second look at the live pass, superseding task 33's colours:
+
+- No `logoText`: the top row is the logo and SESSION.
+- The room is in the gate label ("GATE - OCTAVIUS 4" above the venue); the bottom row is DATE and TIME. Wallet cannot show a smaller line under a value.
+- No NOTICE on the front. The disclaimer is on the back; the organisation name and description still say unofficial. Requirement 9.2 is amended to the back.
+- Colours: background `rgb(140, 79, 255)` (#8C4FFF), values white, labels `rgb(255, 0, 127)` (#FF007F). Wallet allows one solid colour each, so the owner's ranges are reduced to one end.
+- **Accepted accessibility deviation.** Pink labels on the purple measure 1.2:1, far under WCAG 2.2 AA (4.5:1 for small text). The owner chose this knowingly on 20 October after seeing the measured contrast and two readable alternatives. The values stay white at 4.49:1, a hair under the guideline. The TAM and CTO reviews should treat this as an accepted owner decision, not an open finding.
+
+## Post-SP3 change: pass review 3 (20 October 2026, task 35)
+
+Owner decisions after the third look, superseding the gate label and colours of task 34:
+
+| Row       | Fields                                                                        |
+| --------- | ----------------------------------------------------------------------------- |
+| Header    | SESSION                                                                       |
+| Primary   | BOARDING CLOSES, GATE (the short room, or "Room not published")               |
+| Secondary | TITLE                                                                         |
+| Auxiliary | DATE "Thu, 3 Dec 2026" (left), TIME "13:00-14:00 PST" (centre), VENUE (right) |
+
+- The timezone abbreviation is the event zone's short name at the session start (`Intl` `timeZoneName: "short"`, for example PST); the back still names the zone in full.
+- Colours: background #232F3F, values white (13.6:1), labels #A166FF (3.78:1). **Accepted deviations:** the background is one digit from AWS Squid Ink (#232F3E), which Requirement 9.10 otherwise rules out, and the label contrast is under WCAG AA. Both were the owner's informed choice on 20 October, after the closeness and the measured contrast were shown; reviews treat them as accepted owner decisions.
+
+## Post-SP3 change: pass review 4 (20 October 2026, task 36)
+
+The bottom row is two fields: DATE on the left, holding the date and the time together as "3 Dec 2026 | 13:00-14:00", and VENUE on the right. The weekday and the zone abbreviation are gone from the front; the back still states the zone once ("All times are Pacific Time."), which Requirement 9.6 needs.
+
+## Post-SP3 change: pass review 5 (20 October 2026, task 37)
+
+Airline wording, owner decision:
+
+| Slot            | Content                                   |
+| --------------- | ----------------------------------------- |
+| logoText        | the session code, no heading              |
+| headerFields    | BOARDING CLOSES: the 24-hour time         |
+| primaryFields   | TERMINAL: the venue; GATE: the short room |
+| secondaryFields | FLIGHT NAME: the title                    |
+| auxiliaryFields | DATE: "3 Dec 2026 \| 13:00-14:00"         |
+
+Wallet gives `logoText` no colour of its own (Apple documents only `foregroundColor` and `labelColor`), so the code shows in the value colour. A long BOARDING CLOSES header can shorten the logo text, which is how "Compass" became "Comp..."; session codes are short. Open owner wish, later: an event ticket with the owner's picture as the background and no QR code (Requirement 9.1 would change).
+
+## Post-SP3 change: owner artwork (20 October 2026, task 38)
+
+The pass logo and icon are the owner's own artwork, the same files the site uses: `site/public/artwork/logo.svg` (the Nevada map and road with a pin, "2026", and "re:Invent" over "Compass") and `site/public/artwork/favicon.svg` (the map alone). `scripts/make-artwork.mjs` renders them once with Playwright's Chromium onto transparent canvases at Apple's sizes and writes `src/apple/artwork.ts`; the module is committed, so the Lambda bundles carry the images with no file read. The logo is fitted to the 50-point height and left-aligned in the 160-point slot, which leaves the logo text (the session code) just right of the middle. The drawn compass glyph and its PNG encoder are removed. Requirement 9.10 still holds: the artwork is original and has no AWS mark; the year in the logo uses a system heavy sans-serif stack instead of AWS's Amazon Ember typeface; the pass PNGs bake in whichever of those fonts the machine running `make-artwork.mjs` has (Segoe UI Black on the owner's machine).
+
+## Post-SP3 change: pass review 6 (20 October 2026, task 39)
+
+| Slot            | Content                                                                           |
+| --------------- | --------------------------------------------------------------------------------- |
+| logo            | the owner's logo, no logo text                                                    |
+| headerFields    | SESSION: the session code                                                         |
+| primaryFields   | TERMINAL: the venue; GATE: the short room                                         |
+| secondaryFields | FLIGHT NAME: the title                                                            |
+| auxiliaryFields | DATE "3 Dec 2026 \| 13:00-14:00" (left); BOARDING CLOSES, 24-hour (right-aligned) |
+
+The arrow between TERMINAL and GATE is Wallet's own transit glyph for `PKTransitTypeGeneric`, and Wallet chooses the font sizes; the pass sets neither. Long primary values are shrunk a little and then cut by Wallet; the full room is on the back.
+
+## Post-SP3 change: Google layout (20 October 2026, task 40)
+
+The Google generic object follows the final Apple pass as far as the generic layout allows: `header` is the title (the flight name) and `subheader` the session code; the text modules read TERMINAL, GATE (short room), DATE ("3 Dec 2026 | 13:00-14:00"), BOARDING CLOSES (24-hour), ROOM (the full room, when known) and NOTICE (the disclaimer, since a Google pass has no back); `hexBackgroundColor` is #232F3F. The formatters and `shortRoom` are the Apple ones, so both passes always say the same. The Google class does not change, so `scripts/google-wallet-class.mjs` needs no new run.
+
+## Post-SP3 change: icon size (20 October 2026, task 41)
+
+The pass icon is 38 by 38 points (38, 76 and 114 pixels at 1x, 2x and 3x). Apple's current Wallet Human Interface Guidelines give `icon.png` as 38 by 38 points for every pass style, and the logo as 50 to 160 points wide and 50 points high; the 29-point icon in the task 12 note came from the older, archived PassKit Programming Guide. Source: https://developer.apple.com/design/human-interface-guidelines/wallet (checked 20 October 2026 through its data endpoint, since the page is rendered by script).
+
+## Post-SP3 change: poster event ticket (20 October 2026, task 42)
+
+Owner decision: the pass carries the owner's picture, so it is an Apple event ticket, not a boarding pass. Users still read "Boarding Pass" (the pass `description` is "Unofficial Boarding Pass"), and the airline labels stay. Apple's facts, checked on 20 October 2026 against the Wallet Human Interface Guidelines (updated 8 June 2026 for iOS 27), the Pass reference and "Creating an event pass using semantic tags":
+
+- A boarding pass takes a logo, an icon and (airline passes only) a footer. It cannot show a background, strip or thumbnail.
+- A legacy event ticket takes a logo, an icon, a thumbnail and a background (343 by 503 points), which Wallet always blurs.
+- A poster event ticket (iOS 26 and later) shows `artwork.png` (358 by 448 points) unblurred, with `primaryLogo.png` (up to 126 by 30 points). It needs `posterEventTicket` in `preferredStyleSchemes` and the semantic tags `eventName`, `venueName`, `venueRegionName` and `venueRoom`, and it is not for passes with a barcode (ours has none). If validation fails, Wallet falls back to the legacy event ticket.
+
+| Key                     | Content                                                                                             |
+| ----------------------- | --------------------------------------------------------------------------------------------------- |
+| `preferredStyleSchemes` | `["posterEventTicket", "eventTicket"]`                                                              |
+| `semantics`             | `PKEventTypeGeneric`; title; venue; "Las Vegas"; full room; start and end (canonical)               |
+| `eventTicket` fields    | as task 39 (SESSION; TERMINAL, GATE; FLIGHT NAME; DATE, BOARDING CLOSES; the back), no transit type |
+| `additionalInfoFields`  | BOARDING CLOSES (24-hour) and NOTICE (the disclaimer), shown below the poster                       |
+| Images                  | the task 38 icon and logo, plus `primaryLogo@2x.png`, `primaryLogo@3x.png` and `artwork@2x.png`     |
+
+Wallet draws the poster front from the semantics, so the seat release time is not guaranteed a place there; it is in the additional info fields and on the legacy front. The artwork ships at 2x only (716 by 896 pixels, 286 KB as PNG; 3x would be 480 KB): with every image the set is about 397 KB, so a 10-pass `.pkpasses` is about 4 MB, about 5.3 MB in base64, under Lambda's 6 MB synchronous response limit. A test holds the set under 420 KB. No client image is added (Requirement 9.11), and the semantic dates are built from `Date.parse` like every other date (review H1). The Google object is unchanged for now; a Google pass can carry a picture through the generic object's hero image, which is a later task. Owner check: delete the old dev passes on the iPhone, issue new ones, and confirm the poster on iOS 26 or later.
+
+## Post-SP3 change: poster generic pass (21 October 2026, task 43)
+
+The owner checked the task 42 pass on iOS 27: no picture and no room. Cause: Wallet shows a poster event ticket only on passes with NFC (Apple's examples all carry an `nfc` dictionary, and pass vendors and the developer forums report that the poster event layout is NFC only). NFC passes need an entitlement Apple grants to ticket issuers, so this pass always fell back to the legacy event ticket. That layout shows one primary field (GATE was dropped) and only a blurred `background.png` (the pass has none).
+
+Apple's poster generic pass (iOS and watchOS 27) has no event or NFC requirement, shows `artwork.png` (358 by 448 points) unblurred with `primaryLogo.png`, and takes a header field, up to four primary fields, two footer fields and back fields. Wallet prefers `posterGeneric` when a pass also carries a legacy style, and older systems show the legacy style. passkit-generator 3.7.0 imports both styles from one pass.json. Source: https://developer.apple.com/documentation/walletpasses/creating-a-poster-generic-pass (checked 21 October 2026).
+
+| Style (where)             | Header  | Primary                                | Secondary      | Auxiliary or footer           |
+| ------------------------- | ------- | -------------------------------------- | -------------- | ----------------------------- |
+| `posterGeneric` (iOS 27+) | SESSION | FLIGHT NAME, TERMINAL, the arrow, GATE | none           | footer: DATE, BOARDING CLOSES |
+| `eventTicket` (fallback)  | SESSION | FLIGHT NAME                            | TERMINAL, GATE | DATE, BOARDING CLOSES         |
+
+The arrow is a primary field with an empty label and the value U+2192, where the boarding pass drew its transit arrow. How Wallet arranges four poster primary fields is not documented, so the owner checks the order on the device; the fields are listed in the owner's reading order. The picture is the owner's choice: replace `site/public/artwork/pass-background.jpg` and rerun `node packages/pass-service/scripts/make-artwork.mjs`. The legacy fallback shows no picture: Wallet always blurs an event ticket background, and a background would push a 10-pass bundle past the artwork budget. `preferredStyleSchemes` is dropped (the poster event ticket needs NFC); the semantic tags stay for Siri and the system.
+
+## Post-SP3 change: Pass Designer event ticket (21 October 2026, task 44)
+
+The task 43 poster generic pass showed on iOS 27, but Wallet placed its primary fields at the bottom in its own fonts and caps a poster's primary logo at 30 points. The owner then designed the pass in Apple's Pass Designer, which previews passes as Wallet renders them, and shared the signed result as `docs/previews/compass.pkpass` (the owner's file, not committed by the agents). Only its `pass.json` layout and texts were read; its signature and identifiers are not used, and the server keeps signing with the Secrets Manager key.
+
+| Section   | Fields (key, label, alignment)                                                                            |
+| --------- | --------------------------------------------------------------------------------------------------------- |
+| Header    | `session` SESSION, natural                                                                                |
+| Primary   | `title` FLIGHT NAME, natural                                                                              |
+| Secondary | `terminal` TERMINAL, left; `arrow` (no label, U+2192), centre; `gate` GATE, right                         |
+| Auxiliary | `date` DATE, left; `boardingCloses` BOARDING CLOSES, natural                                              |
+| Back      | about, unofficial, seatRule, then roomFull, walk, next and name when known, then timezone, plans, privacy |
+
+Owner decisions on the import (21 October): keep the organization name "AWS Community South Africa" and the black, white and orange colours (orange labels measure about 9.2:1 on black, above WCAG AA; their closeness to the AWS colours is an accepted deviation, recorded with TM1); keep ABOUT and drop the design's DISCLAIMER NOTICE, which repeated it in older wording; add the per-pass ROOM, WALK FROM PREVIOUS and NEXT SESSION back fields. The design's images are replaced by renders of the same owner artwork at Apple's sizes: its logos were 8423 by 3645 pixels (656 KB each) and its footer images apply to airline boarding passes only. The background ships at 2x only, as in the design, so the set stays at 395 KB. Wallet may blur an event ticket background; the picture is a smooth gradient, so it reads the same either way. The Google object follows the black background. The showcase site sample pass (SD1) still shows the earlier design and is a follow-up.
+
+Owner check (21 October): the pass matched the design except the background, which was rendered from the older `pass-background.jpg` photo. The background is now the design's own gradient, `packages/pass-service/artwork/pass-background.png` (a pass-only source, kept out of the site's public folder), shipped as `background.png` at 1x (343 by 503 pixels, 147 KB): at 2x it weighs 538 KB, and Wallet blurs an event ticket background, so 1x looks the same. The set is 222 KB. The `/board` page of the site still uses the older photo as its backdrop.
+
+## Post-SP3 change: Google template (22 October 2026, task 47)
+
+Google Wallet publishing access was approved on 21 October, so any Android user can save the pass. Until now the Google pass showed a letter circle, the title and the session code, Google's generic fallback picture, and every other field in the details. The owner chose, from two mocks of 22 October, the look below: the icon alone top left, the full logo on the gradient hero (the reverse of the first mock, which put the logo on top and the icon on the hero), and the card in the blue at the top of the hero. Google's facts, checked on 22 October 2026 against the Generic pass template page and the brand guidelines (both updated 21 October 2026):
+
+- The card title section (logo or wide logo, card title, subheader, header, background colour) is fixed. On Android a `wideLogo` replaces the round logo and the card title. Wide logo: transparent PNG, 1280 by 400 pixels recommended, light artwork on a dark card.
+- `classTemplateInfo.cardTemplateOverride.cardRowTemplateInfos` adds front rows of one, two or three items (at least one row, at most two recommended); each item names a field path such as `object.textModulesData['gate']` and shows its header as the label.
+- `heroImage` is a full-width picture, 1032 by 812 pixels recommended. Without one Google shows a fallback picture of the pass category. Google places it (after the first row or under the rows).
+- `detailsTemplateOverride.detailsItemInfos` lists what the details show, in order. The list view keeps Google's default.
+- Images need a public HTTPS URL that Google fetches and caches by URL.
+
+| Part      | Content                                                                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Top       | `wideLogo` (the icon only, left-aligned, `wallet/wide-logo-v1.png`), subheader the session code, header the title (flight name)            |
+| Colour    | #2035E2, the blue at the top of the hero (white text about 7.9:1); the Apple pass stays black                                              |
+| Row 1     | TERMINAL (start), GATE (end)                                                                                                               |
+| Row 2     | DATE (start), BOARDING CLOSES (end)                                                                                                        |
+| Hero      | the Pass Designer gradient with the full logo centred over a soft white glow (`wallet/hero-v1.png`)                                        |
+| Details   | ROOM, ABOUT, UNOFFICIAL PASS, BOARDING CLOSES (seat rule), WALK FROM PREVIOUS, NEXT SESSION, TIMES, IF YOUR PLANS CHANGE, PRIVACY          |
+| Not on it | NAME (the object lives on Google's servers; the Apple pass keeps it on the device) and the short NOTICE (ABOUT and UNOFFICIAL PASS say it) |
+
+The icon is a wide logo, not Google's round `logo`, so it shows alone without a circle mask or the card title, as the logo sits on the Apple pass. The glow keeps the logo's purple "Compass" legible on the blue; Google advises against text in a hero image because it is not translated, which is accepted here for a logo. The texts are the Apple pass texts (`backFields` is shared), so both passes always say the same. `cardTitle` stays "Compass boarding pass" because the Generic object requires it and the list view and other platforms may show it. The object sets the image URLs from `PUBLIC_BASE_URL`, so dev and prod each serve their own copy; the save JWT still references objects by id only, so its length does not change.
+
+Hosting (owner decisions): the images are pass-only sources in `packages/pass-service/artwork/google/` (no PNG enters `site/public`). They first went to the site bucket as Terraform `aws_s3_object` resources (infra task 24), but the first dev release could not create them: the HCP apply role may not write objects and the bucket policy denies reads to everything but the distribution. The owner then chose to treat them as site content (infra task 25, design item 43): `scripts/release.sh` copies them into the built site under `wallet/` after the site build, and the site sync uploads them with every other file. The existing distribution serves them and the release invalidation covers them. A changed picture gets a new `-v2` name.
+
+The class carries the template, so `scripts/google-wallet-class.mjs` must run once per environment after the images are live. Its diff check now compares nested values (a desired value matches when every key it names matches the class Google returns, including list order), so a second run changes nothing.
+
+Text module limit (task 47.7, 24 October): the owner's first dev sync with the template issued two passes but both Google inserts failed fast. An object carried up to 13 text modules, and Google takes at most 10 from the object and 10 from the class (and would display no more). The five fixed texts (ABOUT, UNOFFICIAL PASS, the seat rule, IF YOUR PLANS CHANGE, PRIVACY) now live on the class, from the import-free `src/apple/pass-texts.ts` that the Apple back also uses; each object keeps the front four plus ROOM, WALK FROM PREVIOUS, NEXT SESSION and TIMES, at most 8. The details template names `class.` or `object.` per item, in the same order. A failed Google insert is not retried, so passes issued during the failure need `forget_me` and a new sync on dev.
+
+Required logo (task 47.8, 25 October): a local diagnostic with test objects built by `buildGenericObject` showed Google refuses a `wideLogo` without a `logo` (HTTP 400 "logo must be set if wide_logo is set") and fetches every image during the insert ("Image cannot be loaded" while an image was not yet live). The object now also sets `logo` (`wallet/logo-v1.png`, the icon on #2035E2, 660 by 660 pixels with a 15 percent margin, masked round by Google where the wide logo does not fit). The owner approved the Google pass on Android on 25 October and confirmed the Apple pass is unchanged.
+
+## Final review: Google save links and insert retry (29 October 2026, tasks 48 and 49)
+
+The final TAM review asked for a 12-pass Google hand-off on prod before submission. Measured on 29 October, one save JWT that names every pass goes over Google's safe length of 1800 characters at about 9 passes, so a week with many reserved sessions would get a link that may fail. Task 48 splits the passes over as many links as needed, each measured on the signed token, the way Apple passes are already split into bundles. The view keeps `saveUrl` (the first link) beside the new `saveUrls`, and the board page shows one button per link, labelled with the passes each holds. The QA pass found that an older board page refuses the new shape outright (its validator allows only `saveUrl`), so the real guarantee runs the other way: the new board page also accepts a view with only `saveUrl` and reads it as one link, so the site can go out before the service. No production board page exists before the 0.1.0 release, and `release.sh` deploys both together.
+
+The TAM also found that a Google insert that fails, or does not finish inside the insert budget, leaves the pass Apple only for good. Task 49 retries such inserts when the hand-off view is read, under the same concurrency limit, and treats a 409 from Google (the object already exists) as inserted after one patch, so a retry after a lost response does no harm. The view waits at most 5 seconds (`VIEW_INSERT_BUDGET_MS`) for these retries, whatever `GOOGLE_INSERT_BUDGET_MS` says, so a slow Google never pushes the view past the board page's 10 second timeout and costs the Apple and calendar links. Accepted residual risks (QA and security Lows): a pass voided while a retry is in flight can end with an active Google object, the same narrow race issue already had; two open board tabs can insert the same pass twice, which Google answers with 409.
+
+## Owner change: buttons for each session (29 October 2026, task 50)
+
+On the local preview of task 48 the owner asked for one Google button, not several, and then for Apple, Google and calendar buttons on each session. The owner accepted a later release for it. The board page now keeps the "add everything" buttons at the top (the Apple bundles, one Google link when every pass fits in one, and the week's calendar) and gives each session its own three buttons. Each session's Google link names one object, so it is always far inside Google's safe length; the top Google link appears only when the whole set fits, which replaces the multi-link split of task 48 on the page. Two new routes serve one Apple pass and one session's calendar by serial number, behind exactly the same checks as the bundle route, and the per hand-off read limit grows with the number of passes so every button works once.
+
+## Owner change: top or per session (30 October 2026, task 51)
+
+After seeing both on the local preview, the owner chose one place for the buttons, never both. With 8 sessions or fewer, the board shows only the top actions: one Apple bundle (at most 10 passes), one Google link (about 8 passes fit Google's safe length) and the week's calendar. With more than 8, it shows the buttons on each session, and the top keeps only the week's calendar file, so a long week can still go into a calendar in one import (owner, 30 October). Sessions carry no calendar button of their own: the week's file at the top already covers every session, so the per-session calendar route was removed (task 52). The threshold is the Google one, so the top always covers every pass. When the single Google link cannot be made for 8 or fewer, the Google buttons move to the sessions that have them, so no pass loses its Google button.
+
+## Measured Google save token lengths (29 and 30 October 2026)
+
+The length of a Save to Google Wallet token, signed with RS256 and naming each object by id and class, as measured for ADR-036:
+
+| Passes in one token | 29 October (TAM, dev ids) | 30 October (QA, production-length ids: 19-digit issuer id, UUID serials, 70-character service account email) |
+| ------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 1                   | 746                       | 733                                                                                                          |
+| 8                   | 1,782                     | 1,796                                                                                                        |
+| 9                   | 1,930                     | over 1,800 (split)                                                                                           |
+| 12                  | 2,374                     | over 1,800 (split)                                                                                           |
+
+Each extra pass adds about 130 to 150 characters. Google's stated safe length is 1,800, so 8 passes sit close to it: the service measures each signed token and does not rely on the count alone.

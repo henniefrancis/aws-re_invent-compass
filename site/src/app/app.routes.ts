@@ -24,6 +24,58 @@ export const routes: Routes = [
       import('./pages/privacy/privacy-page.component').then((m) => m.PrivacyPage),
   },
   {
+    path: 'about',
+    title: 'The Creator',
+    loadComponent: () => import('./pages/about/about-page.component').then((m) => m.AboutPage),
+  },
+  {
+    path: 'inspiration',
+    title: 'The Inspiration',
+    loadComponent: () =>
+      import('./pages/inspiration/inspiration-page.component').then((m) => m.InspirationPage),
+  },
+  {
+    path: 'documentation',
+    title: 'Documentation',
+    loadComponent: () =>
+      import('./pages/documentation/documentation-page.component').then((m) => m.DocumentationPage),
+  },
+  {
+    path: 'disclaimer',
+    title: 'Disclaimer',
+    loadComponent: () =>
+      import('./pages/disclaimer/disclaimer-page.component').then((m) => m.DisclaimerPage),
+  },
+  {
+    path: 'copyright',
+    title: 'Copyright and licence',
+    loadComponent: () =>
+      import('./pages/copyright/copyright-page.component').then((m) => m.CopyrightPage),
+  },
+  {
+    path: 'terms',
+    title: 'Terms of use',
+    loadComponent: () => import('./pages/terms/terms-page.component').then((m) => m.TermsPage),
+  },
+  {
+    path: 'security',
+    title: 'Security',
+    loadComponent: () =>
+      import('./pages/security/security-page.component').then((m) => m.SecurityPage),
+  },
+  {
+    path: 'accessibility',
+    title: 'Accessibility',
+    loadComponent: () =>
+      import('./pages/accessibility/accessibility-page.component').then((m) => m.AccessibilityPage),
+  },
+  {
+    path: 'credits',
+    title: 'Open-source credits',
+    loadComponent: () =>
+      import('./pages/credits/credits-page.component').then((m) => m.CreditsPage),
+  },
+  {
     path: 'board',
     title: 'Board',
     loadComponent: () => import('./pages/board/board-page.component').then((m) => m.BoardPage),

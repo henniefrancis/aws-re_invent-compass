@@ -1,3 +1,10 @@
+/* The page is a full-height column, so the footer sits at the bottom of a short page. */
+app-root {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100vh;
+}
+
 .container {
   inline-size: 100%;
   max-inline-size: var(--page-width);
@@ -6,8 +13,8 @@
 }
 
 .site-header {
-  background: var(--color-surface);
-  border-block-end: 2px solid var(--color-border);
+  background: var(--color-paper);
+  border-block-end: 1px solid var(--color-tint);
 }
 
 .site-header__bar {
@@ -30,13 +37,47 @@
 
 .site-main {
   display: block;
+  flex: 1 0 auto;
+  inline-size: calc(100% - 2 * var(--space-3));
+  margin-block: var(--space-4) var(--space-6);
   padding-block: var(--space-4) var(--space-7);
+  border-radius: 1.25rem;
+  background: var(--color-paper);
 }
 
+@media (min-width: 48rem) {
+  .site-main {
+    margin-block: var(--space-6) var(--space-7);
+    padding: var(--space-6) var(--space-6) var(--space-7);
+  }
+}
+
+.site-main > section + section {
+  margin-block-start: var(--space-7);
+}
+
+/* The footer (task 27): the Notice under a small heading, centred and compact. */
 .site-footer {
-  padding-block: var(--space-5);
-  border-block-start: 2px solid var(--color-border);
-  background: var(--color-surface);
+  padding-block: var(--space-4);
+  border-block-start: 1px solid var(--color-tint);
+  background: var(--color-paper);
+  text-align: center;
+}
+
+.site-footer__inner {
+  max-inline-size: 64rem;
+}
+
+.site-footer__heading {
+  margin: 0 0 var(--space-1);
+  font-size: 0.9375rem;
+  letter-spacing: 0;
+}
+
+.site-footer .notice {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .stack > * + * {
@@ -56,6 +97,13 @@
   align-items: center;
 }
 
-.measure {
-  max-inline-size: var(--measure);
+/* Text fills the page card; page headings and the line under a page title are centred (task 33). */
+.site-main h1,
+.site-main h2,
+.site-main h1 + .source-note {
+  text-align: center;
+}
+
+.site-main .hero__title {
+  text-align: start;
 }

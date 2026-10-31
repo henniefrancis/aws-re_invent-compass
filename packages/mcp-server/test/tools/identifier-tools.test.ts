@@ -21,7 +21,7 @@ describe('Property 28: tools reject bad identifiers before any S1 call', () => {
     ['cancel_reservation', (id) => ({ sessionId: id })],
     ['add_standby', (id) => ({ sessionIds: ['syn-096', id] })],
     ['remove_standby', (id) => ({ sessionId: id })],
-    ['issue_boarding_passes', (id) => ({ sessionIds: [id] })],
+    ['issue_boarding_pass', (id) => ({ sessionId: id })],
     ['send_to_phone', (id) => ({ sessionIds: [id] })],
     ['sync_passes', (id) => ({ sessionIds: [id] })],
     [

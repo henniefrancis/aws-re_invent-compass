@@ -279,7 +279,57 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - [x] 15. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-## Notes
+- [x] 16. Return the pass and calendar downloads as binary to browsers (SP3 finding, design "Post-SP3 change")
+  - [x] 16.1 Add `*/*` to the binary media types
+    - In `contracts/compass-api.openapi.yaml`, add `'*/*'` (quoted, because a bare `*` starts a YAML alias) to `x-amazon-apigateway-binary-media-types`, keep the three named types, and update the header comment to say why. Run `npm run gen:copy` so `packages/contracts/openapi.yaml` and `infra/modules/api/openapi.yaml` stay byte-identical, then the hash, placeholder and dash checks, the full test run at 100 percent, lint, typecheck and prettier, and the infra native test of `infra/modules/api`
+    - Why: on 19 October SP3 showed that Safari's Add to Apple Wallet link sends `Accept: text/html,...` first, and API Gateway honours only the first Accept media type, so the bundle arrived as base64 text and Wallet refused it. With `Accept: application/vnd.apple.pkpasses` the same URL returned a zip. AWS documents `*/*` for browser clients
+    - The owner redeploys dev with `scripts/release.sh dev` and repeats SP3 step 1; the JSON routes are checked on dev in the same run (issue, hand-off, device registration)
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+
+  - [x] 16.2 Commit
+    - After the full gate passes, commit locally with a Conventional Commit scoped `foundation-contracts`. Do not push, merge, tag or open a PR
+
+- [x] 17. Add the `show_schedule` tool contract (SP3 finding, design "Post-SP3 change: the show_schedule tool contract")
+  - [x] 17.1 Add `show_schedule` to `mcpTools`
+    - In `packages/contracts/src/mcp-tools.ts`, add `ShowScheduleInput` (`z.object({})`) and `ShowScheduleOutput` (`{ schedule: ScheduleWireSchema, notInCatalog: z.array(z.string()) }`) and the `show_schedule` key, and say eighteen tools in the record comment. Add the accept and strip cases to `schemas-accept-strip.test.ts`
+    - Why: on 19 October SP3 in Kiro could not answer "check my itinerary", because no tool lists the reservations, standby list and personal time with their ids (compass-power task 33 builds the handler)
+    - _Requirements: 4.11_
+  - [x] 17.2 Commit
+    - After the full gate passes, commit locally in the same commit as compass-power task 33 (scoped `compass-power`), so the registry and the contract never disagree. Do not push, merge, tag or open a PR
+
+- [x] 18. Keep catalog rooms written with a vertical bar on the pass (SP3 finding, design "Post-SP3 change: vertical bar in pass text")
+  - [x] 18.1 Turn a vertical bar into a comma in `normalisePassText`
+    - In `packages/contracts/src/pass-fields.ts`, after the whitespace collapse, split the text on `|`, trim each part, drop empty parts and join the rest with `, `, so "Level 1 | Academy 409" becomes "Level 1, Academy 409" and bars at either end disappear. `ALLOWED_TEXT` and the server-side PassFields rule stay as they are. Make the same change in the showcase copy `site/src/lib/demo/pass-text.ts` and add `|` to the marks of its equality property test
+    - Tests: a real-shaped room normalises to "Level 1, Academy 409" and is accepted as `room`; a bare bar, repeated bars and bars at either end; the raw room is still refused; the S4 Pass_Builder keeps the normalised room instead of falling back to an empty string
+    - Why: on 19 October SP3 showed every live pass without its ROOM line. Real catalog rooms read like "Level 1 | Academy 409", `|` is not in the allowlist, so the Pass_Builder sent an empty room and the Apple template left the ROOM field out
+    - Then the full test run at 100 percent, the site tests, lint, typecheck, prettier and the dash check. The owner redeploys and re-issues the passes
+    - _Requirements: 4.9_
+
+  - [x] 18.2 Commit
+    - After the full gate passes, commit locally with a Conventional Commit scoped `foundation-contracts`. Do not push, merge, tag or open a PR
+
+- [x] 19. Run the check workflow on pushes to develop as well (design "Post-merge change: CI on develop pushes", ADR-018 amendment)
+  - [x] 19.1 Add `push: branches: [develop]` to `.github/workflows/check.yml` next to the pull request trigger, and update its header comment
+    - Why: `check.yml` ran only on pull requests into `main`. Once the standing pull request from develop (PR #1) was merged on 19 October, pushes to develop got no CI at all: ten commits went unchecked by CI. Running on develop pushes checks every change as it lands, without a standing pull request
+    - Still no schedule trigger, no deploy and no other branch; `publish.yml` stays the only tag trigger. The concurrency group cancels an older run on the same ref
+    - Tests: update `packages/contracts/test/workflows.test.ts` so it requires exactly the pull request into main and the push to develop, and still refuses a schedule or any other push branch
+  - [x] 19.2 Commit after the full gate passes, scoped `foundation-contracts`; the owner approved the push
+
+- [x] 20. Add the tech and GitHub tool contracts (owner request of 20 October, design "Owner change: tech and GitHub tool contracts")
+  - [x] 20.1 In `packages/contracts/src/mcp-tools.ts`, add `show_my_tech`, `find_sessions_by_tech`, `connect_github`, `scan_github` and `disconnect_github`, give `ScanRepoOutput` an optional `technologies` list, and say twenty-three tools in the record comment. Add the accept and strip cases to `schemas-accept-strip.test.ts`
+    - Why: compass-power tasks 41 to 45 build the handlers
+    - _Requirements: 4.11_
+  - [x] 20.2 Commit in the same commit as compass-power tasks 41 to 45 (scoped `compass-power`), so the registry and the contract never disagree. Do not push
+
+- [x] 21. Add the link-or-QR choice to the send_to_phone contract (owner request of 21 October, design "Owner change: send_to_phone show")
+  - [x] 21.1 `SendToPhoneInput` gains optional `show` (`link`, `qr` or `both`); `SendToPhoneOutput` gains optional `shownAs` and `qrShownIn` (`browser` or `chat`), so older outputs still parse. Accept and strip cases in `schemas-accept-strip.test.ts`, and an unknown `show` is rejected
+    - _Requirements: 4.11_
+  - [x] 21.2 Commit with compass-power task 48 (scoped `compass-power`). Do not push
+
+- [x] 22. Replace the issue_boarding_passes contract with issue_all_boarding_passes and issue_boarding_pass (owner decision of 21 October, design "Owner change: issue all passes or one")
+  - [x] 22.1 `issue_all_boarding_passes`: input `{}`; `issue_boarding_pass`: input `{ sessionId?: string }`; both output `{ issued: string[], serials?: string[] }`. Remove `issue_boarding_passes`; twenty-four tools. Accept and strip cases follow
+    - _Requirements: 4.11_
+  - [x] 22.2 Commit with compass-power task 51 (scoped `compass-power`). Do not push
 
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.

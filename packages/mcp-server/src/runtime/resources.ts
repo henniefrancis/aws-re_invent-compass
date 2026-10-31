@@ -37,6 +37,12 @@ export const SCAN_WORKER_LOCATION: ResourceLocation = {
   repository: 'dist/scan-worker.js',
 };
 
+/** The GitHub scan worker (task 45). Like the scan worker, it exists only in a built package. */
+export const GITHUB_WORKER_LOCATION: ResourceLocation = {
+  bundled: 'dist/github-scan-worker.js',
+  repository: 'dist/github-scan-worker.js',
+};
+
 /**
  * The folder of the nearest `package.json` at or above the folder of `moduleUrl`, as a URL ending in
  * `/`. When there is none, the module's own folder is returned, so every later lookup fails with

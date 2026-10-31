@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { NOTICE, PAGES, boardPath, mockHandoff } from './support/site';
+import { NOTICE, PAGES, boardPath, mockHandoff, openNav } from './support/site';
 
 test.describe('every page', () => {
   for (const page of PAGES) {
@@ -10,13 +10,8 @@ test.describe('every page', () => {
       await expect(browser).toHaveTitle(page.title);
       await expect(browser.locator('main')).toHaveCount(1);
       await expect(browser.locator('footer .notice')).toHaveText(NOTICE);
-      await expect(browser.locator('footer .footer-list li')).toHaveText([
-        'Repository',
-        'Builder Center post (coming soon)',
-        'Video (coming soon)',
-        'Install',
-        'Privacy',
-      ]);
+      await expect(browser.locator('footer h2')).toHaveText('Disclaimer Notice');
+      await expect(browser.locator('footer a')).toHaveCount(0);
       await expect(browser.locator('html')).toHaveAttribute('lang', 'en');
     });
   }
@@ -30,21 +25,31 @@ test.describe('every page', () => {
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
   });
 
-  test('the footer links to the repository and never to an unknown address', async ({ page }) => {
+  test('the Project group links to the repository and never to an unknown address', async ({
+    page,
+  }) => {
     await page.goto('/');
-    await expect(page.locator('footer a[href^="https://"]')).toHaveCount(1);
-    await expect(page.locator('footer a[href^="https://github.com/henniefrancis/"]')).toHaveText(
+    await openNav(page, 'Project');
+    const nav = page.getByRole('navigation', { name: 'Main' });
+    await expect(nav.locator('a[href^="https://"]')).toHaveCount(1);
+    await expect(nav.locator('a[href^="https://github.com/henniefrancis/"]')).toContainText(
       'Repository',
     );
+    // Outside links open in a new tab and say so to screen readers (task 35).
+    await expect(nav.locator('a[href^="https://"]')).toHaveAttribute('target', '_blank');
+    await expect(nav.locator('a[href^="https://"]')).toContainText('(opens in a new tab)');
+    await expect(nav.getByText('Builder Center post (coming soon)')).toBeVisible();
+    await expect(nav.getByText('Video (coming soon)')).toBeVisible();
   });
 });
 
 test.describe('navigation', () => {
   test('moves focus to the page heading and sets the title', async ({ page }) => {
     await page.goto('/');
+    await openNav(page, 'Product');
     await page
       .getByRole('navigation', { name: 'Main' })
-      .getByRole('link', { name: 'Install' })
+      .getByRole('link', { name: /^Install/ })
       .click();
     await expect(page.locator('h1')).toHaveText('Install');
     await expect(page.locator('h1')).toBeFocused();
@@ -55,7 +60,7 @@ test.describe('navigation', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: 'Try the demo' }).click();
+    await page.getByRole('main').getByRole('link', { name: 'Try the demo' }).click();
     await expect(page.locator('h1')).toHaveText('Demo');
     await expect(page.locator('h1')).toBeFocused();
   });

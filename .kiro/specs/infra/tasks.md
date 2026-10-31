@@ -303,6 +303,41 @@ The build order lays the shared foundation first (version pins, provider, tags, 
   - [x] 20.1 Scripts under Git Bash on Windows, the existing OIDC provider, the API Gateway logging role trust, the event window pattern, the WAF managed rule groups, the tagged CloudFront distribution and the empty saved plan, each with a static or native test
   - [x] 20.2 Record the deploy in `docs/runbooks/first-deploy-notes.md`; a second bootstrap and release show no changes
 
+- [x] 21. Set the binary media types from the contract (design item 39, SP3)
+  - [x] 21.1 In `infra/modules/api`, read `x-amazon-apigateway-binary-media-types` from `openapi.yaml` with `yamldecode`, set `binary_media_types` on the REST API to that list, and add the list to the deployment trigger; update the comments that said the module never sets it
+  - [x] 21.2 Native tests: the list equals the contract's list and includes `*/*`; the trigger is the hash of the body plus the list; replace the two assertions that forbade `binary_media_types`. Run fmt, validate, the module tests, `infra/tests` and the static tests
+  - [x] 21.3 Commit with scope `infra`; the owner redeploys dev with `scripts/release.sh dev` and checks that `get-rest-api` lists `*/*`
+
+- [x] 22. Raise the account budget to USD 60 (TAM review M4 of 20 October, design item 40)
+  - [x] 22.1 Default `monthly_budget_usd` 60 and a correct description: dev and prod together cost about USD 38 to 40 a month (WAF is USD 16 to 17 per environment since ADR-021 was not adopted), and October also carries the USD 58 domain registration, so a USD 40 budget fired its 100 percent alert every month and hid real cost run-ups. The example tfvars and the native test follow; the owner sets 60 in his own terraform.tfvars and re-runs the bootstrap
+  - [x] 22.2 Tests and commit scoped `infra`
+
+- [x] 23. Check the AWS session before the release builds or applies (design item 41)
+  - [x] 23.1 In `scripts/release.sh`, check `aws sts get-caller-identity` before the build, and after `terraform init` check with `aws s3api head-bucket` (which needs `s3:ListBucket`, like the sync) that the session can reach the site bucket from the last apply; a first deploy has no bucket yet and skips the bucket check. The message names `AWS_PROFILE` and `aws sso login` and says nothing was applied; it prints no bucket name or account id
+  - [x] 23.2 Static test for the two checks and their order; update the release runbook; shellcheck, the static tests and commit scoped `infra`
+
+- [x] 24. Serve the Google Wallet pass images (design item 42, pass-service task 47)
+  - [x] 24.1 In `infra/modules/site`, add `wallet_images_dir` and one `aws_s3_object` per listed image (`wide-logo-v1.png`, `hero-v1.png`) under `wallet/` in the site bucket: `image/png`, `public, max-age=31536000, immutable`, `etag` from `filemd5`. Both roots pass `wallet_images_dir` (default `../../build/wallet`)
+  - [x] 24.2 In `scripts/release.sh`, copy `packages/pass-service/artwork/google/*.png` to `infra/build/wallet/` next to the Lambda zips, add `--exclude "wallet/*"` to the site sync, and allow `aws_s3_object` in the plan check (not retained)
+  - [x] 24.3 Native tests (the two objects, their keys, type, cache header and bucket), the composition tests with a fixture folder, a static test that the module's names match the files in `packages/pass-service/artwork/google/` and the release steps; update the release runbook; fmt, validate, the module tests, `infra/tests`, the static tests and commit scoped `infra`
+
+- [x] 25. Ship the Google Wallet images with the site sync (design item 43, owner decision of 22 October after the first dev release of task 24 failed)
+  - [x] 25.1 Remove the `aws_s3_object` resources, `wallet_images_dir` (module and both roots), the `wallet_image_keys` output, the native test run and fixtures, the root test variables, the `infra/build/wallet` copy, the `--exclude "wallet/*"` on the sync and `aws_s3_object` in the allowed types
+  - [x] 25.2 In `scripts/release.sh`, after the site build check, copy `packages/pass-service/artwork/google/*.png` (the names in `google-layout.ts`) into `<site output>/wallet/`, failing when one is missing, so the sync uploads them
+  - [x] 25.3 Static tests (the names match the layout and the files; the copy sits after the site build and before the sync; no wallet exclude); update the release runbook and the pass-service design note; fmt, validate, the module tests, `infra/tests`, the static tests, shellcheck and commit scoped `infra`. Owner: `scripts/release.sh dev` again
+
+- [x] 26. Deploy-day docs and stale release references (final TAM and CTO reviews of 29 October, TAM findings 4, 6 and 10, CTO findings 10 and 11, design item 44)
+  - [x] 26.1 Replace the reissue command that does not exist (`sync_passes --reissue-all`) in `docs/runbooks/rollback.md`, `docs/decisions/ADR-015-retained-resources.md` and `docs/architecture/build-plan.md` with the real path: the attendee runs `forget_me`, then `issue_all_boarding_passes` (check both tool names and what `forget_me` erases against `packages/mcp-server/src`)
+  - [x] 26.2 One deploy-day checklist in `docs/runbooks/release.md`, in order, owner-run: PR develop into main, CI green, merge; from a clean main checkout `release.sh dev` as a rehearsal; `release.sh prod` (the first health check fails by design); a fresh Google key, then load the secrets (origin-verify, app, apple, google); `check-secrets.sh prod`; `google-wallet-class.mjs --env prod`; shred the key; `release.sh prod` again (health 200, zero diff); confirm the prod alarm subscription; `curl https://reinvent-compass.vegas/api/v1/health` on the apex; a device smoke test on prod; `e2e.yml` green on the main commit; tag `v0.1.0` and approve `npm-publish`; then the post-publish steps: `npx reinvent-compass@0.1.0 demo` on a clean machine, the Kiro import from GitHub, the site `packageVersion` and README status (the owner's README, so as a proposal), deprecate 0.0.1, merge main back into develop, watch for 30 to 60 minutes. Link the existing runbooks rather than repeat them
+  - [x] 26.3 Bring stale references in line: `release/1.0.0` in `CONCEPT.md` and `docs/architecture/build-plan.md` (the release is cut from main, version 0.1.0), lock files described as pending, and "tag the merge commit only" where the runbooks now say otherwise; check every fact against the repo
+  - [x] 26.4 Dash check and prettier; commit scoped `infra`
+
+- [x] 27. Publish job split, site engines and the Google class script in the coverage gate (CTO findings 4, 9 and 12, design item 45)
+  - [x] 27.1 Split `.github/workflows/publish.yml` into a `verify` job with no `id-token` (npm ci, tsc, lint, tests, the tag-equals-version check, build, pack, upload the tarball as an artifact) and a `publish` job that needs it, runs only when the ref is a `v*` tag, holds `id-token: write` and the `npm-publish` environment, runs no `npm ci` or package script, and publishes the downloaded tarball with `--provenance --access public`; every action pinned by commit SHA; update the static workflow tests and `docs/runbooks/npm-release.md`, including the advice to keep 2FA on the npm account and to limit the `npm-publish` environment to `v*` tags in GitHub settings (owner)
+  - [x] 27.2 Set `site/package.json` `engines.node` to `^24.15.0` (Angular 22's floor), keeping the lock file in step
+  - [x] 27.3 Bring `scripts/google-wallet-class.mjs` into the root coverage gate with unit tests at 100 percent, with every network and file call injected and no real Google call
+  - [x] 27.4 Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent, `npm run test:site`, the infra static tests, actionlint if present); commit scoped `infra`
+
 ## Notes
 
 - The implementation language is Terraform/HCL, Bash, and Node.js (`.mjs`), fixed by the design and tech steering (Terraform only, no CDK/CloudFormation/SAM).

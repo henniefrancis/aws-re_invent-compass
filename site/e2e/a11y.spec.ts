@@ -1,6 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { PAGES, boardPath, expectNoAxeViolations, mockHandoff } from './support/site';
 
+// axe in Firefox on a loaded machine can pass the default 30 s on any page (seen on several
+// pages and board states after the task 25 restyle), so every axe test there gets the slow
+// timeout. The checks themselves are unchanged.
+test.beforeEach(({ browserName }) => {
+  test.slow(browserName === 'firefox');
+});
+
 const addButton = (page: Page, code: string) =>
   page.getByRole('button', { name: new RegExp(`^Add ${code}, `) });
 
@@ -17,7 +24,7 @@ test.describe('axe on every page', () => {
 test.describe('axe on every board state', () => {
   const states: [string, string, string][] = [
     ['ready-one-bundle', 'ready', 'Your boarding passes are ready'],
-    ['ready-three-bundles', 'ready', 'Your boarding passes are ready'],
+    ['ready-many-sessions', 'ready', 'Your boarding passes are ready'],
     ['ready-apple-only', 'ready', 'Your boarding passes are ready'],
     ['not-found', 'expired', 'This link has expired'],
     ['rate-limited', 'rate limited', 'Too many tries'],
@@ -59,8 +66,8 @@ test.describe('axe on the demo states', () => {
     await expect(page.getByRole('status')).toContainText('Sample week loaded');
     await expectNoAxeViolations(page);
 
-    await addButton(page, 'ARC228').click();
-    await expect(page.getByRole('heading', { name: 'ARC228 was blocked' })).toBeVisible();
+    await addButton(page, 'CMP340').click();
+    await expect(page.getByRole('heading', { name: 'CMP340 was blocked' })).toBeVisible();
     await expectNoAxeViolations(page);
 
     await page.getByRole('button', { name: 'Start the safe swap' }).click();
@@ -73,20 +80,20 @@ test.describe('axe on the demo states', () => {
     await expect(page.getByText('The swap is done.')).toBeVisible();
     await expectNoAxeViolations(page);
 
-    await page.getByRole('button', { name: /Show sample pass for BWP213/ }).click();
-    await expect(page.getByRole('img', { name: /Boarding pass for BWP213/ })).toBeVisible();
+    await page.getByRole('button', { name: /Show sample pass for TNC334-R/ }).click();
+    await expect(page.getByRole('img', { name: /Boarding pass. Session TNC334-R./ })).toBeVisible();
     await expectNoAxeViolations(page);
   });
 
   test('a warning', async ({ page }) => {
     test.slow(); // three axe runs; a loaded machine can pass the default 30 s
     await page.goto('/demo');
-    await addButton(page, 'AIM482').click();
-    await expect(page.getByRole('status')).toContainText('AIM482');
+    await addButton(page, 'ACT053').click();
+    await expect(page.getByRole('status')).toContainText('ACT053');
     await expectNoAxeViolations(page);
     await page.getByRole('button', { name: 'Add anyway' }).click();
-    await addButton(page, 'CMP327').click();
-    await expect(page.getByRole('status')).toContainText('CMP327');
+    await addButton(page, 'SEC318-R').click();
+    await expect(page.getByRole('status')).toContainText('SEC318-R');
     await expectNoAxeViolations(page);
     await page.getByRole('button', { name: 'Add anyway' }).click();
     await expect(page.getByRole('button', { name: /^Add this layover/ })).toBeVisible();

@@ -83,3 +83,13 @@ desktop.ini
 # Playwright output
 site/playwright-report/
 site/test-results/
+
+# Local Claude Code state: agent worktrees, local settings and launch configs.
+.claude/worktrees/
+.claude/settings.local.json
+.claude/launch.json
+
+# Copied or generated into the npm package by its build (task 57).
+packages/mcp-server/LICENSE
+packages/mcp-server/NOTICE
+packages/mcp-server/THIRD-PARTY-NOTICES.txt

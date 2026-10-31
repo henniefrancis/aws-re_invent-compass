@@ -38,8 +38,16 @@ export async function connect(
     client.setRequestHandler(ElicitRequestSchema, (request) => {
       questions.push(request.params.message);
       switch (action) {
-        case 'accept':
-          return { action, content: { confirm: true } };
+        case 'accept': {
+          // A pick list (task 51) is answered with its first option; a confirmation with a tick.
+          const params = request.params as {
+            requestedSchema?: { properties?: Record<string, { enum?: string[] }> };
+          };
+          const first = params.requestedSchema?.properties?.choice?.enum?.[0];
+          return first === undefined
+            ? { action, content: { confirm: true } }
+            : { action, content: { choice: first } };
+        }
         case 'acceptUnticked':
           return { action: 'accept' as const, content: { confirm: false } };
         case 'acceptEmpty':

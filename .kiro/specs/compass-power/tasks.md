@@ -486,6 +486,192 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 31.2 Commit
     - After `npx eslint .` and `npx prettier --check .` both pass with zero errors, commit the captures with scope `compass-power` (subject plus body via multiple `-m` flags, no attribution trailer). Never push.
 
+- [x] 32. Trim gitignore lines in linear time (CodeQL alert 1, design "Post-CodeQL change")
+  - [x] 32.1 Replace the trailing-space and trailing-slash regexes in `parseGitignore` with linear loops that keep git's rule: a trailing space escaped by `\` stays
+    - Why: CodeQL js/polynomial-redos on `packages/core/src/scanner/gitignore.ts`. A scanned `.gitignore` line made of a long run of `/` or spaces followed by another character made `/\/+$/` and `/(?<!\\) +$/` quadratic. The scanner reads repositories the attendee points it at, so the input is not trusted
+    - Tests: the escaped-space and plain trailing-space cases still parse as before; a 100 000-character run of slashes or spaces parses in well under a second; 100 percent coverage
+  - [x] 32.2 Commit after the full gate passes, scoped `compass-power`. Do not push
+
+- [x] 33. Let the agent read the schedule with its ids (SP3 finding, design "Post-SP3 change: show_schedule")
+  - [x] 33.1 Show the new layover's id in the `add_layover` text
+    - Why: on 19 October SP3 in Kiro created a layover, then could not change or delete it, because the new `personalTimeId` was only in `structuredContent` and Kiro shows the model the text alone
+    - The create and update results put `personalTimeId` next to the title inside the attendee Labelled_Data_Block, and the delete result names the id it deleted
+    - Tests: the create text contains the new id; the update and delete texts contain the id; a create the schedule does not confirm carries no id; 100 percent coverage
+    - _Requirements: P1.2_
+  - [x] 33.2 Build the `show_schedule` read tool (after foundation-contracts task 17 adds its contract)
+    - `packages/mcp-server/src/tools/show-schedule.ts`: no input; checks the sign-in, reads the fresh schedule (which also writes the Schedule_Snapshot) and the cached catalog; returns `{ schedule, notInCatalog }`; the text gives the counts, then one catalog Labelled_Data_Block with the reserved sessions and the standby list (`sessionId`, `code`, `title`, `venue`, `room`, `startsAt`, `endsAt`, in start order), then one attendee block with the layovers (`personalTimeId`, `title`, `startDateTime`, `endDateTime`, `location`), and the ids the catalog cache does not know, with a pointer to `refresh_catalog`. An empty schedule says so plainly. Nothing is written to S1 or S4
+    - Registry: class `read`, not a schedule write; title "Show my schedule"; description "Show your live re:Invent schedule ... Takes no input. Nothing is changed."
+    - Descriptions: `check_itinerary` says it checks commitments you pass in and points to `show_schedule` for the current schedule; `export_calendar` says that with no input it reads your live schedule and that commitments are only for a proposed itinerary
+    - Tests: a handler test (reserved, standby, layovers, ids not in the catalog, empty schedule, not signed in, hostile catalog and layover titles stay inside the blocks); the registry, annotation, Property 19 (read tools never write), stdout and tool count tests include it; the CLI tool list count is eighteen
+    - _Requirements: P1.1, P1.3, P1.4_
+  - [x] 33.3 Document it
+    - `packages/mcp-server/README.md` tool table (class read) and Approvals: `show_schedule` reads your schedule, so it is approved per call like `scan_repo` and is not in the recommended `autoApprove` list, which stays at three; `power/POWER.md` Approvals and `power/skills/plan-my-week/SKILL.md` name it as the way to see the schedule and the ids. The repository root README is the owner's draft and is not changed here
+    - Tests: the README test checks eighteen tools and keeps `show_schedule` out of the `autoApprove` snippet
+    - _Requirements: P1.5_
+  - [x] 33.4 Commit after the full gate passes (100 percent coverage, eslint, `tsc -b`, prettier, `npm run check:dash`), scoped `compass-power`, with no attribution trailer. Do not push
+
+- [x] 34. Make show_schedule easy to find and list each session once (dev test of 20 October, design "Post-SP3 change: show_schedule, round 2")
+  - [x] 34.1 Leave reserved sessions out of the standby list in `show_schedule`
+    - Why: the Events API keeps a reserved session in the attendee's favourites, so BIZ332 and MAM411 showed under both reserved and standby, and Kiro then offered to "clean up" the standby list. The text and the catalog block now list a reserved session once, under reserved; the count line counts standby without the reserved ones and says that reserved sessions stay in the Events favourites. `structured.schedule` stays the raw schedule. `notInCatalog` lists each id once
+    - Tests: a session that is both reserved and a favourite appears only under reserved, the counts match, the note appears only when there is an overlap, and an id missing from the catalog that is both reserved and a favourite is named once
+  - [x] 34.2 Make the description match how attendees ask
+    - Why: on dev, Kiro (running Compass as a plain MCP server, so without the Power's skill text) went through `check_itinerary`, `plan_week` and `export_calendar` before it found `show_schedule`. The description now leads with the questions it answers: what is on my schedule, what have I booked or reserved, what is on my standby (favourites) list
+    - Update the pinned description in this design's Descriptions line and in the registry test
+  - [x] 34.3 Commit after the full gate passes, scoped `compass-power`
+
+- [x] 35. Keep the CLI tests independent of the built `dist/` folder (flaky test found on 20 October)
+  - [x] 35.1 Give `test/cli/main.test.ts` its own checkout copy (package.json, `data/venues.json`, `fixtures/api`, `fixtures/synthetic`, `fixtures/sample-repo`) in a temporary folder, and point the default test host's `moduleUrl` at it
+    - Why: the pack smoke test rebuilds `packages/mcp-server/dist` (it removes and copies `dist/data` and the rest) while the CLI tests read `dist/data/venues.json` through the bundled-first lookup. When both ran at once, `main` could not read the venues and returned 1, so the demo and serve tests failed at random in the full run (seen twice locally; CI passed by timing). With its own copy the CLI test always uses the repository fallback and never touches `dist/`
+    - Tests: the 19 CLI tests pass on their own and in the full coverage run, twice in a row
+  - [x] 35.2 Commit after the full gate passes, scoped `compass-power`
+
+- [x] 36. Use the private checkout in every test that runs the CLI (flaky test found again on 20 October)
+  - [x] 36.1 Move the checkout copy of task 35 into `test/support/private-checkout.ts` and use it in `test/cli/main.test.ts` and `test/e2e/full-flow.test.ts`, whose demo run read `dist/` while the pack smoke test rebuilt it and returned 1 at random
+  - [x] 36.2 Tests pass on their own and twice in the full coverage run; commit scoped `compass-power`
+
+- [x] 37. Read-only by default (owner decisions of 20 October, design "Post-SP3 change: read-only by default")
+  - [x] 37.1 In live mode Compass is read-only unless the attendee sets `COMPASS_ALLOW_WRITES=1`; the server logs one line when writes are on. Simulated mode never calls the Events API, so it keeps its made-up bookings
+  - [x] 37.2 A read-only Events adapter wraps the real one: every write method (reserve, cancel, favourite, unfavourite, create, update and delete personal time) throws `CompassError('ReadOnly')` without a network call; reads are untouched
+  - [x] 37.3 The schedule write tools (`reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`) check first and, when read-only, ask nothing and reply with what they would have done, that nothing changed, and how to make the change in the re:Invent app. The pass tools and `forget_me` still work: passes live on Compass's own pass service (owner decision)
+  - [x] 37.4 Tests: live mode is read-only by default, every write refuses and makes no call, each schedule tool asks nothing and says nothing changed, `COMPASS_ALLOW_WRITES=1` turns writes on, simulated mode is unaffected. Documented in the MCP server README and the Power. Commit scoped `compass-power`
+
+- [x] 38. Fixes from the first read-only try in Kiro (20 October, design "Post-SP3 change: codes, walk-up sessions, no write invitations")
+  - [x] 38.1 Accept a session code wherever a tool takes `sessionId` or `sessionIds`: the server maps a value that is not a catalog id but is exactly one session's code (any letter case) to that session's id before the tool runs. Why: Kiro called `reserve_with_guardrails` with "SVS339" and got "not in the catalog", and a catalog refresh did not help
+  - [x] 38.2 `reserve_with_guardrails` refuses a session that is not reservable before anything else, with a block verdict that says it needs no reservation (walk up, or keep it on the standby list). Why: SVS339 has `isReservable: false` and Compass offered to reserve it
+  - [x] 38.3 The read-only reply only points to the re:Invent app and no longer names the setting, and the Power skill tells the agent never to change Compass's settings or offer to. Why: Kiro offered to edit mcp.json to turn writes on, which is the accident read-only mode exists to prevent
+  - [x] 38.4 Tests and commit after the full gate passes, scoped `compass-power`
+
+- [x] 39. Point the walk-up reply to the re:Invent app when Compass is read-only (20 October, design "Post-SP3 change: codes, walk-up sessions, no write invitations")
+  - [x] 39.1 When Compass is read-only, the walk-up reply of `reserve_with_guardrails` suggests adding the session to the favourites in the re:Invent app instead of the standby list, because `add_standby` is a write and would only reply what it would have done. Why: in Kiro the agent offered to add SVS339 to the standby list after the walk-up reply
+  - [x] 39.2 Tests for both wordings; commit scoped `compass-power`
+
+- [x] 40. Pre-release review fixes for read-only mode (CTO H1, M1, M2, L4 and TAM L1 of 20 October; design "Post-SP3 change: pre-release review fixes")
+  - [x] 40.1 The read-only reply carries the sessions, layover text and guardrail warnings only inside labelled data blocks (Requirement on Labelled_Data_Block): `readOnlyReply(ctx, action, data)` takes already-labelled data, `catalogTargets` builds the catalog block. The required prompt-injection test now runs every schedule tool against the hostile catalog in read-only mode
+  - [x] 40.2 When writes are on in live mode, the schedule tools, `show_schedule` and `sign_in` start their reply with "Writes are on: ...", so the person in the chat sees it; the Power skill and POWER.md no longer name the setting, and the write-tool descriptions say Compass is read-only unless writes are turned on
+  - [x] 40.3 The Kiro pre-write hook resolves session codes with the same pure resolver as the server (`sessionIdResolver`), so a call made with a code is judged instead of passed through
+  - [x] 40.4 Tests and commit scoped `compass-power`
+
+- [x] 41. Scan for all technology, AWS first (owner request of 20 October, design "Owner change: your tech and your GitHub")
+  - [x] 41.1 Stream the scan through `SourceFile` and `analyseFiles`: the walker also yields a name-only entry for each regular file it does not read, `scanRepo` becomes `analyseFiles(walk(...))`, and `productionMarkerFor` is exported. Existing scan results are unchanged
+  - [x] 41.2 Add the Tech_Table and the Tech_Detectors (extensions and manifests) and `ScanResult.technologies`, scored as files + 5 x declarations
+  - [x] 41.3 Add the AWS SDK for .NET to the Service_Table (`nugetPackages`, `dotnetClientNames`) with an official source for every identifier, and a `dotnet` detector for `*.csproj` and `*.cs`
+  - [x] 41.4 `scan_repo` scans each git repository in a dev folder as its own project (depth 1 and 2, up to 50, 120 seconds in all) and its text lists AWS services first, then other technology, names only
+  - Tests: every detector on good, malformed and hostile input; name-only entries never reach a detector's `detect`; no path or name in any result (property test); a dev folder with three repositories, one over the limit; 100 percent coverage
+  - _Requirements: P2.1, P2.2, P2.3_
+
+- [x] 42. Keep a tech profile on the device (design "Tech_Profile")
+  - [x] 42.1 `tech-profile.ts`: the store (app-data, 0600, atomic write, `simulated` subfolder), hashed source ids, replace on rescan, at most 500 sources, `mergeProfile` and its ranking; a `techProfile` port on the Runtime
+  - [x] 42.2 `scan_repo` adds each project to the profile; `forget_me` removes it; `plan_week` ranks by the merged profile (AWS findings and techs), falling back to `lastScan`
+  - Tests: merge and ranking (property test: order does not change the merge), rescan replaces, the cap, a corrupt file reads as empty, no path in the file, `forget_me` removes it, the planner's tech weight and reason; 100 percent coverage
+  - _Requirements: P2.4, P2.7_
+
+- [x] 43. Build the `show_my_tech` read tool (design "show_my_tech")
+  - [x] 43.1 Handler, registry (class `read`), title "Show my tech", description led by "What tech do I work on, and what do I use the most"; `top` 1 to 50
+  - Tests: AWS first, ranking, `top`, empty profile, simulated mode; registry, annotation, Property 19 (read tools never write), stdout and tool count tests; 100 percent coverage
+  - _Requirements: P2.5, P2.10_
+
+- [x] 44. Build the `find_sessions_by_tech` read tool (design "find_sessions_by_tech and the planner")
+  - [x] 44.1 Whole-word `words` matching in the Events adapter's catalog filter (title, abstract, topics, services); alias resolution; grouped results from the profile when no tech is given
+  - [x] 44.2 Handler, registry (class `read`), title "Find sessions by tech", description led by "Find me sessions on a technology, for example .NET"
+  - Tests: ".NET", "dotnet" and "C#" find the same sessions; "net" does not match "network"; an unknown tech is a literal word; no tech uses the profile; hostile catalog text stays inside the blocks; limits; 100 percent coverage
+  - _Requirements: P2.6, P2.10_
+
+- [x] 45. Read your GitHub repositories, read-only, with consent (design "GitHub, read-only")
+  - [x] 45.1 Core GitHub module: device flow and refresh, the GitHub_Token_Store (keychain, memory fallback, redaction), the listing client (installations, repositories, paging), the archive reader (manual redirect to codeload only, no token on the redirect, gunzip and tar in memory, size caps) and the worker request that scans one repository under the budget
+  - [x] 45.2 `connect_github`, `scan_github` and `disconnect_github`: background polling, the consent message, forks left out by default, each repository a `github` profile source, simulated mode makes no request, no client ID means not set up
+  - [x] 45.3 Document it: MCP server README (tools, approvals, what leaves your machine, threat model), POWER.md and the plan-my-week skill, the site privacy page (GitHub hosts). Owner action recorded: register the GitHub App and fill in the client ID and slug
+  - Tests: every device-flow error, refresh, token never in a log or error, host allowlist, a redirect to another host is refused, a tar bomb and a huge file stop at the caps, PAX long names, links skipped, decline reads nothing, a client that cannot ask is refused; 100 percent coverage. A security review of the module before the commit
+  - _Requirements: P2.8, P2.9, P2.10_
+
+- [x] 46. Commit tasks 41 to 45 after the full gate passes (100 percent coverage, eslint, `tsc -b`, prettier, `npm run check:dash`, the site tests and build), scoped `compass-power`, with foundation-contracts task 20 in the same commit. Do not push
+
+- [x] 47. Wire in the registered Compass GitHub App (owner action of 20 October, design "GitHub, read-only")
+  - The owner registered the public app "re:Invent Compass (unofficial)" on his personal account: Contents: read and Metadata: read only, no account or organisation permissions, Device Flow on, expiring user tokens on, no webhook, no callback URL, installable on any account, no client secret and no private key
+  - Set `GITHUB_APP_CLIENT_ID` to `Iv23liKdFb0y0U0QXj6N` and `GITHUB_APP_SLUG` to `re-invent-compass-unofficial` in `packages/mcp-server/src/config/github.ts`; both are public. Update the comment and the tests that assumed the build constants were empty
+  - Tests: the build ships the client ID and slug, with no environment the build app is used with its install link, the environment still replaces them; 100 percent coverage
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage), then commit scoped `compass-power` on develop
+  - _Requirements: P2.8_
+
+- [x] 48. Let the attendee choose a link or a QR code on a browser page (owner request of 21 October, design "Owner change: link or QR code")
+  - Contract (foundation-contracts task 21) and the SVG render (boarding-passes task 13) land in the same commit
+  - `src/adapters/qr-page.ts` and `createLocalPageOpener`; `send_to_phone` takes `show` and asks when it is missing; `forget_me` clears the page; the descriptions, the Power, the plan-my-week skill, the demo and the mcp-server README follow
+  - Tests: a missing `show` creates no hand-off and calls nothing; `link` has no QR; `qr` opens the page and prints no link; `both`; the fallback to the chat QR when the page cannot be shown; the page is written with mode 0600 in a new `compass-qr-` folder, carries the CSP and no script, is deleted at expiry, on replacement, on `clear()`, on exit and on the stop signals; old pages are swept; overlapping calls run one at a time; an opener that never returns times out; the link and the path are never logged; 100 percent coverage
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage), a security review of the page and the temporary file, then commit scoped `compass-power` on develop
+  - _Requirements: P3.1, P3.2, P3.3, P3.4, P3.5, P3.6_
+
+- [x] 49. Brand the QR page (owner request of 21 October, design "Owner change: branded QR page")
+  - `scripts/make-qr-brand.mjs` writes `src/adapters/qr-brand.ts` with the owner's `logo.svg` and `favicon.svg` as base64; a test fails when the module and the site files drift apart
+  - `qrPageHtml`: title "re:Invent Compass Boarding Pass"; the icon as an SVG favicon and the full logo above the heading, both `data:` URLs; the pass gradient behind a dark card, orange heading
+  - Tests: the title, the favicon and logo are the owner's files as `data:` URLs, the logo comes before the heading, still no script, no external URL and the same CSP
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
+  - _Requirements: P3.3, P3.7_
+
+- [x] 50. Hide the QR code and show a red expired banner when the link expires (owner request of 21 October, design "Expired link banner")
+  - `qrPageHtml` takes the milliseconds left; the `.live` block and the `.expired` banner switch with a CSS animation delayed to the expiry; no script, the CSP is unchanged
+  - Tests: the banner is in the page and hidden at first, the delay is the seconds left rounded up (never negative), the scan text and QR code sit in the block that hides, and the page still has no script; a check of the page in a browser
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
+  - _Requirements: P3.8_
+
+- [x] 51. Replace issue_boarding_passes with issue_all_boarding_passes and issue_boarding_pass (owner decision of 21 October, design "Owner change: issue all passes or one")
+  - Contract (foundation-contracts task 22) in the same commit; registry, hook write-tool list, descriptions and titles, `NoPassesIssued`, the spec renderer's next action (`packages/core/src/spec/render.ts`), the demo, the Power, the plan-my-week skill and the mcp-server README follow
+  - `ctx.choose` for a single-choice elicitation; `elicitInput` waits five minutes and a timeout is `ConfirmTimedOut`
+  - Tests: all passes after one confirmation; nothing reserved asks nothing; an id or a code issues one reserved pass and refuses one not reserved without a pass call; without an id the pick list issues the chosen one, a decline or an unknown label issues nothing, and a client without elicitation gets the list and nothing is issued; the timeout says it timed out and writes nothing; the prompt-injection and stdout cross tests cover both tools; 100 percent coverage
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
+  - _Requirements: P4.1, P4.2, P4.3, P4.4_
+
+- [x] 52. One confirmation for issuing passes: the client's approval (owner rule of 21 October, design "One confirmation for passes")
+  - Remove `humanConfirms` from `issue_all_boarding_passes` and `issue_boarding_pass`; keep the pick list; the descriptions, the Power and the plan-my-week skill say the client's approval is the one confirmation
+  - Tests: neither tool asks a confirmation through elicitation; the pick list is the only question without an id; over MCP with an elicitation client the only question is the pick list; 100 percent coverage
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`), then commit scoped `compass-power` on develop
+  - _Requirements: P4.5_
+
+- [x] 53. The 0.1.0 release commit (owner go of 25 October, tracker REL1 and T1, TAM H1, design "Owner change: the 0.1.0 release commit", runbook `docs/runbooks/npm-release.md` "Prepare a release")
+  - Remove `"private": true` from `packages/mcp-server/package.json` and change the packaging test that expects it in the same commit
+  - Set the version to `0.1.0` in `packages/mcp-server/package.json`, `power/plugin.json`, `power/POWER.md`, `power/mcp.json`, the hook template and every `npx --yes reinvent-compass@X` example in `packages/mcp-server/README.md` and under `power/`
+  - Set `COMPASS_API_BASE_URL` in `packages/mcp-server/src/config/compass-api.ts` to `https://reinvent-compass.vegas` (ADR-031), with no trailing slash; the dev override (`COMPASS_API_URL` with `COMPASS_ALLOW_API_OVERRIDE=1`) keeps working
+  - Full gate (`tsc -b`, eslint, prettier, `npm run check:dash`, `npm test` at 100 percent coverage, `npm run test:site`) and the file list check `npm pack --dry-run --workspace packages/mcp-server`; commit scoped `compass-power` on develop. No tag and no publish: the owner tags `v0.1.0` only after prod answers `GET /api/v1/health` (release gate G03)
+  - _Requirements: 20.1, 20.2, R2.3_
+
+- [x] 54. Refresh the read-only wording proposals (owner request of 26 October, tracker DOC2, design "Owner change: refreshed wording proposals")
+  - Rewrite `docs/proposals/read-only-wording.md` against the owner's current drafts (`README.md`, `docs/article/builder-center-draft.md`) and the code as of develop dcf0f1f: the tool count and table, read-only by default, the Boarding Pass fields, the tagline, the GitHub tech scan, link or QR, the site pages, Google Wallet publishing access, the 0.1.0 version and the production address, the hook, the runbooks and the requirements section for hackathon rules row 3
+  - Each item names the draft, the current line and text, and the replacement to paste; nothing is applied to the owner's drafts
+  - Check every fact against the code and docs, the dash check and prettier; commit scoped `compass-power` on develop
+  - _Requirements: 20.1, R2.3_
+
+- [x] 55. Layover times in re:Invent's own time zone (owner LW1 run of 29 October, tracker BUG1, design "Owner change: layover times and badge pickup day")
+  - The live Events API keeps personal time as a wall-clock time in the event's time zone, not in UTC as the OpenAPI document says: a layover sent for 07:00 PST as `15:00:00` showed at 15:00 in the re:Invent app
+  - Add `toZoneWallClock(instant, zone)` and `fromZoneWallClock(local, zone)` to `packages/core/src/catalog/session-time.ts`, with tests for PST, a daylight saving change, a bad zone and a bad value
+  - In `packages/mcp-server/src/adapters/events-adapter.ts`, send `startDateTime` and `endDateTime` as the wall-clock time in the event time zone (`eventWindow().timezone`), and read naive personal time back as that wall-clock time, so every reader still compares real instants
+  - Tests: 07:00-08:00 goes on the wire as `07:00:00`; a naive `07:00:00` reads back as `07:00:00-08:00`; the confirmation still matches the entry; the attendee's own time zone never changes either value
+  - Full gate, then commit scoped `compass-power` on develop
+  - _Requirements: 14.3, 14.4_
+
+- [x] 56. Layovers on badge pickup day, 29 November (owner LW1 run of 29 October, tracker BUG2, design "Owner change: layover times and badge pickup day")
+  - The live event window starts 30 November at 05:30 PST, so a layover on Sunday 29 November is refused, although badge pickup and registration open that day
+  - `add_layover` accepts a layover from 00:00 on the day before the event start, in the event time zone, to the event end; the window itself is still read from the API and never hard-coded
+  - Tests: 29 November 10:00 PST is accepted; 28 November 23:55 PST is refused; the event end is unchanged
+  - Amend Requirement 14.4 to name the badge pickup day; full gate, then commit scoped `compass-power` on develop
+  - _Requirements: 14.4_
+
+- [x] 57. Package metadata and licences (CTO final review of 29 October, findings 1 and 2, tracker CTO1)
+  - Add `description`, `license` (`Apache-2.0`), `repository` (`git+https://github.com/henniefrancis/aws-re_invent-compass.git`, directory `packages/mcp-server`), `homepage` (`https://reinvent-compass.vegas`) and `bugs` to `packages/mcp-server/package.json`; npm provenance needs `repository` to match the GitHub repository
+  - The build copies the repository `LICENSE` and `NOTICE` into the package and writes `THIRD-PARTY-NOTICES.txt` from the esbuild metafile: every bundled package with its name, version, licence and licence text, so the bundled libraries keep their notices
+  - Update `check-pack.mjs` (`REQUIRED_FILES`, `ALLOWED_FILE`), the packaging tests and the file count in `docs/runbooks/npm-release.md`
+  - Full gate and `npm pack --dry-run --workspace packages/mcp-server`, then commit scoped `compass-power` on develop
+  - _Requirements: 20.1, 20.2_
+
+- [x] 58. ADRs the final CTO review asked for (CTO findings 7 and 8 of 29 October)
+  - ADR-032: stay on the MCP TypeScript SDK v1 line for 0.1.0 (why not v2, what the v1 maintenance line means, when to move), and whether to take the 1.32.2 patch now
+  - ADR-033: the Compass GitHub App for the GitHub tech scan (why an App, the permissions it asks for, what it reads, what it never stores)
+  - ADR-034: the pass confirmation change (one confirmation through the client's approval, compass-power task 52, owner rule of 21 October)
+  - ADR-035: GitHub token handling (where the token lives, its lifetime, redaction, and what happens on sign-out and `forget_me`)
+  - Each ADR states only what the code and specs show, links its sources, and is listed in `docs/decisions/README.md`; dash check and prettier; commit scoped `compass-power`
+  - _Requirements: 20.1_
+
+- [x] 59. Take the MCP SDK 1.32.2 patch (owner approval of 30 October, ADR-032)
+  - Pin `@modelcontextprotocol/sdk` at exactly 1.32.2 in `packages/mcp-server/package.json`, refresh the lock file, amend ADR-032, Requirement terms and the foundation-contracts dependency table; full gate; commit scoped `compass-power`
+  - _Requirements: 20.1_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

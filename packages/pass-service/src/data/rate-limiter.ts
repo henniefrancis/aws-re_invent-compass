@@ -53,13 +53,21 @@ export interface RateLimiter {
     now: number,
     scope?: string,
   ): Promise<void>;
-  /** Counts one read of a hand-off; the counter lives until the hand-off expires. */
+  /**
+   * Counts one read of a hand-off; the counter lives until the hand-off expires. The cap is
+   * LIMITS.handoffReads plus HANDOFF_READS_PER_PASS for every pass in the hand-off, so every
+   * button on the board page can be used once.
+   */
   consumeHandoffRead(
     subHash: string,
     handoffHash: string,
     handoffExpiresAtMs: number,
+    passCount: number,
   ): Promise<boolean>;
 }
+
+/** Extra reads of a hand-off for each of its passes (one per button on the board page). */
+export const HANDOFF_READS_PER_PASS = 2;
 
 function windowOf(now: number): { startSec: number; endMs: number } {
   const startSec = Math.floor(now / 1000 / WINDOW_SECONDS) * WINDOW_SECONDS;
@@ -116,12 +124,12 @@ export function createRateLimiter(table: TableClient): RateLimiter {
       await add(subHash, kind, units, now, scope, UNLIMITED);
     },
 
-    async consumeHandoffRead(subHash, handoffHash, handoffExpiresAtMs) {
+    async consumeHandoffRead(subHash, handoffHash, handoffExpiresAtMs, passCount) {
       const name = counterName('handoffReads', handoffHash);
       const { allowed } = await table.addCounter(
         rateKey(subHash, name, 0),
         1,
-        LIMITS.handoffReads,
+        LIMITS.handoffReads + HANDOFF_READS_PER_PASS * passCount,
         counterAttributes(subHash, 'handoffReads', name, 0, handoffExpiresAtMs),
       );
       return allowed;

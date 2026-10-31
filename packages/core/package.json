@@ -48,6 +48,11 @@
       "@compass/source": "./src/redact/index.ts",
       "types": "./dist/redact/index.d.ts",
       "default": "./dist/redact/index.js"
+    },
+    "./github": {
+      "@compass/source": "./src/github/index.ts",
+      "types": "./dist/github/index.d.ts",
+      "default": "./dist/github/index.js"
     }
   },
   "dependencies": {

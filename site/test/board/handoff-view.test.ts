@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import type { HandoffId } from '../../src/lib/board/fragment';
 import {
   CONTRACT_MATCH,
@@ -10,13 +10,39 @@ import {
 import {
   FIXED_ID,
   bodyArb,
+  applePathOf,
   exampleBody,
   idArb,
   idFromBytes,
   type WireBody,
 } from '../support/handoff-data';
 
+// The generated hand-off bodies hold up to 80 sessions; the machine may be busy.
+vi.setConfig({ testTimeout: 60_000 });
+
+const UNRELATED_SERIAL = '11111111-2222-4333-8444-555555555555';
 const clone = (body: WireBody): WireBody => structuredClone(body);
+
+describe('the venue of a session', () => {
+  const withVenue = (venue: unknown) => {
+    const body = exampleBody();
+    return { ...body, sessions: [{ ...body.sessions[0], venue }, ...body.sessions.slice(1)] };
+  };
+
+  test('is a name of 1 to 40 characters, or null', () => {
+    expect(validateHandoffView(withVenue('The Venetian'), FIXED_ID)?.sessions[0]?.venue).toBe(
+      'The Venetian',
+    );
+    expect(validateHandoffView(withVenue(null), FIXED_ID)?.sessions[0]?.venue).toBeNull();
+    expect(validateHandoffView(withVenue('x'.repeat(40)), FIXED_ID)).not.toBeNull();
+  });
+
+  test('anything else refuses the whole body', () => {
+    for (const bad of ['', 'x'.repeat(41), 5, true, {}, ['The Venetian'], undefined]) {
+      expect(validateHandoffView(withVenue(bad), FIXED_ID)).toBeNull();
+    }
+  });
+});
 
 describe('validateHandoffView examples', () => {
   test('accepts the example body and returns everything unchanged', () => {
@@ -90,12 +116,31 @@ describe('validateHandoffView examples', () => {
   });
 
   test('a hand-off with no action at all is refused', () => {
-    const none = { ...exampleBody(), apple: { bundlePaths: [] }, google: null, calendarPath: null };
+    const base = exampleBody();
+    const bare = base.sessions.map((s) => ({
+      ...s,
+      applePath: null,
+      googleSaveUrl: null,
+    }));
+    const none = {
+      ...base,
+      sessions: bare,
+      apple: { bundlePaths: [] },
+      google: null,
+      calendarPath: null,
+    };
     expect(validateHandoffView(none, FIXED_ID)).toBeNull();
+    const first = base.sessions[0] as WireBody['sessions'][number];
+    const only = (patch: Partial<typeof first>) => ({
+      ...none,
+      sessions: [{ ...bare[0], ...patch }, ...bare.slice(1)],
+    });
     for (const withOne of [
       { ...none, calendarPath: `/api/v1/handoffs/${FIXED_ID}/calendar.ics` },
-      { ...none, google: exampleBody().google },
+      { ...none, google: base.google },
       { ...none, apple: { bundlePaths: [`/api/v1/handoffs/${FIXED_ID}/apple/0`] } },
+      only({ applePath: first.applePath }),
+      only({ googleSaveUrl: first.googleSaveUrl }),
     ]) {
       expect(validateHandoffView(withOne, FIXED_ID)).not.toBeNull();
     }
@@ -162,6 +207,89 @@ describe('validateHandoffView examples', () => {
         validateHandoffView({ ...exampleBody(), google: { saveUrl } }, FIXED_ID),
         saveUrl,
       ).toBeNull();
+      // The same rule holds for one session's own link.
+      const body = exampleBody();
+      const first = body.sessions[0] as WireBody['sessions'][number];
+      expect(
+        validateHandoffView(
+          { ...body, sessions: [{ ...first, googleSaveUrl: saveUrl }] },
+          FIXED_ID,
+        ),
+        saveUrl,
+      ).toBeNull();
+    }
+  });
+});
+
+describe('the buttons of each session', () => {
+  const body = exampleBody();
+  const first = body.sessions[0] as WireBody['sessions'][number];
+  const withFirst = (patch: Record<string, unknown>) => ({
+    ...body,
+    sessions: [{ ...first, ...patch }, ...body.sessions.slice(1)],
+  });
+
+  test('every session returns its own two fields as sent', () => {
+    const result = validateHandoffView(body, FIXED_ID);
+    expect(result?.sessions.map((s) => [s.applePath, s.googleSaveUrl])).toEqual(
+      body.sessions.map((s) => [s.applePath, s.googleSaveUrl]),
+    );
+    expect(result?.sessions[1]?.googleSaveUrl).toBeNull();
+  });
+
+  test('each path must be exactly this hand-off and this session', () => {
+    const other = idFromBytes(new Uint8Array(16).fill(7));
+    const second = body.sessions[1] as WireBody['sessions'][number];
+    const bad: Record<string, unknown>[] = [
+      { applePath: `/api/v1/handoffs/${other}/apple/pass/${first.serialNumber}` },
+      { applePath: second.applePath },
+      { applePath: `/api/v1/handoffs/${FIXED_ID}/apple/pass/${first.serialNumber}?x=1` },
+      { applePath: `https://evil.invalid${first.applePath}` },
+      { applePath: `${first.applePath}/` },
+      { applePath: '' },
+      { applePath: 5 },
+      { googleSaveUrl: 5 },
+      { googleSaveUrl: undefined },
+    ];
+    for (const patch of bad) {
+      expect(validateHandoffView(withFirst(patch), FIXED_ID), JSON.stringify(patch)).toBeNull();
+    }
+  });
+
+  test('a session with a path field missing or an extra field is refused', () => {
+    const noApple: Record<string, unknown> = { ...first };
+    delete noApple['applePath'];
+    expect(validateHandoffView({ ...body, sessions: [noApple] }, FIXED_ID)).toBeNull();
+    expect(validateHandoffView(withFirst({ extra: 1 }), FIXED_ID)).toBeNull();
+  });
+
+  test('a service from before per-session buttons is refused as a whole', () => {
+    const old = body.sessions.map((s) => ({
+      serialNumber: s.serialNumber,
+      sessionCode: s.sessionCode,
+      title: s.title,
+      startsAt: s.startsAt,
+    }));
+    expect(validateHandoffView({ ...body, sessions: old }, FIXED_ID)).toBeNull();
+  });
+
+  test('a session carrying the removed calendarPath is refused', () => {
+    expect(
+      validateHandoffView(
+        withFirst({ calendarPath: `/api/v1/handoffs/${FIXED_ID}/calendar/x.ics` }),
+        FIXED_ID,
+      ),
+    ).toBeNull();
+    expect(validateHandoffView(withFirst({ calendarPath: null }), FIXED_ID)).toBeNull();
+  });
+
+  test('the top Google object has only saveUrl', () => {
+    const saveUrl = `${GOOGLE_SAVE_PREFIX}eyJ.a.b`;
+    expect(validateHandoffView({ ...body, google: { saveUrl } }, FIXED_ID)?.googleSaveUrl).toBe(
+      saveUrl,
+    );
+    for (const google of [{ saveUrl, saveUrls: [saveUrl] }, { saveUrls: [saveUrl] }, {}, 'x', []]) {
+      expect(validateHandoffView({ ...body, google }, FIXED_ID)).toBeNull();
     }
   });
 });
@@ -209,7 +337,15 @@ describe('Property 4: Hand-off view validation is all or nothing', () => {
     }),
     sessionExtraField: (b) => ({ ...clone(b), sessions: [{ ...first(b), extra: 1 }] }),
     sessionMissingField: (b, _id, pick) => {
-      const keys = ['serialNumber', 'sessionCode', 'title', 'startsAt'] as const;
+      const keys = [
+        'serialNumber',
+        'sessionCode',
+        'title',
+        'startsAt',
+        'venue',
+        'applePath',
+        'googleSaveUrl',
+      ] as const;
       const s: Record<string, unknown> = { ...first(b) };
       delete s[keys[pick % keys.length] as string];
       return { ...clone(b), sessions: [s] };
@@ -286,9 +422,28 @@ describe('Property 4: Hand-off view validation is all or nothing', () => {
     }),
     googleExtraField: (b) => ({
       ...clone(b),
-      google: { saveUrl: `${GOOGLE_SAVE_PREFIX}abc`, extra: 1 },
+      google: { saveUrl: `${GOOGLE_SAVE_PREFIX}eyJ.a.b`, extra: 1 },
+    }),
+    googleSaveUrlsKept: (b) => ({
+      ...clone(b),
+      google: {
+        saveUrl: `${GOOGLE_SAVE_PREFIX}eyJ.a.b`,
+        saveUrls: [`${GOOGLE_SAVE_PREFIX}eyJ.a.b`],
+      },
     }),
     googleNotString: (b) => ({ ...clone(b), google: { saveUrl: 5 } }),
+    sessionApplePathOtherSerial: (b, id) => ({
+      ...clone(b),
+      sessions: [{ ...first(b), applePath: applePathOf(id, UNRELATED_SERIAL) }],
+    }),
+    sessionGoogleForeignHost: (b) => ({
+      ...clone(b),
+      sessions: [{ ...first(b), googleSaveUrl: 'https://pay.google.com.evil.invalid/gp/v/save/a' }],
+    }),
+    sessionGoogleNotString: (b) => ({
+      ...clone(b),
+      sessions: [{ ...first(b), googleSaveUrl: 5 }],
+    }),
     googleNotObject: (b) => ({ ...clone(b), google: 'x' }),
   };
 

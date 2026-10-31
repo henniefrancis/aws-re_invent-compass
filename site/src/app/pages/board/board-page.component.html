@@ -1,5 +1,5 @@
 <section class="board-panel stack" [attr.aria-busy]="vm().busy">
-  <h1 #stateHeading tabindex="-1">{{ vm().heading }}</h1>
+  <h1 #stateHeading tabindex="-1" class="gradient-text">{{ vm().heading }}</h1>
   <p>{{ vm().message }}</p>
   @if (!scriptRuns()) {
     <p class="board-note">This page needs JavaScript to open your hand-off link.</p>
@@ -8,15 +8,37 @@
   @if (vm().actions.length > 0) {
     <ul class="board-actions">
       @for (action of vm().actions; track action.href) {
-        <li>
+        <li [class]="'board-action board-action--' + action.kind">
           @if (action.kind === 'apple') {
-            <a class="button" [href]="action.href" type="application/vnd.apple.pkpasses">{{
-              action.label
-            }}</a>
+            <a class="wallet-badge" [href]="action.href" type="application/vnd.apple.pkpasses"
+              ><img
+                class="wallet-badge__image"
+                src="artwork/apple-wallet.svg"
+                width="680"
+                height="216"
+                [alt]="action.label"
+            /></a>
           } @else if (action.kind === 'google') {
-            <a class="button" [href]="action.href" rel="noopener noreferrer">{{ action.label }}</a>
+            <a class="wallet-badge" [href]="action.href" rel="noopener noreferrer"
+              ><img
+                class="wallet-badge__image"
+                src="artwork/google-wallet.svg"
+                width="701"
+                height="217"
+                [alt]="action.label"
+            /></a>
           } @else {
-            <a class="button button--secondary" [href]="action.href" download>{{ action.label }}</a>
+            <a class="wallet-badge" [href]="action.href" download
+              ><img
+                class="wallet-badge__image"
+                src="artwork/calendar.svg"
+                width="681"
+                height="230"
+                [alt]="action.label"
+            /></a>
+          }
+          @if (action.caption !== null) {
+            <span class="wallet-badge__caption">{{ action.caption }}</span>
           }
         </li>
       }
@@ -34,15 +56,91 @@
   }
 
   @if (vm().sessions.length > 0) {
-    <h2>Your sessions</h2>
+    <h2 class="gradient-text">Your sessions</h2>
     @if (vm().timezoneNote !== null) {
       <p>{{ vm().timezoneNote }}</p>
     }
     <ul class="board-sessions">
       @for (row of vm().sessions; track $index) {
         <li>
-          <strong>{{ row.code }}</strong
-          >: {{ row.title }}<br />{{ row.time }}
+          <div class="board-session">
+            <strong class="board-session__code gradient-text">{{ row.code }}</strong>
+            <span class="board-session__title"
+              ><span class="visually-hidden">: </span>{{ row.title }}</span
+            >
+            <span class="board-session__time">{{ row.time }}</span>
+          </div>
+          @if (row.isNext) {
+            <div class="board-walk">
+              <p class="source-note">{{ walkText.privacy }}</p>
+              <p>
+                <button
+                  type="button"
+                  [attr.aria-disabled]="walkShown().kind === 'locating' ? 'true' : null"
+                  [attr.aria-busy]="walkShown().kind === 'locating' ? 'true' : null"
+                  (click)="startWalk()"
+                >
+                  {{ walkText.button }}
+                </button>
+              </p>
+              @if (walkShown(); as w) {
+                @if (w.kind === 'locating') {
+                  <p>{{ walkText.locating }}</p>
+                } @else if (w.kind === 'message') {
+                  <p>{{ w.text }}</p>
+                } @else if (w.kind === 'estimate') {
+                  <p class="board-walk__result">
+                    <strong>{{ w.summary }}</strong> {{ w.leaveBy }}
+                  </p>
+                  <p class="source-note">{{ w.workedOut }} {{ w.note }}</p>
+                  <p>
+                    <a
+                      class="board-walk__link"
+                      [href]="w.directions.href"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >{{ w.directions.label
+                      }}<span class="visually-hidden">{{ w.directions.detail }}</span></a
+                    >
+                  </p>
+                  <p class="source-note">{{ w.directions.caption }}</p>
+                }
+              }
+            </div>
+          }
+          @if (row.actions.length > 0) {
+            <ul class="board-session-actions">
+              @for (action of row.actions; track action.href) {
+                <li>
+                  @if (action.kind === 'apple') {
+                    <a
+                      class="wallet-badge wallet-badge--row"
+                      [href]="action.href"
+                      type="application/vnd.apple.pkpass"
+                      ><img
+                        class="wallet-badge__image"
+                        src="artwork/apple-wallet.svg"
+                        width="680"
+                        height="216"
+                        [alt]="action.label"
+                    /></a>
+                  } @else if (action.kind === 'google') {
+                    <a
+                      class="wallet-badge wallet-badge--row"
+                      [href]="action.href"
+                      rel="noopener noreferrer"
+                      ><img
+                        class="wallet-badge__image"
+                        src="artwork/google-wallet.svg"
+                        width="701"
+                        height="217"
+                        [alt]="action.label"
+                    /></a>
+                  }
+                </li>
+              }
+            </ul>
+          }
         </li>
       }
     </ul>
@@ -52,4 +150,4 @@
     <p class="source-note">{{ vm().expiresText }}</p>
   }
 </section>
-<p class="live-region" role="status" aria-live="polite">{{ announcement() }}</p>
+<p class="live-region visually-hidden" role="status" aria-live="polite">{{ announcement() }}</p>

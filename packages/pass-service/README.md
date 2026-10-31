@@ -1,9 +1,9 @@
 # @compass/pass-service
 
 The Compass API Lambdas of re:Invent Compass (stream S5). Two bundles, `api` and `passkit`, sign
-unofficial Apple and Google Wallet boarding passes for signed-in attendees, run Apple's PassKit web
+unofficial Apple and Google Wallet Boarding Passes for signed-in attendees, run Apple's PassKit web
 service, push pass updates over APNs, patch Google Wallet objects and serve the 15-minute hand-off to
-the phone. The contract is `contracts/compass-api.openapi.yaml` (15 operations); this package never
+the phone. The contract is `contracts/compass-api.openapi.yaml` (16 operations); this package never
 edits it. Infrastructure is S6's (Terraform only); this README is the interface between the two.
 
 Specs: `.kiro/specs/pass-service/` (requirements, design, tasks).
@@ -201,7 +201,11 @@ repeat-inserts passes for made-up sessions.
 - SP2: `ID_TOKEN_VERIFIER=cognito` and `ID_TOKEN_ISSUER=<iss>` when `iss` matches the Cognito pattern and
   the spike prints `verified`; otherwise `oidc` with `ID_TOKEN_ISSUER` and `ID_TOKEN_JWKS_URI`.
 - SP3: `PASSKIT_WEB_SERVICE_PATH` (default `/api/passkit`), `APNS_PUSH_TYPE` (unset, then `background`,
-  then `alert` if no fetch arrives) and `APNS_ENABLED=false` as the fallback.
+  then `alert` if no fetch arrives) and `APNS_ENABLED=false` as the fallback. Result (19 October, real
+  iPhone against dev, `docs/spikes-results.md`): the defaults work. The path joins with one slash,
+  pushes arrive with `APNS_PUSH_TYPE` unset and `apns-topic` equal to the Pass Type ID, Wallet sends
+  `If-Modified-Since`, and `APNS_ENABLED` stays `true`. Binary downloads through the edge needed `*/*`
+  in the API's binary media types.
 - SP4: `GOOGLE_WALLET_CLASS_SUFFIX`, `GOOGLE_WALLET_ENABLED=false` if access is refused.
 
 Image sizes of the pass artwork (icon 29 by 29 points, logo up to 160 by 50, at 1x, 2x and 3x) come

@@ -44,7 +44,7 @@ terraform {
 }
 ```
 
-Terraform generates no secret value, so no `random` provider is used. The bootstrap also uses `hashicorp/tfe ~> 0.82.0`. The lock files of the three roots (`bootstrap`, `envs/dev`, `envs/prod`) are committed once the owner has generated them for every platform with `terraform providers lock -platform=linux_amd64 -platform=windows_amd64 -platform=darwin_arm64`; the lock files of the modules are not committed.
+Terraform generates no secret value, so no `random` provider is used. The bootstrap also uses `hashicorp/tfe ~> 0.82.0`. The lock files of the three roots (`bootstrap`, `envs/dev`, `envs/prod`) are committed. They were generated for every platform with `terraform providers lock -platform=linux_amd64 -platform=windows_amd64 -platform=darwin_arm64`; the lock files of the modules are not committed
 
 ## Offline checks
 

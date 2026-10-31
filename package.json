@@ -49,6 +49,9 @@
     "vitest": "4.1.12"
   },
   "overrides": {
+    "passkit-generator": {
+      "joi": "17.13.9"
+    },
     "openapi-typescript": {
       "typescript": "$typescript"
     }

@@ -26,13 +26,27 @@ import { realFs, resolveAppDataDir } from '@compass/core/catalog';
 import { APP_FOLDER_NAME, createAppDataResolver, joinInFolder } from '@compass/core/passes';
 import type { HttpTransport } from '@compass/core/passes';
 import { VenueDataSchema } from '@compass/core/rules';
-import { createNodeScanFs, scanInWorker } from '@compass/core/scanner';
+import {
+  createGitHubTokenStore,
+  defaultGitHubFetch,
+  registerGitHubSecrets,
+  scanGitHubRepoInWorker,
+} from '@compass/core/github';
+import type { GitHubFetch, GitHubTokenStore } from '@compass/core/github';
+import { createNodeScanFs, scanInWorker, ScanWorkerError } from '@compass/core/scanner';
 import { createFsFixtureLoader } from '@compass/core/simulated';
 import { createNodeSpecFs } from '@compass/core/spec';
-import { readFile } from 'node:fs/promises';
+import { rmSync } from 'node:fs';
+import { lstat, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { createFetchTransport } from '../adapters/fetch-transport.js';
 import { defaultEventsFetch } from '../adapters/default-fetch.js';
 import { createEventsAdapter } from '../adapters/events-adapter.js';
+import { createGitHubAdapter } from '../adapters/github-adapter.js';
+import { createQrPage } from '../adapters/qr-page.js';
+import type { QrPageFs } from '../adapters/qr-page.js';
+import { readGitHubAppConfig } from '../config/github.js';
+import { readOnlyEvents } from '../adapters/read-only-events.js';
 import type { AuthPort } from '../adapters/events-adapter.js';
 import { createNodeAppFileSystem } from '../adapters/node-fs-adapter.js';
 import { createRulesAdapter } from '../adapters/rules-adapter.js';
@@ -50,9 +64,11 @@ import {
   SIMULATED_NOW,
 } from '../simulated/simulated-runtime.js';
 import { createSnapshotStore } from '../state/schedule-snapshot.js';
-import { createBrowserOpener } from './browser-opener.js';
+import { createTechProfileStore } from '../state/tech-profile.js';
+import { createBrowserOpener, createLocalPageOpener } from './browser-opener.js';
+import { onProcessEnd, processUid } from './exit-hooks.js';
 import { realBind } from './real-bind.js';
-import { sleep } from './sleep.js';
+import { abortableSleep, sleep } from './sleep.js';
 import { expiryOf } from './token-expiry.js';
 import type { ExecFileLike } from './browser-opener.js';
 import { createPassesFactory } from './passes-factory.js';
@@ -72,6 +88,8 @@ export interface RuntimeEnvironment {
   venuesPath: string;
   /** The bundled scan worker. When it is left out the scan runs in the server's own thread. */
   scanWorkerPath?: string;
+  /** The bundled GitHub scan worker (task 45). When it is left out a repository is read in this thread. */
+  githubWorkerPath?: string;
   /** The folder with the simulated fixtures (`api` and `synthetic`). Left out, S1 uses the repository's. */
   fixturesRoot?: string;
   /** Test seams. Production leaves them out and the real ones are used. */
@@ -80,6 +98,13 @@ export interface RuntimeEnvironment {
   oauthFetch?: OAuthFetch;
   compassTransport?: HttpTransport;
   bind?: (expectedState: string, timeoutMs: number) => Promise<LoopbackServer>;
+  githubStore?: GitHubTokenStore;
+  githubFetch?: GitHubFetch;
+  /** The QR page's file system and temp folder (task 48). Production uses node:fs and the OS temp folder. */
+  qrPageFs?: QrPageFs;
+  tempRoot?: string;
+  /** Registers the QR page's exit clean-up. Production uses onProcessEnd (exit and stop signals). */
+  onExit?: (fn: () => void) => void;
 }
 
 /** Options a command can set for one run. */
@@ -105,6 +130,10 @@ function simulatedAuth(): AuthPort {
   };
 }
 
+/** The one log line when the attendee turns writes on in live mode (compass-power task 37). */
+export const WRITES_ON_NOTICE =
+  'Writes are on (COMPASS_ALLOW_WRITES=1): Compass can change your real re:Invent schedule after you confirm each change.';
+
 /** Builds the Runtime for `env`. */
 export async function createRuntime(
   environment: RuntimeEnvironment,
@@ -114,6 +143,9 @@ export async function createRuntime(
   const config = readRuntimeConfig(env);
   const simulated = config.mode === 'simulated';
   const logger = createStderrLogger(environment.stderr);
+  if (!config.readOnly && !simulated) {
+    logger.warn(WRITES_ON_NOTICE);
+  }
   if (config.warning !== undefined) {
     logger.warn(config.warning);
   }
@@ -190,7 +222,7 @@ export async function createRuntime(
     signOut: () => signOut(store, { fetch: oauthFetch, logger: redacting }),
   };
 
-  const events = createEventsAdapter({
+  const writableEvents = createEventsAdapter({
     ctx,
     auth: simulated ? simulatedAuth() : live,
     catalogDir,
@@ -198,6 +230,9 @@ export async function createRuntime(
     venues: venues.list,
     now: nowMs,
   });
+  // Read-only by default in live mode: every Events API write is refused before any request
+  // unless COMPASS_ALLOW_WRITES=1 (task 37).
+  const events = config.readOnly ? readOnlyEvents(writableEvents) : writableEvents;
   const rules = createRulesAdapter({
     clock,
     venueData: venues.data,
@@ -219,24 +254,25 @@ export async function createRuntime(
   });
 
   if (simulated) {
-    return (
-      await createSimulatedRuntime({
-        version: environment.version,
-        cwd,
-        logger,
-        events,
-        rules,
-        createPasses: passesFactory,
-        scanFs: createNodeScanFs(),
-        specFs: createNodeSpecFs(),
-        appDataDir: root,
-        fs: createNodeAppFileSystem(),
-        ...scanRunner,
-      })
-    ).runtime;
+    // Simulated mode never calls the Events API, so it is never read-only (task 37).
+    const { runtime: simulatedRuntime } = await createSimulatedRuntime({
+      version: environment.version,
+      cwd,
+      logger,
+      events,
+      rules,
+      createPasses: passesFactory,
+      scanFs: createNodeScanFs(),
+      specFs: createNodeSpecFs(),
+      appDataDir: root,
+      fs: createNodeAppFileSystem(),
+      ...scanRunner,
+    });
+    return { ...simulatedRuntime, qrPage: qrPageFor(environment, nowMs) };
   }
   return {
     mode: 'live',
+    ...(config.readOnly ? { readOnly: true } : {}),
     version: environment.version,
     events,
     rules,
@@ -250,6 +286,86 @@ export async function createRuntime(
     clock,
     logger,
     cwd,
+    techProfile: createTechProfileStore(root, 'live', createNodeAppFileSystem()),
+    github: liveGitHub(environment, env, { redacting, nowMs, notify: writeLine }),
+    qrPage: qrPageFor(environment, nowMs),
     ...scanRunner,
   };
+}
+
+const nodeQrPageFs: QrPageFs = {
+  mkdtemp: (prefix) => mkdtemp(prefix),
+  writeFile: (path, data, options) => writeFile(path, data, options),
+  rm: (path, options) => rm(path, options),
+  rmSync: (path, options) => {
+    rmSync(path, options);
+  },
+  readdir: (path) => readdir(path),
+  lstat: (path) => lstat(path),
+};
+
+/** The QR page (task 48): a private page in the temp folder, opened without a shell. */
+function qrPageFor(environment: RuntimeEnvironment, nowMs: () => number) {
+  return createQrPage({
+    fs: environment.qrPageFs ?? nodeQrPageFs,
+    tempRoot: environment.tempRoot ?? tmpdir(),
+    open: createLocalPageOpener({ platform: environment.platform, execFile: environment.execFile }),
+    now: nowMs,
+    wallNow: () => Date.now(),
+    schedule: (fn, ms) => {
+      const timer = setTimeout(fn, ms);
+      timer.unref();
+      return () => {
+        clearTimeout(timer);
+      };
+    },
+    onExit:
+      environment.onExit ??
+      ((fn) => {
+        onProcessEnd(fn);
+      }),
+    uid: processUid(),
+  });
+}
+
+/** The one line printed when another GitHub App is named (security review L6). */
+export const GITHUB_OVERRIDE_NOTICE =
+  'Warning: COMPASS_GITHUB_CLIENT_ID names another GitHub App. Compass cannot check that it is read-only.';
+
+/** The live GitHub port (task 45): the read-only Compass GitHub App, tokens in the keychain. */
+function liveGitHub(
+  environment: RuntimeEnvironment,
+  env: EnvRecord,
+  parts: {
+    redacting: Parameters<typeof registerGitHubSecrets>[1];
+    nowMs: () => number;
+    notify: (line: string) => void;
+  },
+) {
+  const fetch = environment.githubFetch ?? defaultGitHubFetch;
+  if (env.COMPASS_GITHUB_CLIENT_ID !== undefined && env.COMPASS_GITHUB_CLIENT_ID !== '') {
+    parts.notify(GITHUB_OVERRIDE_NOTICE);
+  }
+  const { githubWorkerPath } = environment;
+  return createGitHubAdapter({
+    config: readGitHubAppConfig(env),
+    store: registerGitHubSecrets(
+      environment.githubStore ?? createGitHubTokenStore(),
+      parts.redacting,
+    ),
+    fetch,
+    openBrowser: createBrowserOpener({
+      platform: environment.platform,
+      execFile: environment.execFile,
+      notify: parts.notify,
+    }),
+    now: parts.nowMs,
+    sleep: abortableSleep,
+    // Without the bundled worker there is no hard time and memory budget, so nothing is read
+    // (security review M1): a source checkout scans local folders only.
+    scanRepository: (fullName, accessToken) =>
+      githubWorkerPath === undefined
+        ? Promise.reject(new ScanWorkerError())
+        : scanGitHubRepoInWorker({ fullName, accessToken }, { workerPath: githubWorkerPath }),
+  });
 }

@@ -12,11 +12,24 @@ export interface ElicitQuestion {
   message: string;
 }
 
-/** What a handler gets besides its input. `elicit` exists only when the client supports it. */
+/** A single-choice question for the human (task 51): each option's label is shown, its value returned. */
+export interface ChoiceQuestion {
+  message: string;
+  options: readonly { value: string; label: string }[];
+}
+
+/** The answer to a confirmation. */
+export type ElicitAnswer = 'accept' | 'decline' | 'cancel';
+
+/**
+ * What a handler gets besides its input. `elicit` and `choose` exist only when the client supports
+ * elicitation; both throw ConfirmTimedOut when the human does not answer in time.
+ */
 export interface ToolContext {
   runtime: Runtime;
   state: SessionState;
-  elicit?: (question: ElicitQuestion) => Promise<'accept' | 'decline' | 'cancel'>;
+  elicit?: (question: ElicitQuestion) => Promise<ElicitAnswer>;
+  choose?: (question: ChoiceQuestion) => Promise<{ value: string } | 'decline' | 'cancel'>;
 }
 
 /** An image attached to a result (the QR code PNG). */

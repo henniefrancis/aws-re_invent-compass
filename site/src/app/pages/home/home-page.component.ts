@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { HERO_PASS } from '../../../lib/content/hero-pass';
+import { SamplePassComponent } from '../demo/sample-pass.component';
 import { ACTS } from '../../../lib/content/acts';
 import { METAPHOR_HEADERS, METAPHOR_ROWS } from '../../../lib/content/metaphor';
 import { PRINCIPLES } from '../../../lib/content/principles';
@@ -7,7 +9,7 @@ import * as story from '../../../lib/content/story';
 
 @Component({
   selector: 'app-home-page',
-  imports: [RouterLink],
+  imports: [RouterLink, SamplePassComponent],
   templateUrl: './home-page.component.html',
 })
 export class HomePage {
@@ -29,4 +31,5 @@ export class HomePage {
   protected readonly metaphorRows = METAPHOR_ROWS;
   protected readonly acts = ACTS;
   protected readonly principles = PRINCIPLES;
+  protected readonly heroPass = HERO_PASS;
 }

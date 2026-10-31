@@ -1,8 +1,31 @@
 /* Windows high contrast and other forced colour modes: keep every control, border, focus
    indicator and status visible with system colours. */
 @media (forced-colors: active) {
-  a {
+  a,
+  .site-nav a,
+  .site-nav a[aria-current='page'] {
     color: LinkText;
+  }
+
+  /* The dark look (task 25) gives way to system colours: no gradient backdrop, and the orange
+     table terms and the muted notice use the system text colour. */
+  body,
+  .site-main {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .data-table tbody th,
+  .notice,
+  .source-note,
+  .board-note,
+  .board-session__time,
+  .doc-list p,
+  .wallet-badge__caption,
+  .site-nav__description,
+  .hero__note,
+  .hero__intro {
+    color: CanvasText;
   }
 
   button,
@@ -12,6 +35,13 @@
     border: 2px solid ButtonBorder;
     background: ButtonFace;
     color: ButtonText;
+  }
+
+  /* The gradient heading gives way to plain system text. */
+  .gradient-text {
+    background: none;
+    -webkit-text-fill-color: CanvasText;
+    color: CanvasText;
   }
 
   button:disabled {

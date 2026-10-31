@@ -168,6 +168,12 @@ describe('catalog and window', () => {
       expect(services.map((s) => s.toLowerCase())).toContain(label.toLowerCase());
     }
     expect(view.filter({ services: ['no-such-service'] })).toEqual([]);
+    // Whole words over title, abstract, topics and services (task 44).
+    const titleWord = String(view.filter({})[0]?.title.split(' ')[0]);
+    expect(view.filter({ words: [titleWord] }).length).toBeGreaterThan(0);
+    expect(view.filter({ words: [label] }).length).toBeGreaterThan(0);
+    expect(view.filter({ words: ['zzqqxx-not-a-word'] })).toEqual([]);
+    expect(view.filter({ words: [] })).toEqual([]);
     expect(view.filter({ text: `${TRIPLE.codes.a}` }).map((s) => s.sessionId)).toContain(TRIPLE.a);
   });
 
@@ -270,12 +276,12 @@ describe('schedule reads and writes', () => {
     expect(layover.kind).toBe('confirmed');
     if (layover.kind === 'confirmed') {
       expect(layover.schedule.personalTime[0]).toMatchObject({
-        startDateTime: '2026-12-02T20:00:00Z',
-        endDateTime: '2026-12-02T21:00:00Z',
+        startDateTime: '2026-12-02T12:00:00-08:00',
+        endDateTime: '2026-12-02T13:00:00-08:00',
       });
     }
     expect((await events.getSchedule()).personalTime[0]?.startDateTime).toBe(
-      '2026-12-02T20:00:00Z',
+      '2026-12-02T12:00:00-08:00',
     );
     const id = (await events.getSchedule()).personalTime[0]?.personalTimeId ?? '';
     const changed = await events.updatePersonalTime(id, {
@@ -286,7 +292,7 @@ describe('schedule reads and writes', () => {
     });
     expect(changed.kind).toBe('confirmed');
     expect((await events.getSchedule()).personalTime).toMatchObject([
-      { personalTimeId: id, title: 'Late lunch', startDateTime: '2026-12-02T21:00:00Z' },
+      { personalTimeId: id, title: 'Late lunch', startDateTime: '2026-12-02T13:00:00-08:00' },
     ]);
     expect(await events.deletePersonalTime(id)).toMatchObject({ kind: 'confirmed', schedule: {} });
     expect((await events.getSchedule()).personalTime).toEqual([]);
@@ -414,6 +420,107 @@ describe('wire quirks', () => {
     expect(view.filter({})).toHaveLength(120);
   });
 
+  test('personal time goes on the wire as event time, whatever the zone it was given in (task 55)', async () => {
+    const { events, rewrite } = await arrange();
+    const wire: string[] = [];
+    rewrite.current = (operation, response) => {
+      if (operation === 'GetSchedule') {
+        const body = response.body as {
+          schedule: { personalTime: { startDateTime: string; endDateTime: string }[] };
+        };
+        for (const entry of body.schedule.personalTime) {
+          wire.push(entry.startDateTime, entry.endDateTime);
+        }
+      }
+      return response;
+    };
+    // 07:00 in Las Vegas, given from Cape Town (UTC+2) as 17:00.
+    const written = await events.createPersonalTime({
+      title: 'Test',
+      description: 'Test',
+      startDateTime: '2026-11-30T17:00:00+02:00',
+      endDateTime: '2026-11-30T17:30:00+02:00',
+    });
+    expect(wire.slice(0, 2)).toEqual(['2026-11-30T07:00:00', '2026-11-30T07:30:00']);
+    expect(written.kind === 'confirmed' && written.schedule.personalTime[0]).toMatchObject({
+      startDateTime: '2026-11-30T07:00:00-08:00',
+      endDateTime: '2026-11-30T07:30:00-08:00',
+    });
+  });
+
+  test('a naive personal time in another shape is still read as event time (QA Low-3)', async () => {
+    const { events, rewrite } = await arrange();
+    await events.createPersonalTime({
+      title: 'Lunch',
+      description: 'Away',
+      startDateTime: '2026-12-02T12:00:00-08:00',
+      endDateTime: '2026-12-02T13:00:00-08:00',
+    });
+    rewrite.current = (operation, response) => {
+      if (operation !== 'GetSchedule') {
+        return response;
+      }
+      const body = response.body as {
+        schedule: { personalTime: { startDateTime: string; endDateTime: string }[] };
+      };
+      for (const entry of body.schedule.personalTime) {
+        entry.startDateTime = '2026-12-02T12:00';
+        entry.endDateTime = '2026-12-02T13:00:00.000';
+      }
+      return response;
+    };
+    expect((await events.getSchedule()).personalTime[0]).toMatchObject({
+      startDateTime: '2026-12-02T12:00:00-08:00',
+      endDateTime: '2026-12-02T13:00:00-08:00',
+    });
+  });
+
+  test('a write whose read-back needs the event window, and cannot read it, is unconfirmed (Low-2)', async () => {
+    const { events, rewrite, failNext } = await arrange();
+    rewrite.current = (operation, response) => {
+      if (operation !== 'GetSchedule') {
+        return response;
+      }
+      const body = response.body as {
+        schedule: { personalTime: Record<string, string>[] };
+      };
+      body.schedule.personalTime.push({
+        personalTimeId: 'pt-other-device',
+        title: 'Added elsewhere',
+        description: 'x',
+        startDateTime: '2026-12-02T12:00:00',
+        endDateTime: '2026-12-02T13:00:00',
+      });
+      return response;
+    };
+    failNext.listEvents = true;
+    expect(await events.reserve([TRIPLE.a])).toMatchObject({
+      kind: 'unconfirmed',
+      result: { successful: [TRIPLE.a] },
+    });
+  });
+
+  test('a naive personal time that is not a real date is left as it is', async () => {
+    const { events, rewrite } = await arrange();
+    await events.createPersonalTime({
+      title: 'Lunch',
+      description: 'Away',
+      startDateTime: '2026-12-02T12:00:00-08:00',
+      endDateTime: '2026-12-02T13:00:00-08:00',
+    });
+    rewrite.current = (operation, response) => {
+      if (operation !== 'GetSchedule') {
+        return response;
+      }
+      const body = response.body as { schedule: { personalTime: { startDateTime: string }[] } };
+      for (const entry of body.schedule.personalTime) {
+        entry.startDateTime = '2026-11-31T12:00:00';
+      }
+      return response;
+    };
+    expect((await events.getSchedule()).personalTime[0]?.startDateTime).toBe('2026-11-31T12:00:00');
+  });
+
   test('personal time that already carries a zone is left as it is', async () => {
     const { events, rewrite } = await arrange();
     await events.createPersonalTime({
@@ -471,10 +578,11 @@ describe('wire quirks', () => {
 });
 
 describe('toWireInstant', () => {
-  test('converts an instant with an offset to UTC without a zone suffix and refuses a bad one', () => {
-    expect(toWireInstant('2026-12-02T12:00:00-08:00')).toBe('2026-12-02T20:00:00');
-    expect(toWireInstant('2026-12-02T20:00:00Z')).toBe('2026-12-02T20:00:00');
-    expect(() => toWireInstant('nope')).toThrow(
+  test('writes an instant as event time without a zone suffix and refuses a bad one', () => {
+    const zone = 'America/Los_Angeles';
+    expect(toWireInstant('2026-12-02T12:00:00-08:00', zone)).toBe('2026-12-02T12:00:00');
+    expect(toWireInstant('2026-12-02T20:00:00Z', zone)).toBe('2026-12-02T12:00:00');
+    expect(() => toWireInstant('nope', zone)).toThrow(
       expect.objectContaining({ code: 'LayoverInvalid' }),
     );
   });

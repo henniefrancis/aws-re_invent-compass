@@ -25,6 +25,13 @@ export interface TableClient {
     expectedVersion: number,
     set: Record<string, unknown>,
   ): Promise<'ok' | 'conflict'>;
+  /** Sets the attributes only when the item exists and `attribute` equals `expected`. */
+  setIfEquals(
+    key: Key,
+    attribute: string,
+    expected: unknown,
+    set: Record<string, unknown>,
+  ): Promise<'ok' | 'conflict'>;
   /** Sets attributes on an existing item; does nothing when the item is gone. */
   set(key: Key, set: Record<string, unknown>): Promise<void>;
   /** Returns true when an item was deleted. */

@@ -139,6 +139,13 @@ for tool in terraform jq npm aws curl; do
   command -v "${tool}" >/dev/null 2>&1 || fail "${tool} is not installed"
 done
 
+# ---- AWS session: checked before anything is built or applied --------------
+
+# The site sync and the invalidation run under your own AWS session. A shell
+# whose default identity belongs to another account used to apply and only then
+# fail at the sync, so the session is checked here and again after init.
+aws sts get-caller-identity --region "${AWS_REGION}" >/dev/null 2>&1 || fail "no AWS session; run aws sso login first"
+
 # ---- build: Lambda zips and the site -------------------------------------
 
 lambda_build_cmd="${COMPASS_LAMBDA_BUILD_CMD:-npm run build:lambda --workspace @compass/pass-service}"
@@ -160,12 +167,31 @@ echo "building the site"
 bash -c "${site_build_cmd}" || fail "the site build failed"
 [ -d "${site_dir}" ] || fail "the site build did not produce its output directory"
 
+# The Google Wallet pass images are site content: Google fetches them from
+# <PUBLIC_BASE_URL>/wallet/ (pass-service task 47, infra task 25). They are added
+# after the site build and its output checks, so the sync uploads them with the site.
+mkdir -p "${site_dir}/wallet"
+for name in logo-v1.png wide-logo-v1.png hero-v1.png; do
+  source_image="${repo_root}/packages/pass-service/artwork/google/${name}"
+  [ -f "${source_image}" ] || fail "the Google Wallet image ${name} is missing"
+  cp "${source_image}" "${site_dir}/wallet/${name}"
+done
+
 # ---- plan -----------------------------------------------------------------
 
 service_version="$(git -C "${repo_root}" describe --tags --always --dirty 2>/dev/null || echo "0.0.0")"
 
 cd "${env_dir}"
 terraform init -input=false || fail "terraform init failed"
+
+# The session must reach the site bucket of the last apply. head-bucket needs
+# s3:ListBucket, as the sync does, so a session in another account gets 403 here,
+# before the plan. A first deploy has no bucket output yet and skips this.
+previous_bucket="$(terraform output -raw site_bucket_name 2>/dev/null || true)"
+if [ -n "${previous_bucket}" ]; then
+  aws s3api head-bucket --region "${AWS_REGION}" --bucket "${previous_bucket}" >/dev/null 2>&1 \
+    || fail "your AWS session cannot reach the ${env_name} site bucket (another account?); set AWS_PROFILE to your Compass profile, run aws sso login and try again; nothing was applied"
+fi
 
 echo "planning ${env_name}"
 # The saved plan file is written to infra/envs/<env>/tfplan. It is git-ignored,
@@ -256,6 +282,8 @@ site_bucket="$(terraform output -raw site_bucket_name)" || fail "could not read 
 echo "syncing the site (uses your own AWS SSO session)"
 aws sts get-caller-identity --region "${AWS_REGION}" >/dev/null 2>&1 || fail "no AWS session; run aws sso login first"
 aws s3 sync --region "${AWS_REGION}" "${site_dir}" "s3://${site_bucket}" --delete --only-show-errors || fail "the site sync failed"
+# The CLI may not know .webp, so the photo is uploaded again with its type stated (showcase-site task 34).
+aws s3 cp --region "${AWS_REGION}" "${site_dir}" "s3://${site_bucket}" --recursive --exclude "*" --include "*.webp" --content-type image/webp --only-show-errors || fail "the photo upload failed"
 
 echo "invalidating the CloudFront cache"
 aws cloudfront create-invalidation --region "${AWS_REGION}" --distribution-id "${distribution_id}" --paths "/*" >/dev/null || fail "the cache invalidation failed"

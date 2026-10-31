@@ -179,6 +179,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/handoffs/{handoffId}/apple/pass/{serialNumber}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The hand-off identifier. */
+                handoffId: components["parameters"]["HandoffId"];
+                /** @description The pass serial number. */
+                serialNumber: components["parameters"]["PassSerialNumber"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Download one Apple pass.
+         * @description Returns one signed .pkpass for a pass in the hand-off. Authorised by the hand-off capability, with the same checks as the bundle route. A serial that is not in the hand-off, not active or not valid answers 404.
+         */
+        get: operations["getHandoffApplePass"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/handoffs/{handoffId}/calendar.ics": {
         parameters: {
             query?: never;
@@ -429,10 +454,17 @@ export interface components {
                 title: string;
                 /** Format: date-time */
                 startsAt: string;
+                /** @description The venue name the pass shows (its TERMINAL), or null when the pass has none. */
+                venue: string | null;
+                /** @description The route for this session's own .pkpass, or null. */
+                applePath: string | null;
+                /** @description A Save to Google Wallet link for this session alone, or null. */
+                googleSaveUrl: string | null;
             }[];
             apple: {
                 bundlePaths: string[];
             };
+            /** @description One link for every pass, present only when they all fit in one link. */
             google: {
                 saveUrl: string;
             } | null;
@@ -490,6 +522,8 @@ export interface components {
         SerialNumber: string;
         /** @description The hand-off identifier. */
         HandoffId: string;
+        /** @description The pass serial number. */
+        PassSerialNumber: string;
         /** @description The zero-based index of the Apple pass bundle. */
         BundleIndex: number;
         /** @description Apple's device library identifier. */
@@ -702,6 +736,32 @@ export interface operations {
                 };
                 content: {
                     "application/vnd.apple.pkpasses": string;
+                };
+            };
+            404: components["responses"]["ProblemNotFound"];
+        };
+    };
+    getHandoffApplePass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The hand-off identifier. */
+                handoffId: components["parameters"]["HandoffId"];
+                /** @description The pass serial number. */
+                serialNumber: components["parameters"]["PassSerialNumber"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Apple pass. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.apple.pkpass": string;
                 };
             };
             404: components["responses"]["ProblemNotFound"];

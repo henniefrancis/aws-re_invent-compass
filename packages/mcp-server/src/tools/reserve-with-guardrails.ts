@@ -21,6 +21,8 @@ import {
   confirmedCommitments,
   ensureSignedIn,
   humanConfirms,
+  readOnlyReply,
+  catalogTargets,
   readFreshSchedule,
 } from './common.js';
 import { explainFailure } from './failure-codes.js';
@@ -43,6 +45,30 @@ export async function reserveWithGuardrails(
     throw new CompassError('UnknownSession');
   }
   const { sessions } = targets;
+
+  // A session that is not reservable needs no reservation (task 38): say so before anything else.
+  const walkUp = sessions.filter((session) => !session.isReservable);
+  if (walkUp.length > 0) {
+    return {
+      ok: true,
+      structured: {
+        verdict: {
+          decision: 'block',
+          reasons: walkUp.map((session) => `${session.code} is not reservable.`),
+        },
+      },
+      text: [
+        `Nothing was reserved. These sessions are not reservable, so they need no reservation: walk up early, or ${
+          ctx.runtime.readOnly === true
+            ? 'add them to your favourites in the re:Invent app'
+            : 'add them to your standby list'
+        } to keep them in your plan.`,
+        labelUntrusted('catalog', {
+          notReservable: walkUp.map((session) => ({ code: session.code, title: session.title })),
+        }),
+      ].join('\n'),
+    };
+  }
 
   const { schedule, window } = await readFreshSchedule(ctx);
   const confirmed = confirmedCommitments(schedule, catalog);
@@ -89,10 +115,16 @@ export async function reserveWithGuardrails(
     };
   }
 
-  const approved = await humanConfirms(
+  const question = confirmMessage('Reserve these sessions?', targets.found, warnings);
+  const readOnly = readOnlyReply(
     ctx,
-    confirmMessage('Reserve these sessions?', targets.found, warnings),
+    'reserve these sessions.',
+    catalogTargets(targets.found, warnings),
   );
+  if (readOnly !== undefined) {
+    return { ok: true, structured: { verdict: guard.verdict }, text: readOnly };
+  }
+  const approved = await humanConfirms(ctx, question);
   if (!approved) {
     return {
       ok: true,

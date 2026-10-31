@@ -24,6 +24,16 @@ describe('pathological input finishes quickly', () => {
     expect(time(() => isIgnored(`dir/${name}`, false, rules))).toBeLessThan(1000);
     expect(time(() => isIgnored(name, false, rules))).toBeLessThan(1000);
   });
+
+  test('long runs of trailing slashes or spaces are trimmed in under 1 second (CodeQL alert 1)', () => {
+    const run = 100_000;
+    expect(time(() => parseGitignore(`${'/'.repeat(run)}x/`, ''))).toBeLessThan(1000);
+    expect(time(() => parseGitignore(`a${' '.repeat(run)}x `, ''))).toBeLessThan(1000);
+    expect(parseGitignore(`dir${'/'.repeat(run)}`, '')).toEqual([
+      { pattern: 'dir', negated: false, directoryOnly: true, anchored: false, base: '' },
+    ]);
+    expect(parseGitignore(`a\\${' '.repeat(run)}`, '').map((r) => r.pattern)).toEqual(['a\\ ']);
+  });
 });
 
 import {
@@ -110,5 +120,94 @@ describe('walk budgets (security review M6)', () => {
       walk(fs.root, fs, { ...DEFAULT_WALK_LIMITS, maxMillis: 250 }, now),
     );
     expect(summary.truncated).toBe(true);
+  });
+});
+
+import { dotnetDetector, maskCSharp } from '../../src/scanner/detectors/dotnet.js';
+import { DEFAULT_TECH_DETECTORS } from '../../src/scanner/scan-repo.js';
+import {
+  elementTexts,
+  packageReferences,
+  stripXmlComments,
+} from '../../src/scanner/detectors/xml.js';
+
+describe('hostile manifests and C# finish quickly (task 41)', () => {
+  const MIB = 1024 * 1024;
+
+  /** Runs every default Tech_Detector that accepts `fileName` over `text`. */
+  const techScan = (text: string, fileName: string) => (): void => {
+    for (const detector of DEFAULT_TECH_DETECTORS) {
+      if (detector.accepts(fileName)) {
+        detector.detect(text, fileName);
+      }
+    }
+  };
+
+  test('C# masking and client matching stay linear', () => {
+    const inputs = [
+      'new '.repeat(MIB / 4),
+      `new Amazon${'x'.repeat(MIB)}`,
+      `new Amazon.${'A'.repeat(MIB)}`,
+      `new${' '.repeat(MIB)}`,
+      '"'.repeat(MIB),
+      '@"'.repeat(MIB / 2),
+      '/*'.repeat(MIB / 2),
+      '\\'.repeat(MIB),
+      `"${'\\"'.repeat(MIB / 2)}`,
+      "'".repeat(MIB),
+      `${'"""'.repeat(MIB / 3)}`,
+      'new AmazonS3Client'.repeat(MIB / 18),
+    ];
+    for (const text of inputs) {
+      expect(time(() => dotnetDetector.detect(text, 'Program.cs'))).toBeLessThan(1000);
+      expect(maskCSharp(text)).toHaveLength(text.length);
+    }
+  });
+
+  test('XML readers stay linear', () => {
+    const inputs = [
+      '<PackageReference '.repeat(MIB / 18),
+      '<PackageReference Include="'.repeat(MIB / 27),
+      `<PackageReference Include="${'a'.repeat(MIB)}`,
+      '<!--'.repeat(MIB / 4),
+      '<artifactId>'.repeat(MIB / 12),
+      `<artifactId>${'a'.repeat(MIB)}`,
+    ];
+    for (const text of inputs) {
+      expect(time(() => packageReferences(text))).toBeLessThan(1000);
+      expect(time(() => elementTexts(text, 'artifactId'))).toBeLessThan(1000);
+      expect(time(() => stripXmlComments(text))).toBeLessThan(1000);
+      expect(time(() => dotnetDetector.detect(`<Project>${text}`, 'App.csproj'))).toBeLessThan(
+        1000,
+      );
+      expect(time(techScan(`<Project><project>${text}`, 'App.csproj'))).toBeLessThan(1000);
+      expect(time(techScan(`<project>${text}`, 'pom.xml'))).toBeLessThan(1000);
+    }
+  });
+
+  test('text manifests stay linear', () => {
+    const cases: [string, string][] = [
+      [`[${' '.repeat(MIB)}`, 'pyproject.toml'],
+      [`[[${'['.repeat(MIB)}`, 'Pipfile'],
+      [`dependencies = [${'"'.repeat(MIB)}`, 'pyproject.toml'],
+      [`dependencies = [\n${`"${'a'.repeat(64)}\n`.repeat(MIB / 66)}`, 'pyproject.toml'],
+      [`dependencies = [${`"a",'b'`.repeat(MIB / 8)}`, 'pyproject.toml'],
+      [`[tool.poetry.dependencies]\n${'a'.repeat(MIB)}`, 'pyproject.toml'],
+      [`[packages]\n${`a${' '.repeat(64)}\n`.repeat(MIB / 66)}`, 'Pipfile'],
+      [`a${' '.repeat(MIB)}`, 'requirements.txt'],
+      ['a'.repeat(MIB), 'requirements.txt'],
+      [`gem${' '.repeat(MIB)}`, 'Gemfile'],
+      [`gem${'('.repeat(MIB)}`, 'Gemfile'],
+      [`"${'a'.repeat(MIB)}`, 'build.gradle'],
+      [`"a:${'b'.repeat(MIB)}`, 'build.gradle'],
+      [`"a:b:${'c'.repeat(MIB)}`, 'build.gradle'],
+      [`'a:`.repeat(MIB / 3), 'build.gradle.kts'],
+      [`"a:b:'`.repeat(MIB / 6), 'build.gradle'],
+      [`{"dependencies":{${'"a":"1",'.repeat(MIB / 10)}"z":"1"}}`, 'package.json'],
+      ['{'.repeat(MIB), 'composer.json'],
+    ];
+    for (const [text, fileName] of cases) {
+      expect(time(techScan(text, fileName))).toBeLessThan(1000);
+    }
   });
 });

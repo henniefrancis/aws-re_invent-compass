@@ -36,6 +36,10 @@ export type CompassErrorCode =
   | 'LevelInvalid'
   | 'InputInvalid'
   | 'UnsafePath'
+  | 'ReadOnly'
+  | 'GitHubNotConnected'
+  | 'GitHubConfirmationNeeded'
+  | 'ConfirmTimedOut'
   | 'Internal';
 
 /** Optional, non-sensitive details a code may carry. */
