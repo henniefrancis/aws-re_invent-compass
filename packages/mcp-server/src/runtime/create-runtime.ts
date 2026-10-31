@@ -125,6 +125,7 @@ function simulatedAuth(): AuthPort {
   return {
     isSignedIn: () => true,
     expiresAt: () => undefined,
+    refreshIfNeeded: () => Promise.resolve(),
     signIn: () => Promise.resolve({}),
     signOut: () => Promise.resolve({ signOutUrl: SIGN_OUT_FALLBACK }),
   };
@@ -206,6 +207,7 @@ export async function createRuntime(
   const live: AuthPort = {
     isSignedIn: () => store.load() !== undefined,
     expiresAt: () => expiryOf(store),
+    refreshIfNeeded: () => sources.refreshIfNeeded(),
     signIn: () =>
       signIn({
         store,

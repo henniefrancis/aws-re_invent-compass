@@ -68,6 +68,8 @@ export interface AuthPort {
   isSignedIn(): boolean;
   /** When the held access token expires, as an ISO instant, if known. */
   expiresAt(): string | undefined;
+  /** Renews the held access token when it has expired or is about to (S1 refreshIfNeeded). */
+  refreshIfNeeded(): Promise<void>;
   signIn(): Promise<{ memoryOnlyNotice?: string }>;
   signOut(): Promise<{ signOutUrl: string }>;
 }
@@ -305,9 +307,18 @@ export function createEventsAdapter(deps: EventsAdapterDeps): EventsPort {
 
   return {
     signIn: async (force) => {
+      // Renew a held sign-in before reporting it, so the expiry shown is never one that has
+      // already passed. A rejected refresh token means the sign-in has ended: sign in again.
       if (!force && auth.isSignedIn()) {
-        const expiresAt = auth.expiresAt();
-        return { signedIn: true, ...(expiresAt === undefined ? {} : { expiresAt }) };
+        try {
+          await auth.refreshIfNeeded();
+          const expiresAt = auth.expiresAt();
+          return { signedIn: true, ...(expiresAt === undefined ? {} : { expiresAt }) };
+        } catch (error) {
+          if (!(error instanceof SignInRequiredError)) {
+            throw mapEventsError(error);
+          }
+        }
       }
       try {
         const done = await auth.signIn();

@@ -50,6 +50,10 @@ interface Arranged {
     signedIn: boolean;
     expires: boolean;
     signInResult: () => Promise<{ memoryOnlyNotice?: string }>;
+    expiry: string;
+    refresh: () => Promise<void>;
+    refreshes: number;
+    signIns: number;
     outs: number;
   };
   failNext: { schedule: boolean; listEvents: boolean };
@@ -108,12 +112,23 @@ async function arrange(eventId = 'reinvent2026'): Promise<Arranged> {
     signedIn: true,
     expires: true,
     signInResult: (): Promise<{ memoryOnlyNotice?: string }> => Promise.resolve({}),
+    expiry: '2026-11-29T20:00:00.000Z',
+    refresh: (): Promise<void> => Promise.resolve(),
+    refreshes: 0,
+    signIns: 0,
     outs: 0,
   };
   const port: AuthPort = {
     isSignedIn: () => auth.signedIn,
-    expiresAt: () => (auth.signedIn && auth.expires ? '2026-11-29T20:00:00.000Z' : undefined),
-    signIn: () => auth.signInResult(),
+    expiresAt: () => (auth.signedIn && auth.expires ? auth.expiry : undefined),
+    refreshIfNeeded: () => {
+      auth.refreshes += 1;
+      return auth.refresh();
+    },
+    signIn: () => {
+      auth.signIns += 1;
+      return auth.signInResult();
+    },
     signOut: () => {
       auth.outs += 1;
       return Promise.resolve({ signOutUrl: 'https://idp.awsevents.com/oidc/logout' });
@@ -203,6 +218,42 @@ describe('sign in and out', () => {
       expiresAt: '2026-11-29T20:00:00.000Z',
       memoryOnlyNotice: 'memory only',
     });
+  });
+
+  test('an already held sign-in is renewed before its expiry is reported', async () => {
+    const { events, auth } = await arrange();
+    auth.expiry = '2026-10-30T08:00:00.000Z';
+    auth.refresh = () => {
+      auth.expiry = '2026-10-31T21:00:00.000Z';
+      return Promise.resolve();
+    };
+    expect(await events.signIn(false)).toEqual({
+      signedIn: true,
+      expiresAt: '2026-10-31T21:00:00.000Z',
+    });
+    expect(auth.refreshes).toBe(1);
+    expect(auth.signIns).toBe(0);
+  });
+
+  test('a held sign-in whose refresh token is rejected signs in again', async () => {
+    const { events, auth } = await arrange();
+    auth.refresh = () => Promise.reject(new SignInRequiredError());
+    auth.signInResult = () => {
+      auth.expiry = '2026-10-31T21:00:00.000Z';
+      return Promise.resolve({});
+    };
+    expect(await events.signIn(false)).toEqual({
+      signedIn: true,
+      expiresAt: '2026-10-31T21:00:00.000Z',
+    });
+    expect(auth.signIns).toBe(1);
+  });
+
+  test('a held sign-in that cannot be renewed for another reason is mapped', async () => {
+    const { events, auth } = await arrange();
+    auth.refresh = () => Promise.reject(new OAuthNetworkError());
+    await expect(events.signIn(false)).rejects.toMatchObject({ code: 'Network' });
+    expect(auth.signIns).toBe(0);
   });
 
   test('sign-in completes without an expiry when none is known', async () => {

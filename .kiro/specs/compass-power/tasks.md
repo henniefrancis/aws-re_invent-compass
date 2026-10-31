@@ -676,6 +676,10 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - The first `v0.1.0` publish failed with E404 after the provenance statement: npm expires a trusted publisher that has not completed a publish within 2 days. `docs/runbooks/npm-release.md` now says to create it on release day with only "npm publish" allowed, gives the `npm trust` CLI form, adds a check before the tag in "Tag order", and adds the E404 case to "If a publish fails"; dash check and prettier; commit scoped `compass-power`
   - _Requirements: 20.1_
 
+- [x] 61. `sign_in` never reports an expiry that has already passed (owner, prod check of 31 October)
+  - On prod, `sign_in` answered "This sign-in lasts until 2026-10-30" on 31 October: when a sign-in is already held, the adapter reported the stored access token's expiry without renewing it. The `AuthPort` gains `refreshIfNeeded` (the S1 credential source in live mode, a no-op in simulated mode); a held sign-in is renewed before its expiry is reported; a rejected refresh token (`SignInRequiredError`) runs the sign-in flow again; any other failure is mapped as before. Unit tests for the three paths at 100 percent coverage; full gate; commit scoped `compass-power`
+  - _Requirements: 9.1_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.
