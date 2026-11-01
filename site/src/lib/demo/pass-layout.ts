@@ -86,8 +86,13 @@ export function fitValue(text: string): readonly string[] {
   return [...lines.slice(0, VALUE_LINES - 1), `${last}...`];
 }
 
+export interface PassLayoutOptions {
+  /** Put FLIGHT NAME above TERMINAL and GATE (the home page's event pass, task 47). */
+  readonly flightNameFirst?: boolean;
+}
+
 /** The lines of a sample pass with their positions. */
-export function layoutPass(pass: SamplePass): PassLayout {
+export function layoutPass(pass: SamplePass, options: PassLayoutOptions = {}): PassLayout {
   const lines: PassLine[] = [];
   const put = (
     kind: PassLine['kind'],
@@ -102,26 +107,40 @@ export function layoutPass(pass: SamplePass): PassLayout {
   // Top row: the logo on the left, SESSION and the code on the right.
   put('label', 'SESSION', RIGHT, 26, 'end');
   put('session', pass.session, RIGHT, 52, 'end');
-  // Large row: TERMINAL, an arrow, GATE.
-  put('label', 'TERMINAL', LEFT, 86);
-  put('label', 'GATE', RIGHT, 86, 'end');
-  const terminal = fitValue(pass.terminal);
-  const gate = fitValue(pass.gate);
-  terminal.forEach((text, i) => {
-    put('large', text, LEFT, 110 + i * 24);
-  });
-  gate.forEach((text, i) => {
-    put('large', text, RIGHT, 110 + i * 24, 'end');
-  });
-  let y = 110 + (Math.max(terminal.length, gate.length) - 1) * 24 + 34;
+  let y = 86;
   // Flight name.
-  put('label', 'FLIGHT NAME', LEFT, y);
-  y += 22;
-  for (const text of wrapText(pass.title)) {
-    put('title', text, LEFT, y);
-    y += 20;
+  const flightName = (): void => {
+    put('label', 'FLIGHT NAME', LEFT, y);
+    y += 22;
+    for (const text of wrapText(pass.title)) {
+      put('title', text, LEFT, y);
+      y += 20;
+    }
+    y += 14;
+  };
+  // Large row: TERMINAL, an arrow, GATE.
+  let arrowY = 102;
+  const terminalAndGate = (): void => {
+    put('label', 'TERMINAL', LEFT, y);
+    put('label', 'GATE', RIGHT, y, 'end');
+    arrowY = y + 16;
+    const terminal = fitValue(pass.terminal);
+    const gate = fitValue(pass.gate);
+    terminal.forEach((text, i) => {
+      put('large', text, LEFT, y + 24 + i * 24);
+    });
+    gate.forEach((text, i) => {
+      put('large', text, RIGHT, y + 24 + i * 24, 'end');
+    });
+    y += 24 + (Math.max(terminal.length, gate.length) - 1) * 24 + 34;
+  };
+  if (options.flightNameFirst === true) {
+    flightName();
+    terminalAndGate();
+  } else {
+    terminalAndGate();
+    flightName();
   }
-  y += 14;
   // Bottom row: DATE and BOARDING CLOSES.
   put('label', 'DATE', LEFT, y);
   put('label', 'BOARDING CLOSES', RIGHT, y, 'end');
@@ -147,7 +166,7 @@ export function layoutPass(pass: SamplePass): PassLayout {
     height: y + 10,
     cardHeight,
     logo: { x: LEFT, y: 14, width: 84, height: 36 },
-    arrow: { x: PASS_WIDTH / 2, y: 102 },
+    arrow: { x: PASS_WIDTH / 2, y: arrowY },
     lines,
   };
 }
