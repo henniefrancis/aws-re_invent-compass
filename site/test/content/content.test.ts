@@ -402,8 +402,12 @@ describe('install content', () => {
   });
 
   test('shows the two npx commands, pinned only when a version is known', () => {
+    const unpinned = INSTALL_COMMANDS.map((c) =>
+      commandText(c, { ...SITE_LINKS, packageVersion: null }),
+    );
+    expect(unpinned).toEqual(['npx reinvent-compass', 'npx reinvent-compass demo']);
     const commands = INSTALL_COMMANDS.map((c) => commandText(c, SITE_LINKS));
-    expect(commands).toEqual(['npx reinvent-compass', 'npx reinvent-compass demo']);
+    expect(commands).toEqual(['npx reinvent-compass@0.1.0', 'npx reinvent-compass@0.1.0 demo']);
     const pinned = INSTALL_COMMANDS.map((c) =>
       commandText(c, { ...SITE_LINKS, packageVersion: '1.0.0' }),
     );

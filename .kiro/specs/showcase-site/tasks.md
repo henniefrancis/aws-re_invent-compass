@@ -490,12 +490,15 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 42. "Boarding closes" everywhere on the site (owner decision of 31 October, to match the pass)
   - The home page story, the timeline graphic, the demo week view and their tests say "Boarding closes at 10:20" instead of "Seat released at 10:20"; the product steering line the home page quotes, Requirement 2 of the home page, `CONCEPT.md`, `site/README.md` and `site/ARTWORK.md` match; the seat rule itself (held until 10 minutes before the start) is unchanged
 
-- [ ] 43. Demo session cards look like the board's (owner request of 31 October)
+- [x] 43. Demo session cards look like the board's (owner request of 31 October)
   - [x] 43.1 Each session in the demo's session list and in "Your week" uses the board's card layout: the date and time (for example "Mon, 30 Nov 2026, 11:30 AM to 12:30 PM") small in the top left corner, the session code small in the top right in the gradient, the title across the full width, then the venue and room and "Boarding closes at ...", and the buttons centred; the card styles are shared with the board page, not copied; the reading order still gives the code with the title
   - [x] 43.2 Owner review on the local preview; full gate and e2e; commit scoped `showcase-site`
 
-- [ ] 44. The hidden-focus check in `site/e2e/layout.spec.ts` probes a link's first line, not the centre of its whole box (release step 14, 31 October)
+- [x] 44. The hidden-focus check in `site/e2e/layout.spec.ts` probes a link's first line, not the centre of its whole box (release step 14, 31 October)
   - The first `e2e.yml` run on `main` (6923e1c) failed on `/security` in iPhone portrait: on Linux WebKit "The full security policy (SECURITY.md)" wraps onto two lines, and the centre of a wrapped link's bounding box falls in the gap between the lines, so `elementFromPoint` returned the list item. The page snapshot shows nothing on top of the link. The check now takes the centre of the element's first client rect (its first line box), which is still covered if anything really sits on top of it; the page is unchanged
+
+- [x] 45. The install page pins the published package (release step 18, prepared 2 November)
+  - `SITE_LINKS.packageVersion` becomes `'0.1.0'`, so the install commands read `npx reinvent-compass@0.1.0` and `npx reinvent-compass@0.1.0 demo`; the browser tests that copy a command expect the pinned text. Full site gate and the affected e2e specs; owner review on the local preview; held unpushed until `reinvent-compass@0.1.0` is on npm (3 November), then pushed and released with `scripts/release.sh prod`; commit scoped `showcase-site`
 
 - [x] 46. Documentation links open in a new tab (owner request of 2 November)
   - The links on the Documentation page, the full security policy link and the licence file links on the Copyright page open the repository document in a new tab (`target="_blank"`, `rel="noopener noreferrer"`), with the visually hidden "(opens in a new tab)" the header's external links already use; action links (wallets, directions, private reporting) are unchanged. Site tests and e2e for the three pages; owner review on the local preview; commit scoped `showcase-site`, pushed with task 45 after the npm publish
