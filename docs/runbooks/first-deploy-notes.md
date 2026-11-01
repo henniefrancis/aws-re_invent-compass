@@ -19,9 +19,9 @@ No secret, token, account identifier, HCP organisation or workspace name is reco
 Public outputs of dev:
 
 - Domain: `dev.reinvent-compass.vegas`
-- CloudFront domain: `d1esk37itij686.cloudfront.net`
-- Distribution id: `E14JXIB6NETBMD`
-- Site bucket: `compass-dev-site-aed4c82c77c659816e3e6f198d`
+- CloudFront domain: `<distribution>.cloudfront.net` (not recorded here)
+- Distribution id: `<DISTRIBUTION_ID>` (read it with `terraform output distribution_id`; not recorded here)
+- Site bucket: `compass-dev-site-<suffix>` (not recorded here)
 
 The version reads `-dirty` only because an uncommitted README draft was in the tree when the Lambda was built.
 
@@ -41,7 +41,7 @@ The version reads `-dirty` only because an uncommitted README draft was in the t
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `0a07439` | (main session) The bootstrap can register the domain with Route 53 Domains (`register_domain`, `domain_contact`). Docs in `2ae753e` and `9083572`.                                                                                                                                                                                                                                 |
 | `a609aff` | Scripts under Git Bash on Windows: the Windows AWS CLI and jq.exe end lines with a carriage return, so every secret check failed closed and the HCP workspace id was corrupted; and Git Bash does not convert a path inside `file://`, so `put-secret-value` got the Windows path through `cygpath`.                                                                               |
-| `6780afe` | The account already had an `app.terraform.io` OIDC provider, managed by the owner's henniefrancis-tech Terraform. AWS allows one per URL, so a create fails and an import would give it two owners. `create_oidc_provider = false` reads it and checks the `aws.workload.identity` audience.                                                                                       |
+| `6780afe` | The account already had an `app.terraform.io` OIDC provider, managed by another Terraform project in the same account. AWS allows one per URL, so a create fails and an import would give it two owners. `create_oidc_provider = false` reads it and checks the `aws.workload.identity` audience.                                                                                  |
 | `80aa58c` | `aws_api_gateway_account` failed twice with "The role ARN does not have required permissions configured": the logging role trust had an `aws:SourceArn` of `/restapis/*`, which the account setting check cannot match. The trust keeps `aws:SourceAccount` only. The bootstrap tests now pin their own variables, because `terraform test` also reads a local `terraform.tfvars`. |
 | `ca368a7` | The plan refused the event window: the rule did not allow the milliseconds GetEvent returns (`2026-11-30T05:30:00.000-08:00`). It now matches the pass-service pattern exactly.                                                                                                                                                                                                    |
 | `0c54e67` | AccessDenied on `wafv2:CreateWebACL` for `global/managedruleset/*/*`: WAF also authorizes the AWS managed rule groups, which carry no tags, so the tag condition never matched. They now have their own statement (CreateWebACL and UpdateWebACL only); the web ACL statements keep the environment tags. The policy size test counts a real 12-digit account id.                  |
@@ -53,16 +53,15 @@ No statement was widened to a wildcard action, and no IAM write statement names 
 ## Things learned
 
 - After each new commit the api Lambda shows one in-place update: `service_version` comes from `git describe`. The zero-diff check needs no commit in between.
-- The owner's shell had a stale `TF_TOKEN_app_terraform_io` from another project, which made `terraform init` fail with "unauthorized". Loading the new token with `read -rs` in the same tab fixed it.
-- Route 53 refuses a `state` for a South African contact, and wants the phone as `+27.<number>`.
+- A stale `TF_TOKEN_app_terraform_io` from another project makes `terraform init` fail with "unauthorized": load the Compass token with `read -rs` in the same shell first.
+- Route 53 contact fields need each country's own format (some countries take no `state`, and the phone needs the country code).
 - The `hash_key` and `range_key` deprecation warnings on `aws_dynamodb_table` are harmless (provider 6.69.1).
 
 ## Owner follow-ups
 
 - Done: the Route 53 registrant verification email for `reinvent-compass.vegas` is confirmed.
 - Done: leftover copies in `~/compass-secrets/dev` and `~/.compass-secrets` are shredded, including the Google key, so prod needs a fresh `compass-wallet` key from the Google Cloud console.
-- Kept for now (owner decision): the `TF_TOKEN_app_terraform_io` in the owner's environment belongs to henniefrancis-tech. Load the Compass token with `read -rs` in each new shell.
-- The henniefrancis-tech Terraform owns the OIDC provider Compass trusts: do not remove it while Compass runs.
+- Another Terraform project owns the OIDC provider Compass trusts: do not remove it while Compass runs.
 
 ## Next
 

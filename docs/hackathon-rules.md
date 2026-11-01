@@ -4,14 +4,14 @@ The official rules of the re:Invent Catalog API Builder Challenge (version updat
 
 ## Key dates
 
-| Date (Pacific time)   | What happens                                                                                                                                               |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 24 Sep 2026, 10:00 am | Contest opens                                                                                                                                              |
-| 4 Nov 2026            | Owner's own submission target (moved from 1 Nov on 31 Oct: npm suspended the owner's account for 72 hours, so the package publishes after 3 Nov 20:12 UTC) |
-| 6 Nov 2026, 11:59 pm  | Hard deadline: entries after this are not judged                                                                                                           |
-| By 27 Nov 2026        | Winners selected                                                                                                                                           |
-| By 30 Nov 2026        | AWS emails the potential winner at the entry email address                                                                                                 |
-| By 4 Dec 2026         | Prize pickup, per AWS's instructions (during re:Invent)                                                                                                    |
+| Date (Pacific time)   | What happens                                                                                   |
+| --------------------- | ---------------------------------------------------------------------------------------------- |
+| 24 Sep 2026, 10:00 am | Contest opens                                                                                  |
+| 4 Nov 2026            | Owner's own submission target (moved from 1 Nov on 31 Oct: the npm package publishes on 3 Nov) |
+| 6 Nov 2026, 11:59 pm  | Hard deadline: entries after this are not judged                                               |
+| By 27 Nov 2026        | Winners selected                                                                               |
+| By 30 Nov 2026        | AWS emails the potential winner at the entry email address                                     |
+| By 4 Dec 2026         | Prize pickup, per AWS's instructions (during re:Invent)                                        |
 
 The prize is one winner's trophy (about USD 250) and a featured showcase during re:Invent 2026. A winner fills in a US tax form (W-8 or W-9) before receiving it.
 
