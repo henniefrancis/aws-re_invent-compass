@@ -1582,7 +1582,7 @@ Owner decisions: Compass reads the attendee's real Builder ID data (catalog, ses
 
 ## Post-SP3 change: codes, walk-up sessions, no write invitations (20 October 2026, task 38)
 
-- **Codes as ids.** Attendees and agents use session codes such as SVS339. Before a tool with `sessionId` or `sessionIds` runs, the server replaces a value that is not a catalog id with the id of the one session whose code matches it, ignoring letter case. An unknown or shared code is left as given, so the tool still reports it as unknown. With no cached catalog the input is left alone.
+- **Codes as ids.** Attendees and agents use session codes such as ABC123. Before a tool with `sessionId` or `sessionIds` runs, the server replaces a value that is not a catalog id with the id of the one session whose code matches it, ignoring letter case. An unknown or shared code is left as given, so the tool still reports it as unknown. With no cached catalog the input is left alone.
 - **Walk-up sessions.** A session with `isReservable: false` needs no reservation. `reserve_with_guardrails` blocks it first, with the reason, and suggests walking up or adding it to the standby list; when Compass is read-only it suggests the favourites in the re:Invent app instead, since the standby tool would not write (task 39).
 - **No write invitations.** The read-only reply says to make the change in the re:Invent app and no longer names `COMPASS_ALLOW_WRITES`; the setting is documented for the attendee only. The Power skill forbids the agent to change Compass's settings or offer to.
 

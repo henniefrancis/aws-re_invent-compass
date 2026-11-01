@@ -341,6 +341,7 @@ Compass was built spec first, with [Kiro](https://kiro.dev).
 - **Reviews.** Every stream passed QA and security review before it was merged, and no branch merged with an open High or Critical finding. Accepted residual risks are recorded in [ADR-027](docs/decisions/ADR-027-accepted-residual-risks.md).
 - **100% coverage.** Unit tests (vitest) cover 100% of lines, branches, functions and statements, with named exclusions only. The showcase site adds Playwright and axe tests across seven device profiles. Terraform has native tests with mock providers, plus tflint and Trivy.
 - **Made-up data in public.** Tests and demos use a deterministic synthetic catalog of 120 sessions in the real API shape ([ADR-016](docs/decisions/ADR-016-synthetic-catalog.md)). The product itself always reads the live API.
+- **The whole build, in public.** Every task from kickoff on 15 October 2026 to submission is a card on the [project board](https://github.com/users/henniefrancis/projects/3), with its workstream and real date, and the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki) holds full copies of every doc, spec and decision for easy reading.
 
 ## Repository layout
 

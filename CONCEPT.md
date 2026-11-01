@@ -61,20 +61,20 @@ Everyone at re:Invent has flown to get there. The metaphor needs no explaining.
 
 | Judging criterion (25% each)   | How Compass scores                                                                                                                                                                                                                                                                      |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Creativity and novelty         | As of 15 October, no other entry ships as a Kiro Power with hooks that enforce the rules, turns a codebase into an agenda, or puts boarding information in the phone's wallet.                                                                                                          |
+| Creativity and novelty         | Compass combines a Kiro Power with hooks that enforce the rules, turns a codebase into an agenda, and puts boarding information in the phone's wallet.                                                                                                                                  |
 | Utility for attendees          | It targets the 10-minute rule, the most costly and least visible first-timer mistake, with information exactly where and when it is needed.                                                                                                                                             |
 | Technical depth and API use    | Uses **all 12 operations** through the REST client (the official remote MCP server joins the Power once spike SP1 confirms its write tools can be disabled there), handles per-session results, throttling and pagination properly, and includes a serverless pass signer in Terraform. |
 | Builder Center article quality | A natural story: "I used Kiro specs to build a tool that turns your re:Invent week into a Kiro spec." Strong visuals: the spec, the hook stopping a bad booking, the pass on a lock screen.                                                                                             |
 
-### How it differs from the 10 existing entries
+### How it differs from other approaches
 
-| Existing entry                                      | Overlap                           | Compass difference                                                                       |
-| --------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
-| Pathfinder, AI Session Assistant, agent with 2 MCPs | AI suggests sessions              | Suggestions come from your actual code, and the plan is a Kiro spec you execute          |
-| re:Plan, re:Invent Planner, Reinvent:Match          | Optimizing the week, walking time | Compass enforces rules at the moment of booking (hooks) and carries them onto the phone  |
-| re:Seat, Reinvent Sniper                            | Booking seats                     | Compass deliberately does not auto-book or poll for seats. A human approves every write. |
-| Riv                                                 | Plan as code                      | Riv is a diff tool. Compass is an agent workflow with guardrails and a phone component.  |
-| SessionMind                                         | Before-session prep cards         | Compass covers the moment of travel and boarding, not note-taking                        |
+| Approach                            | Overlap                           | Compass difference                                                                       |
+| ----------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
+| AI assistants that suggest sessions | AI suggests sessions              | Suggestions come from your actual code, and the plan is a Kiro spec you execute          |
+| Planners that optimise the week     | Optimizing the week, walking time | Compass enforces rules at the moment of booking (hooks) and carries them onto the phone  |
+| Tools that book or watch seats      | Booking seats                     | Compass deliberately does not auto-book or poll for seats. A human approves every write. |
+| Plan-as-code tools                  | Plan as code                      | Compass is an agent workflow with guardrails and a phone component                       |
+| Note and preparation tools          | Before-session prep cards         | Compass covers the moment of travel and boarding, not note-taking                        |
 
 ## 5. API coverage (all 12 operations)
 
