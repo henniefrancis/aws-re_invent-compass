@@ -50,15 +50,17 @@ The four criteria come from the rules; the 25 percent weight each was recorded a
 
 Prepared on 31 October so the owner only confirms each line on the day. Claude rechecks rows 1, 2 and 4 the same morning.
 
-1. The rules on the contest page still show the version of 24 September 2026. If not, re-copy them and re-check every row above.
+Pre-check of 1 November 2026: the contest page (Rules tab) still says "Updated September 24, 2026", with the same requirements, dates, judging criteria and exclusions as the table above. The About tab words the same requirement as "a published project on AWS Builder Center" and judges the "Quality of the Builder Center project": the article is published through the hackathon's "Create post", and that post is the project. The owner's project entry exists (created 26 October, the owner as team leader) with no post yet. The live Events API OpenAPI was byte-identical to the committed copy, prod answered 200 on 46f69ac (the head of `main`), CodeQL had no open alert on `main`, and npm held only 0.0.0-stage and 0.0.1. The owner confirmed rows 5 to 13 unchanged.
+
+1. The rules on the contest page still show the version of 24 September 2026 (checked 1 November). If not, re-copy them and re-check every row above.
 2. Row 1: the live Events API OpenAPI document is still byte-identical to `packages/contracts/events-api.openapi.json` (refreshed 31 October; its SHA-256 is in ADR-023).
 3. Row 2: `main` holds the code that prod runs (46f69ac since 1 November), `GET https://reinvent-compass.vegas/api/v1/health` answers 200, and CI and the e2e suite are green on `main`.
 4. The npm package `reinvent-compass@0.1.0` is published with provenance, and `npx --yes reinvent-compass@0.1.0 demo` runs on a clean machine (release steps 15 and 16).
 5. Row 4: the article is **published** on builder.aws.com (not a draft), and its links work: the repository, the site, the install page, npm and the video.
 6. The demo video is uploaded and linked from the article and the README.
 7. The README status line says released, with the live links (release step 18, owner's wording).
-8. Rows 5 to 13 are unchanged since 20 October (owner confirms).
-9. Submit on Builder Center with the entry email address, before 6 November 2026 11:59 pm Pacific time.
+8. Rows 5 to 13 are unchanged since 20 October (owner confirmed on 1 November).
+9. Submit on Builder Center with the entry email address, before 6 November 2026 11:59 pm Pacific time: publish the article through the hackathon's "Create post" so it becomes the project, and check that it shows on the Projects tab.
 
 ## Owner requirement: Kiro first (not a contest rule)
 
