@@ -12,7 +12,7 @@ All five are in the CloudWatch console of us-east-1 under `compass-<env>-...`. T
 
 The API returned server errors in a five minute window.
 
-1. Look at the `compass-<env>-api` and `compass-<env>-passkit` log groups for the failing route: the request log lines carry the route template, status and outcome only, never a path or an identifier.
+1. Look at the `/aws/lambda/compass-<env>-api` and `/aws/lambda/compass-<env>-passkit` log groups for the failing route: the request log lines carry the route template, status and outcome only, never a path or an identifier.
 2. An outcome of `dependency_error` points at a secret, DynamoDB or an upstream service (Apple, Google, the ID token issuer). Run `scripts/check-secrets.sh <env>` to rule out a missing secret value.
 3. After a release, roll forward (see `rollback.md`).
 
@@ -73,4 +73,4 @@ The account budget (`compass-account-monthly`, 60 USD by default) emails you at 
 | Hand-off calendar download             | `handoff_calendar_enabled` | `HANDOFF_CALENDAR_ENABLED`  | The calendar file route misbehaves. Pass downloads keep working.                                         |
 | WAF kill switch (see `kill-switch.md`) | `kill_switch_enabled`      | none (WAF rule)             | Abuse or a cost run-up that needs everything stopped at once.                                            |
 
-Each Lambda switch is a Terraform variable, set in the HCP workspace and applied with `scripts/release.sh <env>`; the change is a Lambda configuration update only. A disabled feature answers with a clear `not_enabled` outcome rather than an error. The kill switch is the only switch that also blocks the site.
+Each Lambda switch is a Terraform variable, set in the HCP workspace and applied with `scripts/release.sh <env>`; the change is a Lambda configuration update only. A disabled feature fails no request: the calendar route answers with a clear `not_enabled` outcome, and with Google Wallet off the Google links are left out. The kill switch is the only switch that also blocks the site.

@@ -37,7 +37,7 @@ The retained resources are protected on purpose (see `rollback.md`): `release.sh
    terraform plan -destroy -out=tfplan
    ```
 
-   Read the plan. It must name only dev resources: the CloudFront distribution, the WAF web ACL, the API, the two Lambdas and their roles, the table, the secrets, the site bucket, the log groups, the alarms, the SNS topic and the KMS key and alias. It must not touch the bootstrap, the roles, the boundaries, the account API Gateway role, the account budget or anything of prod.
+   Read the plan. It must name only dev resources: the CloudFront distribution, the dev certificate and its `dev.reinvent-compass.vegas` records in the zone, the WAF web ACL, the API, the two Lambdas and their roles, the table, the secrets, the site bucket, the log groups, the alarms, the SNS topic and the KMS key and alias. It must not touch the bootstrap, the roles, the boundaries, the account API Gateway role, the account budget or anything of prod.
 
 5. Apply it: `terraform apply tfplan`. The distribution is disabled and then deleted, which takes several minutes; the WAF web ACL follows once it is detached. Delete the local `tfplan` file afterwards.
 6. Confirm the workspace state is empty: `terraform state list` prints nothing. Do not use the console to check or to delete anything.
@@ -48,7 +48,7 @@ The retained resources are protected on purpose (see `rollback.md`): `release.sh
 - The KMS key of the alarm topic is scheduled for deletion with its 7 day window; it stops costing after that.
 - The account budget stays (it also covers prod).
 - The dev workspace, its two roles and the dev boundary stay in the bootstrap. They cost nothing. Removing them is a later bootstrap change (drop `dev` from the environment set) and is only needed if you want the account fully clean.
-- The CloudFront domain of dev stops resolving, so any pass issued from dev stops updating.
+- `dev.reinvent-compass.vegas` and the CloudFront domain of dev stop resolving, so any pass issued from dev stops updating.
 
 ## If the destroy fails
 

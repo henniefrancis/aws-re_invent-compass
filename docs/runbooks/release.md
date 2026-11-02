@@ -9,7 +9,7 @@ scripts/release.sh dev
 scripts/release.sh prod
 ```
 
-The script builds the two Lambda bundles and the site, saves a Terraform plan in HCP Terraform, refuses any plan that destroys or replaces a retained resource or touches an unexpected resource type, asks you to type `yes`, applies the saved plan, syncs the site, invalidates the CloudFront cache and checks `GET /api/v1/health`.
+The script builds the two Lambda bundles and the site, saves a Terraform plan in HCP Terraform, refuses any plan that destroys or replaces a retained resource or touches an unexpected resource type, asks you to type `yes` (dev) or `prod` (prod), applies the saved plan, syncs the site, invalidates the CloudFront cache and checks `GET /api/v1/health`.
 
 ## Deploy-day checklist (release 0.1.0)
 

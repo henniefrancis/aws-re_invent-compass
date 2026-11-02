@@ -7,7 +7,7 @@ Owner-run. Rollback in this project is always a roll forward: the previous commi
 1. Find the last good release tag or commit: `git tag --list 'v*'` or `git log --oneline`.
 2. Check out that commit in a clean working tree: `git switch --detach <tag or commit>`.
 3. Run `npm ci`, then `scripts/release.sh <env>` for the affected environment. The script builds that commit's Lambda bundles and site and shows a saved plan.
-4. Read the plan. It should change only the Lambda code, the API deployment and the site. Type `yes` only if no retained resource is touched (the script refuses otherwise).
+4. Read the plan. It should change only the Lambda code, the API deployment and the site. Type `yes` (`prod` for prod) only if no retained resource is touched (the script refuses otherwise).
 5. After the health check passes, return to your branch: `git switch -`.
 6. If the bad release changed Terraform, the plan may need to undo a configuration change. The refusal checks still apply: a destroy or replace of a retained resource is never offered.
 
