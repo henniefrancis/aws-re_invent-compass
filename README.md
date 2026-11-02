@@ -229,7 +229,7 @@ One function, `checkReservation` in `packages/core/src/rules`, answers "should t
 
 **The phone hand-off.** Planning happens on a computer, because Builder ID sign-in returns to your own machine. To board on your phone:
 
-1. `send_to_phone` asks "Link or QR code?" first. A link appears in the chat; a QR code opens on a page in your browser, for your phone camera to scan.
+1. `send_to_phone` first asks whether you want a link, a QR code or both. A link appears in the chat; a QR code opens on a page in your browser, for your phone camera to scan.
 2. The link opens the site's `/board` page. The hand-off id sits in the URL fragment, so it never reaches the CDN, and the page removes it from the address.
 3. The page offers **Add to Apple Wallet** (in bundles of up to 10 passes), **Add to Google Wallet**, or the calendar file.
 4. The link works for 15 minutes. When it expires, the QR page says so.
