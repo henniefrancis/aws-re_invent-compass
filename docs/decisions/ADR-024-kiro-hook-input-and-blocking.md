@@ -1,6 +1,6 @@
 # ADR-024 Kiro hook input and blocking (SP1 result)
 
-Status: Accepted, 2026-10-18 (owner, spike SP1 on Kiro IDE 1.3.11, Windows). Checklist steps 12 to 14 (the real "Import power from GitHub") are pending: GitHub `main` has no `power/` folder until develop is merged and pushed.
+Status: Accepted, 2026-10-18 (owner, spike SP1 on Kiro IDE 1.3.11, Windows). Checklist steps 12 to 14 (the real "Import power from GitHub") were pending because GitHub `main` had no `power/` folder; `power/` reached `main` on 19 October 2026 (pull request #1), and no result for these steps is recorded yet. Decision 6 amends ADR-017.
 
 ## Context
 

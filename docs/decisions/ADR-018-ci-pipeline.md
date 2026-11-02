@@ -1,6 +1,6 @@
 # ADR-018 CI pipeline
 
-Status: Accepted, 2026-10-15 (owner approved the build plan).
+Status: Accepted, 2026-10-15 (owner approved the build plan). Amended by ADR-026 (the audit step) and ADR-028 (the site coverage exclusion).
 
 ## Context
 

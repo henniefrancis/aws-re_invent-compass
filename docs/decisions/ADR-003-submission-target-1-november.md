@@ -1,6 +1,6 @@
 # ADR-003 Submission target 1 November
 
-Status: Accepted, 2026-10-15 (owner, kickoff answer 7)
+Status: Accepted, 2026-10-15 (owner, kickoff answer 7). Amended 31 October 2026: the submission target moved to 4 November 2026, because the npm package publishes on 3 November ([hackathon rules](../hackathon-rules.md)). The deadline of 6 November 2026 is unchanged.
 
 ## Decision
 

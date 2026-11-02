@@ -1,6 +1,6 @@
 # ADR-013 Edge CloudFront WAF and API Gateway REST
 
-Status: Accepted, 2026-10-15 (owner approved the build plan).
+Status: Accepted, 2026-10-15 (owner approved the build plan). Amended by ADR-030 (API key at API Gateway) and ADR-031 (custom domain `reinvent-compass.vegas`). ADR-021 was not adopted, so WAF stays.
 
 ## Context
 
