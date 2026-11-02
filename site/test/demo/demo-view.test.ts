@@ -221,9 +221,19 @@ describe('pass layout', () => {
     const layout = layoutPass(pass as NonNullable<typeof pass>);
     expect(layout.width).toBe(PASS_WIDTH);
     const texts = layout.lines.map((l) => l.text);
-    for (const label of ['SESSION', 'TERMINAL', 'GATE', 'FLIGHT NAME', 'DATE', 'BOARDING CLOSES']) {
-      expect(texts).toContain(label);
-    }
+    // Task 48: FLIGHT NAME is the first row under SESSION, above TERMINAL and GATE.
+    const labels = layout.lines.filter((l) => l.kind === 'label').map((l) => l.text);
+    expect(labels).toEqual([
+      'SESSION',
+      'FLIGHT NAME',
+      'TERMINAL',
+      'GATE',
+      'DATE',
+      'BOARDING CLOSES',
+    ]);
+    expect(pass?.accessibleName).toMatch(
+      /^Boarding pass\. Session AIM433\. Flight name: .+\. Terminal: /,
+    );
     expect(texts).toContain('AIM433');
     expect(texts).toContain(pass?.boardingCloses as string);
     expect(texts).toContain(pass?.date as string);

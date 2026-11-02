@@ -1,10 +1,11 @@
 // Layout of the sample pass image (showcase-site, Component 8).
 //
 // The pass is drawn as inline SVG. SVG text does not wrap, so the lines and their positions are
-// worked out here. The face follows the final Apple pass: logo and SESSION on top, TERMINAL, an
-// arrow and GATE, FLIGHT NAME, then DATE and BOARDING CLOSES. The walk, the next connection, the
-// sample label and the disclaimer are small lines under the card face (on the real pass the walk
-// and the next session are on the back). The pass has no barcode, no QR code and no AWS mark.
+// worked out here. The face follows the final Apple poster pass (task 48): logo and SESSION on top,
+// FLIGHT NAME, TERMINAL, an arrow and GATE, then DATE and BOARDING CLOSES. The walk, the next
+// connection, the sample label and the disclaimer are small lines under the card face (on the
+// real pass the walk and the next session are on the back). The pass has no barcode, no QR code
+// and no AWS mark.
 
 import type { SamplePass } from './sample-pass';
 
@@ -86,13 +87,8 @@ export function fitValue(text: string): readonly string[] {
   return [...lines.slice(0, VALUE_LINES - 1), `${last}...`];
 }
 
-export interface PassLayoutOptions {
-  /** Put FLIGHT NAME above TERMINAL and GATE (the home page's event pass, task 47). */
-  readonly flightNameFirst?: boolean;
-}
-
 /** The lines of a sample pass with their positions. */
-export function layoutPass(pass: SamplePass, options: PassLayoutOptions = {}): PassLayout {
+export function layoutPass(pass: SamplePass): PassLayout {
   const lines: PassLine[] = [];
   const put = (
     kind: PassLine['kind'],
@@ -109,38 +105,26 @@ export function layoutPass(pass: SamplePass, options: PassLayoutOptions = {}): P
   put('session', pass.session, RIGHT, 52, 'end');
   let y = 86;
   // Flight name.
-  const flightName = (): void => {
-    put('label', 'FLIGHT NAME', LEFT, y);
-    y += 22;
-    for (const text of wrapText(pass.title)) {
-      put('title', text, LEFT, y);
-      y += 20;
-    }
-    y += 14;
-  };
-  // Large row: TERMINAL, an arrow, GATE.
-  let arrowY = 102;
-  const terminalAndGate = (): void => {
-    put('label', 'TERMINAL', LEFT, y);
-    put('label', 'GATE', RIGHT, y, 'end');
-    arrowY = y + 16;
-    const terminal = fitValue(pass.terminal);
-    const gate = fitValue(pass.gate);
-    terminal.forEach((text, i) => {
-      put('large', text, LEFT, y + 24 + i * 24);
-    });
-    gate.forEach((text, i) => {
-      put('large', text, RIGHT, y + 24 + i * 24, 'end');
-    });
-    y += 24 + (Math.max(terminal.length, gate.length) - 1) * 24 + 34;
-  };
-  if (options.flightNameFirst === true) {
-    flightName();
-    terminalAndGate();
-  } else {
-    terminalAndGate();
-    flightName();
+  put('label', 'FLIGHT NAME', LEFT, y);
+  y += 22;
+  for (const text of wrapText(pass.title)) {
+    put('title', text, LEFT, y);
+    y += 20;
   }
+  y += 14;
+  // Large row: TERMINAL, an arrow, GATE.
+  put('label', 'TERMINAL', LEFT, y);
+  put('label', 'GATE', RIGHT, y, 'end');
+  const arrowY = y + 16;
+  const terminal = fitValue(pass.terminal);
+  const gate = fitValue(pass.gate);
+  terminal.forEach((text, i) => {
+    put('large', text, LEFT, y + 24 + i * 24);
+  });
+  gate.forEach((text, i) => {
+    put('large', text, RIGHT, y + 24 + i * 24, 'end');
+  });
+  y += 24 + (Math.max(terminal.length, gate.length) - 1) * 24 + 34;
   // Bottom row: DATE and BOARDING CLOSES.
   put('label', 'DATE', LEFT, y);
   put('label', 'BOARDING CLOSES', RIGHT, y, 'end');

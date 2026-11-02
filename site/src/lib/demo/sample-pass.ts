@@ -143,8 +143,8 @@ export function buildSamplePass(
         }),
   };
   const parts = [
-    `Boarding pass. Session ${session.code}. Terminal: ${terminal}. Gate: ${gate}.`,
-    `Flight name: ${title}.`,
+    `Boarding pass. Session ${session.code}. Flight name: ${title}.`,
+    `Terminal: ${terminal}. Gate: ${gate}.`,
     `Date: ${date}.`,
     boardingNote === null
       ? `Boarding closes: ${boardingCloses}.`

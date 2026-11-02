@@ -21,7 +21,7 @@ describe('the home page hero pass', () => {
   });
 
   test('its accessible name reads the fields in the order the pass draws them', () => {
-    const cardText = layoutPass(HERO_PASS, { flightNameFirst: true })
+    const cardText = layoutPass(HERO_PASS)
       .lines.filter((line) => line.onCard && line.kind !== 'label')
       .map((line) => line.text);
     expect(cardText).toEqual([
