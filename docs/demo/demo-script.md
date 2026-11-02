@@ -40,7 +40,7 @@ The real catalog is not in the repository (only the synthetic one is), so the re
 - **D**, a session the owner is happy to cancel on camera (the void shot).
 - Sessions the owner really wants to attend, because in live mode with writes on these are **real reservations** (see open question 2).
 
-For rehearsal in simulated mode, the synthetic catalog has the same story: `BWP213` (Tuesday 13:00, MGM Grand) held, `ARC228` clashing with it, and the repeat `BWP213-R` (Friday 11:30, The Venetian). The site demo uses that same set.
+For rehearsal in simulated mode, the synthetic catalog has the same story: `BWP213` (Tuesday 13:00, MGM Grand) held, `ARC228` clashing with it, and the repeat `BWP213-R` (Friday 11:30, The Venetian). The site demo uses 17 real re:Invent 2026 sessions instead, with a simulated week: the sample week holds `TNC334-R`, `CMP340` clashes with it, and its repeat is `TNC334-R1`.
 
 ## Shot list and narration
 
@@ -136,16 +136,16 @@ For rehearsal in simulated mode, the synthetic catalog has the same story: `BWP2
 
 ### Shot 11. The showcase site and the click-through (2:22 to 2:38)
 
-- **On screen:** a phone browser on `https://reinvent-compass.vegas`, then `/demo`. Tap **Start with a sample week**, add `ARC228`; the guardrail blocks it with its reasons. Tap **Try this repeat**: the three swap steps tick off. Tap **Show sample pass**. End on "These sessions are made up. Nothing in this demo touches a real schedule."
+- **On screen:** a phone browser on `https://reinvent-compass.vegas`, then `/demo`. Tap **Start with a sample week**, add `CMP340`; the guardrail blocks it with its reasons. Tap **Try this repeat**: the three swap steps tick off. Tap **Show sample pass**. End on "Nothing in this demo touches a real schedule."
 - **Narration:**
 
-  > Judges and attendees can try it with no install and no sign-in. The showcase site runs a click-through demo on made-up sessions, with the same rules engine. Add a session that clashes, and watch the guardrail stop it.
+  > Judges and attendees can try it with no install and no sign-in. The showcase site runs a click-through demo on real sessions with a simulated week, with the same rules engine. Add a session that clashes, and watch the guardrail stop it.
 
 - **Prepare:** prod site live. A phone screen recording, or a desktop browser at phone width. Start from a fresh load (the site keeps no state, so a reload resets it).
 
 ### Shot 12. Safety: read-only by default (2:38 to 2:50)
 
-- **On screen:** a pickup clip recorded with writes off: a reserve request answered "Compass is read-only, so nothing in your re:Invent schedule changed. Make this change yourself in the re:Invent app." Then a close-up of the README line `"env": { "COMPASS_ALLOW_WRITES": "1" }` (not the live Kiro settings). End on "Unofficial. Your badge is your ticket."
+- **On screen:** a pickup clip recorded with writes off: a reserve request answered "Compass is read-only, so nothing in your re:Invent schedule changed. Make this change yourself in the re:Invent app." Then a close-up of the `packages/mcp-server/README.md` line `"env": { "COMPASS_ALLOW_WRITES": "1" }` (not the live Kiro settings). End on "Unofficial. Your badge is your ticket."
 - **Narration:**
 
   > Compass is read-only by default. It reads your real schedule, but changes nothing until you turn writes on yourself. Even then, every booking is checked, and you approve each one. And the passes are unofficial. Your badge is your ticket.
@@ -192,7 +192,7 @@ Shots 1 and 2 (map, metaphor cards) and the simulated rehearsal can be done befo
 3. **Hook on camera.** The owner rule asks for a hook blocking a bad booking. Is the in-Kiro hook block enough, or do you also want the server guardrail block shown?
 4. **Tech scan source.** The sample repo, one of your public projects, or `scan_github` through the GitHub App?
 5. **Wording on the site.** Decided 31 October 2026: the site now says "Boarding closes" everywhere, like the passes and this script.
-6. **Folder.** `.kiro/steering/structure.md` names `docs/demo/` for the video script; this draft is in `docs/video/` as asked. Keep it here (and update the steering file later), or move it?
+6. **Folder.** Settled: this draft is in `docs/demo/`, the folder `.kiro/steering/structure.md` names for the video script.
 7. **Campus map.** May the official campus map and venue footage be shown, or should the cold open use original artwork?
 8. **On camera.** Do you want to appear in shot 13, or end on the pass and the end card?
 9. **Voice.** Recorded live while filming, or a separate voice-over laid over the cut?
