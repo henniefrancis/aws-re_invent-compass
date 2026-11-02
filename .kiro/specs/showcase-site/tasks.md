@@ -503,9 +503,6 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 48. Every sample pass draws FLIGHT NAME above TERMINAL and GATE (owner request of 2 November)
   - The demo pass on `/demo` drew TERMINAL and GATE first. FLIGHT NAME is now always the first row under SESSION, as on the real Apple poster pass and the hero; the `flightNameFirst` option from task 47 is removed. The demo pass accessible name reads Session, Flight name, Terminal, Gate in the same order. Tests check the card order of the demo pass. Owner review on the local preview; site tests and e2e; commit scoped `showcase-site`
 
-- [ ] 49. Documentation audit before submission (owner request of 2 November, branch `docs/audit-2026-11-03`)
-  - Check every document (the root docs, `docs/**` except `docs/article/**`, the package READMEs, the Power files, the spec text that states facts about the code, and the site text in `site/src/lib/content/` and `site/src/app/pages/`) against the code as it is today: tool counts and names, Events API and pass API operations, venues, scripts, versions, Terraform facts, test counts and links. Fix what is wrong, list the wiki and public board findings without editing them, and record every result in `docs/proposals/docs-audit-2026-11-03.md`. No spec clearly owns all documentation (S0 owns the root docs, S6 the runbooks, each stream its README), so this task sits here, with the site text. Full gate; one draft PR into `develop`; the owner decides what to merge
-
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.
