@@ -45,7 +45,7 @@ A reserved seat is only held until 10 minutes before the session starts, then it
 
 ## Core features
 
-1. **Repo to agenda:** scan the attendee's workspace locally (Terraform, CDK TypeScript, AWS SDK for JavaScript v3, boto3), infer the AWS services they use and how deeply, map them to the catalog's `services` taxonomy, and suggest a level per topic. Only service names and depth leave the scanner; never file contents.
+1. **Repo to agenda:** scan the attendee's workspace locally (Terraform, CDK TypeScript, AWS SDK for JavaScript v3, boto3, AWS SDK for .NET), infer the AWS services they use and how deeply, map them to the catalog's `services` taxonomy, and suggest a level per topic. Only service and technology names, depth and counts leave the scanner; never file contents.
 2. **Week as a spec:** generate `.kiro/specs/my-reinvent-week/` (`requirements.md`, `design.md`, `tasks.md`). Each task is one API action the attendee approves. Offer to git-ignore it, because a public repo would publish where the attendee will be and when.
 3. **Guardrails:** every write runs `checkReservation` inside the Compass server (connection, boarding time, clash, layover) before it is sent. Kiro hooks run the same check first as defence in depth. Every write is confirmed by reading `GetSchedule` back.
 4. **Boarding passes:** Apple Wallet and Google Wallet passes for every reserved session, signed by the attendee-only Compass API.
@@ -73,7 +73,7 @@ A reserved seat is only held until 10 minutes before the session starts, then it
 - Automatic booking, seat watching, or bypassing the official reservation rules.
 - A hosted app that signs attendees in (the API does not allow it).
 - Note-taking, trip reports, social features.
-- On hold: extra scanners beyond the four above, community trail import.
+- On hold: extra scanners beyond the five above, community trail import.
 
 ## Voice and copy
 
@@ -84,6 +84,6 @@ A reserved seat is only held until 10 minutes before the session starts, then it
 ## Success measures
 
 - Judging criteria (25% each): creativity and novelty, utility for attendees, technical depth and use of the API surface, quality of the Builder Center article.
-- All 12 Events API operations used through the Compass tools; the official remote MCP server added for read exploration once SP1 confirms `disabledTools` works in a Power (ADR-024).
+- All 12 Events API operations used through the Compass tools. The official remote MCP server is not bundled in the Power, because SP1 showed Kiro does not honour `disabledTools` there (ADR-024); attendees add it to their workspace for read exploration.
 - A first-timer goes from "Plan my re:Invent" to passes on their phone in under 15 minutes.
 - A judge can try the core idea on a phone in under 2 minutes on the showcase site.
