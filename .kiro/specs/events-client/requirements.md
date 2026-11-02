@@ -34,7 +34,7 @@ Scope boundary: this stream does not build the guardrails engine (S2 rules), the
 - **Event_Window**: The event start and end instants and timezone, read from `ListEvents` and `GetEvent`, never hard-coded.
 - **Fixture**: A JSON file under `fixtures/api/<operation>/<scenario>.json` used by tests and the simulated transport.
 - **Simulated_Mode**: The mode selected by `COMPASS_MODE=simulated` in which the Simulated_Transport serves fixtures instead of the live Events API.
-- **Live_Smoke_Test**: A test that calls the live Events API, run only when `COMPASS_LIVE_TESTS=1` is set.
+- **Live_Smoke_Test**: A test that calls the live Events API, run only when the live gate is fully open (`COMPASS_LIVE_TESTS=1` and `COMPASS_LIVE_CONFIRM=yes`, and not a CI run; Requirement 21.5).
 
 ## Requirements
 

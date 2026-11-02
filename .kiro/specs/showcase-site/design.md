@@ -4,13 +4,13 @@
 
 This design covers S7, the `showcase-site` stream: the public website of re:Invent Compass and its `/board` hand-off page. It owns `site/**` only.
 
-The Site is a static Angular 22.2.3 application with standalone components, zoneless change detection and prerendered output (`outputMode: "static"`). It is served from S3 behind CloudFront at the distribution's default domain (S6). It has five routes:
+The Site is a static Angular 22.2.3 application with standalone components, zoneless change detection and prerendered output (`outputMode: "static"`). It is served from S3 behind CloudFront (S6); prod has served it at https://reinvent-compass.vegas since 31 October 2026. The dated changes at the end of this document add nine pages (The Creator at `/about`, The Inspiration, Documentation and six legal pages), so `site/src/app/app.routes.ts` now declares fourteen routes. This design has five:
 
 - `/` (Home_Page): the "Seat released at" story, the airline metaphor, Plan, Boarding, Fly, and links to the repository, the Builder Center post and the video.
-- `/demo` (Demo_Page): a click-through demo that runs the real rules engine (`@compass/core/rules`, S2) in the browser on sessions copied from the synthetic catalog (ADR-016).
+- `/demo` (Demo_Page): a click-through demo that runs the real rules engine (`@compass/core/rules`, S2) in the browser on sessions copied from the synthetic catalog (ADR-016). Since task 41 (31 October 2026) the sessions are a snapshot of 17 real catalog sessions from the AWS Events API (`site/src/lib/demo/demo-sessions.json`, code, title, start, end, venue and room only).
 - `/install` (Install_Page): the Kiro Power, the npx one-liners and other MCP clients.
 - `/privacy` (Privacy_Page): "what leaves your machine", in plain words from build plan section 4.2.
-- `/board` (Board_Page): the hand-off page a phone opens from the QR code. It reads the 15-minute capability from the URL fragment, calls `GET /api/v1/handoffs/{handoffId}`, and offers Add to Apple Wallet, Save to Google Wallet and Download calendar (ADR-011).
+- `/board` (Board_Page): the hand-off page a phone opens from the QR code. It reads the 15-minute capability from the URL fragment, calls `GET /api/v1/handoffs/{handoffId}`, and offers Add to Apple Wallet, Add to Google Wallet and Add to Calendar (ADR-011; first designed as Save to Google Wallet and Download calendar).
 
 In the airline metaphor the first four pages are the departures hall and `/board` is the gate.
 
@@ -125,7 +125,7 @@ Angular components hold one `signal` of state each and call pure Site_Logic func
 4. `node scripts/check-budgets.mjs` runs the Budget_Check from `index.html` and `stats.json`.
 5. On demand: `npx playwright test -c playwright.config.ts` starts the Static_Server on the build output and runs the browser suite.
 
-Until the Integrator wires these into the root `npm run build` and `npm run e2e` scripts and into `site/package.json` (Notes in `tasks.md`), the stream runs them with `npx` from `site/`.
+Until the Integrator wires these into the root scripts and into `site/package.json` (Notes in `tasks.md`), the stream runs them with `npx` from `site/`. They are now wired: `site/package.json` has `build` (steps 2 to 4), `test` and `e2e`, and the root runs them as `npm run build:site`, `npm run test:site` and `npm run e2e` (the root `npm run build` is `tsc -b` only).
 
 ### Module boundaries and ownership
 

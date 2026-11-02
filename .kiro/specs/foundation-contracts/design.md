@@ -23,6 +23,8 @@ The deliverables, mapped to the twelve requirements:
 | Doc and example updates                 | 11          | `.env.example`, terraform tfvars and backend examples, CONCEPT dates                                                                                                                                                                                               |
 | Foundation acceptance gate              | 12          | A green run of compile, test, hash, placeholder, dash, actionlint and catalog validation                                                                                                                                                                           |
 
+This table is the day-1 scope. Today `mcpTools` has twenty-four entries (see the dated changes at the end of this document) and `@compass/core` has ten subpaths (`redact` and `github` were added later).
+
 ### Non-negotiable constraints baked into every component
 
 - No em dash or en dash anywhere in copy, comments, test names or commit messages. Use commas, colons, parentheses or new sentences. The Dash_Check_Script enforces this in CI and on save.
@@ -306,7 +308,7 @@ The error shape is the `application/problem+json` object `{type, title, status, 
 Four files under `.github/`, every action pinned by commit SHA, no `push` and no `schedule` trigger anywhere.
 
 - `check.yml`: one job on `pull_request` into `main` only. Steps in build plan 11.1 order: `npm ci`, contract hash check, placeholder safety check, dash check, `prettier --check`, `eslint`, `tsc -b`, `vitest --coverage` at 100 percent, build, gitleaks, `npm audit --omit=dev --audit-level=high`, `terraform fmt -check`, `terraform validate`, `tflint`, `terraform test`, Trivy filesystem scan, Trivy config scan, shellcheck. Target run time under 8 minutes. The Terraform and shellcheck steps are written to pass as no-ops while there are no Terraform or shell files yet (guarded by a presence check so an empty match does not fail).
-- `e2e.yml`: `workflow_dispatch` only. Playwright plus axe plus Lighthouse.
+- `e2e.yml`: `workflow_dispatch` only. Playwright plus axe (Lighthouse was planned but is not pinned; showcase-site design Open Question 13).
 - `publish.yml`: tag `v*` only. Build and `npm publish` through npm trusted publishing with provenance.
 - `dependabot.yml`: monthly schedule, `open-pull-requests-limit: 0`.
 

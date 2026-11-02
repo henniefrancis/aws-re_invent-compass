@@ -28,7 +28,7 @@ All names and attendee-facing copy follow the airline metaphor (BoardingPass, Co
 - **Issued_Pass_Record**: The local personal-data record P5 (serialNumber, session code, a hash of the pass fields, platform), stored in the app-data folder with file mode 0600.
 - **App_Data_Folder**: The per-OS location for local personal data: `%APPDATA%` on Windows, `~/Library/Application Support` on macOS, or `$XDG_DATA_HOME` with the suffix `/reinvent-compass` on Linux.
 - **Board_URL**: The URL returned by the create-hand-off operation, carrying the hand-off id in its URL fragment, that a phone opens to collect passes.
-- **Ellipsis_Character**: The single Unicode horizontal ellipsis character used when a title is truncated.
+- **Ellipsis_Character**: The single Unicode horizontal ellipsis character. It is not in the PassFields allowlist, so a truncated title ends with three ASCII full stops instead (Requirement 1.5).
 - **Boarding_Closes**: The moment ten minutes before a session starts, derived from the server-supplied session start.
 - **Connection**: The walk between two consecutive commitments.
 - **Event_Window**: The event start, end and timezone from the Events API GetEvent operation, supplied at runtime to the PassFields schema factory.

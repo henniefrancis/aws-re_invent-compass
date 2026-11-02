@@ -6,7 +6,7 @@ This spec (S7, showcase-site) covers the public website of re:Invent Compass and
 
 In the airline metaphor the site is the departures hall and the gate. The departures hall tells the story ("From your code to your seat, on time."), lets anyone try a click-through demo on made-up sessions, and explains how to install Compass and what leaves the attendee's machine. The gate is `/board`: the page a phone opens after scanning the QR code that Compass prints on the computer, where the attendee adds unofficial boarding passes to Apple Wallet or Google Wallet, or downloads a calendar file.
 
-The site is plan on a computer, board on any device (ADR-005). It is a static Angular 22 application, prerendered to files and served from S3 behind CloudFront at the distribution's default domain. It has no sign-in, no cookies, no analytics and no third-party requests. The demo runs the real rules engine (`@compass/core/rules`, owned by S2) in the browser on sessions copied from the synthetic catalog (ADR-016). The `/board` page reads a 15-minute hand-off capability from the URL fragment only (ADR-011), calls one hand-off route from `contracts/compass-api.openapi.yaml`, and never stores, logs or shares that capability.
+The site is plan on a computer, board on any device (ADR-005). It is a static Angular 22 application, prerendered to files and served from S3 behind CloudFront (in prod at https://reinvent-compass.vegas). It has no sign-in, no cookies, no analytics and no third-party requests. The demo runs the real rules engine (`@compass/core/rules`, owned by S2) in the browser on sessions copied from the synthetic catalog (ADR-016); since showcase-site task 41 (31 October 2026) those sessions are a snapshot of 17 real catalog sessions from the AWS Events API (code, title, start, end, venue and room only). The `/board` page reads a 15-minute hand-off capability from the URL fragment only (ADR-011), calls one hand-off route from `contracts/compass-api.openapi.yaml`, and never stores, logs or shares that capability.
 
 re:Invent Compass is an unofficial, independent community project. The site never implies AWS endorsement and uses no AWS logos, colours or trademark artwork.
 
@@ -14,7 +14,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 
 ## Glossary
 
-- **Site**: The Angular application in `site/`, served as static files from S3 behind CloudFront at `https://<distribution>.cloudfront.net`.
+- **Site**: The Angular application in `site/`, served as static files from S3 behind CloudFront at `https://<distribution>.cloudfront.net` or a custom domain (prod: `https://reinvent-compass.vegas`).
 - **Shell**: The layout shared by every page: skip link, header, navigation, main landmark and footer.
 - **Home_Page**: The route `/`, which tells the product story.
 - **Demo_Page**: The route `/demo`, the click-through demo on made-up sessions.
