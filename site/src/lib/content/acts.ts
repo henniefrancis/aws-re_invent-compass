@@ -9,7 +9,8 @@ export interface Act {
 
 // The three acts follow CONCEPT.md section 3. Where CONCEPT.md differs from the build plan
 // and the product steering, the plan wins: the scanner list is Terraform, AWS CDK TypeScript,
-// AWS SDK for JavaScript v3 and boto3.
+// AWS SDK for JavaScript v3 and boto3, and the scanner now also reads the AWS SDK for .NET
+// (packages/core/src/scanner/detectors/dotnet.ts).
 
 export const ACTS: readonly Act[] = [
   {
@@ -24,7 +25,7 @@ export const ACTS: readonly Act[] = [
     points: [
       summary(
         'act-plan-repo',
-        'Your repo is your agenda. Compass scans your own workspace on your machine (Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3 and boto3), works out which AWS services you use and how deeply, and suggests a level for each topic. Only service names and depth leave the scanner, never file contents.',
+        'Your repo is your agenda. Compass scans your own workspace on your machine (Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3 and boto3, plus the AWS SDK for .NET), works out which AWS services you use and how deeply, and suggests a level for each topic. Only service names and depth leave the scanner, never file contents.',
         '.kiro/steering/product.md',
         'Core features, 1',
       ),

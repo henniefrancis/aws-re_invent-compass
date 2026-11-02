@@ -36,7 +36,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-catalog-schedule',
-        'The session catalog cache and a snapshot of your schedule stay in a folder on your computer. The snapshot is purged 30 days after the event ends, or when you run forget_me.',
+        'The session catalog cache and a snapshot of your schedule stay in a folder on your computer. The snapshot is replaced each time Compass reads your schedule, and deleted when you run forget_me.',
         PLAN,
         '4.2 (P4)',
       ),
