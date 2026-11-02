@@ -4,7 +4,7 @@
 
 This spec (stream S6, `infra`) owns all of the Terraform for re:Invent Compass, the owner-run deploy and set-up scripts, and the operations runbooks. The infrastructure provisions the serverless Compass API (CloudFront, WAF, API Gateway REST, two Lambdas, DynamoDB, Secrets Manager, observability) in the owner's personal AWS account, region us-east-1, through HCP Terraform with dynamic provider credentials. There are no AWS access keys anywhere.
 
-The approved build plan is the source of truth (sections 6, 7, 8 S6 row, 11.3 and 13). Decisions that shape this spec are recorded in ADR-001 (state in HCP Terraform), ADR-013 (edge: CloudFront, WAF and API Gateway REST), ADR-014 (Terraform in HCP with dynamic credentials), ADR-015 (retained resources), ADR-019 (Google Wallet key in Secrets Manager), ADR-020 (dev environment before prod) and ADR-021 (CloudFront flat-rate Free plan, proposed). Where this document and the build plan disagree, the plan wins.
+The approved build plan is the source of truth (sections 6, 7, 8 S6 row, 11.3 and 13). Decisions that shape this spec are recorded in ADR-001 (state in HCP Terraform), ADR-013 (edge: CloudFront, WAF and API Gateway REST), ADR-014 (Terraform in HCP with dynamic credentials), ADR-015 (retained resources), ADR-019 (Google Wallet key in Secrets Manager), ADR-020 (dev environment before prod) and ADR-021 (CloudFront flat-rate Free plan, proposed, later not adopted). Where this document and the build plan disagree, the plan wins.
 
 Ownership is strict. This spec owns `infra/**`, `scripts/**` and `docs/runbooks/**`. The one exception inside `infra/**` is `infra/modules/api/openapi.yaml`, which is a byte-identical copy owned by S0 (foundation-contracts). This spec references and consumes that file but never edits it. If a change is needed outside this ownership, it is written up as a note for the integrator and not applied here.
 
@@ -31,7 +31,7 @@ The schedule milestone (ADR-020, build plan section 9.3) is that the dev environ
 - **Web_ACL**: The AWS WAF web ACL created by Edge_Module, CLOUDFRONT scope, in us-east-1.
 - **Rest_Api**: The API Gateway REST API created by Api_Module from the OpenAPI file.
 - **Openapi_Copy**: The file `infra/modules/api/openapi.yaml`, an S0-owned byte-identical copy that Api_Module consumes but does not edit.
-- **Retained_Resource**: A resource carrying `prevent_destroy`: the Distribution, the DynamoDB table, the three secrets and the site bucket.
+- **Retained_Resource**: A resource carrying `prevent_destroy`: the Distribution, the DynamoDB table, the four secrets (three until the origin-verify secret was split out, infra design item 28) and the site bucket.
 - **Release_Script**: `scripts/release.sh`, run by the owner to deploy an environment.
 - **Bootstrap_Script**: `scripts/bootstrap.sh`, run by the owner to apply Bootstrap_Config once.
 - **Load_Secrets_Script**: `scripts/load-secrets.sh`, run by the owner to load certificate and key values into Secrets Manager.
