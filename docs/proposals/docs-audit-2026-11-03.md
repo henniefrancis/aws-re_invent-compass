@@ -11,6 +11,18 @@ Branch `docs/audit-2026-11-03`, cut from `origin/develop` at 742862a. Work done 
 - **Could not reach:** the live site (https://reinvent-compass.vegas), most external documentation hosts and the board. The session's network policy blocks them, so the live-site comparison, most external link checks and the board review are listed under "Could not verify".
 - **Needs the owner:** the AWS architecture image (not in the repo), 18 board placeholders, a site privacy change to approve, a NOTICE wording question, and the docs proposed for deletion (four tests and site content read some of them).
 
+## Gate results (3 November 2026, on this branch)
+
+| Check                                                                                                      | Result                                                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run build`, `lint`, `format:check`, `check:hash`, `check:placeholders`, `check:dash`, `check:catalog` | all pass                                                                                                                                                                                                               |
+| `npm test`                                                                                                 | 245 files, 3,025 tests passed; 100% statements (9769/9769), branches (5558/5558), functions, lines                                                                                                                     |
+| `npm run test:site`                                                                                        | 40 files, 453 tests passed; 100% statements (1296/1296), branches (941/941), functions, lines                                                                                                                          |
+| `npm run build:site`                                                                                       | pass                                                                                                                                                                                                                   |
+| `npm run e2e`                                                                                              | Only Chromium is installed here (build 1243; Playwright 1.64.1 expects 1248). The `desktop-chromium` profile run against that browser: 180 passed, 2 skipped. WebKit and Firefox (the other six profiles) were not run |
+
+The session runs Node 22.23.4; the project asks for Node 24 or later, so the CI run on `develop` is the final word.
+
 ## How to publish the wiki (after approval)
 
 Run these on the owner's machine once the PR is reviewed. They replace the current wiki content with the drafted pages.
