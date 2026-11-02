@@ -94,7 +94,7 @@ No browser opens, no sign-in happens and nothing is sent anywhere. Every result 
 
 You can run the whole server on made-up data too: set `COMPASS_MODE=simulated`.
 
-The showcase site will also run a click-through demo on any phone, with no install and no sign-in, at `https://reinvent-compass.vegas` (**coming soon**).
+The showcase site also runs a click-through demo on any phone, with no install and no sign-in, at [reinvent-compass.vegas/demo](https://reinvent-compass.vegas/demo).
 
 ### 2. Install the Kiro Power
 
@@ -126,7 +126,7 @@ Signed in with your Builder ID, Compass reads the live catalog and your real res
 
 To let Compass make changes, each one still approved by you first, set `COMPASS_ALLOW_WRITES=1` in the `env` of the Compass MCP server in your client's MCP settings. While writes are on, every schedule reply starts with "Writes are on". Only you should change this setting: the Power tells the agent never to. Details are in [packages/mcp-server/README.md](packages/mcp-server/README.md#read-only-by-default).
 
-Boarding passes in live mode need the production Compass API at `https://reinvent-compass.vegas`, which is **coming soon**.
+Boarding passes in live mode use the production Compass API at `https://reinvent-compass.vegas`.
 
 ## The 24 tools
 
@@ -325,7 +325,7 @@ flowchart LR
 **Key choices** (each one is an ADR in [docs/decisions](docs/decisions/README.md)):
 
 - **API Gateway REST behind CloudFront**, imported from the OpenAPI file with request validation. One WAF web ACL covers the site and the API. An origin-verify header shields the API Gateway URL.
-- **Contract first.** `contracts/compass-api.openapi.yaml` (15 operations) is the single source. Byte-identical copies are checked by SHA-256, TypeScript types are generated from it, and every Compass API response is validated against it in tests.
+- **Contract first.** `contracts/compass-api.openapi.yaml` (16 operations) is the single source. Byte-identical copies are checked by SHA-256, TypeScript types are generated from it, and every Compass API response is validated against it in tests.
 - **No stored pass files.** Passes are signed on demand from the pass record, so there is no file store to clean up.
 - **Expiry in code, TTL only for clean-up**, because DynamoDB TTL can take days.
 - **Two Lambdas** (arm64, Node.js 24) so the attendee API and the Apple device service each get least privilege.

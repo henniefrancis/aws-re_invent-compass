@@ -18,9 +18,14 @@ npm run test:site        # showcase site unit tests
 npm run lint
 npm run format:check
 npm run check:dash
+npm run check:hash       # the contract copies match byte for byte
+npm run check:placeholders
+npm run check:catalog
+npm run build:site
+npm run e2e              # browser tests (needs the Playwright browsers)
 ```
 
-Everything runs offline in simulated mode (`COMPASS_MODE=simulated`). Tests never call the live AWS Events API, Apple, Google or AWS.
+These are the checks CI runs in `.github/workflows/check.yml` and `e2e.yml`. Everything runs offline in simulated mode (`COMPASS_MODE=simulated`). Tests never call the live AWS Events API, Apple, Google or AWS.
 
 ## Rules
 
