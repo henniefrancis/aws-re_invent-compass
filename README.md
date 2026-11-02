@@ -8,6 +8,8 @@ It ships as a Kiro Power plus a local MCP server that any desktop MCP client can
 
 Built for the re:Invent Catalog API Builder Challenge (September to November 2026).
 
+The full documentation is in the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki): a user guide, the architecture, the key decisions, a developer guide, operations and reference pages.
+
 > **Status: built, version 0.1.0, not yet released.** The code, tests and infrastructure are in this repository, and the code is set to version 0.1.0. These parts are **coming soon**: the production site and Compass API at `https://reinvent-compass.vegas`, the npm package `reinvent-compass` (published after the production deploy), the Builder Center article and the demo video. Links will be added here when they are live.
 
 ## Contents
@@ -109,7 +111,7 @@ Both forms are listed because it is not yet recorded which one Kiro accepts. A l
 
 Then open your own project in Kiro and say: "Plan my re:Invent."
 
-**Other MCP clients.** Claude Desktop, VS Code and the Kiro CLI can run the same server with `npx --yes reinvent-compass@0.1.0`. The setup for each is in [packages/mcp-server/README.md](packages/mcp-server/README.md). Hooks are Kiro-only, but the guardrail runs inside the server in every client.
+**Other MCP clients.** Claude Desktop, VS Code and the Kiro CLI can run the same server with `npx --yes reinvent-compass@0.1.0`. The setup for each is in [Getting started](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Getting-Started). Hooks are Kiro-only, but the guardrail runs inside the server in every client.
 
 ### 3. Live mode (AWS Builder ID)
 
@@ -124,7 +126,7 @@ Without `COMPASS_MODE=simulated`, Compass works on your real re:Invent schedule.
 
 Signed in with your Builder ID, Compass reads the live catalog and your real reservations, standby list and layovers. It never changes them unless you turn writes on yourself. Until then the five schedule tools run the guardrail and reply with what they would have done, and every Events API write is refused before any request is sent, so nothing can change your schedule by accident. Boarding passes still work, because they live on the Compass pass service.
 
-To let Compass make changes, each one still approved by you first, set `COMPASS_ALLOW_WRITES=1` in the `env` of the Compass MCP server in your client's MCP settings. While writes are on, every schedule reply starts with "Writes are on". Only you should change this setting: the Power tells the agent never to. Details are in [packages/mcp-server/README.md](packages/mcp-server/README.md#read-only-by-default).
+To let Compass make changes, each one still approved by you first, set `COMPASS_ALLOW_WRITES=1` in the `env` of the Compass MCP server in your client's MCP settings. While writes are on, every schedule reply starts with "Writes are on". Only you should change this setting: the Power tells the agent never to. Details are in [Read-only by default](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Read-Only-By-Default).
 
 Boarding passes in live mode use the production Compass API at `https://reinvent-compass.vegas`.
 
@@ -322,7 +324,7 @@ flowchart LR
 
 **Trust boundaries.** Your computer sends only the access token and Events API calls to AWS Events. If you connect GitHub, it sends the GitHub tokens only to GitHub. It sends only the ID token and printable pass fields to the Compass API, never the access token. The phone sends the hand-off id and Apple's per-pass token.
 
-**Key choices** (each one is an ADR in [docs/decisions](docs/decisions/README.md)):
+**Key choices** (each one is explained in [Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions)):
 
 - **API Gateway REST behind CloudFront**, imported from the OpenAPI file with request validation. One WAF web ACL covers the site and the API. An origin-verify header shields the API Gateway URL.
 - **Contract first.** `contracts/compass-api.openapi.yaml` (16 operations) is the single source. Byte-identical copies are checked by SHA-256, TypeScript types are generated from it, and every Compass API response is validated against it in tests.
@@ -335,13 +337,13 @@ flowchart LR
 
 Compass was built spec first, with [Kiro](https://kiro.dev).
 
-- **Plan, then steering.** An approved build plan ([docs/architecture/build-plan.md](docs/architecture/build-plan.md)) and four steering files ([.kiro/steering](.kiro/steering)) load into every Kiro session, so every stream works from the same product rules, stack and voice.
-- **Eight specs, parallel streams.** The work is split into eight Kiro specs, S0 to S7, each with its own `requirements.md`, `design.md` and `tasks.md` in [.kiro/specs](.kiro/specs). Each stream ran in its own git worktree and branch, with clear file ownership so no two streams edited the same file. The shared contracts were locked on day one ([ADR-025](docs/decisions/ADR-025-early-contract-lock.md)) so the other streams could start at once.
-- **When the Kiro credits ran out.** Kiro wrote the S0, S1, S2, S4 and S6 specs and built S0 and S1 tasks 1 to 8. Then the owner's Kiro credits ran out on 17 October. From there, Claude's dev-team agents built the rest from the same Kiro specs, one agent per worktree, under the same steering and review gates. The S3, S5 and S7 specs were written in Kiro's format. The specs and their task checkboxes stayed the single record of what was done. The full story is in [KIRO-SPEC-PROMPTS.md](KIRO-SPEC-PROMPTS.md).
-- **Reviews.** Every stream passed QA and security review before it was merged, and no branch merged with an open High or Critical finding. Accepted residual risks are recorded in [ADR-027](docs/decisions/ADR-027-accepted-residual-risks.md).
+- **Plan, then steering.** An approved build plan and four steering files ([Steering and hooks](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Steering-and-Hooks)) load into every Kiro session, so every stream works from the same product rules, stack and voice.
+- **Eight specs, parallel streams.** The work is split into eight Kiro specs, S0 to S7, each with its own `requirements.md`, `design.md` and `tasks.md` in [.kiro/specs](.kiro/specs) ([Kiro specs](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Kiro-Specs)). Each stream ran in its own git worktree and branch, with clear file ownership so no two streams edited the same file. The shared contracts were locked on day one ([early contract lock](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Delivery-and-Tooling#early-contract-lock)) so the other streams could start at once.
+- **When the Kiro credits ran out.** Kiro wrote the S0, S1, S2, S4 and S6 specs and built S0 and S1 tasks 1 to 8. Then the owner's Kiro credits ran out on 17 October. From there, Claude's dev-team agents built the rest from the same Kiro specs, one agent per worktree, under the same steering and review gates. The S3, S5 and S7 specs were written in Kiro's format. The specs and their task checkboxes stayed the single record of what was done. The full story is in [How it was built](https://github.com/henniefrancis/aws-re_invent-compass/wiki/How-It-Was-Built).
+- **Reviews.** Every stream passed QA and security review before it was merged, and no branch merged with an open High or Critical finding. Accepted residual risks are recorded in [Accepted residual risks](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Security-and-Privacy#accepted-residual-risks).
 - **100% coverage.** Unit tests (vitest) cover 100% of lines, branches, functions and statements, with named exclusions only. The showcase site adds Playwright and axe tests across seven device profiles. Terraform has native tests with mock providers, plus tflint and Trivy.
-- **Made-up data in public.** Tests and demos use a deterministic synthetic catalog of 120 sessions in the real API shape ([ADR-016](docs/decisions/ADR-016-synthetic-catalog.md)). The product itself always reads the live API.
-- **The whole build, in public.** Every task from kickoff on 15 October 2026 to submission is a card on the [project board](https://github.com/users/henniefrancis/projects/3), with its workstream and real date, and the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki) holds full copies of every doc, spec and decision for easy reading.
+- **Made-up data in public.** Tests and demos use a deterministic synthetic catalog of 120 sessions in the real API shape ([made-up sessions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Product-and-Scope#made-up-sessions-for-tests-and-the-public-demo)). The product itself always reads the live API.
+- **The whole build, in public.** Every task from kickoff on 15 October 2026 to submission is a card on the [project board](https://github.com/users/henniefrancis/projects/3), with its workstream and real date, and the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki) documents the whole project for easy reading.
 
 ## Repository layout
 
@@ -361,7 +363,7 @@ data/venues.json       Venues and researched walking times, each with its source
 fixtures/              Synthetic catalog and API fixtures
 scripts/               Owner-run release, bootstrap and secret-loading scripts
 spikes/                Day-one spike scripts
-docs/                  Build plan, ADRs, runbooks, hackathon rules, the story and the article draft
+docs/                  Build plan, ADRs, runbooks, hackathon rules, the story and article screenshots
 ```
 
 ## Development
@@ -375,9 +377,9 @@ npm run format:check
 npm run check:dash       # no em or en dashes anywhere
 ```
 
-The site, the pass-service Lambdas and the infrastructure each have their own README: [site/README.md](site/README.md), [packages/pass-service/README.md](packages/pass-service/README.md) and [infra/README.md](infra/README.md). Live tests against the real Events API run only on the owner's machine with `COMPASS_LIVE_TESTS=1`. CI never calls the live API.
+The [developer guide](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Build-and-Test) covers building, testing and the [quality gate](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Quality-Gate). The site, the pass-service Lambdas and the infrastructure each also have their own README: [site/README.md](site/README.md), [packages/pass-service/README.md](packages/pass-service/README.md) and [infra/README.md](infra/README.md). Live tests against the real Events API run only on the owner's machine with `COMPASS_LIVE_TESTS=1`. CI never calls the live API.
 
-Contributions are welcome. Please keep to the voice in [.kiro/steering/product.md](.kiro/steering/product.md): plain English, short sentences, and no em or en dashes.
+Contributions are welcome. Please read [Contributing](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Contributing) and keep to the voice in [.kiro/steering/product.md](.kiro/steering/product.md): plain English, short sentences, and no em or en dashes.
 
 ## Licence
 
