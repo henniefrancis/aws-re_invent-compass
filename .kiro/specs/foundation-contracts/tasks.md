@@ -361,6 +361,9 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - [x] 32. The creator story moves next to the site (owner request of 3 November)
   - `docs/story/creator-and-inspiration.md` is the owner's approved wording for The Creator and The Inspiration pages; the site quotes it and `creator.test.ts` checks every paragraph word for word. It moves to `site/content/creator-and-inspiration.md` with no change to its text; `about.ts`, `inspiration.ts`, `FILE_SOURCES`, the test, `site/README.md` and the steering structure follow. No visible change on the site. Site tests and the root gate
 
+- [x] 33. The infra leak scan covers `wiki/` (security review of 3 November)
+  - The runbooks now live in `wiki/`, so `infra/tests/static/lib.mjs` adds `wiki/` to the owned prefixes and the `git ls-files` pathspec, and `leakage.test.mjs` asserts the scan reaches it. A pasted account id, account-bearing ARN or email in a wiki page now fails the infra static tests before it can be published
+
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.
 - Each top-level task (1 through 14) ends with a commit sub-task. Commit locally only after that task's tests pass, using Conventional Commits with `foundation-contracts` as the scope. The first commit (1.6) also includes `.kiro/specs/foundation-contracts/`. Never push, merge, tag or open a PR: the integrator does that after review.
