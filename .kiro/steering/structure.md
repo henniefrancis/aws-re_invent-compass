@@ -39,6 +39,7 @@ aws-re_invent-compass/
 │   ├── skills/                   #   plan-my-week, first-timer-guide, install-hooks
 │   └── hook-templates/           #   PreToolUse guardrail (copied into the attendee's .kiro/hooks); the PostToolUse sync hook was removed (ADR-024)
 ├── site/                         # S7: Angular 22 showcase site (story, demo, install, privacy, /board)
+│   └── content/                  #   the owner's approved words for The Creator and The Inspiration
 ├── infra/                        # S6: Terraform only (us-east-1, HCP Terraform)
 │   ├── bootstrap/                #   HCP OIDC provider and plan/apply roles (owner runs once)
 │   ├── modules/                  #   site, edge, api (openapi.yaml copy owned by S0), data, secrets, observability
@@ -54,12 +55,7 @@ aws-re_invent-compass/
 │   └── .raw/                     # git-ignored: the owner's real recordings (SP5)
 ├── docs/
 │   ├── architecture/             # build-plan.md (mirror of the approved plan)
-│   ├── decisions/                # ADR-001 onwards
-│   ├── runbooks/                 # S6: release, rollback, secrets, Google class, kill switch
-│   ├── proposals/                # wording proposals
-│   ├── story/                    # creator and inspiration
-│   ├── article/                  # Claude: Builder Center post drafts and screenshots
-│   └── demo/                     # Claude and owner: video script
+│   └── hackathon-rules.md        # the contest rules and how each is met
 ├── .github/                      # S0: check.yml, e2e.yml, publish.yml, dependabot.yml
 ├── CONCEPT.md, README.md, CONTRIBUTING.md, SECURITY.md, LICENSE, NOTICE
 └── package.json, package-lock.json   # S0; after day 1 only the integrator changes them
@@ -75,5 +71,5 @@ aws-re_invent-compass/
 - **Imports:** packages import each other only through declared subpath exports (`@compass/core/rules`), never deep relative paths across packages.
 - **Tests:** in each package's `test/` folder, mirroring `src/`, named `<module>.test.ts`.
 - **Fixtures:** `fixtures/api/<operation>/<scenario>.json`, for example `fixtures/api/reserve-sessions/partial-failure.json`. Never commit real recordings.
-- **Decisions:** a choice that changes steering gets an ADR in `docs/decisions/` and a steering update in the same change.
+- **Decisions:** a choice that changes steering gets a decision on the wiki (`wiki/Decisions-*.md`, published to the GitHub wiki) and a steering update in the same change.
 - **Commits:** Conventional Commits with the spec as scope (`feat(events-client): add pagination`). No em dashes or en dashes anywhere.

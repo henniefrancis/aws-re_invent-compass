@@ -202,7 +202,7 @@ repeat-inserts passes for made-up sessions.
   the spike prints `verified`; otherwise `oidc` with `ID_TOKEN_ISSUER` and `ID_TOKEN_JWKS_URI`.
 - SP3: `PASSKIT_WEB_SERVICE_PATH` (default `/api/passkit`), `APNS_PUSH_TYPE` (unset, then `background`,
   then `alert` if no fetch arrives) and `APNS_ENABLED=false` as the fallback. Result (19 October, real
-  iPhone against dev, `docs/spikes-results.md`): the defaults work. The path joins with one slash,
+  iPhone against dev, the day-one spikes on https://github.com/henniefrancis/aws-re_invent-compass/wiki/How-It-Was-Built): the defaults work. The path joins with one slash,
   pushes arrive with `APNS_PUSH_TYPE` unset and `apns-topic` equal to the Pass Type ID, Wallet sends
   `If-Modified-Since`, and `APNS_ENABLED` stays `true`. Binary downloads through the edge needed `*/*`
   in the API's binary media types.

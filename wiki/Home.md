@@ -25,7 +25,7 @@ The time that matters at re:Invent is not "Starts 10:30". A reserved seat is hel
 - **Attendees**, first-timers above all: start with [Getting started](Getting-Started), then the user guide ([Plan](User-Guide-Plan), [Board](User-Guide-Board), [Fly](User-Guide-Fly)).
 - **Architects**: start with the [Architecture overview](Architecture-Overview) and the [Key decisions](Key-Decisions).
 - **Developers**: start with the [Repository layout](Repository-Layout) and [Build and test](Build-and-Test).
-- **Operators**: start with [Operations](Operations).
+- **Operators**: start with [Operations](Operations), then the [Runbooks](Runbooks).
 
 ## Quick links
 

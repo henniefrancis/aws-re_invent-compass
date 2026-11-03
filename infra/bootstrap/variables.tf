@@ -97,7 +97,7 @@ variable "create_oidc_provider" {
 }
 
 variable "register_domain" {
-  description = "Register hosted_zone_name with Route 53 Domains and keep it renewed (domain.tf, ADR-031). A purchase: the owner reads the plan before applying. False reads an existing hosted zone instead. If the domain is already registered in this account, import it rather than registering again (docs/runbooks/release.md)."
+  description = "Register hosted_zone_name with Route 53 Domains and keep it renewed (domain.tf, ADR-031). A purchase: the owner reads the plan before applying. False reads an existing hosted zone instead. If the domain is already registered in this account, import it rather than registering again (https://github.com/henniefrancis/aws-re_invent-compass/wiki/Release)."
   type        = bool
   default     = false
 }

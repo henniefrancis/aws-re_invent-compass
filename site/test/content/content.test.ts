@@ -358,15 +358,27 @@ describe('links and footer', () => {
     ]);
   });
 
-  test('documentation and licence links all point into the repository (tasks 28)', () => {
+  test('documentation and licence links all point into the repository or its wiki (tasks 28 and 49)', () => {
     const docs = documentationLinks(SITE_LINKS);
     expect(docs.map((d) => d.label)).toEqual([
       'README',
-      'Build plan',
-      'Architecture decision records',
+      'Get started',
+      'User guide',
+      'Architecture',
+      'Key decisions',
+      'Developer guide',
+      'Operations',
       'Runbooks',
+      'How it was built',
+      'Reference',
       'Kiro specs',
     ]);
+    // Each wiki section opens on the first page under its sidebar heading.
+    const sidebar = readFileSync(join(REPO_ROOT, 'wiki/_Sidebar.md'), 'utf8');
+    for (const doc of docs.filter((d) => d.href.includes('/wiki/'))) {
+      const page = doc.href.slice(doc.href.lastIndexOf('/') + 1);
+      expect(sidebar, doc.label).toContain(`](${page})`);
+    }
     for (const link of [...docs, ...licenceLinks(SITE_LINKS)]) {
       expect(link.href.startsWith(SITE_LINKS.repository), link.label).toBe(true);
     }

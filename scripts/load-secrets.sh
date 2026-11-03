@@ -32,7 +32,7 @@
 #         value being retired, so the edge accepts both while CloudFront rolls
 #         over. The old value comes from --previous-file, the local file the owner
 #         still holds from the last load; the secret is never read back. See
-#         docs/runbooks/secrets.md for the rotation order.
+#         https://github.com/henniefrancis/aws-re_invent-compass/wiki/Secrets for the rotation order.
 # app     generates the pepper locally (32 random bytes, base64url) and writes
 #         compass/<env>/app with the keys pepper and pepperId (the pass-service
 #         rejects a secret without both). The first load uses pepperId p1. The

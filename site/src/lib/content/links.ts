@@ -190,11 +190,11 @@ export function securityPolicyUrl(links: SiteLinks): string {
   return `${links.repository}/blob/main/SECURITY.md`;
 }
 
-/** The Documentation_Page links (Requirement 26), all inside the repository. */
+/** The Documentation_Page links (Requirement 26): the README, one link per wiki section (the wiki sidebar headings) and the Kiro specs (task 49). */
 export function documentationLinks(
   links: SiteLinks,
 ): readonly { readonly label: string; readonly href: string; readonly description: string }[] {
-  const tree = `${links.repository}/tree/main`;
+  const wiki = `${links.repository}/wiki`;
   return [
     {
       label: 'README',
@@ -202,23 +202,53 @@ export function documentationLinks(
       description: 'What Compass does, how to install it and how to run it',
     },
     {
-      label: 'Build plan',
-      href: `${links.repository}/blob/main/docs/architecture/build-plan.md`,
-      description: 'The architecture, the streams and how they fit together',
+      label: 'Get started',
+      href: `${wiki}/Getting-Started`,
+      description: 'Three ways to try Compass, and short answers to common questions',
     },
     {
-      label: 'Architecture decision records',
-      href: `${tree}/docs/decisions`,
+      label: 'User guide',
+      href: `${wiki}/User-Guide-Plan`,
+      description: 'Plan your week, board your sessions and get to every seat on time',
+    },
+    {
+      label: 'Architecture',
+      href: `${wiki}/Architecture-Overview`,
+      description: 'What Compass is made of, where each part runs and how the parts connect',
+    },
+    {
+      label: 'Key decisions',
+      href: `${wiki}/Key-Decisions`,
       description: 'Every design decision, with the reason for it',
     },
     {
+      label: 'Developer guide',
+      href: `${wiki}/Repository-Layout`,
+      description: 'The repository layout, how to build and test, and how to contribute',
+    },
+    {
+      label: 'Operations',
+      href: `${wiki}/Operations`,
+      description: 'The environments, who runs what and the ground rules',
+    },
+    {
       label: 'Runbooks',
-      href: `${tree}/docs/runbooks`,
-      description: 'How to deploy, release, roll back and tear down',
+      href: `${wiki}/Runbooks`,
+      description: 'How to release, watch, roll back, handle secrets and tear down',
+    },
+    {
+      label: 'How it was built',
+      href: `${wiki}/How-It-Was-Built`,
+      description: 'The build story, the Kiro specs and the steering',
+    },
+    {
+      label: 'Reference',
+      href: `${wiki}/MCP-Tools`,
+      description: 'The MCP tools, the pass API, Events API coverage and the glossary',
     },
     {
       label: 'Kiro specs',
-      href: `${tree}/.kiro/specs`,
+      href: `${links.repository}/tree/main/.kiro/specs`,
       description: 'The requirements, design and tasks each part was built from',
     },
   ];

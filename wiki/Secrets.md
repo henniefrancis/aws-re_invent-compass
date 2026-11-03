@@ -139,6 +139,7 @@ node scripts/google-wallet-class.mjs --service-account <key file> --issuer-id <i
 
 ## Related pages
 
+- [Runbooks](Runbooks)
 - [Release](Release)
 - [Rollback](Rollback)
 - [Security](Security)

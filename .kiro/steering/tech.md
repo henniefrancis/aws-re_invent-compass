@@ -4,7 +4,7 @@ inclusion: always
 
 # Technology
 
-The approved build plan is the source of truth: #[[file:docs/architecture/build-plan.md]]. Decisions are in `docs/decisions/` (ADR-001 to ADR-037). If this file and the plan disagree, the plan wins; fix this file in the same change.
+The approved build plan is the source of truth: #[[file:docs/architecture/build-plan.md]]. Decisions are on the wiki, on the Key decisions pages (`wiki/Key-Decisions.md` and `wiki/Decisions-*.md` in this repo). If this file and the plan disagree, the plan wins; fix this file in the same change.
 
 ## Stack (ADR-006)
 

@@ -8,7 +8,9 @@
 <ul>
   @for (file of files; track file.href) {
     <li>
-      <a [href]="file.href" rel="noopener noreferrer">{{ file.label }}</a>
+      <a [href]="file.href" target="_blank" rel="noopener noreferrer"
+        >{{ file.label }}<span class="visually-hidden"> (opens in a new tab)</span></a
+      >
     </li>
   }
 </ul>

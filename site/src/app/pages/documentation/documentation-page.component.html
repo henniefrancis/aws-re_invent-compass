@@ -1,9 +1,13 @@
 <h1 tabindex="-1">Documentation</h1>
-<p class="lead">Everything about how Compass is built and run lives in the repository.</p>
+<p class="lead">
+  Everything about how Compass is built and run lives in the repository and its wiki.
+</p>
 <ul class="doc-list">
   @for (link of links; track link.href) {
     <li class="card">
-      <a class="doc-list__link" [href]="link.href" rel="noopener noreferrer">{{ link.label }}</a>
+      <a class="doc-list__link" [href]="link.href" target="_blank" rel="noopener noreferrer"
+        >{{ link.label }}<span class="visually-hidden"> (opens in a new tab)</span></a
+      >
       <p>{{ link.description }}</p>
     </li>
   }

@@ -1,7 +1,8 @@
 // Shared helpers for the static scans of the infra stream (S6).
 //
 // The scans run offline with Node builtins only: node --test infra/tests/static
-// They read the files this stream owns (infra/**, scripts/**, docs/runbooks/**)
+// They read the files this stream owns (infra/**, scripts/**) and the wiki
+// source (wiki/**), which holds the runbooks since foundation-contracts task 26,
 // and never touch AWS, HCP Terraform or any credential.
 
 import { execFileSync } from 'node:child_process';
@@ -12,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 export const repoRoot = resolve(here, '..', '..', '..');
 
-const OWNED_PREFIXES = ['infra/', 'scripts/', 'docs/runbooks/'];
+const OWNED_PREFIXES = ['infra/', 'scripts/', 'wiki/'];
 const BINARY_EXTENSIONS = new Set(['.zip', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf']);
 
 /**
@@ -33,7 +34,7 @@ export function listOwnedFiles() {
       '--',
       'infra',
       'scripts',
-      'docs/runbooks',
+      'wiki',
     ],
     { cwd: repoRoot, encoding: 'utf8' },
   );
