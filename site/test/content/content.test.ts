@@ -358,14 +358,20 @@ describe('links and footer', () => {
     ]);
   });
 
-  test('documentation and licence links all point into the repository (tasks 28)', () => {
+  test('documentation and licence links all point into the repository or its wiki (tasks 28 and 49)', () => {
     const docs = documentationLinks(SITE_LINKS);
     expect(docs.map((d) => d.label)).toEqual([
       'README',
+      'Wiki',
       'Build plan',
-      'Architecture decision records',
-      'Runbooks',
+      'Key decisions',
+      'Operations',
       'Kiro specs',
+    ]);
+    expect(docs.filter((d) => d.href.includes('/wiki')).map((d) => d.href)).toEqual([
+      `${SITE_LINKS.repository}/wiki`,
+      `${SITE_LINKS.repository}/wiki/Key-Decisions`,
+      `${SITE_LINKS.repository}/wiki/Operations`,
     ]);
     for (const link of [...docs, ...licenceLinks(SITE_LINKS)]) {
       expect(link.href.startsWith(SITE_LINKS.repository), link.label).toBe(true);

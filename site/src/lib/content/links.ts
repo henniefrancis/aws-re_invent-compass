@@ -190,11 +190,12 @@ export function securityPolicyUrl(links: SiteLinks): string {
   return `${links.repository}/blob/main/SECURITY.md`;
 }
 
-/** The Documentation_Page links (Requirement 26), all inside the repository. */
+/** The Documentation_Page links (Requirement 26), all inside the repository and its wiki (task 49). */
 export function documentationLinks(
   links: SiteLinks,
 ): readonly { readonly label: string; readonly href: string; readonly description: string }[] {
   const tree = `${links.repository}/tree/main`;
+  const wiki = `${links.repository}/wiki`;
   return [
     {
       label: 'README',
@@ -202,18 +203,23 @@ export function documentationLinks(
       description: 'What Compass does, how to install it and how to run it',
     },
     {
+      label: 'Wiki',
+      href: wiki,
+      description: 'The developer and architect documentation, page by page',
+    },
+    {
       label: 'Build plan',
       href: `${links.repository}/blob/main/docs/architecture/build-plan.md`,
       description: 'The architecture, the streams and how they fit together',
     },
     {
-      label: 'Architecture decision records',
-      href: `${tree}/docs/decisions`,
+      label: 'Key decisions',
+      href: `${wiki}/Key-Decisions`,
       description: 'Every design decision, with the reason for it',
     },
     {
-      label: 'Runbooks',
-      href: `${tree}/docs/runbooks`,
+      label: 'Operations',
+      href: `${wiki}/Operations`,
       description: 'How to deploy, release, roll back and tear down',
     },
     {
