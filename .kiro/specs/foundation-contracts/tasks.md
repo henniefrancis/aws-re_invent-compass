@@ -355,6 +355,9 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - [x] 30. The demo video script leaves `docs/` (owner request of 3 November)
   - Nothing in the build reads `docs/demo/demo-script.md`; it stayed only while the owner recorded the videos. It is deleted (git history keeps it) and the steering structure no longer lists `docs/demo/`
 
+- [ ] 31. Move the creator story and the hackathon rules out of `docs/` after the submission (owner request of 3 November; not before 6 November)
+  - `docs/story/creator-and-inspiration.md` holds the owner's approved words for The Creator and The Inspiration pages (`about.ts` and `inspiration.ts` quote it, `creator.test.ts` reads it): move it next to the site (for example `site/content/creator-and-inspiration.md`) and update both sources, `FILE_SOURCES` and the test. `docs/hackathon-rules.md` is the submission checklist and the source of the demo data rule on the Disclaimer and Privacy pages (`content.test.ts` checks its wording): once judging ends, turn it into a short Hackathon page in `wiki/` and re-source those blocks to it. With task 28 done as well, `docs/` is gone. Full gate, site tests and owner review on the local preview
+
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.
 - Each top-level task (1 through 14) ends with a commit sub-task. Commit locally only after that task's tests pass, using Conventional Commits with `foundation-contracts` as the scope. The first commit (1.6) also includes `.kiro/specs/foundation-contracts/`. Never push, merge, tag or open a PR: the integrator does that after review.
