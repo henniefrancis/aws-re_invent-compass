@@ -11,7 +11,7 @@ export const INDEPENDENT_NOTICE =
 export const SEAT_RULE =
   'Your reserved seat is held until 10 minutes before the session starts. After that, it can go to the walk-up line.';
 export const PLANS_NOTICE =
-  'Compass never changes your schedule. Make changes in the official re:Invent app. If you cancel a session, this pass is voided at the next sync.';
+  'By default, Compass never changes your schedule: make changes in the official re:Invent app. If you turn on write mode, Compass changes it only after you approve each change. If you cancel a session, this pass is voided at the next sync.';
 export const PRIVACY_NOTICE =
   'This pass holds only session details. Remove it from Wallet at any time. To delete everything Compass keeps, ask Compass to forget you.';
 
