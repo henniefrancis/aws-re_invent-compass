@@ -1,5 +1,3 @@
-# Contributing
-
 _For developers: how to propose and make a change to re:Invent Compass, from the spec to the merge, and the rules every change follows._
 
 Thank you for your interest. re:Invent Compass is an unofficial community project for first-time AWS re:Invent attendees and is not affiliated with AWS. This page is the wiki version of [CONTRIBUTING.md](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/CONTRIBUTING.md), with more detail on the workflow.

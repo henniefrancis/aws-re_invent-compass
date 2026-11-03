@@ -1,5 +1,3 @@
-# Pass API
-
 _For developers and architects: every operation of the Compass pass API, how each one is authorised, what it returns, the limits it enforces and the headers it sets._
 
 The Pass API is the [Compass API](Glossary#compass-api): a small serverless service that signs unofficial Apple Wallet and Google Wallet [boarding passes](Glossary#boarding-pass), runs Apple's [PassKit](Glossary#passkit) web service for pass updates, and serves the short-lived [hand-off](Glossary#hand-off) to your phone. The MCP server is its main client.

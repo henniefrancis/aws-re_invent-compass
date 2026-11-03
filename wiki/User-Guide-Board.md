@@ -1,5 +1,3 @@
-# User guide: Board
-
 _For attendees: how to issue your unofficial boarding passes, what each pass shows, and how to move them to your phone._
 
 Board is the second of the three acts ([Plan](User-Guide-Plan), Board, [Fly](User-Guide-Fly)). You issue passes on your computer, then a short-lived link or QR code moves them to your phone.
@@ -56,18 +54,18 @@ FLIGHT NAME sits above TERMINAL and GATE. The pass is black with white values an
 
 In this order, with a row left out when there is no data for it:
 
-| Label                  | Text                                                                                                                                                              |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ABOUT`                | "re:Invent Compass is an independent community project, not affiliated with AWS or AWS re:Invent. It is an entry in the re:Invent Catalog API Builder Challenge." |
-| `UNOFFICIAL PASS`      | "This is not a ticket. Your re:Invent badge is your official ticket. Bring it to every session."                                                                  |
-| `BOARDING CLOSES`      | "Your reserved seat is held until 10 minutes before the session starts. After that, it can go to the walk-up line."                                               |
-| `ROOM`                 | The full room text, for example "Level 1, Academy 409".                                                                                                           |
-| `WALK FROM PREVIOUS`   | For example "30 min from Caesars Forum", when there is a session or layover before it within 12 hours.                                                            |
-| `NEXT SESSION`         | For example "DAT302 at Thu 13:05, The Venetian, 30 min walk", when there is a next reserved session within 12 hours.                                              |
-| `NAME`                 | Only when a name is supplied. The Compass tools in version 0.1.0 do not supply one.                                                                               |
-| `TIMES`                | For example "All times are Pacific Time."                                                                                                                         |
-| `IF YOUR PLANS CHANGE` | "Compass never changes your schedule. Make changes in the official re:Invent app. If you cancel a session, this pass is voided at the next sync."                 |
-| `PRIVACY`              | "This pass holds only session details. Remove it from Wallet at any time. To delete everything Compass keeps, ask Compass to forget you."                         |
+| Label                  | Text                                                                                                                                                                                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ABOUT`                | "re:Invent Compass is an independent community project, not affiliated with AWS or AWS re:Invent. It is an entry in the re:Invent Catalog API Builder Challenge."                                                                               |
+| `UNOFFICIAL PASS`      | "This is not a ticket. Your re:Invent badge is your official ticket. Bring it to every session."                                                                                                                                                |
+| `BOARDING CLOSES`      | "Your reserved seat is held until 10 minutes before the session starts. After that, it can go to the walk-up line."                                                                                                                             |
+| `ROOM`                 | The full room text, for example "Level 1, Academy 409".                                                                                                                                                                                         |
+| `WALK FROM PREVIOUS`   | For example "30 min from Caesars Forum", when there is a session or layover before it within 12 hours.                                                                                                                                          |
+| `NEXT SESSION`         | For example "DAT302 at Thu 13:05, The Venetian, 30 min walk", when there is a next reserved session within 12 hours.                                                                                                                            |
+| `NAME`                 | Only when a name is supplied. The Compass tools in version 0.1.0 do not supply one.                                                                                                                                                             |
+| `TIMES`                | For example "All times are Pacific Time."                                                                                                                                                                                                       |
+| `IF YOUR PLANS CHANGE` | "By default, Compass never changes your schedule: make changes in the official re:Invent app. If you turn on write mode, Compass changes it only after you approve each change. If you cancel a session, this pass is voided at the next sync." |
+| `PRIVACY`              | "This pass holds only session details. Remove it from Wallet at any time. To delete everything Compass keeps, ask Compass to forget you."                                                                                                       |
 
 The fixed texts are in [packages/pass-service/src/apple/pass-texts.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/pass-service/src/apple/pass-texts.ts).
 

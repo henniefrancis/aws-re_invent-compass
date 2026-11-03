@@ -1,5 +1,3 @@
-# Events API coverage
-
 _For developers and architects: how Compass uses each of the 12 operations of the AWS re:Invent Event Catalog API, how the client behaves on the wire, and why the catalog is searched on your machine._
 
 The [Events API](Glossary#events-api) is the AWS re:Invent 2026 Event Catalog API at `https://api.awsevents.com/v1`. Its OpenAPI document is committed as [packages/contracts/events-api.openapi.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/contracts/events-api.openapi.json) (see [Contracts](Contracts)). Compass calls it from the attendee's own machine, through the local [MCP server](Glossary#mcp-server), with the attendee's own sign-in. Every call is scoped to the event id `reinvent2026`.

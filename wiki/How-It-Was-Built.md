@@ -1,5 +1,3 @@
-# How it was built
-
 _For developers and architects: how re:Invent Compass went from an idea on 15 October 2026 to a live service on 31 October 2026, who built what, and how the work was kept safe._
 
 re:Invent Compass was built spec first, with [Kiro](Glossary#kiro). Every piece of the product started as a [Kiro spec](Glossary#kiro-spec): a requirements file, a design file and a task list. Four [steering](Glossary#steering) files gave every session the same product rules, stack and voice. The work ran as eight parallel streams, one spec each, and every stream passed a QA and security review before it was merged.
@@ -96,13 +94,13 @@ A stream was done only when it met the definition of done in the workflow steeri
 4. A short README for what it built, plus any runbook the owner needs.
 5. Then the review gate: QA and security review the branch, and the builder fixes findings until no High or Critical finding is open.
 
-No branch merged with an open High or Critical finding. A few residual risks that were not worth closing in code for a hackathon project were accepted by the owner in writing, so the release gate could check each one (see [Decisions: security and privacy](Decisions-Security-and-Privacy)). Before release, a technical account manager review gave the Go/No-Go [board: G01] and a CTO review signed the work off. The final reviews ran on 29 October.
+No branch merged with an open High or Critical finding. A few residual risks that were not worth closing in code for a hackathon project were accepted by the owner in writing, so the release gate could check each one (see [Decisions: security and privacy](Decisions-Security-and-Privacy)). Before release, a technical account manager review gave the Go/No-Go ([G01](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290044068)) and a CTO review signed the work off. The final reviews ran on 29 October.
 
 ### Release to prod (31 October 2026)
 
 [Release cards](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Release%22)
 
-On 31 October the owner merged `develop` into `main` (pull requests #2, #3 and #4), ran the release script against prod from `main`, and tagged `v0.1.0` after prod answered its health check. The prod preconditions (the prod Google key and class, the Apple certificate check and the workspace secrets) were their own gate [board: G03]. The first prod apply surfaced two small fixes, both written back into the infrastructure spec as tasks: the apply role may tag CloudFront functions, and the release script builds the TypeScript workspace first.
+On 31 October the owner merged `develop` into `main` (pull requests #2, #3 and #4), ran the release script against prod from `main`, and tagged `v0.1.0` after prod answered its health check. The prod preconditions (the prod Google key and class, the Apple certificate check and the workspace secrets) were their own gate ([G03](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290046602)). The first prod apply surfaced two small fixes, both written back into the infrastructure spec as tasks: the apply role may tag CloudFront functions, and the release script builds the TypeScript workspace first.
 
 The showcase site and the Compass API have been live at https://reinvent-compass.vegas since 31 October 2026. See [Release](Release) for the release steps.
 
@@ -114,7 +112,7 @@ The showcase site and the Compass API have been live at https://reinvent-compass
 - The Kiro Power in [power/](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/power).
 - The pass service on AWS and the showcase site at https://reinvent-compass.vegas.
 - The README with setup, requirements and how to run it.
-- The Builder Center article [board: D02] and the demo video [board: D03].
+- The Builder Center project post ([D02](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290047381)) and the demo video ([D03](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290047460)).
 - This wiki.
 
 ### Owner tasks
@@ -127,7 +125,7 @@ Some work only the owner could do: register the Apple Pass Type ID and the Googl
 
 [Close-out cards](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Close-out%22)
 
-After the release: the public docs were cleaned of anything private and their content is moving into this wiki, and a final rules check runs on submission day [board: S01]. The submission target is 4 November 2026.
+After the release: the public docs were cleaned of anything private and their content is moving into this wiki, and a final rules check runs on submission day ([S01](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290047759)). The submission target is 4 November 2026.
 
 ## The honest AI story
 

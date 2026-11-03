@@ -1,5 +1,3 @@
-# Build and test
-
 _For developers: how to install, build and test every part of re:Invent Compass on your own machine, and what each npm script does._
 
 Everything here runs offline. Tests use [simulated mode](Glossary#simulated-mode) and never call the live AWS [Events API](Glossary#events-api), Apple, Google or AWS. The same commands run in CI, in the order described on [Quality gate](Quality-Gate).

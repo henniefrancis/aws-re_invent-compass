@@ -1,5 +1,3 @@
-# Decisions: Architecture
-
 _For architects: why the contracts, the pass API, the hand-off and the edge are built the way they are, and how every booking stays behind the guardrail._
 
 Each section is one decision with four parts: the context, the decision, why, and the trade-off. Where a later decision or the code changed it, the section says so. The [Key decisions](Key-Decisions) page lists every decision on every theme.

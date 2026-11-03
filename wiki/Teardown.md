@@ -1,5 +1,3 @@
-# Teardown
-
 _For operators: how to remove the dev environment completely through Terraform, what stays behind, and what to do if the destroy fails._
 
 This runbook removes `dev` once it is no longer needed. It is owner-run and Terraform only: nothing is deleted in the console or with the AWS CLI. You lift each protection through code and variables, plan a destroy, read it, and apply it. **Never run it against prod.**

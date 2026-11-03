@@ -1,5 +1,3 @@
-# Showcase site
-
 _For architects: how the showcase site at reinvent-compass.vegas is built, what its pages do, and why it makes only one network call._
 
 The showcase site is live at [https://reinvent-compass.vegas](https://reinvent-compass.vegas). It explains Compass, runs a click-through demo, and hosts the `/board` page that hands passes to a phone. It is a static Angular 22.2.3 site, prerendered at build time and served from a private S3 bucket through [CloudFront](Glossary#cloudfront). It has no sign-in, no cookies, no browser storage, no analytics and no request to another origin.
@@ -81,7 +79,12 @@ The site has no runtime configuration. The build is `npm run build:site` from th
 
 ## Build cards
 
-Built in the Build workstream: [project board, Build](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Build%22). Cards: [board: L01] (Walk from here), [board: RD1] (real sessions in the demo), [board: SD1] (the sample pass matches the Apple pass), [board: LEG1] (the legal pages).
+The site was built in the Build workstream ([Build cards on the project board](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Build%22)). The cards for it:
+
+- [L01: Walk from here](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290048024): live walking time to the next session on the board page
+- [RD1: real catalog sessions in the demo](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290041945)
+- [SD1: the sample pass matches the Apple layout](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290041819)
+- [LEG1: the legal pages](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290043504): Terms, Security, Accessibility and Open-source credits
 
 ## Related pages
 

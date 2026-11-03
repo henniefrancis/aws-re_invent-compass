@@ -1,5 +1,3 @@
-# Rollback
-
 _For operators: how to undo a bad release by rolling forward, which resources are retained and why, and how to recover if one is lost._
 
 Rollback in Compass is always a roll forward: you release the last good commit again with the normal release script. Nothing is reverted by hand in the console, and the retained resources are never destroyed. See [Release](Release) for how the script works.

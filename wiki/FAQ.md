@@ -1,5 +1,3 @@
-# FAQ
-
 _For attendees and judges: short answers to the questions people ask first, with links to the full pages._
 
 ## Is this an official AWS product?

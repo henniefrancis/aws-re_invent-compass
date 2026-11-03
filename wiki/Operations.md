@@ -1,5 +1,3 @@
-# Operations
-
 _For operators: how the Compass backend is run, who does what, and which runbook to open when._
 
 The [Compass API](Glossary#compass-api) and the showcase site run in one AWS account, in two environments, all defined in [Terraform](Glossary#terraform) under [infra/](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/infra). This section of the wiki is the operator's handbook: one overview page and six runbooks. Every command on these pages is taken from the scripts and Terraform in the repository.

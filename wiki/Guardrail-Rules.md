@@ -1,5 +1,3 @@
-# Guardrail rules
-
 _For attendees (and anyone checking the logic): every rule the booking guardrail applies, with its exact numbers, the walking times between venues, and the safe swap._
 
 The [guardrail](Glossary#guardrail) answers one question: should this booking go ahead? One function, `checkReservation` in [packages/core/src/rules/check-reservation.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/core/src/rules/check-reservation.ts), answers it everywhere: in the Compass MCP server, in the Kiro hook and in the browser demo. It never reads a clock, a file or the network; the caller passes in the current time, the event time zone and the venue data.

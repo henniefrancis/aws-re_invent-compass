@@ -1,5 +1,3 @@
-# Contracts
-
 _For developers and architects: which contracts Compass is built against, where each one lives, how tests hold the code to them and how to change one safely._
 
 Compass is contract first. Every boundary between parts has a written contract, and the code on both sides is generated from it or checked against it:

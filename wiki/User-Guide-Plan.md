@@ -1,5 +1,3 @@
-# User guide: Plan
-
 _For attendees: how Compass learns your tech, plans your week as a Kiro spec, and books it safely on your computer._
 
 Plan is the first of the three acts (Plan, [Board](User-Guide-Board), [Fly](User-Guide-Fly)). It happens on your computer, in Kiro or another [MCP client](Glossary#mcp-client), because the [AWS Builder ID](Glossary#aws-builder-id) sign-in returns to your own machine. You talk to your assistant; it calls the Compass tools. Every tool is listed on [MCP tools](MCP-Tools).

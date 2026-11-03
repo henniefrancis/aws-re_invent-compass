@@ -1,5 +1,3 @@
-# User guide: Fly
-
 _For attendees: how Compass keeps your passes in step with your real schedule during the week, and how to see your week at a glance._
 
 Fly is the third of the three acts ([Plan](User-Guide-Plan), [Board](User-Guide-Board), Fly). Your real re:Invent schedule is the source of truth. Compass compares it with the passes it issued and makes the passes match: it issues new ones, updates changed ones and [voids](Glossary#void) cancelled ones.

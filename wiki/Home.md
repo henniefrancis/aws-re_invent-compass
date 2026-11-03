@@ -1,8 +1,10 @@
+<img alt="re:Invent Compass" src="images/re_invent-compass-header.png">
+
 # re:Invent Compass
 
-_For everyone: what re:Invent Compass is, who it is for, and where to start reading._
-
 **From your code to your seat, on time.**
+
+_For everyone: what re:Invent Compass is, who it is for, and where to start reading._
 
 re:Invent Compass helps a first-time AWS re:Invent attendee plan their week from their own code, book it safely, and get into every reserved session on time. It is an independent community project, built for the re:Invent Catalog API Builder Challenge (September to November 2026), and it is not affiliated with AWS (see the [Disclaimer](Disclaimer)).
 

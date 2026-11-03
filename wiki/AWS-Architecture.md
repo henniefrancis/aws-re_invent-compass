@@ -1,5 +1,3 @@
-# AWS architecture
-
 _For architects: every AWS service the Compass API and site use, with the real settings from the Terraform in the repository._
 
 ![AWS architecture of re:Invent Compass](images/compass-architecture.png)

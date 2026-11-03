@@ -1,5 +1,3 @@
-# Flows
-
 _For architects: the four end-to-end flows of Compass (plan, issue, board and fly), each as a sequence diagram checked against the code._
 
 Every flow starts in the attendee's [MCP client](Glossary#mcp-client) and runs through the Compass [MCP server](Glossary#mcp-server) on their computer. The server is the only part that holds Events API tokens. The [Compass API](Glossary#compass-api) sees only the ID token and the pass fields. The participants below are the same in every diagram.

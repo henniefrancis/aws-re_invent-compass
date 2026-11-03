@@ -1,5 +1,3 @@
-# Quality
-
 _For architects: how re:Invent Compass is tested, what the measured numbers are, what CI runs, and which gates a change must pass before it merges._
 
 Compass is built test first against contracts. Every package, spike module and CI script is held to 100 percent coverage, the site's decision code is held to the same bar, the browser suite runs on seven devices, and the Terraform is tested offline with mock providers. Nothing in the test suites calls the live AWS Events API, Apple, Google or AWS: tests run with `COMPASS_MODE=simulated`.

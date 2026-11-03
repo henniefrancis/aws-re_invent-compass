@@ -1,5 +1,3 @@
-# Kiro specs
-
 _For developers and architects: the eight Kiro specs that re:Invent Compass was built from, what each one owns and built, and how to read a spec._
 
 re:Invent Compass was built from eight [Kiro specs](Glossary#kiro-spec), one per build stream. Each spec owns a fixed set of folders, and no other stream edits them. Together the specs are the record of what was built and why: every task is ticked when it is done, and every change of plan is written into the design. [How it was built](How-It-Was-Built) tells the story of the build; this page describes the specs themselves.

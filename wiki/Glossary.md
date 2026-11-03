@@ -1,5 +1,3 @@
-# Glossary
-
 _For everyone: the words used across this wiki, from the airline metaphor to the AWS services, each in a few plain sentences with a link to the page that explains more._
 
 Compass borrows the language of air travel. A [venue](#venue) is a terminal, a room is a gate, a session title is a flight name, the seat release 10 minutes before the start is when boarding closes, favourites are standby, personal time is a layover, and a repeat session is the rebooking. The rest of the terms are the tools and AWS services behind it.

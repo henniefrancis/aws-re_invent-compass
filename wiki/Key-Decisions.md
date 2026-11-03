@@ -1,5 +1,3 @@
-# Key decisions
-
 _For architects: every architecture decision behind re:Invent Compass in one list, and where to read each one._
 
 The project kept one numbered record for each architecture decision, from the kickoff on 15 October 2026 to the release. The wiki groups them by theme on six pages. Each section there gives the context, the decision, why it was taken and what it costs, checked against the code as it is today.

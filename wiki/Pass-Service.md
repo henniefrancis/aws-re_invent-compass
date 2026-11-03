@@ -1,5 +1,3 @@
-# Pass service
-
 _For architects: how the Compass pass service is built, what its routes and limits are, how passes are signed and updated, and what it stores._
 
 The pass service is the [Compass API](Glossary#compass-api). It issues, updates and [voids](Glossary#void) unofficial [Boarding Passes](Glossary#boarding-pass) for Apple Wallet and Google Wallet, serves the 15 minute [hand-off](Glossary#hand-off) to the phone, runs Apple's [PassKit](Glossary#passkit) web service and erases everything on request. It runs as two [Lambda](Glossary#lambda) functions behind [CloudFront](Glossary#cloudfront), [WAF](Glossary#waf) and [API Gateway](Glossary#api-gateway), with one [DynamoDB](Glossary#dynamodb) table. Only attendees signed in with [AWS Builder ID](Glossary#aws-builder-id) can use it.
@@ -107,7 +105,12 @@ The reasoning is on [Decisions: Passes and wallets](Decisions-Passes-and-Wallets
 
 ## Build cards
 
-Built in the Build workstream: [project board, Build](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Build%22). Cards: [board: GP1] (Google layout matches the Apple pass), [board: P05] (Google Wallet publishing access), [board: PK1] (prod Google key and Apple certificate check), [board: L01] (the venue of each session in the hand-off view).
+The pass service was built in the Build workstream ([Build cards on the project board](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Build%22)). The cards for it:
+
+- [GP1: the Google pass matches the Apple layout](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290041735)
+- [P05: Google Wallet issuer account and publishing access](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290037554)
+- [PK1: production Google key, pass class and Apple certificate check](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290045602)
+- [L01: Walk from here](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290048024): live walking time to the next session on the board page
 
 ## Related pages
 

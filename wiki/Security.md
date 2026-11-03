@@ -1,5 +1,3 @@
-# Security
-
 _For architects: the threat model of re:Invent Compass in plain words, how each threat is handled in code and infrastructure, and how to report a vulnerability._
 
 Compass handles an attendee's sign-in to the [AWS Events API](Glossary#events-api), their real re:Invent schedule, their code and a pass service on the internet. The design keeps each credential to one destination, treats every piece of outside text as data, checks every booking in the server, and stores as little as possible for as short a time as possible.

@@ -1,18 +1,16 @@
-# Getting started
-
 _For attendees: three ways to try re:Invent Compass, what you need, and how live sign-in works._
 
 re:Invent Compass plans your AWS re:Invent week from your own code, checks every booking against a [guardrail](Glossary#guardrail), and puts unofficial [boarding passes](Glossary#boarding-pass) on your phone. It is an independent community project and is not affiliated with AWS (see the [Disclaimer](Disclaimer)).
 
 There are three ways in, from no install at all to the full setup:
 
-| Way in                     | Needs                                      | Touches your real schedule                      |
-| -------------------------- | ------------------------------------------ | ----------------------------------------------- |
-| 1. The demo on a phone     | A browser                                  | No                                              |
-| 2. The demo in a terminal  | Node.js 24                                 | No                                              |
-| 3. The Power or MCP server | Node.js 24, and Kiro or another MCP client | Reads it; changes it only if you turn writes on |
+| Way in                   | Requires                                   | Touches your real schedule                      |
+| ------------------------ | ------------------------------------------ | ----------------------------------------------- |
+| Demo: Phone              | A browser                                  | No                                              |
+| Demo: Terminal           | Node.js 24                                 | No                                              |
+| Kiro Power or MCP server | Node.js 24, and Kiro or another MCP client | Reads it; changes it only if you turn writes on |
 
-## 1. Try the demo on a phone
+## Demo: Phone
 
 Open [reinvent-compass.vegas/demo](https://reinvent-compass.vegas/demo) on any phone or computer. There is nothing to install and no sign-in.
 
@@ -24,7 +22,7 @@ The demo runs entirely in your browser ([site/src/lib/demo](https://github.com/h
 - **Show sample pass** draws a pass for a reserved session, with FLIGHT NAME above TERMINAL and GATE.
 - **Download sample calendar** gives you an `.ics` file of your demo week with "Boarding closes" and "Leave now" alarms.
 
-## 2. Run the demo in a terminal
+## Demo: Terminal
 
 ```sh
 npx --yes reinvent-compass@0.1.0 demo
@@ -50,9 +48,9 @@ Useful options:
 - `demo --repo <folder>` scans a folder of yours instead of the [sample repo](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/fixtures/sample-repo). Compass copies the folder to a temporary workspace first (skipping `.git`, `node_modules`, links and files over 1 MB, up to 2,000 files), so your folder is never changed.
 - To run the whole server on made-up data in your own client, set `COMPASS_MODE=simulated` in its environment. Every result then starts with `SIMULATED MODE: no real data.`
 
-## 3. Install the Power in Kiro, or use another MCP client
+## Kiro Power or MCP server
 
-### Kiro
+### Kiro Power
 
 The [Kiro Power](Glossary#kiro-power) is the [power](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/power) folder: `plugin.json` and a matching `POWER.md`, `mcp.json`, three skills (`plan-my-week`, `first-timer-guide` and `install-hooks`) and a hook template. Its `mcp.json` starts one server, `compass`, with `npx --yes reinvent-compass@0.1.0`.
 

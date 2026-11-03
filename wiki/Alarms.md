@@ -1,5 +1,3 @@
-# Alarms
-
 _For operators: the five CloudWatch alarms, the logs and the budget alert, what each one means, and which switch to use._
 
 Each environment has five CloudWatch alarms, defined in [infra/modules/observability/main.tf](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/infra/modules/observability/main.tf). They notify the SNS topic `compass-<env>-alarms`, which emails the address in the sensitive workspace variable `alarm_email`. The account also has one cost budget that emails you directly. Confirm the SNS subscription once with the link AWS emails, or no alarm reaches you.

@@ -1,5 +1,3 @@
-# MCP server
-
 _For architects: how the Compass MCP server is built, what its 24 tools are, how it keeps writes safe and how it is configured._
 
 The Compass server is a local [MCP server](Glossary#mcp-server) published to npm as `reinvent-compass` (version 0.1.0, Node 24 or newer). An [MCP client](Glossary#mcp-client) such as Kiro starts it on stdio with `npx --yes reinvent-compass@0.1.0`. It reads the [AWS Events API](Glossary#events-api), scans code, plans a week, runs the [guardrail](Glossary#guardrail) before every booking and drives the [Compass API](Glossary#compass-api) for passes.
@@ -116,7 +114,12 @@ The app-data folder follows the platform: `%LOCALAPPDATA%` (or `%APPDATA%`) on W
 
 ## Build cards
 
-Built in the Build workstream: [project board, Build](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Build%22). Cards: [board: REL1] (the 0.1.0 release commit), [board: BUG1] and [board: BUG2] (layover times), [board: CTO1] (package metadata and licences).
+The MCP server was built in the Build workstream ([Build cards on the project board](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Build%22)). The cards for it:
+
+- [REL1: the 0.1.0 release commit](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290044925): version, private flag off, production API address
+- [BUG1: layover showed 8 hours late](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290045381)
+- [BUG2: layover refused on 29 November](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290045485) (badge pickup day)
+- [CTO1: package metadata and licences](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290044316)
 
 ## Related pages
 

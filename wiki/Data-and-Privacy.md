@@ -1,5 +1,3 @@
-# Data and privacy
-
 _For architects: every data item Compass holds, where it lives, how it is keyed, how long it lives and how it is deleted._
 
 This page is the architect's view. For the attendee's view in plain words, see [Privacy](Privacy).

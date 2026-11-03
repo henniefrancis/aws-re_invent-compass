@@ -1,5 +1,3 @@
-# Decisions: Security and privacy
-
 _For architects: what personal data the pass service holds and for how long, how secrets and the API are protected, which risks the owner accepted, and how GitHub access stays read-only._
 
 Each section is one decision with four parts: the context, the decision, why, and the trade-off. Where a later decision or the code changed it, the section says so. The [Key decisions](Key-Decisions) page lists every decision on every theme.

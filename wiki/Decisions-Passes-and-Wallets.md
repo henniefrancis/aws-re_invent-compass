@@ -1,5 +1,3 @@
-# Decisions: Passes and wallets
-
 _For architects: how Compass keeps Apple and Google Wallet passes true to the schedule, how long it keeps pass content, how many prompts it shows, and how the board page offers the passes._
 
 Each section is one decision with four parts: the context, the decision, why, and the trade-off. Where a later decision or the code changed it, the section says so. The [Key decisions](Key-Decisions) page lists every decision on every theme.

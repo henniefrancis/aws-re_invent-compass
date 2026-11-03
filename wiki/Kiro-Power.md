@@ -1,5 +1,3 @@
-# Kiro Power
-
 _For architects: what the Compass Kiro Power contains, how it starts the MCP server and what its skills and hooks do._
 
 A [Kiro Power](Glossary#kiro-power) packages an [MCP server](Glossary#mcp-server) with instructions for the agent. The Compass Power holds no code of its own: it starts the Compass server and tells the agent the order of the tools, which calls need approval and which rules never bend. Every safety check also runs inside the server, so the Power is guidance, not the line of defence.
@@ -56,7 +54,7 @@ To try the flow without an account, run `npx --yes reinvent-compass@0.1.0 demo`.
 
 ## Build cards
 
-The Power was built in the Build workstream: [project board, Build](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Build%22). Release card: [board: REL1].
+The Power was built in the Build workstream ([Build cards on the project board](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Build%22)). It shipped with the release card [REL1: the 0.1.0 release commit](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290044925).
 
 ## Related pages
 

@@ -1,5 +1,3 @@
-# Repository layout
-
 _For developers: what each folder in the repository holds, which package owns what, and where to start reading the code._
 
 re:Invent Compass is one npm workspaces monorepo. Four TypeScript packages, an Angular site and the Terraform for AWS live side by side, so a change to a shared contract is checked against every consumer in one pull request.

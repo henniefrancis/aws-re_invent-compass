@@ -1,5 +1,3 @@
-# MCP tools
-
 _For developers and attendees who want the detail: every tool the Compass MCP server offers, what each one reads or changes, which ones may be approved automatically, the command line and the environment variables._
 
 The Compass [MCP server](Glossary#mcp-server) is the npm package `reinvent-compass`. It registers exactly the 24 tools keyed in [packages/contracts/src/mcp-tools.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/contracts/src/mcp-tools.ts). Each tool's class and wording live in [tool-registry.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/src/server/tool-registry.ts) and [descriptions.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/src/server/descriptions.ts).

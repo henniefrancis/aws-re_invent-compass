@@ -1,5 +1,3 @@
-# Release
-
 _For operators: how to deploy an environment with the release script, set up a new environment, ship a new version and publish the npm package._
 
 Every deploy is run by the owner with one script, [scripts/release.sh](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/scripts/release.sh). It builds everything, saves a [Terraform](Glossary#terraform) plan in [HCP Terraform](Glossary#hcp-terraform), refuses dangerous plans, asks for a typed word, applies, syncs the site, clears the [CloudFront](Glossary#cloudfront) cache and checks the health route. The npm package is published separately, by a GitHub Actions workflow started by a version tag. See [Operations](Operations) for the environments and who runs what.

@@ -1,5 +1,3 @@
-# Read-only by default
-
 _For attendees: why Compass never changes your real re:Invent schedule unless you turn writes on, what it does instead, and how to turn writes on safely._
 
 Signed in with your [AWS Builder ID](Glossary#aws-builder-id), Compass reads the live catalog and your real reservations, standby list and layovers. In live mode it never changes them unless you turn writes on yourself. This is [read-only mode](Glossary#read-only-mode), and it is the default.

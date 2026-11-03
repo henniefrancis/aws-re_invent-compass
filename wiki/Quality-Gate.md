@@ -1,5 +1,3 @@
-# Quality gate
-
 _For developers: exactly what must pass before a change reaches `develop` or `main`, in the order CI runs it, and the review steps around it._
 
 The gate is defined in [.github/workflows](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/.github/workflows). Every action in every workflow is pinned by commit SHA, and the Terraform, tflint and Trivy binaries are pinned by version. Every check also runs on your machine; see [Build and test](Build-and-Test).

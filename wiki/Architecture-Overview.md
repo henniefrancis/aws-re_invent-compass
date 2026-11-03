@@ -1,5 +1,3 @@
-# Architecture overview
-
 _For architects: what re:Invent Compass is made of, where each part runs, which token goes where, and where to read more._
 
 re:Invent Compass is an independent community project. It is not affiliated with AWS, and its Boarding Passes are unofficial: the badge is the ticket.

@@ -1,5 +1,3 @@
-# Decisions: Delivery and tooling
-
 _For architects: how the work was organised and built, which tools and checks guard it, and why each choice was made._
 
 Each section is one decision with four parts: the context, the decision, why, and the trade-off. Where a later decision or the code changed it, the section says so. The [Key decisions](Key-Decisions) page lists every decision on every theme.

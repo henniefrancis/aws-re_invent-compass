@@ -1,5 +1,3 @@
-# Decisions: Product and scope
-
 _For architects: the decisions that set what Compass does, for whom, by when and on which devices, with the reasons and what they cost._
 
 Each section is one decision with four parts: the context, the decision, why, and the trade-off. Where a later decision or the code changed it, the section says so. The [Key decisions](Key-Decisions) page lists every decision on every theme.

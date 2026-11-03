@@ -1,5 +1,3 @@
-# Privacy
-
 _For attendees: what Compass keeps on your computer, what leaves it and where it goes, how long the server keeps it, and how to erase it._
 
 Compass is local first. It keeps your data on your computer and sends as little as it can. This page is the attendee view; the full data inventory for architects is on [Data and privacy](Data-and-Privacy).

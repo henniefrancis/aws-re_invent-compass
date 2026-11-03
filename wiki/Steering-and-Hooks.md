@@ -1,5 +1,3 @@
-# Steering and hooks
-
 _For developers: the four Kiro steering files that every build session read, the hook used while building this repository, and the two hooks the Compass Power can install for attendees, including why they work the way they do._
 
 [Kiro](Glossary#kiro) has two ways to shape what its agent does without repeating it in every prompt. [Steering](Glossary#steering) files are standing instructions that load into a session. [Kiro hooks](Glossary#kiro-hook) run an action when something happens in the IDE, such as a file save or a tool call. re:Invent Compass uses both: steering and one hook to build the repository, and two hooks that attendees can install to add an early check before a booking.

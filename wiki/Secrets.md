@@ -1,5 +1,3 @@
-# Secrets
-
 _For operators: which secrets Compass needs, how to load, rotate and check them without ever showing a value, and how to create the Google Wallet class._
 
 Terraform creates the secret containers and nothing more: it generates no secret value and stores none. The owner loads every value from their own machine, under their own AWS SSO session, with three scripts in [scripts/](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/scripts). The HCP Terraform plan and apply roles are denied `secretsmanager:GetSecretValue`, so Terraform cannot read a value back either.

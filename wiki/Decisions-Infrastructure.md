@@ -1,5 +1,3 @@
-# Decisions: Infrastructure
-
 _For architects: how the AWS infrastructure is deployed and protected, which resources may never be destroyed, and why the project runs a dev environment and its own domain._
 
 Each section is one decision with four parts: the context, the decision, why, and the trade-off. Where a later decision or the code changed it, the section says so. The [Key decisions](Key-Decisions) page lists every decision on every theme.

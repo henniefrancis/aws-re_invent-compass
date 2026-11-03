@@ -1,5 +1,3 @@
-# Kill switch
-
 _For operators: how to stop every request at the edge at once, how to turn it off again, and what the WAF does the rest of the time._
 
 The kill switch blocks every request to an environment's [CloudFront](Glossary#cloudfront) distribution: the site and the API alike. Use it when abuse or a cost run-up needs all traffic stopped at once. It is a rule in the [WAF](Glossary#waf) web ACL, defined in [infra/modules/edge/main.tf](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/infra/modules/edge/main.tf), driven by one Terraform variable.

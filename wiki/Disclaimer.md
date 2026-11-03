@@ -1,5 +1,3 @@
-# Disclaimer
-
 _For everyone: what re:Invent Compass is and is not, the trademarks it mentions, and the licence it is shared under._
 
 ## An independent community project
