@@ -55,7 +55,6 @@ aws-re_invent-compass/
 ├── docs/
 │   ├── architecture/             # build-plan.md (mirror of the approved plan)
 │   ├── story/                    # creator and inspiration
-│   ├── demo/                     # Claude and owner: video script
 │   └── hackathon-rules.md        # the contest rules and how each is met
 ├── .github/                      # S0: check.yml, e2e.yml, publish.yml, dependabot.yml
 ├── CONCEPT.md, README.md, CONTRIBUTING.md, SECURITY.md, LICENSE, NOTICE

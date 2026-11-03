@@ -352,6 +352,9 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - [x] 29. The last two decision records leave `docs/` (owner request of 3 November)
   - The Events API provenance record (ADR-023: source URL, retrieval date, size and SHA-256) moves next to the document as `packages/contracts/events-api.openapi.provenance.md`, and `events-api-provenance.test.ts` reads it there with the same checks. The Privacy page text on Walk from here names `wiki/Decisions-Product-and-Scope.md` (section "Walk from here on the board page") as its source instead of ADR-037; it is a summary block, so only the file must exist. Both ADR files are deleted; steering, `.prettierignore`, `docs/hackathon-rules.md` and `site/README.md` follow. Full gate and site tests
 
+- [x] 30. The demo video script leaves `docs/` (owner request of 3 November)
+  - Nothing in the build reads `docs/demo/demo-script.md`; it stayed only while the owner recorded the videos. It is deleted (git history keeps it) and the steering structure no longer lists `docs/demo/`
+
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.
 - Each top-level task (1 through 14) ends with a commit sub-task. Commit locally only after that task's tests pass, using Conventional Commits with `foundation-contracts` as the scope. The first commit (1.6) also includes `.kiro/specs/foundation-contracts/`. Never push, merge, tag or open a PR: the integrator does that after review.
