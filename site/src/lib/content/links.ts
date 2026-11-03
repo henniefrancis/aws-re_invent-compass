@@ -229,7 +229,12 @@ export function documentationLinks(
     {
       label: 'Operations',
       href: `${wiki}/Operations`,
-      description: 'How to release, watch, roll back and tear down',
+      description: 'The environments, who runs what and the ground rules',
+    },
+    {
+      label: 'Runbooks',
+      href: `${wiki}/Runbooks`,
+      description: 'How to release, watch, roll back, handle secrets and tear down',
     },
     {
       label: 'How it was built',

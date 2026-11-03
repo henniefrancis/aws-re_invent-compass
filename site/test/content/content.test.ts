@@ -368,6 +368,7 @@ describe('links and footer', () => {
       'Key decisions',
       'Developer guide',
       'Operations',
+      'Runbooks',
       'How it was built',
       'Reference',
       'Kiro specs',

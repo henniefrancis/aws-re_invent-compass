@@ -74,6 +74,7 @@ The [retained resources](Rollback#retained-resources) are protected on purpose, 
 
 ## Related pages
 
+- [Runbooks](Runbooks)
 - [Rollback](Rollback)
 - [Operations](Operations)
 - [Release](Release)

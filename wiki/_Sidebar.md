@@ -48,6 +48,10 @@
 **Operations**
 
 - [Overview](Operations)
+
+**Runbooks**
+
+- [Index](Runbooks)
 - [Release](Release)
 - [Alarms](Alarms)
 - [Kill switch](Kill-Switch)

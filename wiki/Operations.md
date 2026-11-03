@@ -1,6 +1,6 @@
 _For operators: how the Compass backend is run, who does what, and which runbook to open when._
 
-The [Compass API](Glossary#compass-api) and the showcase site run in one AWS account, in two environments, all defined in [Terraform](Glossary#terraform) under [infra/](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/infra). This section of the wiki is the operator's handbook: one overview page and six runbooks. Every command on these pages is taken from the scripts and Terraform in the repository.
+The [Compass API](Glossary#compass-api) and the showcase site run in one AWS account, in two environments, all defined in [Terraform](Glossary#terraform) under [infra/](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/infra). This page is the operator's overview; the six step-by-step procedures are in the [Runbooks](Runbooks) section. Every command on these pages is taken from the scripts and Terraform in the repository.
 
 ## Environments
 
@@ -71,14 +71,7 @@ AWS allows one `app.terraform.io` OIDC provider per account. If another configur
 
 ## Runbooks
 
-| Runbook                    | Open it when                                                                                |
-| -------------------------- | ------------------------------------------------------------------------------------------- |
-| [Release](Release)         | You deploy dev or prod, set up an environment, or publish a new version of the npm package. |
-| [Alarms](Alarms)           | An alarm or a budget alert has emailed you, or you need one of the feature switches.        |
-| [Kill switch](Kill-Switch) | Abuse or a cost run-up needs every request stopped at the edge at once.                     |
-| [Rollback](Rollback)       | A release went wrong, or a retained resource was lost.                                      |
-| [Secrets](Secrets)         | You load, rotate or check a secret, or create the Google Wallet class.                      |
-| [Teardown](Teardown)       | You remove the dev environment.                                                             |
+The step-by-step procedures (release, alarms, kill switch, rollback, secrets and teardown) are on the [Runbooks](Runbooks) page, with when to open each one.
 
 ## Ground rules
 
@@ -95,4 +88,5 @@ The release work is tracked on the project board under the [Release workstream](
 - [Security](Security)
 - [Pass service](Pass-Service)
 - [Infrastructure decisions](Decisions-Infrastructure)
+- [Runbooks](Runbooks)
 - [Release](Release)
