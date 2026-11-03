@@ -39,6 +39,7 @@ aws-re_invent-compass/
 │   ├── skills/                   #   plan-my-week, first-timer-guide, install-hooks
 │   └── hook-templates/           #   PreToolUse guardrail (copied into the attendee's .kiro/hooks); the PostToolUse sync hook was removed (ADR-024)
 ├── site/                         # S7: Angular 22 showcase site (story, demo, install, privacy, /board)
+│   └── content/                  #   the owner's approved words for The Creator and The Inspiration
 ├── infra/                        # S6: Terraform only (us-east-1, HCP Terraform)
 │   ├── bootstrap/                #   HCP OIDC provider and plan/apply roles (owner runs once)
 │   ├── modules/                  #   site, edge, api (openapi.yaml copy owned by S0), data, secrets, observability
@@ -54,7 +55,6 @@ aws-re_invent-compass/
 │   └── .raw/                     # git-ignored: the owner's real recordings (SP5)
 ├── docs/
 │   ├── architecture/             # build-plan.md (mirror of the approved plan)
-│   ├── story/                    # creator and inspiration
 │   └── hackathon-rules.md        # the contest rules and how each is met
 ├── .github/                      # S0: check.yml, e2e.yml, publish.yml, dependabot.yml
 ├── CONCEPT.md, README.md, CONTRIBUTING.md, SECURITY.md, LICENSE, NOTICE
