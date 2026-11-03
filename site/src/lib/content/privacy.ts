@@ -36,7 +36,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-catalog-schedule',
-        'The session catalog cache and a snapshot of your schedule stay in a folder on your computer. The snapshot is purged 30 days after the event ends, or when you run forget_me.',
+        'The session catalog cache and a snapshot of your schedule stay in a folder on your computer. The snapshot is replaced each time Compass reads your schedule, and deleted when you run forget_me.',
         PLAN,
         '4.2 (P4)',
       ),
@@ -114,7 +114,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-processors',
-        'When you add a pass to a wallet, Apple (the push token) and Google (the pass object) also process data. Google acts as a processor.',
+        'Apple processes data (the push token) when you add a pass to Apple Wallet. Google holds the pass object from the moment the pass is issued, so that the Add to Google Wallet link works. Google acts as a processor.',
         PLAN,
         '4.2 (P15, P16)',
       ),

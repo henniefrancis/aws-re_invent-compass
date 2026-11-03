@@ -37,6 +37,6 @@ Several Kiro sessions ("engineers") build re:Invent Compass at the same time, on
 
 ## Safety
 
-- Never call the live Events API from tests. Use `COMPASS_MODE=simulated` and fixtures. Live checks run only when the owner sets `COMPASS_LIVE_TESTS=1`.
+- Never call the live Events API from tests. Use `COMPASS_MODE=simulated` and fixtures. Live checks run only when the owner sets both `COMPASS_LIVE_TESTS=1` and `COMPASS_LIVE_CONFIRM=yes`, and never in CI.
 - Never read, print, paste or commit a secret, certificate, key, token or account ID. Use the `.example` files.
 - Never create AWS resources outside Terraform, and never run `terraform apply` or deploy scripts: the owner runs every deploy.

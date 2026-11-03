@@ -1,6 +1,6 @@
 # ADR-017 Remote awsevents server read-only
 
-Status: Accepted, 2026-10-15 (owner approved the build plan).
+Status: Accepted, 2026-10-15 (owner approved the build plan). Amended by ADR-024 (decision 6): `awsevents` is not in the Power's `mcp.json`; the attendee adds it to the workspace `.kiro/settings/mcp.json` with `disabledTools` listing the seven write tools by their full names.
 
 ## Context
 

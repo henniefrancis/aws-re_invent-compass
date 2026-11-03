@@ -1,6 +1,6 @@
 # ADR-010 Pass lifecycle
 
-Status: Accepted, 2026-10-15 (owner approved the build plan).
+Status: Accepted, 2026-10-15 (owner approved the build plan). Amended by ADR-031: `webServiceURL` is `https://reinvent-compass.vegas/api/passkit`. Since pass-service task 42 (owner, 20 October 2026) the Apple pass is an `eventTicket` with no `transitType`.
 
 ## Context
 

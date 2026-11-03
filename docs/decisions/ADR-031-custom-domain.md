@@ -1,6 +1,6 @@
 # ADR-031 Custom domain reinvent-compass.vegas
 
-Status: Accepted, 2026-10-18 (owner decision; the pass host was dropped the same day). Amends ADR-002 and ADR-013 (the address of the public edge) and resolves ADR-027 item 6.
+Status: Accepted, 2026-10-18 (owner decision; the pass host was dropped the same day). Amends ADR-003 and ADR-013 (the address of the public edge) and resolves ADR-027 item 6.
 
 ## Context
 

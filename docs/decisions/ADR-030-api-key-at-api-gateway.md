@@ -8,7 +8,7 @@ The Compass API runs on API Gateway REST behind CloudFront and WAF. The regional
 
 ## Decision
 
-- The contract (`contracts/compass-api.openapi.yaml`) adds an `api_key` scheme (header `x-api-key`, `x-amazon-apigateway-api-key-source: HEADER`) to every one of the 15 methods. API Gateway enforces it before any Lambda runs.
+- The contract (`contracts/compass-api.openapi.yaml`) adds an `api_key` scheme (header `x-api-key`, `x-amazon-apigateway-api-key-source: HEADER`) to every one of the 15 methods (16 since the single Apple pass route of ADR-036, which carries it too). API Gateway enforces it before any Lambda runs.
 - CloudFront injects the key as a custom origin header and overwrites any viewer-supplied value. Viewers never see or send it.
 - The `bearerIdToken` and `applePass` schemes stay documentation only; those credentials are verified inside the Lambdas.
 - The origin-verify check stays as defence in depth.

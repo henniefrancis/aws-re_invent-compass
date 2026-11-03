@@ -8,6 +8,8 @@ It ships as a Kiro Power plus a local MCP server that any desktop MCP client can
 
 Built for the re:Invent Catalog API Builder Challenge (September to November 2026).
 
+The full documentation is in the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki): a user guide, the architecture, the key decisions, a developer guide, operations and reference pages.
+
 > **Status: built, version 0.1.0, not yet released.** The code, tests and infrastructure are in this repository, and the code is set to version 0.1.0. These parts are **coming soon**: the production site and Compass API at `https://reinvent-compass.vegas`, the npm package `reinvent-compass` (published after the production deploy), the Builder Center article and the demo video. Links will be added here when they are live.
 
 ## Contents
@@ -94,7 +96,7 @@ No browser opens, no sign-in happens and nothing is sent anywhere. Every result 
 
 You can run the whole server on made-up data too: set `COMPASS_MODE=simulated`.
 
-The showcase site will also run a click-through demo on any phone, with no install and no sign-in, at `https://reinvent-compass.vegas` (**coming soon**).
+The showcase site also runs a click-through demo on any phone, with no install and no sign-in, at [reinvent-compass.vegas/demo](https://reinvent-compass.vegas/demo).
 
 ### 2. Install the Kiro Power
 
@@ -109,7 +111,7 @@ Both forms are listed because it is not yet recorded which one Kiro accepts. A l
 
 Then open your own project in Kiro and say: "Plan my re:Invent."
 
-**Other MCP clients.** Claude Desktop, VS Code and the Kiro CLI can run the same server with `npx --yes reinvent-compass@0.1.0`. The setup for each is in [packages/mcp-server/README.md](packages/mcp-server/README.md). Hooks are Kiro-only, but the guardrail runs inside the server in every client.
+**Other MCP clients.** Claude Desktop, VS Code and the Kiro CLI can run the same server with `npx --yes reinvent-compass@0.1.0`. The setup for each is in [Getting started](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Getting-Started). Hooks are Kiro-only, but the guardrail runs inside the server in every client.
 
 ### 3. Live mode (AWS Builder ID)
 
@@ -124,9 +126,9 @@ Without `COMPASS_MODE=simulated`, Compass works on your real re:Invent schedule.
 
 Signed in with your Builder ID, Compass reads the live catalog and your real reservations, standby list and layovers. It never changes them unless you turn writes on yourself. Until then the five schedule tools run the guardrail and reply with what they would have done, and every Events API write is refused before any request is sent, so nothing can change your schedule by accident. Boarding passes still work, because they live on the Compass pass service.
 
-To let Compass make changes, each one still approved by you first, set `COMPASS_ALLOW_WRITES=1` in the `env` of the Compass MCP server in your client's MCP settings. While writes are on, every schedule reply starts with "Writes are on". Only you should change this setting: the Power tells the agent never to. Details are in [packages/mcp-server/README.md](packages/mcp-server/README.md#read-only-by-default).
+To let Compass make changes, each one still approved by you first, set `COMPASS_ALLOW_WRITES=1` in the `env` of the Compass MCP server in your client's MCP settings. While writes are on, every schedule reply starts with "Writes are on". Only you should change this setting: the Power tells the agent never to. Details are in [Read-only by default](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Read-Only-By-Default).
 
-Boarding passes in live mode need the production Compass API at `https://reinvent-compass.vegas`, which is **coming soon**.
+Boarding passes in live mode use the production Compass API at `https://reinvent-compass.vegas`.
 
 ## The 24 tools
 
@@ -204,10 +206,10 @@ One function, `checkReservation` in `packages/core/src/rules`, answers "should t
 
 - **Seat release.** Boarding closes 10 minutes before the start, worked out by instant arithmetic and shown in the event's local time.
 - **Clashes.** Two commitments that overlap by one second or more clash, including all-day items and sessions that cross midnight. A clash blocks.
-- **Walking connections.** The walk between two venues plus a 10-minute buffer must fit in the gap. A connection with less than 5 minutes to spare is tight and warns.
+- **Walking connections.** The walk from the previous session must fit before boarding closes for the next one. An official walking time gets a 10-minute buffer on top; the researched estimates below already include 15 minutes to leave and enter buildings, so they get no extra buffer. A connection with less than 5 minutes to spare is tight and warns.
 - **Walking estimates from researched routes.** AWS publishes no walking times between venues, so `data/venues.json` holds researched estimates for all 30 ordered pairs of the six official 2026 venues. Each one is the OpenStreetMap foot-route distance (from the public OSRM router) at 66.7 metres a minute, plus 15 minutes to leave and enter buildings, rounded up to 5 minutes, with a 30-minute floor that matches the AWS advice to allow 30 to 45 minutes between venues. Every estimate states its basis and sources. Because they are estimates, an impossible walk warns ("likely impossible") and only blocks when you would be late even at half the estimate.
 - **Meals.** Each day needs at least 30 free minutes between 11:30 and 14:00. If not, Compass warns and suggests a layover in a gap that clashes with nothing.
-- **Rest.** A run of commitments longer than 3 hours with no gap is flagged.
+- **Rest.** A run of commitments longer than 3 hours with no gap is flagged when Compass suggests layovers. It does not warn on a single booking.
 - **Energy.** Each day gets a score you can read: 10 per commitment, plus the walking minutes, plus 15 per venue change. Over 100 warns that the day is overloaded.
 - **Missing data.** A rule that cannot be judged is skipped, never blocked on, and the verdict says which rule could not be checked.
 
@@ -225,11 +227,11 @@ One function, `checkReservation` in `packages/core/src/rules`, answers "should t
 - **Void on cancel.** When you cancel a session, `sync_passes` voids its pass. For Apple Wallet the Compass API marks the pass voided and expired and pushes an update to each registered device over APNs, so Wallet moves it to expired passes. For Google Wallet the object is set to `INACTIVE`. No wallet lets anyone delete a pass remotely, so Compass never claims to.
 - **Expire at session end.** Every pass expires when its session ends.
 - **Changes.** A change of time or room updates the pass on the phone.
-- **Calendar fallback.** `export_calendar` writes an `.ics` file with "Leave now" and "Boarding closes" alarms. When the walk from the previous session is unknown or does not fit, there is no "Leave now" alarm.
+- **Calendar fallback.** `export_calendar` writes an `.ics` file with "Leave now" and "Boarding closes" alarms. When the walk from the previous session is unknown, there is no "Leave now" alarm.
 
 **The phone hand-off.** Planning happens on a computer, because Builder ID sign-in returns to your own machine. To board on your phone:
 
-1. `send_to_phone` asks "Link or QR code?" first. A link appears in the chat; a QR code opens on a page in your browser, for your phone camera to scan.
+1. `send_to_phone` first asks whether you want a link, a QR code or both. A link appears in the chat; a QR code opens on a page in your browser, for your phone camera to scan.
 2. The link opens the site's `/board` page. The hand-off id sits in the URL fragment, so it never reaches the CDN, and the page removes it from the address.
 3. The page offers **Add to Apple Wallet** (in bundles of up to 10 passes), **Add to Google Wallet**, or the calendar file.
 4. The link works for 15 minutes. When it expires, the QR page says so.
@@ -252,8 +254,8 @@ Compass is local first. The responsible party under South Africa's Protection of
 **What leaves it, and where it goes**
 
 - The access token goes only to `api.awsevents.com`, and the refresh token only to the AWS Events token endpoint.
-- When you issue passes, the printable pass fields (session code, title, times, room and an optional name you type yourself) and your ID token go to the Compass API. The ID token proves you signed in. It is checked and never stored. Only a keyed hash of your Builder ID subject is kept.
-- Apple or Google receive the pass if you add it to a wallet. Google keeps its own copy of a saved object, set to `INACTIVE` after a void.
+- When you issue passes, the printable pass fields (session code, title, venue, room, times, and the walks before and after the session; version 0.1.0 never sends your name) and your ID token go to the Compass API. The ID token proves you signed in. It is checked and never stored. Only a keyed hash of your Builder ID subject is kept.
+- Apple receives a pass only if you add it to Apple Wallet. Google Wallet gets its pass object when the Compass API issues the pass, so the "Add to Google Wallet" link works; Google keeps that object, set to `INACTIVE` after a void.
 - If you connect GitHub, the GitHub tokens go only to `github.com` and `api.github.com`. Repository archives come from `codeload.github.com` without the token and are read in memory. Nothing about your repositories goes to Compass or to AWS.
 
 **How long the server keeps it**
@@ -322,10 +324,10 @@ flowchart LR
 
 **Trust boundaries.** Your computer sends only the access token and Events API calls to AWS Events. If you connect GitHub, it sends the GitHub tokens only to GitHub. It sends only the ID token and printable pass fields to the Compass API, never the access token. The phone sends the hand-off id and Apple's per-pass token.
 
-**Key choices** (each one is an ADR in [docs/decisions](docs/decisions/README.md)):
+**Key choices** (each one is explained in [Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions)):
 
 - **API Gateway REST behind CloudFront**, imported from the OpenAPI file with request validation. One WAF web ACL covers the site and the API. An origin-verify header shields the API Gateway URL.
-- **Contract first.** `contracts/compass-api.openapi.yaml` (15 operations) is the single source. Byte-identical copies are checked by SHA-256, TypeScript types are generated from it, and every Compass API response is validated against it in tests.
+- **Contract first.** `contracts/compass-api.openapi.yaml` (16 operations) is the single source. Byte-identical copies are checked by SHA-256, TypeScript types are generated from it, and every Compass API response is validated against it in tests.
 - **No stored pass files.** Passes are signed on demand from the pass record, so there is no file store to clean up.
 - **Expiry in code, TTL only for clean-up**, because DynamoDB TTL can take days.
 - **Two Lambdas** (arm64, Node.js 24) so the attendee API and the Apple device service each get least privilege.
@@ -335,13 +337,13 @@ flowchart LR
 
 Compass was built spec first, with [Kiro](https://kiro.dev).
 
-- **Plan, then steering.** An approved build plan ([docs/architecture/build-plan.md](docs/architecture/build-plan.md)) and four steering files ([.kiro/steering](.kiro/steering)) load into every Kiro session, so every stream works from the same product rules, stack and voice.
-- **Eight specs, parallel streams.** The work is split into eight Kiro specs, S0 to S7, each with its own `requirements.md`, `design.md` and `tasks.md` in [.kiro/specs](.kiro/specs). Each stream ran in its own git worktree and branch, with clear file ownership so no two streams edited the same file. The shared contracts were locked on day one ([ADR-025](docs/decisions/ADR-025-early-contract-lock.md)) so the other streams could start at once.
-- **When the Kiro credits ran out.** Kiro wrote the S0, S1, S2, S4 and S6 specs and built S0 and S1 tasks 1 to 8. Then the owner's Kiro credits ran out on 17 October. From there, Claude's dev-team agents built the rest from the same Kiro specs, one agent per worktree, under the same steering and review gates. The S3, S5 and S7 specs were written in Kiro's format. The specs and their task checkboxes stayed the single record of what was done. The full story is in [KIRO-SPEC-PROMPTS.md](KIRO-SPEC-PROMPTS.md).
-- **Reviews.** Every stream passed QA and security review before it was merged, and no branch merged with an open High or Critical finding. Accepted residual risks are recorded in [ADR-027](docs/decisions/ADR-027-accepted-residual-risks.md).
+- **Plan, then steering.** An approved build plan and four steering files ([Steering and hooks](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Steering-and-Hooks)) load into every Kiro session, so every stream works from the same product rules, stack and voice.
+- **Eight specs, parallel streams.** The work is split into eight Kiro specs, S0 to S7, each with its own `requirements.md`, `design.md` and `tasks.md` in [.kiro/specs](.kiro/specs) ([Kiro specs](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Kiro-Specs)). Each stream ran in its own git worktree and branch, with clear file ownership so no two streams edited the same file. The shared contracts were locked on day one ([early contract lock](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Delivery-and-Tooling#early-contract-lock)) so the other streams could start at once.
+- **When the Kiro credits ran out.** Kiro wrote the S0, S1, S2, S4 and S6 specs and built S0 and S1 tasks 1 to 8. Then the owner's Kiro credits ran out on 17 October. From there, Claude's dev-team agents built the rest from the same Kiro specs, one agent per worktree, under the same steering and review gates. The S3, S5 and S7 specs were written in Kiro's format. The specs and their task checkboxes stayed the single record of what was done. The full story is in [How it was built](https://github.com/henniefrancis/aws-re_invent-compass/wiki/How-It-Was-Built).
+- **Reviews.** Every stream passed QA and security review before it was merged, and no branch merged with an open High or Critical finding. Accepted residual risks are recorded in [Accepted residual risks](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Security-and-Privacy#accepted-residual-risks).
 - **100% coverage.** Unit tests (vitest) cover 100% of lines, branches, functions and statements, with named exclusions only. The showcase site adds Playwright and axe tests across seven device profiles. Terraform has native tests with mock providers, plus tflint and Trivy.
-- **Made-up data in public.** Tests and demos use a deterministic synthetic catalog of 120 sessions in the real API shape ([ADR-016](docs/decisions/ADR-016-synthetic-catalog.md)). The product itself always reads the live API.
-- **The whole build, in public.** Every task from kickoff on 15 October 2026 to submission is a card on the [project board](https://github.com/users/henniefrancis/projects/3), with its workstream and real date, and the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki) holds full copies of every doc, spec and decision for easy reading.
+- **Made-up data in public.** Tests and demos use a deterministic synthetic catalog of 120 sessions in the real API shape ([made-up sessions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Product-and-Scope#made-up-sessions-for-tests-and-the-public-demo)). The product itself always reads the live API.
+- **The whole build, in public.** Every task from kickoff on 15 October 2026 to submission is a card on the [project board](https://github.com/users/henniefrancis/projects/3), with its workstream and real date, and the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki) documents the whole project for easy reading.
 
 ## Repository layout
 
@@ -361,7 +363,7 @@ data/venues.json       Venues and researched walking times, each with its source
 fixtures/              Synthetic catalog and API fixtures
 scripts/               Owner-run release, bootstrap and secret-loading scripts
 spikes/                Day-one spike scripts
-docs/                  Build plan, ADRs, runbooks, hackathon rules, the story and the article draft
+docs/                  Build plan, ADRs, runbooks, hackathon rules, the story and article screenshots
 ```
 
 ## Development
@@ -375,9 +377,9 @@ npm run format:check
 npm run check:dash       # no em or en dashes anywhere
 ```
 
-The site, the pass-service Lambdas and the infrastructure each have their own README: [site/README.md](site/README.md), [packages/pass-service/README.md](packages/pass-service/README.md) and [infra/README.md](infra/README.md). Live tests against the real Events API run only on the owner's machine with `COMPASS_LIVE_TESTS=1`. CI never calls the live API.
+The [developer guide](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Build-and-Test) covers building, testing and the [quality gate](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Quality-Gate). The site, the pass-service Lambdas and the infrastructure each also have their own README: [site/README.md](site/README.md), [packages/pass-service/README.md](packages/pass-service/README.md) and [infra/README.md](infra/README.md). Live tests against the real Events API run only on the owner's machine, with both `COMPASS_LIVE_TESTS=1` and `COMPASS_LIVE_CONFIRM=yes`, and never in CI. CI never calls the live API.
 
-Contributions are welcome. Please keep to the voice in [.kiro/steering/product.md](.kiro/steering/product.md): plain English, short sentences, and no em or en dashes.
+Contributions are welcome. Please read [Contributing](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Contributing) and keep to the voice in [.kiro/steering/product.md](.kiro/steering/product.md): plain English, short sentences, and no em or en dashes.
 
 ## Licence
 

@@ -4,7 +4,7 @@ inclusion: always
 
 # Technology
 
-The approved build plan is the source of truth: #[[file:docs/architecture/build-plan.md]]. Decisions are in `docs/decisions/` (ADR-001 to ADR-030). If this file and the plan disagree, the plan wins; fix this file in the same change.
+The approved build plan is the source of truth: #[[file:docs/architecture/build-plan.md]]. Decisions are in `docs/decisions/` (ADR-001 to ADR-037). If this file and the plan disagree, the plan wins; fix this file in the same change.
 
 ## Stack (ADR-006)
 
@@ -116,9 +116,9 @@ Used as `awsevents` for read exploration. It is NOT bundled in `power/mcp.json`:
 
 ## CI (ADR-018)
 
-- `check.yml`: one job on `pull_request` into `main` only, the required check, under 8 minutes (full list in plan section 11.1).
+- `check.yml`: one job on `pull_request` into `main` and on push to `develop`, the required check, under 8 minutes (full list in plan section 11.1).
 - `e2e.yml`: `workflow_dispatch` only. `publish.yml`: tag `v*` only, npm trusted publishing with provenance.
-- No push triggers, no cron, no deploy workflow. Actions pinned by SHA. Dependabot monthly, paused until after 1 November.
+- No other push triggers, no cron, no deploy workflow. Actions pinned by SHA. Dependabot monthly, paused until after 1 November.
 
 ## Public and private
 
@@ -140,7 +140,7 @@ Never read, print or paste a secret value. Repository protections: secret scanni
 - Fixture tests for all 12 operations, including partial failures, 429 with `Retry-After`, multi-page catalogs, unknown codes and expired tokens.
 - Contract tests: Compass API responses validated against the OpenAPI file.
 - Security tests: tokens and emails never reach logs or errors; JWT negative cases; PassKit authorisation; hand-off expiry; PassFields rejection cases. Ambiguous input is refused, never reinterpreted.
-- Live tests only with `COMPASS_LIVE_TESTS=1`, run by the owner locally. CI never calls the live API.
+- Live tests only with `COMPASS_LIVE_TESTS=1` and `COMPASS_LIVE_CONFIRM=yes`, run by the owner locally. CI never calls the live API (the gate refuses a CI run).
 
 ## Day-1 spikes that may change this file (plan section 10)
 

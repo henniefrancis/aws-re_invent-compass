@@ -1,6 +1,6 @@
 # ADR-009 Attendee-only Compass API
 
-Status: Accepted, 2026-10-15 (owner approved the build plan). The per-pass manage-token fallback below is the alternative if the day-1 spike SP2 fails.
+Status: Accepted, 2026-10-15 (owner approved the build plan). The per-pass manage-token fallback below is the alternative if the day-1 spike SP2 fails. SP2 passed on 18 October 2026 (`docs/spikes-results.md`), so the fallback was not used.
 
 ## Context
 

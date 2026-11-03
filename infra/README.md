@@ -7,7 +7,7 @@ Terraform only, region `us-east-1`, state in HCP Terraform. The build plan (sect
 ```
 infra/
   .terraformignore     files kept out of the HCP upload
-  bootstrap/           OIDC provider, four roles, account API Gateway role (owner runs once)
+  bootstrap/           OIDC provider, four roles, boundaries, account API Gateway role, budget, domain, HCP workspaces (owner runs once)
   modules/             site, edge, api, data, secrets, observability
   envs/dev, envs/prod  compose the six modules; real tfvars and tfbackend are git-ignored
   tests/               native tests (mock providers, plan only) and static scans
@@ -44,7 +44,7 @@ terraform {
 }
 ```
 
-Terraform generates no secret value, so no `random` provider is used. The bootstrap also uses `hashicorp/tfe ~> 0.82.0`. The lock files of the three roots (`bootstrap`, `envs/dev`, `envs/prod`) are committed. They were generated for every platform with `terraform providers lock -platform=linux_amd64 -platform=windows_amd64 -platform=darwin_arm64`; the lock files of the modules are not committed
+Terraform generates no secret value, so no `random` provider is used. The bootstrap also uses `hashicorp/tfe ~> 0.82.0`. The lock files of the three roots (`bootstrap`, `envs/dev`, `envs/prod`) are committed. They were generated for every platform with `terraform providers lock -platform=linux_amd64 -platform=windows_amd64 -platform=darwin_arm64`; the lock files of the modules are not committed.
 
 ## Offline checks
 

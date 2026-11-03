@@ -6,7 +6,7 @@ This spec (S3, compass-power) covers the parts of re:Invent Compass that an atte
 
 In the airline metaphor this stream is the travel agent and the boarding gate. It reads the attendee's code to suggest an itinerary (scan and plan), writes that itinerary as a Kiro spec, books and cancels seats only through the guardrail (every write runs `checkReservation` inside the server), hands boarding passes to the phone, and offers the same desk to Kiro, Claude Desktop, VS Code and the Kiro CLI.
 
-S3 consumes three other streams only through their documented interfaces, behind injected seams, and mocks them until they merge: S1 events-client (`@compass/core/auth`, `/api`, `/catalog`, `/simulated`), S2 itinerary-rules (`@compass/core/rules`) and S4 boarding-passes (`@compass/core/passes`). All shared types and the seventeen MCP tool schemas come from `@compass/contracts` and are never redeclared or edited here.
+S3 consumes three other streams only through their documented interfaces, behind injected seams, and mocks them until they merge: S1 events-client (`@compass/core/auth`, `/api`, `/catalog`, `/simulated`), S2 itinerary-rules (`@compass/core/rules`) and S4 boarding-passes (`@compass/core/passes`). All shared types and the MCP tool schemas (twenty-four after the amendments below) come from `@compass/contracts` and are never redeclared or edited here.
 
 The guardrail inside the server is the control. Kiro hooks add a warning or a block on top, as defence in depth, so S3 works whether or not day-1 spike SP1 confirms hook blocking. A human approves every write: write tools are never auto-approved, and the official `awsevents` remote server's write tools are listed in `disabledTools`.
 
@@ -16,7 +16,7 @@ Scope boundary: this stream does not build the Events API client, sign-in, catal
 
 - **Compass_Server**: The local stdio MCP server in `packages/mcp-server`, built on `@modelcontextprotocol/sdk` 1.32.2 (1.32.1 until 30 October 2026, ADR-032).
 - **CLI**: The `reinvent-compass` command in the same package: no arguments starts the Compass_Server; `demo` runs the simulated flow; `hook <name>` is what Kiro hooks call.
-- **Tool**: One of the seventeen MCP tools defined in `mcpTools` in `packages/contracts/src/mcp-tools.ts`.
+- **Tool**: One of the twenty-four MCP tools (seventeen until the amendments below) defined in `mcpTools` in `packages/contracts/src/mcp-tools.ts`.
 - **Read_Tool**: `refresh_catalog`, `find_sessions`, `scan_repo`, `check_itinerary`. These may be auto-approved by the attendee.
 - **Local_Action_Tool**: `sign_in`, `sign_out`, `plan_week`, `export_calendar`. These change only local state and are not auto-approved by Compass.
 - **Write_Tool**: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby`, `add_layover`, `issue_boarding_passes`, `send_to_phone`, `sync_passes`, `forget_me`. Never auto-approved; guardrailed inside the Compass_Server. `sync_passes` is a Write_Tool because it can void passes (CTO review H1).

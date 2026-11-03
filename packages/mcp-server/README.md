@@ -187,7 +187,7 @@ Every scan adds to one tech list on your machine: the AWS services you use (with
 - **GitHub**: the GitHub tokens stay in your operating system keychain (or in memory only) and go only to `github.com` and `api.github.com`. Repository archives come from `codeload.github.com` without the token, are read in memory and are never saved. Nothing about your repositories goes to Compass or to AWS.
 - **Your schedule** is read from the AWS Events service. A copy is kept in your app-data folder (mode 0600) and removed by `forget_me`.
 - **Session text** from the catalog is shown to your assistant as labelled data, never as instructions. Session abstracts are never passed on.
-- **Boarding Passes**: when you issue passes, the pass fields (session code, title, times, room and an optional name you type yourself) go to the Compass pass service. Apple or Google receive them if you add a pass to a wallet. The ID token is checked and never stored.
+- **Boarding Passes**: when you issue passes, the pass fields (session code, title, venue, room, times, and the walks before and after the session) go to the Compass pass service; version 0.1.0 never sends your name. Apple receives a pass only if you add it to Apple Wallet. Google Wallet gets its pass object when the pass service issues the pass, so the "Add to Google Wallet" link works. The ID token is checked and never stored.
 - **Nothing is logged** that holds a token, an email address, a link or a file path. Logs go to stderr, never to stdout.
 - **The week spec** is written into your workspace folder, after you confirm the folder. If the folder is a public repository the plan would show where you will be and when, so Compass offers to add it to `.gitignore`.
 

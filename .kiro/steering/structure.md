@@ -26,14 +26,16 @@ aws-re_invent-compass/
 │   │       ├── catalog/          # S1: pagination, cache, normalisation, venue recovery
 │   │       ├── simulated/        # S1: fixture-backed transport (COMPASS_MODE=simulated)
 │   │       ├── rules/            # S2: pure, browser-safe rules engine (also used by the site)
-│   │       ├── scanner/          # S3: repo to services (terraform, cdk-ts, sdk-js-v3, boto3)
+│   │       ├── scanner/          # S3: repo to services (terraform, cdk-ts, sdk-js-v3, boto3, sdk-dotnet) and other tech
+│   │       ├── github/           # S3: read-only GitHub App sign-in, repo listing and archive scan
+│   │       ├── redact/           #   the one redactor for every log line and error message
 │   │       ├── spec/             # S3: week spec generator
 │   │       └── passes/           # S4: PassFields builder, Compass API client, sync, .ics, itinerary HTML, QR
 │   ├── mcp-server/               # S3: local stdio MCP server and CLI, published as `reinvent-compass`
 │   └── pass-service/             # S5: Compass API Lambdas (api, passkit), original pass artwork
 ├── power/                        # S3: the Kiro Power (Agent Plugins format)
 │   ├── plugin.json
-│   ├── mcp.json                  #   compass (local stdio); awsevents is added only after SP1 (ADR-024)
+│   ├── mcp.json                  #   compass (local stdio) only; awsevents is not bundled (ADR-024)
 │   ├── skills/                   #   plan-my-week, first-timer-guide, install-hooks
 │   └── hook-templates/           #   PreToolUse guardrail (copied into the attendee's .kiro/hooks); the PostToolUse sync hook was removed (ADR-024)
 ├── site/                         # S7: Angular 22 showcase site (story, demo, install, privacy, /board)
@@ -42,7 +44,7 @@ aws-re_invent-compass/
 │   ├── modules/                  #   site, edge, api (openapi.yaml copy owned by S0), data, secrets, observability
 │   └── envs/{dev,prod}/          #   cloud.auto.tfbackend and terraform.tfvars are git-ignored; .example committed
 ├── spikes/                       # S0: day-1 spike scripts (owner-run, print no secret values)
-├── scripts/                      # S6: release.sh, bootstrap.sh, load-secrets.sh, google-wallet-class.mjs (owner-run)
+├── scripts/                      # S6: release.sh, bootstrap.sh, load-secrets.sh, set-workspace-secrets.sh, check-secrets.sh, google-wallet-class.mjs (owner-run)
 ├── data/
 │   └── venues.json               # S2: venues, coordinates, walking-time matrix, a source note per value
 ├── fixtures/
@@ -54,6 +56,8 @@ aws-re_invent-compass/
 │   ├── architecture/             # build-plan.md (mirror of the approved plan)
 │   ├── decisions/                # ADR-001 onwards
 │   ├── runbooks/                 # S6: release, rollback, secrets, Google class, kill switch
+│   ├── proposals/                # wording proposals
+│   ├── story/                    # creator and inspiration
 │   ├── article/                  # Claude: Builder Center post drafts and screenshots
 │   └── demo/                     # Claude and owner: video script
 ├── .github/                      # S0: check.yml, e2e.yml, publish.yml, dependabot.yml
