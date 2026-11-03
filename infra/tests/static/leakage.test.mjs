@@ -1,7 +1,7 @@
 // Property 7: no committed owned file embeds an account id, an account-bearing
 // ARN or an email address (Requirement 17.6).
 //
-// Scans every file under infra/**, scripts/** and docs/runbooks/** that is tracked
+// Scans every file under infra/** and scripts/** that is tracked
 // or untracked-but-not-ignored. Findings name the file, the line and the kind,
 // never the matched text.
 

@@ -6,7 +6,7 @@ A Kiro Power that turns a first-timer's re:Invent week into a Kiro spec, then is
 
 Entry for the re:Invent Event Catalog API Hackathon. Submission deadline: 6 November 2026, 11:59 PM PT.
 
-> **Kept as approved on 15 October 2026.** This is the original concept. The build changed some details, and the [README](README.md), the [ADRs](docs/decisions/README.md) and the [build plan](docs/architecture/build-plan.md) describe what was built. The main changes: the submission target moved from 1 November to 4 November ([hackathon rules](docs/hackathon-rules.md)); the `PostToolUse` hook was removed and the official remote MCP server is not bundled in the Power, because Kiro does not honour `disabledTools` inside a Power ([ADR-024](docs/decisions/ADR-024-kiro-hook-input-and-blocking.md)); the guardrail runs inside the Compass server, and hooks are a second check; the scanner reads Terraform, AWS CDK TypeScript, the AWS SDK for JavaScript v3, boto3 and the AWS SDK for .NET, not CloudFormation or SAM; and production has been live at https://reinvent-compass.vegas since 31 October 2026.
+> **Kept as approved on 15 October 2026.** This is the original concept. The build changed some details, and the [README](README.md), the [key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions) and the [build plan](docs/architecture/build-plan.md) describe what was built. The main changes: the submission target moved from 1 November to 4 November ([hackathon rules](docs/hackathon-rules.md)); the `PostToolUse` hook was removed and the official remote MCP server is not bundled in the Power, because Kiro does not honour `disabledTools` inside a Power ([ADR-024](docs/decisions/ADR-024-kiro-hook-input-and-blocking.md)); the guardrail runs inside the Compass server, and hooks are a second check; the scanner reads Terraform, AWS CDK TypeScript, the AWS SDK for JavaScript v3, boto3 and the AWS SDK for .NET, not CloudFormation or SAM; and production has been live at https://reinvent-compass.vegas since 31 October 2026.
 
 ---
 
@@ -167,7 +167,7 @@ The full register (16 risks with owner, likelihood and mitigation) is in build p
 
 ## 12. Decisions
 
-All decisions are ADRs in [docs/decisions](docs/decisions/). The headline ones (15 October 2026):
+All decisions are on the wiki: [Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions). The headline ones (15 October 2026):
 
 | Topic        | Decision                                                                                                                |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------- |

@@ -1,7 +1,7 @@
 // Shared helpers for the static scans of the infra stream (S6).
 //
 // The scans run offline with Node builtins only: node --test infra/tests/static
-// They read the files this stream owns (infra/**, scripts/**, docs/runbooks/**)
+// They read the files this stream owns (infra/**, scripts/**)
 // and never touch AWS, HCP Terraform or any credential.
 
 import { execFileSync } from 'node:child_process';
@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 export const repoRoot = resolve(here, '..', '..', '..');
 
-const OWNED_PREFIXES = ['infra/', 'scripts/', 'docs/runbooks/'];
+const OWNED_PREFIXES = ['infra/', 'scripts/'];
 const BINARY_EXTENSIONS = new Set(['.zip', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf']);
 
 /**
@@ -24,17 +24,7 @@ const BINARY_EXTENSIONS = new Set(['.zip', '.png', '.jpg', '.jpeg', '.gif', '.ic
 export function listOwnedFiles() {
   const out = execFileSync(
     'git',
-    [
-      'ls-files',
-      '-z',
-      '--cached',
-      '--others',
-      '--exclude-standard',
-      '--',
-      'infra',
-      'scripts',
-      'docs/runbooks',
-    ],
+    ['ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', 'infra', 'scripts'],
     { cwd: repoRoot, encoding: 'utf8' },
   );
   return [...new Set(out.split('\0').filter((p) => p.length > 0))]
