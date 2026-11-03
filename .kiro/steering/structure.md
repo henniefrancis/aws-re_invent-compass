@@ -26,23 +26,26 @@ aws-re_invent-compass/
 │   │       ├── catalog/          # S1: pagination, cache, normalisation, venue recovery
 │   │       ├── simulated/        # S1: fixture-backed transport (COMPASS_MODE=simulated)
 │   │       ├── rules/            # S2: pure, browser-safe rules engine (also used by the site)
-│   │       ├── scanner/          # S3: repo to services (terraform, cdk-ts, sdk-js-v3, boto3)
+│   │       ├── scanner/          # S3: repo to services (terraform, cdk-ts, sdk-js-v3, boto3, sdk-dotnet) and other tech
+│   │       ├── github/           # S3: read-only GitHub App sign-in, repo listing and archive scan
+│   │       ├── redact/           #   the one redactor for every log line and error message
 │   │       ├── spec/             # S3: week spec generator
 │   │       └── passes/           # S4: PassFields builder, Compass API client, sync, .ics, itinerary HTML, QR
 │   ├── mcp-server/               # S3: local stdio MCP server and CLI, published as `reinvent-compass`
 │   └── pass-service/             # S5: Compass API Lambdas (api, passkit), original pass artwork
 ├── power/                        # S3: the Kiro Power (Agent Plugins format)
 │   ├── plugin.json
-│   ├── mcp.json                  #   compass (local stdio); awsevents is added only after SP1 (ADR-024)
+│   ├── mcp.json                  #   compass (local stdio) only; awsevents is not bundled (ADR-024)
 │   ├── skills/                   #   plan-my-week, first-timer-guide, install-hooks
 │   └── hook-templates/           #   PreToolUse guardrail (copied into the attendee's .kiro/hooks); the PostToolUse sync hook was removed (ADR-024)
 ├── site/                         # S7: Angular 22 showcase site (story, demo, install, privacy, /board)
+│   └── content/                  #   the owner's approved words for The Creator and The Inspiration
 ├── infra/                        # S6: Terraform only (us-east-1, HCP Terraform)
 │   ├── bootstrap/                #   HCP OIDC provider and plan/apply roles (owner runs once)
 │   ├── modules/                  #   site, edge, api (openapi.yaml copy owned by S0), data, secrets, observability
 │   └── envs/{dev,prod}/          #   cloud.auto.tfbackend and terraform.tfvars are git-ignored; .example committed
 ├── spikes/                       # S0: day-1 spike scripts (owner-run, print no secret values)
-├── scripts/                      # S6: release.sh, bootstrap.sh, load-secrets.sh, google-wallet-class.mjs (owner-run)
+├── scripts/                      # S6: release.sh, bootstrap.sh, load-secrets.sh, set-workspace-secrets.sh, check-secrets.sh, google-wallet-class.mjs (owner-run)
 ├── data/
 │   └── venues.json               # S2: venues, coordinates, walking-time matrix, a source note per value
 ├── fixtures/
@@ -52,10 +55,7 @@ aws-re_invent-compass/
 │   └── .raw/                     # git-ignored: the owner's real recordings (SP5)
 ├── docs/
 │   ├── architecture/             # build-plan.md (mirror of the approved plan)
-│   ├── decisions/                # ADR-001 onwards
-│   ├── runbooks/                 # S6: release, rollback, secrets, Google class, kill switch
-│   ├── article/                  # Claude: Builder Center post drafts and screenshots
-│   └── demo/                     # Claude and owner: video script
+│   └── hackathon-rules.md        # the contest rules and how each is met
 ├── .github/                      # S0: check.yml, e2e.yml, publish.yml, dependabot.yml
 ├── CONCEPT.md, README.md, CONTRIBUTING.md, SECURITY.md, LICENSE, NOTICE
 └── package.json, package-lock.json   # S0; after day 1 only the integrator changes them
@@ -71,5 +71,5 @@ aws-re_invent-compass/
 - **Imports:** packages import each other only through declared subpath exports (`@compass/core/rules`), never deep relative paths across packages.
 - **Tests:** in each package's `test/` folder, mirroring `src/`, named `<module>.test.ts`.
 - **Fixtures:** `fixtures/api/<operation>/<scenario>.json`, for example `fixtures/api/reserve-sessions/partial-failure.json`. Never commit real recordings.
-- **Decisions:** a choice that changes steering gets an ADR in `docs/decisions/` and a steering update in the same change.
+- **Decisions:** a choice that changes steering gets a decision on the wiki (`wiki/Decisions-*.md`, published to the GitHub wiki) and a steering update in the same change.
 - **Commits:** Conventional Commits with the spec as scope (`feat(events-client): add pagination`). No em dashes or en dashes anywhere.

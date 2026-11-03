@@ -1,4 +1,4 @@
-# Advisories accepted by ADR-026 (docs/decisions/ADR-026-audit-allowlist.md).
+# Advisories accepted by ADR-026 (the reviewed audit allowlist, https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Security-and-Privacy#a-reviewed-allowlist-for-npm-audit).
 # Exactly the three advisories of the reviewed npm audit allowlist, no more: any
 # other advisory still fails the Trivy filesystem scan. Review at every release
 # gate. Trivy reports each one under its CVE id and lists the GHSA id of ADR-026 as

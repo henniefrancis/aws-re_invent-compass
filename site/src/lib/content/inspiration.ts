@@ -1,11 +1,11 @@
 // The Inspiration_Page (showcase-site task 34, Requirement 25): the owner's story in the owner's
-// words, quoted section by section from docs/story/creator-and-inspiration.md.
+// words, quoted section by section from site/content/creator-and-inspiration.md.
 
 import { quoted, type ContentBlock } from './content-block';
 
 export const INSPIRATION_TITLE = 'The Inspiration';
 
-const SOURCE = 'docs/story/creator-and-inspiration.md';
+const SOURCE = 'site/content/creator-and-inspiration.md';
 
 /** The one line to remember, shown under the title. */
 export const INSPIRATION_KEY_LINE: ContentBlock = quoted(

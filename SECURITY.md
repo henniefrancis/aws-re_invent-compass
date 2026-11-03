@@ -20,4 +20,4 @@ Out of scope: the AWS Events API, AWS Builder ID, Apple Wallet and Google Wallet
 
 ## How the project handles secrets
 
-No secret, token, key, certificate or account identifier is ever committed. Server secrets live in AWS Secrets Manager and are loaded by the owner. Attendee tokens stay in the operating system keychain on the attendee's own machine. See `docs/architecture/build-plan.md` (threat model) and `docs/decisions/` for the full design.
+No secret, token, key, certificate or account identifier is ever committed. Server secrets live in AWS Secrets Manager and are loaded by the owner. Attendee tokens stay in the operating system keychain on the attendee's own machine. See [Security](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Security) and [Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions) in the wiki for the full design.

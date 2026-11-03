@@ -134,13 +134,10 @@ describe('mcp.json', () => {
 
   test('has no awsevents entry until ADR-024 confirms disabledTools in a Power (CTO review H2)', async () => {
     const mcp = McpSchema.parse(await readJson(join(power, 'mcp.json')));
-    const adrs = (await readdir(join(root, 'docs', 'decisions'))).filter((f) =>
-      f.startsWith('ADR-024'),
-    );
-    const adr =
-      adrs[0] === undefined
-        ? undefined
-        : await readFile(join(root, 'docs', 'decisions', adrs[0]), 'utf8');
+    // The ADR-024 decision now lives on the wiki page "Decisions: Architecture"
+    // (foundation-contracts task 29); its source is in the repository's wiki/ folder.
+    const record = join(root, 'wiki', 'Decisions-Architecture.md');
+    const adr = existsSync(record) ? await readFile(record, 'utf8') : undefined;
     if ('awsevents' in mcp.mcpServers) {
       expect(awseventsAllowed(adr)).toBe(true);
       const entry = mcp.mcpServers.awsevents;

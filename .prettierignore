@@ -19,7 +19,7 @@ fixtures/synthetic/catalog.json
 fixtures/synthetic/index.json
 
 # The official Events API OpenAPI document, committed byte-for-byte as fetched.
-# ADR-023 records its SHA-256, so it must never be reformatted.
+# events-api.openapi.provenance.md records its SHA-256, so it must never be reformatted.
 packages/contracts/events-api.openapi.json
 
 # The three byte-identical Compass API OpenAPI files (hash-checked). They must

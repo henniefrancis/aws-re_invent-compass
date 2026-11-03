@@ -32,11 +32,11 @@ Several Kiro sessions ("engineers") build re:Invent Compass at the same time, on
 2. 100% unit coverage for the code you own (named exclusions only), lint, format and typecheck clean.
 3. No token, email or other personal data can reach logs or error messages (with a test that proves it, where relevant).
 4. Docs for what you built: a short `README.md` in your package or folder, plus any runbook the owner needs.
-5. Two or three screenshots or short terminal captures of the feature working, saved to `docs/article/screenshots/<spec-name>/`, for the Builder Center post.
+5. Two or three screenshots or short terminal captures of the feature working, kept for the Builder Center post (local, not committed).
 6. Then the review gate: QA and security review the branch; you fix findings until no High or Critical is open.
 
 ## Safety
 
-- Never call the live Events API from tests. Use `COMPASS_MODE=simulated` and fixtures. Live checks run only when the owner sets `COMPASS_LIVE_TESTS=1`.
+- Never call the live Events API from tests. Use `COMPASS_MODE=simulated` and fixtures. Live checks run only when the owner sets both `COMPASS_LIVE_TESTS=1` and `COMPASS_LIVE_CONFIRM=yes`, and never in CI.
 - Never read, print, paste or commit a secret, certificate, key, token or account ID. Use the `.example` files.
 - Never create AWS resources outside Terraform, and never run `terraform apply` or deploy scripts: the owner runs every deploy.

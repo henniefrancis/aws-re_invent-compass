@@ -1,11 +1,11 @@
 // The About_Page, titled The Creator (showcase-site task 34, Requirement 24), quoted from
-// docs/story/creator-and-inspiration.md.
+// site/content/creator-and-inspiration.md.
 
 import { quoted, type ContentBlock } from './content-block';
 
 export const ABOUT_TITLE = 'The Creator';
 
-const SOURCE = 'docs/story/creator-and-inspiration.md';
+const SOURCE = 'site/content/creator-and-inspiration.md';
 
 export const ABOUT_BUILT_BY: ContentBlock = quoted(
   'about-built-by',

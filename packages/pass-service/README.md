@@ -23,45 +23,45 @@ same tree are byte-identical. The build fails at 5 MB; the bundles are about 520
 
 ## Bundles
 
-| Lambda    | Zip                                             | Handler         | Runtime      | Arch    | Memory (plan) | Timeout (plan) | Operations                                                                                                                                 |
-| --------- | ----------------------------------------------- | --------------- | ------------ | ------- | ------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `api`     | `packages/pass-service/dist/lambda/api.zip`     | `index.handler` | `nodejs24.x` | `arm64` | 512 MB        | 10 s           | getHealth, issuePasses, getApplePass, updatePass, voidPass, createHandoff, getHandoff, getHandoffAppleBundle, getHandoffCalendar, forgetMe |
-| `passkit` | `packages/pass-service/dist/lambda/passkit.zip` | `index.handler` | `nodejs24.x` | `arm64` | 512 MB        | 5 s            | registerDevice, unregisterDevice, getSerialNumbers, getLatestPass, logMessages                                                             |
+| Lambda    | Zip                                             | Handler         | Runtime      | Arch    | Memory (plan) | Timeout (plan) | Operations                                                                                                                                                      |
+| --------- | ----------------------------------------------- | --------------- | ------------ | ------- | ------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api`     | `packages/pass-service/dist/lambda/api.zip`     | `index.handler` | `nodejs24.x` | `arm64` | 512 MB        | 15 s           | getHealth, issuePasses, getApplePass, updatePass, voidPass, createHandoff, getHandoff, getHandoffAppleBundle, getHandoffApplePass, getHandoffCalendar, forgetMe |
+| `passkit` | `packages/pass-service/dist/lambda/passkit.zip` | `index.handler` | `nodejs24.x` | `arm64` | 512 MB        | 5 s            | registerDevice, unregisterDevice, getSerialNumbers, getLatestPass, logMessages                                                                                  |
 
 Both run outside a VPC (outbound HTTPS only). The `api` Lambda's forget_me fan-out is cut at twice
-`APNS_BUDGET_MS` (8 s by default), close to the 10 s timeout: the data is deleted before the fan-out
-starts, so a timeout loses only the response. A 15 s timeout, or `APNS_BUDGET_MS=3000`, leaves room.
+`APNS_BUDGET_MS` (8 s by default), inside the 15 s timeout: the data is deleted before the fan-out
+starts, so a timeout would lose only the response.
 
 ## Environment variables
 
 An empty value counts as not set. Parsing is strict and fails closed at start-up with an error that
 names the variable (never its value). Checks run in the order of this table.
 
-| Variable                                 | Lambda       | Required            | Default                      | Meaning                                                                                                     |
-| ---------------------------------------- | ------------ | ------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `TABLE_NAME`                             | api, passkit | yes                 |                              | DynamoDB table (`compass-<env>`)                                                                            |
-| `APP_SECRET_ID`                          | api, passkit | yes                 |                              | secret `compass/<env>/app`: `pepper`, `pepperId`                                                            |
-| `ORIGIN_VERIFY_SECRET_ID`                | api, passkit | yes                 |                              | secret `compass/<env>/origin-verify`: `originVerify`                                                        |
-| `APPLE_SECRET_ID`                        | api, passkit | yes                 |                              | secret `compass/<env>/apple-pass`                                                                           |
-| `GOOGLE_WALLET_ENABLED`                  | api          | no                  | `true`                       | `true` or `false` (cut-list item 10)                                                                        |
-| `GOOGLE_SECRET_ID`                       | api          | when Google enabled |                              | secret `compass/<env>/google-wallet`                                                                        |
-| `GOOGLE_WALLET_CLASS_SUFFIX`             | api          | when Google enabled |                              | class id suffix made by `scripts/google-wallet-class.mjs`                                                   |
-| `GOOGLE_INSERT_BUDGET_MS`                | api          | no                  | `8000`                       | overall budget for the Google inserts of one issue request (100 to 12000)                                   |
-| `PUBLIC_BASE_URL`                        | api, passkit | yes                 |                              | `https://<distribution>.cloudfront.net`, origin only. Set in the second apply; never derived from a request |
-| `PASSKIT_WEB_SERVICE_PATH`               | api, passkit | no                  | `/api/passkit`               | joined to the base URL as the pass `webServiceURL`                                                          |
-| `EVENT_TIMEZONE`                         | api, passkit | yes                 |                              | IANA zone from GetEvent                                                                                     |
-| `EVENT_WINDOW_START`, `EVENT_WINDOW_END` | api          | yes                 |                              | ISO 8601 with offset, from GetEvent                                                                         |
-| `ID_TOKEN_VERIFIER`                      | api          | no                  | `cognito`                    | `cognito` or `oidc` (SP2)                                                                                   |
-| `ID_TOKEN_ISSUER`                        | api          | yes                 |                              | exact `iss`. In `cognito` mode `https://cognito-idp.<region>.amazonaws.com/<region>_<id>`                   |
-| `ID_TOKEN_CLIENT_ID`                     | api          | no                  | `7vmom55m1qstvq8i71ph127bfq` | expected `aud`                                                                                              |
-| `ID_TOKEN_JWKS_URI`                      | api          | in `oidc` mode      |                              | `https`, and its host must equal the issuer host                                                            |
-| `APNS_ENABLED`                           | api          | no                  | `true`                       | SP3 fallback switch                                                                                         |
-| `APNS_HOST`                              | api          | no                  | `api.push.apple.com`         | `api.push.apple.com` or `api.sandbox.push.apple.com` only (any other value fails closed)                    |
-| `APNS_PUSH_TYPE`                         | api          | no                  | unset                        | `alert` or `background`, sent only when set (SP3)                                                           |
-| `APNS_TIMEOUT_MS`, `APNS_BUDGET_MS`      | api          | no                  | `2000`, `4000`               | per push and per request                                                                                    |
-| `HANDOFF_CALENDAR_ENABLED`               | api          | no                  | `true`                       | cut-list item 5 switch                                                                                      |
-| `SECRETS_CACHE_TTL_SECONDS`              | api, passkit | no                  | `300`                        | secret cache period                                                                                         |
-| `SERVICE_VERSION`                        | api          | yes                 |                              | returned by getHealth                                                                                       |
+| Variable                                 | Lambda       | Required            | Default                      | Meaning                                                                                                                                  |
+| ---------------------------------------- | ------------ | ------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `TABLE_NAME`                             | api, passkit | yes                 |                              | DynamoDB table (`compass-<env>`)                                                                                                         |
+| `APP_SECRET_ID`                          | api, passkit | yes                 |                              | secret `compass/<env>/app`: `pepper`, `pepperId`                                                                                         |
+| `ORIGIN_VERIFY_SECRET_ID`                | api, passkit | yes                 |                              | secret `compass/<env>/origin-verify`: `originVerify`                                                                                     |
+| `APPLE_SECRET_ID`                        | api, passkit | yes                 |                              | secret `compass/<env>/apple-pass`                                                                                                        |
+| `GOOGLE_WALLET_ENABLED`                  | api          | no                  | `true`                       | `true` or `false` (cut-list item 10)                                                                                                     |
+| `GOOGLE_SECRET_ID`                       | api          | when Google enabled |                              | secret `compass/<env>/google-wallet`                                                                                                     |
+| `GOOGLE_WALLET_CLASS_SUFFIX`             | api          | when Google enabled |                              | class id suffix made by `scripts/google-wallet-class.mjs`                                                                                |
+| `GOOGLE_INSERT_BUDGET_MS`                | api          | no                  | `8000`                       | overall budget for the Google inserts of one issue request (100 to 12000)                                                                |
+| `PUBLIC_BASE_URL`                        | api, passkit | yes                 |                              | `https://<domain>` (or `https://<distribution>.cloudfront.net` without one), origin only. Set by Terraform; never derived from a request |
+| `PASSKIT_WEB_SERVICE_PATH`               | api, passkit | no                  | `/api/passkit`               | joined to the base URL as the pass `webServiceURL`                                                                                       |
+| `EVENT_TIMEZONE`                         | api, passkit | yes                 |                              | IANA zone from GetEvent                                                                                                                  |
+| `EVENT_WINDOW_START`, `EVENT_WINDOW_END` | api          | yes                 |                              | ISO 8601 with offset, from GetEvent                                                                                                      |
+| `ID_TOKEN_VERIFIER`                      | api          | no                  | `cognito`                    | `cognito` or `oidc` (SP2)                                                                                                                |
+| `ID_TOKEN_ISSUER`                        | api          | yes                 |                              | exact `iss`. In `cognito` mode `https://cognito-idp.<region>.amazonaws.com/<region>_<id>`                                                |
+| `ID_TOKEN_CLIENT_ID`                     | api          | no                  | `7vmom55m1qstvq8i71ph127bfq` | expected `aud`                                                                                                                           |
+| `ID_TOKEN_JWKS_URI`                      | api          | in `oidc` mode      |                              | `https`, and its host must equal the issuer host                                                                                         |
+| `APNS_ENABLED`                           | api          | no                  | `true`                       | SP3 fallback switch                                                                                                                      |
+| `APNS_HOST`                              | api          | no                  | `api.push.apple.com`         | `api.push.apple.com` or `api.sandbox.push.apple.com` only (any other value fails closed)                                                 |
+| `APNS_PUSH_TYPE`                         | api          | no                  | unset                        | `alert` or `background`, sent only when set (SP3)                                                                                        |
+| `APNS_TIMEOUT_MS`, `APNS_BUDGET_MS`      | api          | no                  | `2000`, `4000`               | per push and per request                                                                                                                 |
+| `HANDOFF_CALENDAR_ENABLED`               | api          | no                  | `true`                       | cut-list item 5 switch                                                                                                                   |
+| `SECRETS_CACHE_TTL_SECONDS`              | api, passkit | no                  | `300`                        | secret cache period                                                                                                                      |
+| `SERVICE_VERSION`                        | api          | yes                 |                              | returned by getHealth                                                                                                                    |
 
 The Lambdas never read or log the `x-api-key` header (API Gateway enforces it) or any other header
 apart from `x-origin-verify`, `Authorization`, `If-Modified-Since` and the content type.
@@ -108,7 +108,7 @@ certificate and key authenticate the APNs connection, so there is no separate AP
 
 Table `compass-<env>`: partition key `pk` (S), sort key `sk` (S), on demand, TTL attribute `ttl`
 (number, epoch seconds), deletion protection, and no point-in-time recovery (ADR-015). GSI2 (`gsi2pk`, `gsi2sk`), strings, projection ALL. GSI1 is no longer used (the pass-keyed registration
-copies below replaced it); S6 may drop it.
+copies below replaced it) and the table no longer has it.
 
 | Item                | pk                 | sk                                  | gsi2pk          | gsi2sk                                   |
 | ------------------- | ------------------ | ----------------------------------- | --------------- | ---------------------------------------- |
@@ -134,7 +134,7 @@ Limits (one-hour windows aligned to the epoch hour): 60 pass writes (issue count
 and void are counted but never refused), 10 hand-offs, 5 forget_me calls (over it the data is still
 erased and the fan-out skipped), 120 updates per attendee and 20 per pass that fan out (over them the
 update is stored and Last_Updated advances, but no push or Google patch is sent; void always fans out),
-30 reads per hand-off, at most 10 live registrations per pass (the 11th gets 200 and is not stored),
+30 reads per hand-off plus 2 for each of its passes, at most 10 live registrations per pass (the 11th gets 200 and is not stored),
 and 80 active passes per attendee.
 
 ## Metrics
@@ -153,15 +153,15 @@ value, header, body, token, serial, device id, push token, SubHash or error mess
 ## Permissions
 
 - `api`: `dynamodb:GetItem`, `PutItem`, `UpdateItem`, `DeleteItem`, `BatchWriteItem`, `Query` on the
-  table and both GSIs; `secretsmanager:GetSecretValue` on the four secrets; outbound HTTPS to the JWKS
+  table and GSI2; `secretsmanager:GetSecretValue` on the four secrets; outbound HTTPS to the JWKS
   host, `api.push.apple.com`, `walletobjects.googleapis.com` and `oauth2.googleapis.com`.
-- `passkit`: `dynamodb:GetItem`, `PutItem`, `DeleteItem`, `Query` on the table and GSI1, with `PutItem`
-  and `DeleteItem` limited by `dynamodb:LeadingKeys` to `DEV#*`; `secretsmanager:GetSecretValue` on
+- `passkit`: `dynamodb:GetItem`, `PutItem`, `DeleteItem`, `Query` on the table and GSI2, with `PutItem`
+  and `DeleteItem` limited by `dynamodb:LeadingKeys` to `DEV#*` and `PASSREG#*`; `secretsmanager:GetSecretValue` on
   `app`, `origin-verify` and `apple-pass` only (it never reads `google-wallet`).
 
 Responses except getHealth carry `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` and
-`Referrer-Policy: no-referrer`; no CORS header is ever set. The hand-off `.pkpasses` and `.ics`
-downloads are attachments with fixed names (`reinvent-passes-<n>.pkpasses`, `reinvent.ics`). A
+`Referrer-Policy: no-referrer`; no CORS header is ever set. The hand-off `.pkpasses`, `.pkpass` and `.ics`
+downloads are attachments with fixed names (`reinvent-passes-<n>.pkpasses`, `reinvent-pass.pkpass`, `reinvent.ics`). A
 hand-off is not single-use within its 15 minutes.
 
 ## forget_me
@@ -202,7 +202,7 @@ repeat-inserts passes for made-up sessions.
   the spike prints `verified`; otherwise `oidc` with `ID_TOKEN_ISSUER` and `ID_TOKEN_JWKS_URI`.
 - SP3: `PASSKIT_WEB_SERVICE_PATH` (default `/api/passkit`), `APNS_PUSH_TYPE` (unset, then `background`,
   then `alert` if no fetch arrives) and `APNS_ENABLED=false` as the fallback. Result (19 October, real
-  iPhone against dev, `docs/spikes-results.md`): the defaults work. The path joins with one slash,
+  iPhone against dev, the day-one spikes on https://github.com/henniefrancis/aws-re_invent-compass/wiki/How-It-Was-Built): the defaults work. The path joins with one slash,
   pushes arrive with `APNS_PUSH_TYPE` unset and `apns-topic` equal to the Pass Type ID, Wallet sends
   `If-Modified-Since`, and `APNS_ENABLED` stays `true`. Binary downloads through the edge needed `*/*`
   in the API's binary media types.

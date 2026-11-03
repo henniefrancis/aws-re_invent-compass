@@ -77,7 +77,7 @@ variable "route_throttles" {
 }
 
 variable "kill_switch_enabled" {
-  description = "When true the WAF kill-switch rule blocks every request. See docs/runbooks/kill-switch.md."
+  description = "When true the WAF kill-switch rule blocks every request. See https://github.com/henniefrancis/aws-re_invent-compass/wiki/Kill-Switch."
   type        = bool
   default     = false
 }
@@ -168,7 +168,7 @@ variable "google_wallet_class_suffix" {
 }
 
 variable "origin_verify_value" {
-  description = "Value of the x-origin-verify header CloudFront sends to the API. Sensitive: supply it as an HCP workspace variable. Generate it locally (see docs/runbooks/secrets.md) and load the same value into the app secret with scripts/load-secrets.sh."
+  description = "Value of the x-origin-verify header CloudFront sends to the API. Sensitive: supply it as an HCP workspace variable. Generate it locally (see https://github.com/henniefrancis/aws-re_invent-compass/wiki/Secrets) and load the same value into the app secret with scripts/load-secrets.sh."
   type        = string
   sensitive   = true
 
@@ -202,25 +202,25 @@ variable "passkit_reserved_concurrency" {
 }
 
 variable "handoff_calendar_enabled" {
-  description = "Switch for the hand-off calendar download. See docs/runbooks/alarms.md."
+  description = "Switch for the hand-off calendar download. See https://github.com/henniefrancis/aws-re_invent-compass/wiki/Alarms."
   type        = bool
   default     = true
 }
 
 variable "table_deletion_protection" {
-  description = "DynamoDB deletion protection. Keep true; only docs/runbooks/teardown.md sets it false."
+  description = "DynamoDB deletion protection. Keep true; only https://github.com/henniefrancis/aws-re_invent-compass/wiki/Teardown sets it false."
   type        = bool
   default     = true
 }
 
 variable "site_force_destroy" {
-  description = "Let Terraform empty and delete the site bucket. Keep false; only docs/runbooks/teardown.md sets it true."
+  description = "Let Terraform empty and delete the site bucket. Keep false; only https://github.com/henniefrancis/aws-re_invent-compass/wiki/Teardown sets it true."
   type        = bool
   default     = false
 }
 
 variable "secret_recovery_window_days" {
-  description = "Recovery window of the secrets after deletion. Keep 30; only docs/runbooks/teardown.md sets 0."
+  description = "Recovery window of the secrets after deletion. Keep 30; only https://github.com/henniefrancis/aws-re_invent-compass/wiki/Teardown sets 0."
   type        = number
   default     = 30
 }

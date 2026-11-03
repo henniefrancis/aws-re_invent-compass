@@ -8,7 +8,7 @@ import { INSPIRATION_SECTIONS } from '../../src/lib/content/inspiration';
 import { CREATOR_LINKS } from '../../src/lib/content/links';
 import { SITE_ROOT } from '../support/source-files';
 
-const STORY = readFileSync(join(SITE_ROOT, '..', 'docs/story/creator-and-inspiration.md'), 'utf8');
+const STORY = readFileSync(join(SITE_ROOT, 'content/creator-and-inspiration.md'), 'utf8');
 const ARTWORK = readFileSync(join(SITE_ROOT, 'ARTWORK.md'), 'utf8');
 
 describe('The Creator and The Inspiration (task 34)', () => {

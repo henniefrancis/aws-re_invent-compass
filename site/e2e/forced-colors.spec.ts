@@ -13,7 +13,10 @@ test.describe('forced colors', () => {
     await expect(page.locator('h1')).toBeVisible();
     expect(await page.evaluate(() => matchMedia('(forced-colors: active)').matches)).toBe(true);
 
-    const button = page.getByRole('button', { name: 'Copy: npx reinvent-compass', exact: true });
+    const button = page.getByRole('button', {
+      name: 'Copy: npx reinvent-compass@0.1.0',
+      exact: true,
+    });
     const borders = await button.evaluate((element) => {
       const style = getComputedStyle(element);
       return {

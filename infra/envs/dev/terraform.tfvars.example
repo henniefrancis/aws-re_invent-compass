@@ -36,7 +36,7 @@ google_wallet_enabled = true
 
 # Sensitive values. Set them as sensitive HCP workspace variables (this file is
 # not uploaded) and never commit the real values. Generation steps are in
-# docs/runbooks/secrets.md.
+# https://github.com/henniefrancis/aws-re_invent-compass/wiki/Secrets.
 origin_verify_value = "REPLACE_WITH_GENERATED_ORIGIN_VERIFY_VALUE"
 api_key_value       = "REPLACE_WITH_GENERATED_API_KEY_VALUE"
 

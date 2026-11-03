@@ -37,8 +37,8 @@ Non-negotiable project constraints that every requirement in this document inher
 - **Publish_Workflow**: `.github/workflows/publish.yml`.
 - **Dependabot_Config**: `.github/dependabot.yml`.
 - **Repo_Hooks**: The `.kiro/hooks/**` hooks used while building this repository.
-- **SP2_Script**: `spikes/sp2-id-token.mjs`.
-- **SP5_Script**: `spikes/sp5-shape-diff.mjs`.
+- **SP2_Script**: `spikes/sp2-id-token.ts`.
+- **SP5_Script**: `spikes/sp5-shape-diff.ts`.
 - **Decision_Record**: The ADR at `docs/decisions/ADR-023-events-api-openapi-source.md` recording the provenance of the Events API OpenAPI document.
 - **Coverage_Thresholds**: vitest v8 coverage set to 100% for lines, branches, functions and statements, with named exclusions only.
 

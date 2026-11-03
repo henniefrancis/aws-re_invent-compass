@@ -6,16 +6,16 @@ This spec (S5, pass-service) covers the Compass API Lambdas of re:Invent Compass
 
 In the airline metaphor this stream is the gate agent's printer and the airline's flight-status service behind it. It prints a boarding pass only for a verified passenger (the Builder ID ID token), refuses to print anything that looks like a forged ticket (fixed template, strict content rules), tells every phone holding a pass when the flight changes or is cancelled (APNs and Google patches), and lets the passenger pick up their passes at a self-service kiosk for 15 minutes (the hand-off).
 
-Infrastructure is out of scope: S6 owns all Terraform, the API Gateway import, the DynamoDB table, the secrets containers, the IAM roles and the alarms. S5 delivers two Lambda bundles (`api` and `passkit`), their handler names, their documented environment variables, the JSON layout of each secret, the DynamoDB key schema it reads and writes, and the metrics it emits. The Compass API contract (`contracts/compass-api.openapi.yaml`, 15 operations) and the shared schemas in `@compass/contracts` are frozen and owned by S0; this stream never edits them.
+Infrastructure is out of scope: S6 owns all Terraform, the API Gateway import, the DynamoDB table, the secrets containers, the IAM roles and the alarms. S5 delivers two Lambda bundles (`api` and `passkit`), their handler names, their documented environment variables, the JSON layout of each secret, the DynamoDB key schema it reads and writes, and the metrics it emits. The Compass API contract (`contracts/compass-api.openapi.yaml`, 15 operations when this spec was written, 16 since pass-service task 50 added getHandoffApplePass) and the shared schemas in `@compass/contracts` are frozen and owned by S0; this stream never edits them.
 
-Three day-1 spikes have not yet been run (SP2 ID token issuer, SP3 PassKit on a real iPhone, SP4 Google Wallet demo mode). This spec designs for the build plan's expected outcome and puts each assumption behind configuration, so a spike result changes configuration, not code.
+Three day-1 spikes had not yet been run when this spec was written (SP2 ID token issuer, SP3 PassKit on a real iPhone, SP4 Google Wallet demo mode); all three have since run (`docs/spikes-results.md`). This spec designs for the build plan's expected outcome and puts each assumption behind configuration, so a spike result changes configuration, not code.
 
 Scope boundary: this stream does not build the local pass builder, sync or Compass API client (S4), the MCP tools (S3), the `/board` page (S7), or any Terraform, script or runbook (S6). It never signs in an attendee and never sees the Events API access token.
 
 ## Glossary
 
 - **Compass_API**: The attendee-only HTTP API defined by `contracts/compass-api.openapi.yaml`, served at `https://<distribution>.cloudfront.net/api/*` through API Gateway REST stage `live`.
-- **Api_Lambda**: The Lambda bundle that serves the ten attendee, hand-off and health operations: getHealth, issuePasses, getApplePass, updatePass, voidPass, createHandoff, getHandoff, getHandoffAppleBundle, getHandoffCalendar and forgetMe.
+- **Api_Lambda**: The Lambda bundle that serves the eleven attendee, hand-off and health operations: getHealth, issuePasses, getApplePass, updatePass, voidPass, createHandoff, getHandoff, getHandoffAppleBundle, getHandoffApplePass (pass-service task 50), getHandoffCalendar and forgetMe.
 - **Passkit_Lambda**: The Lambda bundle that serves the five Apple PassKit web service operations: registerDevice, unregisterDevice, getSerialNumbers, getLatestPass and logMessages.
 - **Route_Template**: The API Gateway resource path template of a request (for example `/api/v1/passes/{serialNumber}/void`), read from the proxy event `resource` field. It never contains an identifier value.
 - **Problem_Response**: An `application/problem+json` body of exactly `{type, title, status, code}` that validates against `ProblemSchema` from `@compass/contracts`.

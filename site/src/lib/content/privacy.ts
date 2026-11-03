@@ -7,7 +7,7 @@ import { quoted, summary, type ContentBlock } from './content-block';
 const PLAN = 'docs/architecture/build-plan.md';
 const PRODUCT = '.kiro/steering/product.md';
 const SITE = '.kiro/specs/showcase-site/requirements.md';
-const WALK = 'docs/decisions/ADR-037-walk-from-here.md';
+const WALK = 'wiki/Decisions-Product-and-Scope.md';
 const MCP_README = 'packages/mcp-server/README.md';
 
 export interface PrivacySection {
@@ -36,7 +36,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-catalog-schedule',
-        'The session catalog cache and a snapshot of your schedule stay in a folder on your computer. The snapshot is purged 30 days after the event ends, or when you run forget_me.',
+        'The session catalog cache and a snapshot of your schedule stay in a folder on your computer. The snapshot is replaced each time Compass reads your schedule, and deleted when you run forget_me.',
         PLAN,
         '4.2 (P4)',
       ),
@@ -114,7 +114,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-processors',
-        'When you add a pass to a wallet, Apple (the push token) and Google (the pass object) also process data. Google acts as a processor.',
+        'Apple processes data (the push token) when you add a pass to Apple Wallet. Google holds the pass object from the moment the pass is issued, so that the Add to Google Wallet link works. Google acts as a processor.',
         PLAN,
         '4.2 (P15, P16)',
       ),
@@ -201,7 +201,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         'privacy-site-walk',
         'On the board page, Walk from here asks your phone for its location only when you tap it. The walking time is worked out on your phone. Compass does not send your location anywhere, save it or log it. Your phone may use its own location service to find it. The Directions link opens Apple Maps or Google Maps, and that app gets your location only when you open the link.',
         WALK,
-        'Decision and Privacy',
+        'Walk from here on the board page',
       ),
     ],
   },

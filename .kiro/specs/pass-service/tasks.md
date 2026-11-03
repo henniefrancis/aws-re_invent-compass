@@ -672,6 +672,9 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - [x] 57. The Apple pass issuer name is re:Invent Compass (owner request of 1 November)
   - `organizationName` changes from "AWS Community South Africa" (task 44) to "re:Invent Compass", the product name, so the Lock Screen card and the change alerts (task 56) name Compass. Passes already on a phone take the new name on their next update. Google Wallet alert titles come from Google's issuer business profile, which this does not change. Tests updated; full gate; commit scoped `pass-service`
 
+- [x] 58. The "If your plans change" text says Compass changes the schedule only in write mode (owner request of 3 November)
+  - `PLANS_NOTICE` said "Compass never changes your schedule", which is not true once the attendee turns writes on (`COMPASS_ALLOW_WRITES=1`). It now says Compass never changes the schedule by default, and in write mode only after the attendee approves each change. The same constant feeds the Apple back field and the Google pass, so both change together. Passes already on a phone take the new text on their next update. Tests updated; full gate; commit scoped `pass-service`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.1) is part of S5's definition of done, so every test task is mandatory.
