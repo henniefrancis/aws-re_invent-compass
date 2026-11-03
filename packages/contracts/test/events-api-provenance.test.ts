@@ -5,14 +5,15 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-// Unit tests for the Events API fetch helper and the ADR-023 provenance record
+// Unit tests for the Events API fetch helper and the provenance record
+// (events-api.openapi.provenance.md, the ADR-023 record)
 // (foundation-contracts, S0).
 //
 // These are ordinary unit assertions, not property tests. They prove two things:
 //  1. A failing fetch (non-200 status or a network error) surfaces a descriptive
 //     error that names the source URL and leaves the committed document byte for
 //     byte unchanged. Validates Requirement 3.5.
-//  2. ADR-023 records the source URL and a SHA-256 that equals the hash of the
+//  2. The provenance record holds the source URL and a SHA-256 that equals the hash of the
 //     committed Events API OpenAPI document. Validates Requirement 3.2.
 //
 // Safety: no test here ever calls the live Events API. global fetch is stubbed
@@ -52,7 +53,7 @@ const repoRoot = findRepoRoot();
 // Absolute paths to the real committed document, the helper module and the ADR.
 const committedDocPath = join(repoRoot, 'packages', 'contracts', 'events-api.openapi.json');
 const helperPath = join(repoRoot, 'packages', 'contracts', 'scripts', 'fetch-events-api.mjs');
-const adrPath = join(repoRoot, 'docs', 'decisions', 'ADR-023-events-api-openapi-source.md');
+const adrPath = join(repoRoot, 'packages', 'contracts', 'events-api.openapi.provenance.md');
 
 // The helper is an .mjs ESM module. Import it by file URL so resolution works on
 // every OS regardless of the test file location. The dynamic import is awaited
@@ -188,19 +189,22 @@ describe('Feature: foundation-contracts, Events API fetch helper', () => {
   });
 });
 
-describe('Feature: foundation-contracts, ADR-023 provenance', () => {
-  test('ADR-023 records the source URL of the committed Events API document', () => {
+describe('Feature: foundation-contracts, Events API provenance record', () => {
+  test('the provenance record names the source URL of the committed Events API document', () => {
     const adrText = readFileSync(adrPath, 'utf8');
     expect(adrText).toContain('https://api.awsevents.com/v1/openapi.json');
   });
 
-  test('the SHA-256 recorded in ADR-023 equals the hash of the committed Events API document', () => {
+  test('the SHA-256 in the provenance record equals the hash of the committed Events API document', () => {
     const adrText = readFileSync(adrPath, 'utf8');
 
     // Extract a 64 character lowercase hex string from the ADR text. This is the
     // recorded SHA-256 of the committed document.
     const match = adrText.match(/[0-9a-f]{64}/);
-    expect(match, 'ADR-023 must record a 64 character lowercase hex SHA-256').not.toBeNull();
+    expect(
+      match,
+      'the provenance record must hold a 64 character lowercase hex SHA-256',
+    ).not.toBeNull();
     const recordedHash = match?.[0];
 
     // Compute the actual SHA-256 of the committed document and compare. This is

@@ -54,7 +54,6 @@ aws-re_invent-compass/
 │   └── .raw/                     # git-ignored: the owner's real recordings (SP5)
 ├── docs/
 │   ├── architecture/             # build-plan.md (mirror of the approved plan)
-│   ├── decisions/                # ADR-023 and ADR-037 only (a test and the site read them)
 │   ├── story/                    # creator and inspiration
 │   ├── demo/                     # Claude and owner: video script
 │   └── hackathon-rules.md        # the contest rules and how each is met

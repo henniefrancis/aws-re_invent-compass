@@ -7,7 +7,7 @@ import { quoted, summary, type ContentBlock } from './content-block';
 const PLAN = 'docs/architecture/build-plan.md';
 const PRODUCT = '.kiro/steering/product.md';
 const SITE = '.kiro/specs/showcase-site/requirements.md';
-const WALK = 'docs/decisions/ADR-037-walk-from-here.md';
+const WALK = 'wiki/Decisions-Product-and-Scope.md';
 const MCP_README = 'packages/mcp-server/README.md';
 
 export interface PrivacySection {
@@ -201,7 +201,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         'privacy-site-walk',
         'On the board page, Walk from here asks your phone for its location only when you tap it. The walking time is worked out on your phone. Compass does not send your location anywhere, save it or log it. Your phone may use its own location service to find it. The Directions link opens Apple Maps or Google Maps, and that app gets your location only when you open the link.',
         WALK,
-        'Decision and Privacy',
+        'Walk from here on the board page',
       ),
     ],
   },
