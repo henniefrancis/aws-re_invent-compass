@@ -346,6 +346,9 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - [x] 27. The runbooks get their own wiki section (owner request of 3 November)
   - A new `wiki/Runbooks.md` page lists the six runbooks (Release, Alarms, Kill switch, Rollback, Secrets, Teardown) and when to open each; the sidebar gets a Runbooks heading under Operations; the Operations page, Home and each runbook link to it. Leak, dash and link checks; owner review on the live preview; publish to the wiki after the owner approves
 
+- [ ] 28. Move the build plan out of `docs/` after the submission (owner request of 3 November; not before 6 November)
+  - `docs/architecture/build-plan.md` stays until then because the steering files load it (`#[[file:]]`, workspace files only) and about 24 Install and Privacy texts on the site quote it, checked by the site content tests. To remove it: point `product.md` and `tech.md` at the wiki pages in `wiki/` (for example `wiki/Architecture-Overview.md`); re-source each site text to a `wiki/` page whose wording matches, or change the site text with the owner; drop it from `FILE_SOURCES`; delete the file. Full gate, site tests and owner review on the local preview
+
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.
 - Each top-level task (1 through 14) ends with a commit sub-task. Commit locally only after that task's tests pass, using Conventional Commits with `foundation-contracts` as the scope. The first commit (1.6) also includes `.kiro/specs/foundation-contracts/`. Never push, merge, tag or open a PR: the integrator does that after review.
