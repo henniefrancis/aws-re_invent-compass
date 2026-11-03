@@ -362,17 +362,22 @@ describe('links and footer', () => {
     const docs = documentationLinks(SITE_LINKS);
     expect(docs.map((d) => d.label)).toEqual([
       'README',
-      'Wiki',
-      'Build plan',
+      'Get started',
+      'User guide',
+      'Architecture',
       'Key decisions',
+      'Developer guide',
       'Operations',
+      'How it was built',
+      'Reference',
       'Kiro specs',
     ]);
-    expect(docs.filter((d) => d.href.includes('/wiki')).map((d) => d.href)).toEqual([
-      `${SITE_LINKS.repository}/wiki`,
-      `${SITE_LINKS.repository}/wiki/Key-Decisions`,
-      `${SITE_LINKS.repository}/wiki/Operations`,
-    ]);
+    // Each wiki section opens on the first page under its sidebar heading.
+    const sidebar = readFileSync(join(REPO_ROOT, 'wiki/_Sidebar.md'), 'utf8');
+    for (const doc of docs.filter((d) => d.href.includes('/wiki/'))) {
+      const page = doc.href.slice(doc.href.lastIndexOf('/') + 1);
+      expect(sidebar, doc.label).toContain(`](${page})`);
+    }
     for (const link of [...docs, ...licenceLinks(SITE_LINKS)]) {
       expect(link.href.startsWith(SITE_LINKS.repository), link.label).toBe(true);
     }

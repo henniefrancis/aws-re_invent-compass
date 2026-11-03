@@ -502,8 +502,9 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 
 - [x] 48. Every sample pass draws FLIGHT NAME above TERMINAL and GATE (owner request of 2 November)
   - The demo pass on `/demo` drew TERMINAL and GATE first. FLIGHT NAME is now always the first row under SESSION, as on the real Apple poster pass and the hero; the `flightNameFirst` option from task 47 is removed. The demo pass accessible name reads Session, Flight name, Terminal, Gate in the same order. Tests check the card order of the demo pass. Owner review on the local preview; site tests and e2e; commit scoped `showcase-site`
-- [x] 49. The Documentation menu links to the wiki for decisions and runbooks (owner request of 3 November)
-  - `docs/decisions` and `docs/runbooks` leave the repo (foundation-contracts task 26). The Documentation menu entries for the decisions and the runbooks open the wiki pages Key decisions and Operations instead, and a Wiki entry opens the wiki home. They open in a new tab like the other documentation links.
+
+- [x] 49. The Documentation page links to the wiki, one card per wiki section (owner requests of 3 November)
+  - `docs/decisions` and `docs/runbooks` leave the repo (foundation-contracts task 26). The Documentation page keeps the README and the Kiro specs and adds one card per wiki sidebar heading, each opening the first page under it: Get started, User guide, Architecture, Key decisions, Developer guide, Operations, How it was built and Reference. The Build plan card goes: readers get the wiki Architecture pages, and `docs/architecture/build-plan.md` stays only because steering and the site content read it. The lead says the documentation lives in the repository and its wiki. The links open in a new tab (task 46). A test checks every wiki card against `wiki/_Sidebar.md`. Owner review on the local preview; site tests; commit scoped `showcase-site`
 
 ## Notes
 
