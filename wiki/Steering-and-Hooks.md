@@ -42,7 +42,7 @@ It is a convenience for builders. The CI check on every pull request is the real
 The [Kiro Power](Glossary#kiro-power) ships a hook template, [power/hook-templates/reinvent-compass.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/hook-templates/reinvent-compass.json), with two `PreToolUse` hooks. A `PreToolUse` hook runs before the agent calls a tool and can stop the call. Both hooks run the same command, with a 30 second limit:
 
 ```sh
-npx --yes reinvent-compass@0.1.0 hook pre-write-guardrail
+npx --yes reinvent-compass@0.1.1 hook pre-write-guardrail
 ```
 
 | Hook                                      | Matcher                                                                                                                                         | What it does                                                                                                                  |

@@ -1,6 +1,6 @@
 {
   "name": "reinvent-compass",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An MCP server and Kiro Power that plans your re:Invent week from your own code and issues unofficial boarding passes for your reserved sessions.",
   "license": "Apache-2.0",
   "repository": {

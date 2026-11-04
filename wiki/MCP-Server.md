@@ -1,6 +1,6 @@
 _For architects: how the Compass MCP server is built, what its 24 tools are, how it keeps writes safe and how it is configured._
 
-The Compass server is a local [MCP server](Glossary#mcp-server) published to npm as `reinvent-compass` (version 0.1.0, Node 24 or newer). An [MCP client](Glossary#mcp-client) such as Kiro starts it on stdio with `npx --yes reinvent-compass@0.1.0`. It reads the [AWS Events API](Glossary#events-api), scans code, plans a week, runs the [guardrail](Glossary#guardrail) before every booking and drives the [Compass API](Glossary#compass-api) for passes.
+The Compass server is a local [MCP server](Glossary#mcp-server) published to npm as `reinvent-compass` (version 0.1.1, Node 24 or newer). An [MCP client](Glossary#mcp-client) such as Kiro starts it on stdio with `npx --yes reinvent-compass@0.1.0`. It reads the [AWS Events API](Glossary#events-api), scans code, plans a week, runs the [guardrail](Glossary#guardrail) before every booking and drives the [Compass API](Glossary#compass-api) for passes.
 
 ## What is inside
 
