@@ -18,11 +18,11 @@ Nothing. Compass is free and open source under the Apache License 2.0. There is 
 
 ## Can I try it without signing in or installing anything?
 
-Yes, two ways. Open [reinvent-compass.vegas/demo](https://reinvent-compass.vegas/demo) on any phone: no install, no sign-in, nothing touches a real schedule. Or, with Node.js 24, run `npx --yes reinvent-compass@0.1.0 demo` for the full ten-step flow on made-up data. See [Getting started](Getting-Started).
+Yes, two ways. Open [reinvent-compass.vegas/demo](https://reinvent-compass.vegas/demo) on any phone: no install, no sign-in, nothing touches a real schedule. Or, with Node.js 24, run `npx --yes reinvent-compass@0.1.1 demo` for the full ten-step flow on made-up data. See [Getting started](Getting-Started).
 
 ## What if I do not use Kiro?
 
-Compass is a standard [MCP server](Glossary#mcp-server). Claude Desktop, VS Code, the Kiro CLI and other desktop [MCP clients](Glossary#mcp-client) that run stdio servers can start it with `npx --yes reinvent-compass@0.1.0`. The setup for each is on [Getting started](Getting-Started#other-mcp-clients). The [guardrail](Glossary#guardrail) runs inside the server, so every client gets it; only the optional hooks are Kiro-only.
+Compass is a standard [MCP server](Glossary#mcp-server). Claude Desktop, VS Code, the Kiro CLI and other desktop [MCP clients](Glossary#mcp-client) that run stdio servers can start it with `npx --yes reinvent-compass@0.1.1`. The setup for each is on [Getting started](Getting-Started#other-mcp-clients). The [guardrail](Glossary#guardrail) runs inside the server, so every client gets it; only the optional hooks are Kiro-only.
 
 ## Which phones work?
 

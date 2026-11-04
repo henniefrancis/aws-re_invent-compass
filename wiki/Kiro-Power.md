@@ -10,13 +10,13 @@ Everything lives in [power/](https://github.com/henniefrancis/aws-re_invent-comp
 | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [plugin.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/plugin.json)                                                   | The manifest: name `reinvent-compass`, version `0.1.0`, Apache-2.0 licence, homepage and keywords.                                                                                                                                                              |
 | [POWER.md](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/POWER.md)                                                         | The same Power described in Kiro's own format (front matter plus notes), so Kiro finds it whichever manifest it reads first.                                                                                                                                    |
-| [mcp.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/mcp.json)                                                         | One server, `compass`, type `stdio`, command `npx --yes reinvent-compass@0.1.0`.                                                                                                                                                                                |
+| [mcp.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/mcp.json)                                                         | One server, `compass`, type `stdio`, command `npx --yes reinvent-compass@0.1.1`.                                                                                                                                                                                |
 | [skills/plan-my-week](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/skills/plan-my-week/SKILL.md)                          | The order of the tools, one approval per write, and the rules that do not bend.                                                                                                                                                                                 |
 | [skills/first-timer-guide](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/skills/first-timer-guide/SKILL.md)                | Plain-English notes for first-time attendees, each with the official AWS page it came from, listed in [official-sources.md](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/skills/first-timer-guide/references/official-sources.md). |
 | [skills/install-hooks](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/skills/install-hooks/SKILL.md)                        | How the agent offers and installs the optional hooks, with the attendee's consent.                                                                                                                                                                              |
 | [hook-templates/reinvent-compass.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/hook-templates/reinvent-compass.json) | Two optional `PreToolUse` [Kiro hooks](Glossary#kiro-hook).                                                                                                                                                                                                     |
 
-The version `0.1.0` is written into [mcp.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/mcp.json), the hook commands and [plugin.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/plugin.json), so the Power always starts the server version it was written for.
+The version `0.1.1` is written into [mcp.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/mcp.json), the hook commands and [plugin.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/plugin.json), so the Power always starts the server version it was written for.
 
 ## Key behaviours
 
@@ -29,7 +29,7 @@ The version `0.1.0` is written into [mcp.json](https://github.com/henniefrancis/
 
 ## The optional hooks
 
-The hook template holds two `PreToolUse` hooks. Both run `npx --yes reinvent-compass@0.1.0 hook pre-write-guardrail` with a 30 second timeout.
+The hook template holds two `PreToolUse` hooks. Both run `npx --yes reinvent-compass@0.1.1 hook pre-write-guardrail` with a 30 second timeout.
 
 | Hook                                      | Matcher                                                                      | What it does                                                                                                                                                                                                                                            |
 | ----------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -50,7 +50,7 @@ The `install-hooks` skill shows the template, asks the attendee whether it may w
 
 The Power itself has no settings. Settings belong to the server: see [MCP server](MCP-Server#configuration). According to the Power's own notes, Kiro starts no MCP server until "Kiro Agent: Configure MCP" is set to Enabled in Settings.
 
-To try the flow without an account, run `npx --yes reinvent-compass@0.1.0 demo`.
+To try the flow without an account, run `npx --yes reinvent-compass@0.1.1 demo`.
 
 ## Build cards
 
