@@ -1,14 +1,13 @@
 // audit-check (foundation-contracts, S0). Run `npm audit --omit=dev --json` and
 // fail on any high or critical advisory except a reviewed allowlist.
 //
-// The allowlist is recorded in ADR-026 (written by the integrator). It covers
-// three advisories reaching the project only through passkit-generator (S5's
-// Apple Wallet library), which the owner accepts for now:
-//   GHSA-86w9-cpqp-85rv  node-forge: signature verification not used by passkit-generator
-//   GHSA-6h2x-m376-mqjq  joi (via passkit-generator): dates bounded by PassFields and passed as Date objects (ADR-026 correction)
-//   GHSA-wr44-6hxh-3jwq  joi (via passkit-generator): only fixed schemas and messages reach joi (ADR-026)
+// The allowlist is recorded in ADR-026. It is empty since 4 November 2026: its
+// three advisories (GHSA-86w9-cpqp-85rv in node-forge, GHSA-6h2x-m376-mqjq and
+// GHSA-wr44-6hxh-3jwq in joi, all through passkit-generator) were fixed by
+// node-forge 1.4.2 and the joi 17.13.9 override, and matched nothing. A future
+// accepted advisory goes back on the list only with a new ADR-026 review.
 //
-// The allowlisted IDs are printed as a warning on every run, so an accepted risk
+// Any allowlisted IDs are printed as a warning on every run, so an accepted risk
 // stays visible. Any high or critical advisory NOT on the allowlist fails the
 // check. The audit JSON is parsed from `via` entries, whose url carries the GHSA
 // id; string `via` entries (references to other packages) are ignored.
@@ -22,10 +21,11 @@ import { maybeRunCli } from './cli.mjs';
 
 /**
  * The reviewed allowlist of advisory ids that are accepted for now (ADR-026).
+ * Empty since 4 November 2026.
+ *
+ * @type {readonly string[]}
  */
-export const ALLOWLIST = ['GHSA-86w9-cpqp-85rv', 'GHSA-6h2x-m376-mqjq', 'GHSA-wr44-6hxh-3jwq'];
-
-const ALLOW_SET = new Set(ALLOWLIST);
+export const ALLOWLIST = [];
 
 /** Severities that fail the check unless allowlisted. */
 const BLOCKING = new Set(['high', 'critical']);
@@ -162,24 +162,28 @@ export function extractAdvisories(report) {
  * Evaluate the audit report against the policy.
  *
  * @param {unknown} report
- * @returns {{ ok: boolean, blocking: Array<{id: string, severity: string, title: string}>, allowlisted: string[] }}
+ * @param {readonly string[]} [allowlist] the accepted advisory ids (ADR-026)
+ * @returns {{ ok: boolean, blocking: Array<{id: string, severity: string, title: string}>, allowlisted: readonly string[] }}
  */
-export function evaluate(report) {
+export function evaluate(report, allowlist = ALLOWLIST) {
   const advisories = extractAdvisories(report);
+  const allowSet = new Set(allowlist);
   // Any high or critical advisory that is not allowlisted blocks the check.
-  const blocking = advisories.filter((a) => BLOCKING.has(a.severity) && !ALLOW_SET.has(a.id));
-  return { ok: blocking.length === 0, blocking, allowlisted: ALLOWLIST };
+  const blocking = advisories.filter((a) => BLOCKING.has(a.severity) && !allowSet.has(a.id));
+  return { ok: blocking.length === 0, blocking, allowlisted: allowlist };
 }
 
 /**
  * Pure CLI driver: run the audit, evaluate the policy, and return the exit code
- * plus the lines to print. Always prints the allowlisted ids as a warning.
+ * plus the lines to print. Always prints the allowlisted ids as a warning, or
+ * says that none are allowlisted.
  *
  * @param {object} [options]
  * @param {() => { stdout: string }} [options.runner]
+ * @param {readonly string[]} [options.allowlist]
  * @returns {Promise<{ code: number, stdout: string, stderr: string }>}
  */
-export async function runCli({ runner } = {}) {
+export async function runCli({ runner, allowlist = ALLOWLIST } = {}) {
   let report;
   try {
     report = runAudit(runner);
@@ -191,9 +195,12 @@ export async function runCli({ runner } = {}) {
     };
   }
 
-  const { ok, blocking, allowlisted } = evaluate(report);
+  const { ok, blocking, allowlisted } = evaluate(report, allowlist);
 
-  let stdout = `audit-check: allowlisted advisories (accepted, ADR-026): ${allowlisted.join(', ')}\n`;
+  let stdout =
+    allowlisted.length > 0
+      ? `audit-check: allowlisted advisories (accepted, ADR-026): ${allowlisted.join(', ')}\n`
+      : 'audit-check: no allowlisted advisories (ADR-026 list is empty)\n';
   if (ok) {
     stdout += 'audit-check ok: no non-allowlisted high or critical advisories\n';
     return { code: 0, stdout, stderr: '' };

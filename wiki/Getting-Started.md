@@ -25,7 +25,7 @@ The demo runs entirely in your browser ([site/src/lib/demo](https://github.com/h
 ## Demo: Terminal
 
 ```sh
-npx --yes reinvent-compass@0.1.0 demo
+npx --yes reinvent-compass@0.1.1 demo
 ```
 
 This runs the whole Compass flow on made-up data, through the real tools and the real server, in ten steps ([packages/mcp-server/src/demo/run-demo.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/src/demo/run-demo.ts)):
@@ -52,7 +52,7 @@ Useful options:
 
 ### Kiro Power
 
-The [Kiro Power](Glossary#kiro-power) is the [power](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/power) folder: `plugin.json` and a matching `POWER.md`, `mcp.json`, three skills (`plan-my-week`, `first-timer-guide` and `install-hooks`) and a hook template. Its `mcp.json` starts one server, `compass`, with `npx --yes reinvent-compass@0.1.0`.
+The [Kiro Power](Glossary#kiro-power) is the [power](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/power) folder: `plugin.json` and a matching `POWER.md`, `mcp.json`, three skills (`plan-my-week`, `first-timer-guide` and `install-hooks`) and a hook template. Its `mcp.json` starts one server, `compass`, with `npx --yes reinvent-compass@0.1.1`.
 
 1. In Kiro, open Settings and set **Kiro Agent: Configure MCP** to Enabled. Kiro starts no [MCP server](Glossary#mcp-server) until you do.
 2. Open the Powers panel and choose **Add Custom Power**.
@@ -64,7 +64,7 @@ Then open your own project in Kiro and say: **"Plan my re:Invent."** The `plan-m
 
 ### Other MCP clients
 
-Any desktop [MCP client](Glossary#mcp-client) that runs stdio servers can start Compass with `npx --yes reinvent-compass@0.1.0`. Hooks are Kiro-only, but the guardrail runs inside the server in every client.
+Any desktop [MCP client](Glossary#mcp-client) that runs stdio servers can start Compass with `npx --yes reinvent-compass@0.1.1`. Hooks are Kiro-only, but the guardrail runs inside the server in every client.
 
 **Kiro without the Power.** Add the server to `.kiro/settings/mcp.json` (this workspace) or `~/.kiro/settings/mcp.json` (all workspaces):
 
@@ -73,7 +73,7 @@ Any desktop [MCP client](Glossary#mcp-client) that runs stdio servers can start 
   "mcpServers": {
     "compass": {
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@0.1.0"],
+      "args": ["--yes", "reinvent-compass@0.1.1"],
       "autoApprove": ["refresh_catalog", "find_sessions", "check_itinerary"]
     }
   }
@@ -89,7 +89,7 @@ Only those three read tools may be auto-approved. Never auto-approve a write too
   "mcpServers": {
     "compass": {
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@0.1.0"]
+      "args": ["--yes", "reinvent-compass@0.1.1"]
     }
   }
 }
@@ -103,7 +103,7 @@ Only those three read tools may be auto-approved. Never auto-approve a write too
     "compass": {
       "type": "stdio",
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@0.1.0"]
+      "args": ["--yes", "reinvent-compass@0.1.1"]
     }
   }
 }

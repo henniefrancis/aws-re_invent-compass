@@ -10,7 +10,7 @@ Built for the re:Invent Catalog API Builder Challenge (September to November 202
 
 The full documentation is in the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki): a user guide, the architecture, the key decisions, a developer guide, operations and reference pages.
 
-> **Status: released, version 0.1.0.** Compass is live: the showcase site, the click-through demo and the Compass API at [reinvent-compass.vegas](https://reinvent-compass.vegas), and the npm package [`reinvent-compass`](https://www.npmjs.com/package/reinvent-compass) (`npx --yes reinvent-compass@0.1.0 demo` runs the whole flow on made-up data). The [project board](https://github.com/users/henniefrancis/projects/3) and the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki) show how it was built. The Builder Center article and the demo video follow on 4 November.
+> **Status: released, version 0.1.1.** Compass is live: the showcase site, the click-through demo and the Compass API at [reinvent-compass.vegas](https://reinvent-compass.vegas), and the npm package [`reinvent-compass`](https://www.npmjs.com/package/reinvent-compass) (`npx --yes reinvent-compass@0.1.1 demo` runs the whole flow on made-up data). The [project board](https://github.com/users/henniefrancis/projects/3) and the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki) show how it was built. The Builder Center article and the demo video follow on 4 November.
 
 ## Contents
 
@@ -74,7 +74,7 @@ The week runs in three acts:
 ### 1. Try the demo (simulated, no sign-in)
 
 ```sh
-npx --yes reinvent-compass@0.1.0 demo
+npx --yes reinvent-compass@0.1.1 demo
 ```
 
 The demo runs the whole flow in your terminal on made-up data, through the real tools, in ten steps:
@@ -108,7 +108,7 @@ Use the folder URL, not the repository URL: the Power lives in `power/`, and Kir
 
 Then open your own project in Kiro and say: "Plan my re:Invent."
 
-**Other MCP clients.** Claude Desktop, VS Code and the Kiro CLI can run the same server with `npx --yes reinvent-compass@0.1.0`. The setup for each is in [Getting started](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Getting-Started). Hooks are Kiro-only, but the guardrail runs inside the server in every client.
+**Other MCP clients.** Claude Desktop, VS Code and the Kiro CLI can run the same server with `npx --yes reinvent-compass@0.1.1`. The setup for each is in [Getting started](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Getting-Started). Hooks are Kiro-only, but the guardrail runs inside the server in every client.
 
 ### 3. Live mode (AWS Builder ID)
 
@@ -251,7 +251,7 @@ Compass is local first. The responsible party under South Africa's Protection of
 **What leaves it, and where it goes**
 
 - The access token goes only to `api.awsevents.com`, and the refresh token only to the AWS Events token endpoint.
-- When you issue passes, the printable pass fields (session code, title, venue, room, times, and the walks before and after the session; version 0.1.0 never sends your name) and your ID token go to the Compass API. The ID token proves you signed in. It is checked and never stored. Only a keyed hash of your Builder ID subject is kept.
+- When you issue passes, the printable pass fields (session code, title, venue, room, times, and the walks before and after the session; version 0.1.1 never sends your name) and your ID token go to the Compass API. The ID token proves you signed in. It is checked and never stored. Only a keyed hash of your Builder ID subject is kept.
 - Apple receives a pass only if you add it to Apple Wallet. Google Wallet gets its pass object when the Compass API issues the pass, so the "Add to Google Wallet" link works; Google keeps that object, set to `INACTIVE` after a void.
 - If you connect GitHub, the GitHub tokens go only to `github.com` and `api.github.com`. Repository archives come from `codeload.github.com` without the token and are read in memory. Nothing about your repositories goes to Compass or to AWS.
 

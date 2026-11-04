@@ -80,27 +80,15 @@ test('the workflow header no longer claims there are no Terraform or shell files
   assert.doesNotMatch(workflow, /Detect Terraform files|Detect shell files/);
 });
 
-test('.trivyignore lists exactly the three ADR-026 advisories, each with a comment naming its GHSA id', () => {
+test('.trivyignore ignores nothing: the ADR-026 advisories were fixed upstream (4 November)', () => {
   const text = readFileSync(resolve(repoRoot, '.trivyignore'), 'utf8').replaceAll('\r\n', '\n');
   const ids = text
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => l.length > 0 && !l.startsWith('#'));
-  // Trivy matches ignores on the CVE id it reports; the GHSA id is a vendor id.
-  assert.deepEqual(ids.sort(), ['CVE-2026-85393', 'CVE-2026-90771', 'CVE-2026-92599']);
-  const expected = {
-    'CVE-2026-85393': 'GHSA-86w9-cpqp-85rv',
-    'CVE-2026-92599': 'GHSA-6h2x-m376-mqjq',
-    'CVE-2026-90771': 'GHSA-wr44-6hxh-3jwq',
-  };
-  for (const [cve, ghsa] of Object.entries(expected)) {
-    const before = text
-      .slice(0, text.indexOf(`\n${cve}\n`))
-      .trimEnd()
-      .split('\n');
-    const comment = before.slice(-3).join(' ');
-    assert.ok(comment.includes(`ADR-026, ${ghsa}`), `${cve} needs its ADR-026 comment`);
-  }
+  // Same list as the empty npm audit allowlist in .github/scripts/audit-check.mjs.
+  assert.deepEqual(ids, []);
+  assert.match(text, /ADR-026/);
 });
 
 test('the gitleaks allowlist keeps the default rules and covers test paths only', () => {

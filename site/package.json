@@ -18,7 +18,7 @@
     "@angular/platform-browser": "22.2.3",
     "@angular/platform-server": "22.2.3",
     "@angular/router": "22.2.3",
-    "@angular/ssr": "22.2.3",
+    "@angular/ssr": "22.2.5",
     "@compass/contracts": "0.0.0",
     "@compass/core": "0.0.0",
     "rxjs": "7.8.2",
@@ -26,8 +26,8 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@angular/build": "22.2.3",
-    "@angular/cli": "22.2.3",
+    "@angular/build": "22.2.5",
+    "@angular/cli": "22.2.5",
     "@angular/compiler-cli": "22.2.3"
   }
 }

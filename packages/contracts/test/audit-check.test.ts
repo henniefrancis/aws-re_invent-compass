@@ -46,10 +46,8 @@ const runnerFor = (adv: Array<{ id: string; severity: string }>) => () => ({
 });
 
 describe('Feature: foundation-contracts, audit-check', () => {
-  test('the allowlist holds exactly the three reviewed advisories', () => {
-    expect([...ALLOWLIST].sort()).toEqual(
-      ['GHSA-6h2x-m376-mqjq', 'GHSA-86w9-cpqp-85rv', 'GHSA-wr44-6hxh-3jwq'].sort(),
-    );
+  test('the allowlist is empty: the three ADR-026 advisories were fixed upstream (4 November)', () => {
+    expect([...ALLOWLIST]).toEqual([]);
   });
 
   test('resolveNpmCommand runs node with npm_execpath when it is set', () => {
@@ -205,22 +203,36 @@ describe('Feature: foundation-contracts, audit-check', () => {
   test('evaluate passes when every high advisory is allowlisted', () => {
     const r = evaluate(
       report([
-        { id: 'GHSA-86w9-cpqp-85rv', severity: 'high' },
-        { id: 'GHSA-6h2x-m376-mqjq', severity: 'high' },
-        { id: 'GHSA-wr44-6hxh-3jwq', severity: 'moderate' },
+        { id: 'GHSA-accepted-a', severity: 'high' },
+        { id: 'GHSA-accepted-b', severity: 'critical' },
+        { id: 'GHSA-moderate', severity: 'moderate' },
         { id: 'GHSA-irrelevant', severity: 'low' },
       ]),
+      ['GHSA-accepted-a', 'GHSA-accepted-b'],
     );
     expect(r.ok).toBe(true);
     expect(r.blocking).toEqual([]);
   });
 
+  test('evaluate with the default, empty allowlist blocks every high advisory', () => {
+    const r = evaluate(report([{ id: 'GHSA-86w9-cpqp-85rv', severity: 'high' }]));
+    expect(r.ok).toBe(false);
+    expect(r.allowlisted).toEqual([]);
+    expect(r.blocking.map((a) => a.id)).toEqual(['GHSA-86w9-cpqp-85rv']);
+  });
+
+  test('evaluate passes with the default allowlist when nothing high or critical is reported', () => {
+    const r = evaluate(report([{ id: 'GHSA-moderate', severity: 'moderate' }]));
+    expect(r.ok).toBe(true);
+  });
+
   test('evaluate fails on a non-allowlisted high advisory', () => {
     const r = evaluate(
       report([
-        { id: 'GHSA-86w9-cpqp-85rv', severity: 'high' },
+        { id: 'GHSA-accepted-a', severity: 'high' },
         { id: 'GHSA-new-high', severity: 'high' },
       ]),
+      ['GHSA-accepted-a'],
     );
     expect(r.ok).toBe(false);
     expect(r.blocking.map((a) => a.id)).toEqual(['GHSA-new-high']);
@@ -234,14 +246,19 @@ describe('Feature: foundation-contracts, audit-check', () => {
 
   test('runCli prints the allowlist and reports ok when only allowlisted advisories exist', async () => {
     const r = await runCli({
-      runner: runnerFor([{ id: 'GHSA-86w9-cpqp-85rv', severity: 'high' }]),
+      runner: runnerFor([{ id: 'GHSA-accepted-a', severity: 'high' }]),
+      allowlist: ['GHSA-accepted-a'],
     });
     expect(r.code).toBe(0);
-    expect(r.stdout).toContain('allowlisted advisories (accepted, ADR-026)');
+    expect(r.stdout).toContain('allowlisted advisories (accepted, ADR-026): GHSA-accepted-a');
     expect(r.stdout).toContain('audit-check ok');
-    for (const id of ALLOWLIST) {
-      expect(r.stdout).toContain(id);
-    }
+  });
+
+  test('runCli says the allowlist is empty and reports ok on a clean audit', async () => {
+    const r = await runCli({ runner: runnerFor([]) });
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain('no allowlisted advisories (ADR-026 list is empty)');
+    expect(r.stdout).toContain('audit-check ok');
   });
 
   test('runCli reports a non-zero code and lists blocking advisories', async () => {
@@ -251,8 +268,8 @@ describe('Feature: foundation-contracts, audit-check', () => {
     expect(r.code).toBe(1);
     expect(r.stderr).toContain('audit-check FAILED');
     expect(r.stderr).toContain('GHSA-new-high');
-    // Even on failure the allowlist warning is printed.
-    expect(r.stdout).toContain('allowlisted advisories (accepted, ADR-026)');
+    // Even on failure the allowlist line is printed.
+    expect(r.stdout).toContain('no allowlisted advisories (ADR-026 list is empty)');
   });
 
   test('runCli surfaces an error when npm audit cannot run', async () => {
