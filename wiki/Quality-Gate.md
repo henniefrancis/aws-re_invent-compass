@@ -34,7 +34,7 @@ One job, "build, test and scan", on `ubuntu-latest` with a 25 minute limit and r
 **Secret and dependency scans**
 
 13. Gitleaks over the whole history.
-14. `node .github/scripts/audit-check.mjs`: `npm audit --omit=dev`, failing on any high or critical advisory not on the reviewed allowlist. The allowlist in [audit-check.mjs](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/.github/scripts/audit-check.mjs) holds three advisories that reach the project only through the Apple Wallet library, and it prints them as a warning on every run so the accepted risk stays visible.
+14. `node .github/scripts/audit-check.mjs`: `npm audit --omit=dev`, failing on any high or critical advisory not on the reviewed allowlist. The allowlist in [audit-check.mjs](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/.github/scripts/audit-check.mjs) is empty since 4 November 2026, when its three advisories in the Apple Wallet library were fixed upstream. Every run prints the allowlist, or says it is empty, so any accepted risk stays visible. `.trivyignore` holds the same list for the Trivy scan.
 
 **Terraform checks.** These are steps of the same job, not a separate job. They never call AWS or [HCP Terraform](Glossary#hcp-terraform): `init` uses `-backend=false` and every native test mocks its providers.
 

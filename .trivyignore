@@ -1,19 +1,8 @@
 # Advisories accepted by ADR-026 (the reviewed audit allowlist, https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Security-and-Privacy#a-reviewed-allowlist-for-npm-audit).
-# Exactly the three advisories of the reviewed npm audit allowlist, no more: any
-# other advisory still fails the Trivy filesystem scan. Review at every release
-# gate. Trivy reports each one under its CVE id and lists the GHSA id of ADR-026 as
-# a vendor id, and it matches ignores on the CVE id, so the CVE id is listed here
-# with the GHSA id in the comment.
-
-# ADR-026, GHSA-86w9-cpqp-85rv: node-forge <= 1.4.0, RSA PKCS#1 v1.5 signature
-# verification. No patched version. passkit-generator only creates signatures;
-# tests use node-forge only for throwaway certificates.
-CVE-2026-85393
-
-# ADR-026, GHSA-6h2x-m376-mqjq: joi < 17.13.7, quadratic regular-expression
-# backtracking in Joi.string().isoDate(). passkit-generator pins joi 17.13.4.
-CVE-2026-92599
-
-# ADR-026, GHSA-wr44-6hxh-3jwq: joi < 17.13.8, prototype replacement through
-# __proto__ error codes in message compilation. passkit-generator pins joi 17.13.4.
-CVE-2026-90771
+# Empty since 4 November 2026: the three advisories once listed here
+# (GHSA-86w9-cpqp-85rv in node-forge, GHSA-6h2x-m376-mqjq and GHSA-wr44-6hxh-3jwq
+# in joi) were fixed by node-forge 1.4.2 and the joi 17.13.9 override, matching
+# the empty allowlist in .github/scripts/audit-check.mjs. Every HIGH or CRITICAL
+# advisory fails the Trivy filesystem scan. An entry goes back here only with the
+# same ADR-026 review as the npm audit allowlist: Trivy matches ignores on the CVE
+# id, so list the CVE id with the GHSA id in the comment above it.
