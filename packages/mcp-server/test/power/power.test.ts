@@ -129,6 +129,9 @@ describe('mcp.json', () => {
       type: 'stdio',
       command: 'npx',
       args: ['--yes', `reinvent-compass@${await packageVersion()}`],
+      // Kiro Powers cancel every elicitation request, so the Power turns Compass's own questions
+      // off and Kiro's tool approval is the confirmation (task 65).
+      env: { COMPASS_ELICITATION: 'off' },
     });
   });
 

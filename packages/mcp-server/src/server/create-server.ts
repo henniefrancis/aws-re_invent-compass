@@ -5,7 +5,8 @@
 // initialisation (no catalog, network or keychain), so cold start stays fast. Every handler
 // call is wrapped: a throw becomes a fixed plain-English message, logged by code only. The
 // `elicit` capability is offered to a handler only when the connected client declares
-// elicitation.
+// elicitation and COMPASS_ELICITATION=off is not set (compass-power task 65: Kiro Powers cancel
+// every elicitation request, so the Power turns the questions off).
 
 import { mcpTools } from '@compass/contracts';
 import type { McpToolInput, McpToolName } from '@compass/contracts';
@@ -48,7 +49,10 @@ function register<K extends McpToolName>(
     },
     async (args: unknown): Promise<CallToolResult> => {
       const ctx: ToolContext = { runtime, state };
-      if (server.server.getClientCapabilities()?.elicitation !== undefined) {
+      if (
+        runtime.elicitationOff !== true &&
+        server.server.getClientCapabilities()?.elicitation !== undefined
+      ) {
         ctx.elicit = confirmWith(server.server);
         ctx.choose = chooseWith(server.server);
       }

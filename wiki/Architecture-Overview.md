@@ -17,7 +17,7 @@ The code lives in one repository: the Power in [power/](https://github.com/henni
 
 ## Three places it runs
 
-1. **Your computer.** The [MCP client](Glossary#mcp-client) (Kiro, or any client that speaks MCP) starts the Compass server on stdio with `npx --yes reinvent-compass@0.1.1`. Sign-in tokens, the catalog cache, your schedule snapshot, your [tech list](Glossary#tech-list) and your pass record stay here. Scans of your code run here, and only service and technology names, depth and counts leave the scanner.
+1. **Your computer.** The [MCP client](Glossary#mcp-client) (Kiro, or any client that speaks MCP) starts the Compass server on stdio with `npx --yes reinvent-compass@0.1.2`. Sign-in tokens, the catalog cache, your schedule snapshot, your [tech list](Glossary#tech-list) and your pass record stay here. Scans of your code run here, and only service and technology names, depth and counts leave the scanner.
 2. **AWS.** The Compass API and the showcase site run in one AWS account in `us-east-1`, behind one [CloudFront](Glossary#cloudfront) distribution on the custom domain `reinvent-compass.vegas`. The API stores only what a pass needs, keyed by a hash of your Builder ID subject, and deletes it 24 hours after the session ends.
 3. **Your phone.** The `/board` page opens in your phone's browser from a 15 minute [hand-off](Glossary#hand-off) link or QR code. From there you add passes to Apple Wallet or Google Wallet, and the [wallet](Glossary#wallet) keeps them up to date through Apple's [PassKit](Glossary#passkit) web service and Google's Wallet API.
 
