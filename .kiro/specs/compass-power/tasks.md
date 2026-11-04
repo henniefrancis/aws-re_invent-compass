@@ -704,12 +704,13 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Full gate, site tests, pack dry run; one QA and security pass. No tag and no publish in this task: the owner tags `v0.1.2` on main
   - [x] 65.1 (done by the owner on 4 November: main 3448539, tag v0.1.2, published with provenance; the QR hand-off works through the Power after the update in task 66) Owner: merge to `main`, tag `v0.1.2`, approve the publish, re-import the Power and check that `send_to_phone` with a QR code creates the link after Kiro's tool approval; then release the site
 
-- [ ] 66. Existing users learn how to update the Power, because importing again keeps the old version (owner, 4 November)
+- [x] 66. Existing users learn how to update the Power, because importing again keeps the old version (owner, 4 November)
   - Found on 4 November after the 0.1.2 publish: `send_to_phone` through the Power still said "No link was created, because you did not confirm." Kiro 1.4.86 keeps a git clone of the repository in `~/.kiro/powers/repos/` and copies the Power from it to `~/.kiro/powers/installed/<name>/`; importing again reused the clone from that morning without pulling, so the installed `mcp.json` had no `COMPASS_ELICITATION` entry. Pulling main into the clone and copying `power/` across fixed it. Kiro's Power loader keeps `env` (it removes only `allowedTools` and `autoApprove`)
   - Root README and package README (Kiro section): an "Updating the Power" paragraph with the four steps (remove, delete only the folders in `~/.kiro/powers/repos/` whose remote is this repository, with the Windows path, import again, ask for the hooks again)
   - Wiki: a Kiro Power section "Updating the Power" with the cause, the steps and how to check the running version; Getting started links to it; the Kiro Power page's `plugin.json` row says `0.1.2`
   - Site Install page: `KIRO_UPDATE_NOTE` from the package README, shown before the hooks note, with a content test
   - Site tests and the full gate; local preview for the owner; one QA and security pass. The owner releases the site from main with `scripts/release.sh prod`
+  - Done on 4 November: PR #24 and #25 merged (main 6609c0f), the owner released the site (live /install shows 0.1.2 and the update note), the wiki is published (5109406) and develop is fast-forwarded to main
 
 ## Notes
 
