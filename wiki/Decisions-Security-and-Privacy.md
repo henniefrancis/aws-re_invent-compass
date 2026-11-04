@@ -65,7 +65,7 @@ Each section is one decision with four parts: the context, the decision, why, an
 
 **Trade-off:** Accepted risk stays in the build until the ids are removed, so the allowlist is reviewed at every release gate and on every passkit-generator upgrade.
 
-**Today:** The underlying issues are fixed. On 31 October 2026 the project moved to node-forge 1.4.2 and, through a nested override in the root [package.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/package.json), to joi 17.13.9, after CI found six new high advisories. On 2 November 2026 `npm audit --omit=dev` reported no advisories at all. The three ids are still on the allowlist but match nothing, so they can be removed.
+**Today:** The underlying issues are fixed. On 31 October 2026 the project moved to node-forge 1.4.2 and, through a nested override in the root [package.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/package.json), to joi 17.13.9, after CI found six new high advisories. On 2 November 2026 `npm audit --omit=dev` reported no advisories at all. The three ids were still on the allowlist but matched nothing. On 4 November 2026 they were removed from the allowlist and from `.trivyignore`, so both lists are empty and every high or critical advisory fails the build. The mechanism stays: an advisory goes back on the list only with a new review recorded here.
 
 ## Accepted residual risks
 
