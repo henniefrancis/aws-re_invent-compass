@@ -407,7 +407,7 @@ describe('install content', () => {
     );
     expect(unpinned).toEqual(['npx reinvent-compass', 'npx reinvent-compass demo']);
     const commands = INSTALL_COMMANDS.map((c) => commandText(c, SITE_LINKS));
-    expect(commands).toEqual(['npx reinvent-compass@0.1.1', 'npx reinvent-compass@0.1.1 demo']);
+    expect(commands).toEqual(['npx reinvent-compass@0.1.2', 'npx reinvent-compass@0.1.2 demo']);
     const pinned = INSTALL_COMMANDS.map((c) =>
       commandText(c, { ...SITE_LINKS, packageVersion: '1.0.0' }),
     );

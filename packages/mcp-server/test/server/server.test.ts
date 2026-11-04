@@ -281,6 +281,21 @@ describe('elicitation', () => {
     expect(seen).toEqual(['none']);
     expect(answers).toEqual([]);
   });
+
+  test('with elicitation off, a client that declares it is asked nothing (task 65, Kiro Powers)', async () => {
+    const seen: string[] = [];
+    vi.spyOn(TOOL_SPECS.sign_in, 'handler').mockImplementation((_input, ctx) => {
+      seen.push(ctx.elicit === undefined && ctx.choose === undefined ? 'none' : 'asked');
+      return Promise.resolve({ ok: true, structured: { signedIn: true }, text: 'done' });
+    });
+    const runtime = { ...createFakeRuntime().runtime, elicitationOff: true };
+    const connection = await connect(runtime, { elicit: 'cancel' });
+    await connection.call('sign_in');
+    const questions = connection.questions;
+    await connection.close();
+    expect(seen).toEqual(['none']);
+    expect(questions).toEqual([]);
+  });
 });
 
 describe('error messages', () => {

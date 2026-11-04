@@ -21,7 +21,7 @@ The guardrail that checks bookings runs inside the Compass server. It runs in ev
 
 ## Install
 
-You need Node.js 24 or newer. Compass starts with `npx --yes reinvent-compass@0.1.1`, which downloads the package on first use.
+You need Node.js 24 or newer. Compass starts with `npx --yes reinvent-compass@0.1.2`, which downloads the package on first use.
 
 ### Kiro (the Power)
 
@@ -40,7 +40,7 @@ Without the Power, add the server to `.kiro/settings/mcp.json` (this workspace) 
   "mcpServers": {
     "compass": {
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@0.1.1"],
+      "args": ["--yes", "reinvent-compass@0.1.2"],
       "autoApprove": ["refresh_catalog", "find_sessions", "check_itinerary"]
     }
   }
@@ -58,7 +58,7 @@ Open the Claude menu, then Settings, then Developer, then Edit Config. The file 
   "mcpServers": {
     "compass": {
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@0.1.1"]
+      "args": ["--yes", "reinvent-compass@0.1.2"]
     }
   }
 }
@@ -76,7 +76,7 @@ Create `.vscode/mcp.json` in the workspace, or run MCP: Open User Configuration 
     "compass": {
       "type": "stdio",
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@0.1.1"]
+      "args": ["--yes", "reinvent-compass@0.1.2"]
     }
   }
 }
@@ -135,7 +135,7 @@ Hooks are an extra check that only Kiro runs. The Power includes a hook template
 - The second hook blocks any write through the remote `awsevents` server, so bookings go through Compass. Its matcher is lower case, because Kiro matches regular expressions against the lower-cased tool name.
 - A hook can only block, with exit code 2. Anything a hook prints when it lets a call through never reaches the agent, so there is no sync reminder hook: the Compass tool results say when to run `sync_passes`.
 
-The server checks every booking again, so nothing is unsafe in a client without hooks. A hook reads its input from stdin only, makes no network call and starts no other program. If it cannot judge a call, it says so and lets the call through. `npx --yes reinvent-compass@0.1.1 hook <name>` accepts only the names `pre-write-guardrail` and `post-write-sync` (the template uses only the first), and exits with code 0 or 2.
+The server checks every booking again, so nothing is unsafe in a client without hooks. A hook reads its input from stdin only, makes no network call and starts no other program. If it cannot judge a call, it says so and lets the call through. `npx --yes reinvent-compass@0.1.2 hook <name>` accepts only the names `pre-write-guardrail` and `post-write-sync` (the template uses only the first), and exits with code 0 or 2.
 
 ## The official AWS Events server (read only)
 
@@ -153,6 +153,8 @@ To let Compass make changes, each one still confirmed by you first, set `COMPASS
 
 Simulated mode never calls the Events API, so its made-up bookings work without the setting.
 
+Where your client supports it, Compass also asks you to confirm inside the tool (MCP elicitation). A client that declares the feature but cannot show the question answers every one as a no. Set `COMPASS_ELICITATION=off` for such a client: Compass then asks nothing, and your approval of the tool call is the confirmation. The Kiro Power sets it, because Kiro cancels the questions a server asks through a Power.
+
 ## Passes on your phone
 
 `send_to_phone` takes `show`: `link` gives a 15-minute link in the chat, `qr` opens a page with a QR code in your browser for your phone camera to scan (the chat then shows no link), and `both` does both. Without `show` it creates nothing and asks, and the Power tells your assistant to ask "Link or QR code?" first. The QR page is a static file in a new private folder in your temp folder (file mode 0600 on macOS and Linux; on Windows your own `%TEMP%` folder protects it), with no script and nothing loaded from outside. Compass deletes it when the link expires, when it shows a newer one, when `forget_me` runs and when the server stops, and clears out any page a crashed server left behind. If the browser cannot be opened, the QR code comes back in the chat instead. If no page appears, ask for a link.
@@ -164,7 +166,7 @@ Set `COMPASS_MODE=simulated` to run the whole server on made-up data: a syntheti
 Try the whole flow in one command:
 
 ```
-npx --yes reinvent-compass@0.1.1 demo
+npx --yes reinvent-compass@0.1.2 demo
 ```
 
 It forces simulated mode and runs ten steps through the real tools on a copy of a sample repo: sign in and load the catalog, scan the repo, plan the week, a clash that is blocked, a safe swap, reserve the session that clashed, issue passes, hand them to a phone with a QR code, cancel a session, and void its pass. It prints which step failed and exits 1 if one does. `demo --repo <folder>` scans a folder of yours instead (a copy is used, so your folder is not changed).
@@ -211,7 +213,7 @@ The score is 2 for each resource, construct or client, plus 1 for each command, 
 | Another program on your machine steals tokens                                                   | Tokens live in the OS keychain. The sign-in server binds to 127.0.0.1, takes one request and closes.                                                                                                                                                                                   |
 | A token or email ends up in a log                                                               | A redacting logger on stderr, and tests that prove no token or email reaches a log or an error.                                                                                                                                                                                        |
 | Someone books through the remote `awsevents` server and skips the guardrail                     | Do not use its write tools. The hook template blocks them in Kiro.                                                                                                                                                                                                                     |
-| The wrong program runs when you start Compass with `npx` (the local copy risk)                  | `npx` can prefer a copy of a package from the folder you are in. Pin the version (`reinvent-compass@0.1.1`), do not start Compass from inside a repository you do not trust, and prefer a global install of a pinned version.                                                          |
+| The wrong program runs when you start Compass with `npx` (the local copy risk)                  | `npx` can prefer a copy of a package from the folder you are in. Pin the version (`reinvent-compass@0.1.2`), do not start Compass from inside a repository you do not trust, and prefer a global install of a pinned version.                                                          |
 | Someone else publishes a package under the same npm name before the owner does (name squatting) | The owner must claim the npm package name `reinvent-compass` (and any scope used) before the first publish, and publish from the owner's account with provenance. Until the name is claimed, install only from the repository. This is an owner action, not something the code can do. |
 | A hostile repository (a slow pattern, a huge archive, a deep or `..` path, links)               | Every scan runs in a worker with a hard time budget. Archives stop at 100 MB compressed or 500 MB unpacked, files over 1 MB and binary files are skipped, links and `..` paths are never followed, and nothing is written to disk.                                                     |
 | A GitHub token is stolen or misused                                                             | The Compass GitHub App can only read code. Tokens live in the OS keychain, are redacted from every log and error, go only to `github.com` and `api.github.com`, and are never sent on the archive redirect. `disconnect_github` deletes them.                                          |

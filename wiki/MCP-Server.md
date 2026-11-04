@@ -1,6 +1,6 @@
 _For architects: how the Compass MCP server is built, what its 24 tools are, how it keeps writes safe and how it is configured._
 
-The Compass server is a local [MCP server](Glossary#mcp-server) published to npm as `reinvent-compass` (version 0.1.1, Node 24 or newer). An [MCP client](Glossary#mcp-client) such as Kiro starts it on stdio with `npx --yes reinvent-compass@0.1.0`. It reads the [AWS Events API](Glossary#events-api), scans code, plans a week, runs the [guardrail](Glossary#guardrail) before every booking and drives the [Compass API](Glossary#compass-api) for passes.
+The Compass server is a local [MCP server](Glossary#mcp-server) published to npm as `reinvent-compass` (version 0.1.2, Node 24 or newer). An [MCP client](Glossary#mcp-client) such as Kiro starts it on stdio with `npx --yes reinvent-compass@0.1.0`. It reads the [AWS Events API](Glossary#events-api), scans code, plans a week, runs the [guardrail](Glossary#guardrail) before every booking and drives the [Compass API](Glossary#compass-api) for passes.
 
 ## What is inside
 
@@ -68,7 +68,7 @@ The library exports ten subpaths, listed in [packages/core/package.json](https:/
 
 ### Elicitation
 
-Where the client declares the MCP elicitation capability, a tool asks the human directly before it changes anything: a ticked box for yes or no, or a single choice from a list. The server waits up to five minutes; a timeout changes nothing. Any answer that is not a ticked box is a no. Where the client cannot ask, the client's own approval of the tool call is the confirmation, and a few actions are refused outright (a bulk void, a swap override, scanning a folder outside the workspace, scanning GitHub). See [elicitation.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/src/server/elicitation.ts).
+Where the client declares the MCP elicitation capability, a tool asks the human directly before it changes anything: a ticked box for yes or no, or a single choice from a list. The server waits up to five minutes; a timeout changes nothing. Any answer that is not a ticked box is a no. Where the client cannot ask, the client's own approval of the tool call is the confirmation, and a few actions are refused outright (a bulk void, a swap override, scanning a folder outside the workspace, scanning GitHub). With `COMPASS_ELICITATION=off` the server asks nothing, even when the client declares the capability, and behaves as it does for a client that cannot ask. The [Kiro Power](Kiro-Power) sets it, because Kiro cancels every question a server asks through a Power (Kiro 1.4.86 logs "Elicitation request received but no handler is active, cancelling"), so each one would read as a no (compass-power task 65). See [elicitation.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/src/server/elicitation.ts).
 
 ### Labelled data
 
@@ -100,15 +100,16 @@ A `hook` command reads stdin only, starts no subprocess and exits only with 0 or
 
 Settings are environment variables of the server process, read in [runtime-config.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/src/config/runtime-config.ts) and [github.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/src/config/github.ts).
 
-| Variable                     | Effect                                                                                                                                                       |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `COMPASS_MODE`               | `simulated` runs on the synthetic catalog with a pinned clock and an in-process pass service. Anything else is live.                                         |
-| `COMPASS_ALLOW_WRITES`       | `1` lets the schedule tools change the real re:Invent schedule, each change still confirmed. Unset means read-only.                                          |
-| `COMPASS_API_URL`            | An `https` Compass API base URL, used only together with `COMPASS_ALLOW_API_OVERRIDE=1`. The server then prints a warning naming the host.                   |
-| `COMPASS_ALLOW_API_OVERRIDE` | `1` allows `COMPASS_API_URL`. This is how the dev environment is tested.                                                                                     |
-| `COMPASS_GITHUB_CLIENT_ID`   | Another GitHub App's client id, for a self-hosted app. An empty value turns GitHub scanning off. The server warns that it cannot check the app is read-only. |
-| `COMPASS_GITHUB_APP_SLUG`    | The slug of that app, for its install page.                                                                                                                  |
-| `COMPASS_ALLOW_SIMULATED`    | `1` allows simulated mode when `NODE_ENV` is `production`.                                                                                                   |
+| Variable                     | Effect                                                                                                                                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `COMPASS_MODE`               | `simulated` runs on the synthetic catalog with a pinned clock and an in-process pass service. Anything else is live.                                                                   |
+| `COMPASS_ALLOW_WRITES`       | `1` lets the schedule tools change the real re:Invent schedule, each change still confirmed. Unset means read-only.                                                                    |
+| `COMPASS_API_URL`            | An `https` Compass API base URL, used only together with `COMPASS_ALLOW_API_OVERRIDE=1`. The server then prints a warning naming the host.                                             |
+| `COMPASS_ALLOW_API_OVERRIDE` | `1` allows `COMPASS_API_URL`. This is how the dev environment is tested.                                                                                                               |
+| `COMPASS_GITHUB_CLIENT_ID`   | Another GitHub App's client id, for a self-hosted app. An empty value turns GitHub scanning off. The server warns that it cannot check the app is read-only.                           |
+| `COMPASS_GITHUB_APP_SLUG`    | The slug of that app, for its install page.                                                                                                                                            |
+| `COMPASS_ELICITATION`        | `off` makes the server ignore the client's elicitation capability, so the client's own tool approval is the confirmation. The Kiro Power sets it. Any other value keeps the questions. |
+| `COMPASS_ALLOW_SIMULATED`    | `1` allows simulated mode when `NODE_ENV` is `production`.                                                                                                                             |
 
 The app-data folder follows the platform: `%LOCALAPPDATA%` (or `%APPDATA%`) on Windows, `~/Library/Application Support` on macOS, `$XDG_DATA_HOME` or `~/.local/share` elsewhere, each with a `reinvent-compass` folder.
 

@@ -86,7 +86,7 @@ An action Kiro runs when something happens, such as a file save or a tool call. 
 
 ### Kiro Power
 
-A package that adds an [MCP server](#mcp-server), skills and hooks to Kiro in one install. The Compass Power starts the Compass MCP server with `npx --yes reinvent-compass@0.1.1`. See [Kiro Power](Kiro-Power).
+A package that adds an [MCP server](#mcp-server), skills and hooks to Kiro in one install. The Compass Power starts the Compass MCP server with `npx --yes reinvent-compass@0.1.2`. See [Kiro Power](Kiro-Power).
 
 ### Kiro spec
 
