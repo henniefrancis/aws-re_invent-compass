@@ -92,6 +92,13 @@ export const KIRO_IMPORT_SOURCE_NOTE: ContentBlock = summary(
   'Repository structure',
 );
 
+export const KIRO_UPDATE_NOTE: ContentBlock = summary(
+  'install-kiro-update-note',
+  'To update the power, remove it in the Powers panel. In ~/.kiro/powers/repos (on Windows, %USERPROFILE%\\.kiro\\powers\\repos), delete only the folders that hold the Compass repository, and leave the others alone. Then import the folder address again, and ask for the hooks again if you installed them. Kiro does not refresh its copy when you import again, so a new import can keep the old version.',
+  'packages/mcp-server/README.md',
+  'Kiro (the Power)',
+);
+
 export const HOOKS_NOTE: ContentBlock = summary(
   'install-hooks-note',
   'Hooks work in Kiro only. The guardrail runs inside the Compass server, so it protects every client.',

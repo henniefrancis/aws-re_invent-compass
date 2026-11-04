@@ -7,6 +7,7 @@ import {
   KIRO_ADD_BUTTON,
   KIRO_IMPORT_INTRO,
   KIRO_IMPORT_SOURCE_NOTE,
+  KIRO_UPDATE_NOTE,
   KIRO_IMPORT_STEPS,
   NODE_REQUIREMENT,
   OTHER_CLIENTS,
@@ -30,6 +31,7 @@ export class InstallPage {
   protected readonly importSteps = KIRO_IMPORT_STEPS;
   protected readonly importOptions = kiroImportOptions(SITE_LINKS);
   protected readonly importSourceNote = KIRO_IMPORT_SOURCE_NOTE.text;
+  protected readonly updateNote = KIRO_UPDATE_NOTE.text;
   protected readonly hooksNote = HOOKS_NOTE.text;
   protected readonly nodeRequirement = NODE_REQUIREMENT.text;
   protected readonly copyLabel = COPY_LABEL;
