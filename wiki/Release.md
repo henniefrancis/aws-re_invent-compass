@@ -123,7 +123,7 @@ It has two jobs, so the job that holds the OIDC token runs none of the repositor
 ### After the package is published
 
 1. On a clean machine, run `npx reinvent-compass@X.Y.Z demo` and check that it starts.
-2. In [Kiro](Glossary#kiro), use "Import power from GitHub" on the repository and check that the [Kiro Power](Glossary#kiro-power) loads.
+2. In [Kiro](Glossary#kiro), use "Import power from GitHub" with the folder URL `https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power` and check that the [Kiro Power](Glossary#kiro-power) loads.
 3. Set `packageVersion` in [site/src/lib/content/links.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/site/src/lib/content/links.ts) to the published version and release the site with `scripts/release.sh prod`.
 4. After the first real release, deprecate the placeholder once: `npm deprecate reinvent-compass@0.0.1 "Placeholder. Use 0.1.0 or later."`
 

@@ -102,10 +102,9 @@ The Power is the `power/` folder: `plugin.json` and a matching `POWER.md`, `mcp.
 
 1. In Kiro, open Settings and set "Kiro Agent: Configure MCP" to Enabled. Kiro starts no MCP server until you do.
 2. Open the Powers panel and choose **Add Custom Power**.
-3. Choose **Import power from GitHub** and give it the repository URL: `https://github.com/henniefrancis/aws-re_invent-compass`.
-4. If Kiro does not find the Power at the root, use the folder URL: `https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power`.
+3. Choose **Import power from GitHub** and give it the folder URL of the Power: `https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power`.
 
-Both forms are listed because it is not yet recorded which one Kiro accepts. A listing in the Kiro Powers catalogue is **coming soon**.
+Use the folder URL, not the repository URL: the Power lives in `power/`, and Kiro reports "Nothing to install from the repository root" for the repository URL. A listing in the Kiro Powers catalogue is **coming soon**.
 
 Then open your own project in Kiro and say: "Plan my re:Invent."
 

@@ -29,10 +29,9 @@ The Power is the `power/` folder of the repository: `plugin.json` and a matching
 
 0. Kiro starts no MCP server until you allow it: in Settings, set "Kiro Agent: Configure MCP" to Enabled.
 1. In Kiro, open the Powers panel and choose Add Custom Power.
-2. Choose Import power from GitHub and give it the repository URL: `https://github.com/henniefrancis/aws-re_invent-compass`.
-3. If Kiro does not find the Power at the repository root, give it the subfolder URL instead: `https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power`.
+2. Choose Import power from GitHub and give it the folder URL of the Power: `https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power`.
 
-Both forms are listed because it is not yet recorded which one Kiro accepts. You can also import `power/` from a folder after cloning the repository. A folder import registers the Power under the folder name, so its server is called `power-power-compass`, whatever `plugin.json` says; the hooks accept both `compass` and that name.
+Use the folder URL, not the repository URL: Kiro reports "Nothing to install from the repository root" for the repository URL. You can also import `power/` from a folder after cloning the repository. A folder import registers the Power under the folder name, so its server is called `power-power-compass`, whatever `plugin.json` says; the hooks accept both `compass` and that name.
 
 Without the Power, add the server to `.kiro/settings/mcp.json` (this workspace) or `~/.kiro/settings/mcp.json` (all workspaces). Kiro reloads the file when you save it:
 

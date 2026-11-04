@@ -79,7 +79,7 @@ Every artwork file is listed with its author in [ARTWORK.md](ARTWORK.md). The dr
 ## Things that change after release
 
 - `src/lib/content/links.ts`: the Builder Center post and the video are shown as "coming soon" text until their addresses are set. The Kiro power listing (`kiroPowerListing`) and the npm version pinned in the npx commands (`packageVersion`) work the same way. These ship as a one-file change.
-- The Install page shows both "Import power from GitHub" options (the repository address and the `power/` folder) until the day-1 spike SP1 records which one works. The two options are one data entry (`kiroImportOptions` in `src/lib/content/install.ts`).
+- The Install page gives one "Import power from GitHub" address: the `power/` folder URL. SP1 recorded on 4 November that Kiro imports the folder URL and refuses the repository root. The option is one data entry (`kiroImportOptions` in `src/lib/content/install.ts`).
 - Setup for Claude Desktop, VS Code and Kiro CLI is in `packages/mcp-server/README.md` and is not on the Install page yet (`OTHER_CLIENTS` in `src/lib/content/install.ts` is empty).
 
 ## Layout

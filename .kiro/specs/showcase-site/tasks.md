@@ -512,6 +512,9 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 49. The Documentation page links to the wiki, one card per wiki section (owner requests of 3 November)
   - `docs/decisions` and `docs/runbooks` leave the repo (foundation-contracts task 26). The Documentation page keeps the README and the Kiro specs and adds one card per wiki sidebar heading, each opening the first page under it: Get started, User guide, Architecture, Key decisions, Developer guide, Operations, Runbooks, How it was built and Reference. The Build plan card goes: readers get the wiki Architecture pages, and `docs/architecture/build-plan.md` stays only because steering and the site content read it. The lead says the documentation lives in the repository and its wiki. The links open in a new tab (task 46). A test checks every wiki card against `wiki/_Sidebar.md`. Owner review on the local preview; site tests; commit scoped `showcase-site`
 
+- [x] 50. The Install page gives the Power folder URL only (owner, SP1 result of 4 November)
+  - SP1 recorded that Kiro imports the Power from `.../tree/main/power` and refuses the repository root (compass-power task 63). `kiroImportOptions` returns one option, the full folder URL built from `SITE_LINKS.repository`, with the note that the repository URL does not work; step 4 asks for that address; the source note no longer says "which is why both options are listed". `site/README.md` and design decision 8 record the result. Content tests expect the single folder option. Owner review on the local preview; site tests; commit scoped `showcase-site`
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.
