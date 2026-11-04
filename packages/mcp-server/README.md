@@ -33,6 +33,15 @@ The Power is the `power/` folder of the repository: `plugin.json` and a matching
 
 Use the folder URL, not the repository URL: Kiro reports "Nothing to install from the repository root" for the repository URL. You can also import `power/` from a folder after cloning the repository. A folder import registers the Power under the folder name, so its server is called `power-power-compass`, whatever `plugin.json` says; the hooks accept both `compass` and that name.
 
+**Updating the Power.** Kiro keeps its own copy of the repository in `~/.kiro/powers/repos/` and does not refresh it when you import the Power again, so a new import can keep the old version. To update:
+
+1. Remove the Power in the Powers panel.
+2. Delete its copy: each folder in `~/.kiro/powers/repos/` (on Windows, `%USERPROFILE%\.kiro\powers\repos\`) where `git remote -v` shows `henniefrancis/aws-re_invent-compass`. Delete only those folders, not `repos` itself, and leave the folders of other Powers alone.
+3. Import the folder URL again.
+4. If you installed the hooks, ask for them again so they use the new version.
+
+Seen in Kiro 1.4.86 on 4 November 2026.
+
 Without the Power, add the server to `.kiro/settings/mcp.json` (this workspace) or `~/.kiro/settings/mcp.json` (all workspaces). Kiro reloads the file when you save it:
 
 ```json

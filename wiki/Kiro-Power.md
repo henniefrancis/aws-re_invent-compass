@@ -8,7 +8,7 @@ Everything lives in [power/](https://github.com/henniefrancis/aws-re_invent-comp
 
 | File                                                                                                                                                   | Purpose                                                                                                                                                                                                                                                         |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [plugin.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/plugin.json)                                                   | The manifest: name `reinvent-compass`, version `0.1.0`, Apache-2.0 licence, homepage and keywords.                                                                                                                                                              |
+| [plugin.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/plugin.json)                                                   | The manifest: name `reinvent-compass`, version `0.1.2`, Apache-2.0 licence, homepage and keywords.                                                                                                                                                              |
 | [POWER.md](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/POWER.md)                                                         | The same Power described in Kiro's own format (front matter plus notes), so Kiro finds it whichever manifest it reads first.                                                                                                                                    |
 | [mcp.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/mcp.json)                                                         | One server, `compass`, type `stdio`, command `npx --yes reinvent-compass@0.1.2`, with `COMPASS_ELICITATION=off` in its `env`: Kiro cancels the questions a server asks through a Power, so Kiro's tool approval is the confirmation.                            |
 | [skills/plan-my-week](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/skills/plan-my-week/SKILL.md)                          | The order of the tools, one approval per write, and the rules that do not bend.                                                                                                                                                                                 |
@@ -53,6 +53,19 @@ The `install-hooks` skill shows the template, asks the attendee whether it may w
 The Power itself has no settings. Settings belong to the server: see [MCP server](MCP-Server#configuration). According to the Power's own notes, Kiro starts no MCP server until "Kiro Agent: Configure MCP" is set to Enabled in Settings.
 
 To try the flow without an account, run `npx --yes reinvent-compass@0.1.2 demo`.
+
+## Updating the Power
+
+Kiro keeps its own git clone of the repository in `~/.kiro/powers/repos/` (one folder per import, named after the repository or `power`) and copies the Power from it to `~/.kiro/powers/installed/<name>/`. Importing the Power again reuses that clone without pulling it, so the installed Power keeps the old version. Seen in Kiro 1.4.86 on 4 November 2026: after the 0.1.2 release, the installed `mcp.json` still had no `COMPASS_ELICITATION` entry, and `send_to_phone` kept answering "No link was created, because you did not confirm."
+
+To update:
+
+1. Remove the Power in the Powers panel.
+2. Delete its clone: each folder in `~/.kiro/powers/repos/` (on Windows, `%USERPROFILE%\.kiro\powers\repos\`) where `git remote -v` shows `henniefrancis/aws-re_invent-compass`. Delete only those folders, not `repos` itself, and leave the folders of other Powers alone.
+3. Import the folder URL again.
+4. If you installed the hooks, ask for them again: the `install-hooks` skill writes the hook file with the new version. Older hook files still work, because every version has the `hook pre-write-guardrail` command.
+
+To check which version is running, open `~/.kiro/powers/installed/<name>/mcp.json`: it should name the new version and, from 0.1.2, have `"env": { "COMPASS_ELICITATION": "off" }`. Kiro's MCP log should have no "Elicitation request received but no handler is active" line after a tool call. A new install needs none of this, because Kiro clones main afresh.
 
 ## Build cards
 

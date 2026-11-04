@@ -60,6 +60,8 @@ The [Kiro Power](Glossary#kiro-power) is the [power](https://github.com/henniefr
 
 Use the folder URL, not the repository URL: the Power lives in `power/`, and Kiro reports "Nothing to install from the repository root" for the repository URL. If you import the folder from a local clone instead, Kiro names the server `power-power-compass`.
 
+To update the Power to a new version, see [Updating the Power](Kiro-Power#updating-the-power): importing it again is not enough.
+
 Then open your own project in Kiro and say: **"Plan my re:Invent."** The `plan-my-week` skill tells the agent the order of the tools and that every write needs your approval. To add the optional [Kiro hooks](Glossary#kiro-hook), ask for them: the `install-hooks` skill shows the template and writes `.kiro/hooks/reinvent-compass.json` only after you say yes.
 
 ### Other MCP clients

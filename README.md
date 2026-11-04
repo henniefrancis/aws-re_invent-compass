@@ -106,6 +106,15 @@ The Power is the `power/` folder: `plugin.json` and a matching `POWER.md`, `mcp.
 
 Use the folder URL, not the repository URL: the Power lives in `power/`, and Kiro reports "Nothing to install from the repository root" for the repository URL. A listing in the Kiro Powers catalogue is **coming soon**.
 
+**Updating the Power.** Kiro keeps its own copy of the repository in `~/.kiro/powers/repos/` and does not refresh it when you import the Power again, so a new import can keep the old version. To update:
+
+1. Remove the Power in the Powers panel.
+2. Delete its copy: each folder in `~/.kiro/powers/repos/` (on Windows, `%USERPROFILE%\.kiro\powers\repos\`) where `git remote -v` shows `henniefrancis/aws-re_invent-compass`. Delete only those folders, not `repos` itself, and leave the folders of other Powers alone.
+3. Import the folder URL again.
+4. If you installed the hooks, ask for them again so they use the new version.
+
+Seen in Kiro 1.4.86 on 4 November 2026.
+
 Then open your own project in Kiro and say: "Plan my re:Invent."
 
 **Other MCP clients.** Claude Desktop, VS Code and the Kiro CLI can run the same server with `npx --yes reinvent-compass@0.1.2`. The setup for each is in [Getting started](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Getting-Started). Hooks are Kiro-only, but the guardrail runs inside the server in every client.
