@@ -54,14 +54,16 @@ Pre-check of 1 November 2026: the contest page (Rules tab) still says "Updated S
 
 Check of 4 November 2026 (00:30 South African time): the Rules tab still says "Updated September 24, 2026", with the deadline 6 November 2026, 11:59 pm Pacific. The live Events API OpenAPI is byte-identical to the committed copy (SHA-256 `2688566112c6...`). `main` is `1c1407b`, prod answers 200 on it, and check, e2e and CodeQL are green with no open code scanning alert. `reinvent-compass@0.1.0` is `latest` on npm with provenance, and `npx --yes reinvent-compass@0.1.0 demo` ran to "The demo finished. Every step worked." from an empty npm cache. Items 1 to 4 are done; items 5 to 9 are left for the owner.
 
+Final check of 4 November 2026 (afternoon, after the 0.1.1 release): the Rules tab was checked the same day (00:30 South African time, above). The live Events API OpenAPI is still byte-identical to the committed copy (SHA-256 `2688566112c6...`). `main` is `72b9c2a`, the commit tagged `v0.1.1`, and prod answers 200 on it with version `v0.1.1`. `develop` (`e9a80b8`) adds only the 0.1.1 install commands on the Install page (PR #21), released next. The check workflow is green on `e9a80b8` and CodeQL on `72b9c2a`, with no open code scanning or secret scanning alert. Dependabot alerts, on since 4 November, show one moderate alert: minimatch 5.1.9 in the openapi-typescript dev tooling, which waits for an upstream fix and is not in the npm package. The e2e suite (seven device profiles) is green on `e9a80b8`, the tree `main` gets from PR #21. `reinvent-compass@0.1.1` is `latest` on npm with provenance (it carries the fast-uri fix), and `npx --yes reinvent-compass@0.1.1 demo` ran to "The demo finished. Every step worked." from an empty npm cache. The repository is public under Apache-2.0. The owner reconfirmed rows 5 to 13 on 4 November: all still true. Items 1 to 4, 7 and 8 are done; items 5, 6 and 9 are left for the owner.
+
 1. The rules on the contest page still show the version of 24 September 2026 (checked 1 November). If not, re-copy them and re-check every row above.
 2. Row 1: the live Events API OpenAPI document is still byte-identical to `packages/contracts/events-api.openapi.json` (refreshed 31 October; its SHA-256 is in `packages/contracts/events-api.openapi.provenance.md`).
-3. Row 2: `main` holds the code that prod runs (1c1407b since 3 November), `GET https://reinvent-compass.vegas/api/v1/health` answers 200, and CI and the e2e suite are green on `main`.
-4. The npm package `reinvent-compass@0.1.0` is published with provenance, and `npx --yes reinvent-compass@0.1.0 demo` runs on a clean machine (release steps 15 and 16).
+3. Row 2: `main` holds the code that prod runs (72b9c2a, tag v0.1.1, since 4 November), `GET https://reinvent-compass.vegas/api/v1/health` answers 200, and CI and the e2e suite are green on `main`.
+4. The npm package `reinvent-compass@0.1.1` (0.1.0 until 4 November) is published with provenance, and `npx --yes reinvent-compass@0.1.1 demo` runs on a clean machine (release steps 15 and 16).
 5. Row 4: the article is **published** on builder.aws.com (not a draft), and its links work: the repository, the site, the install page, npm and the video.
 6. The demo video is uploaded and linked from the article and the README.
 7. The README status line says released, with the live links (release step 18, owner's wording).
-8. Rows 5 to 13 are unchanged since 20 October (owner confirmed on 1 November).
+8. Rows 5 to 13 are unchanged since 20 October (owner confirmed on 1 November and again on 4 November).
 9. Submit on Builder Center with the entry email address, before 6 November 2026 11:59 pm Pacific time: publish the article through the hackathon's "Create post" so it becomes the project, and check that it shows on the Projects tab.
 
 ## Owner requirement: Kiro first (not a contest rule)
