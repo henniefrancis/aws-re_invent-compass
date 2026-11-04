@@ -83,7 +83,7 @@ Each subpath has a `@compass/source` export condition that points at the TypeScr
 
 ### packages/mcp-server
 
-[packages/mcp-server](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/packages/mcp-server) is the published npm package `reinvent-compass` (version 0.1.1, bin `reinvent-compass`). Its source in [src](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/packages/mcp-server/src):
+[packages/mcp-server](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/packages/mcp-server) is the published npm package `reinvent-compass` (version 0.1.2, bin `reinvent-compass`). Its source in [src](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/packages/mcp-server/src):
 
 | Folder                                                                                                             | What it holds                                                                                                                                  |
 | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |

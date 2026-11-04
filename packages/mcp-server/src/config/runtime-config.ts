@@ -20,6 +20,13 @@ export interface RuntimeConfig {
    * its made-up bookings stay on.
    */
   readOnly: boolean;
+  /**
+   * True only for COMPASS_ELICITATION=off (compass-power task 65). The server then ignores the
+   * client's elicitation capability, so every tool behaves as it does for a client that cannot ask
+   * and the client's own tool approval is the confirmation. The Kiro Power sets it, because Kiro
+   * cancels every elicitation request that comes through a Power.
+   */
+  elicitationOff: boolean;
   compassApiUrl: string;
   /** Passed to the pass client as `allowedHosts`: only the host of `compassApiUrl`. */
   allowedHosts: string[];
@@ -46,12 +53,14 @@ export function readRuntimeConfig(
 ): RuntimeConfig {
   const mode = env.COMPASS_MODE === 'simulated' ? 'simulated' : 'live';
   const readOnly = mode === 'live' && env.COMPASS_ALLOW_WRITES !== '1';
+  const elicitationOff = env.COMPASS_ELICITATION === 'off';
   const override = env.COMPASS_API_URL;
   const overrideAllowed = env.COMPASS_ALLOW_API_OVERRIDE === '1';
   if (override === undefined || override === '' || !overrideAllowed) {
     return {
       mode,
       readOnly,
+      elicitationOff,
       compassApiUrl: COMPASS_API_BASE_URL,
       allowedHosts: [new URL(COMPASS_API_BASE_URL).host],
     };
@@ -60,6 +69,7 @@ export function readRuntimeConfig(
   return {
     mode,
     readOnly,
+    elicitationOff,
     compassApiUrl: url.toString().replace(/\/+$/, ''),
     allowedHosts: [url.host],
     warning: `Warning: the Compass API override is in use, so passes go to ${url.host} and not the built-in service.`,

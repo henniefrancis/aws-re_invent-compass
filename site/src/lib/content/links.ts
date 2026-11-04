@@ -20,7 +20,7 @@ export const SITE_LINKS: SiteLinks = {
   builderCenterPost: null,
   video: null,
   kiroPowerListing: null,
-  packageVersion: '0.1.1',
+  packageVersion: '0.1.2',
 };
 
 /** The private vulnerability reporting form of the repository, the contact channel for data requests. */

@@ -11,9 +11,26 @@ describe('readRuntimeConfig', () => {
     expect(readRuntimeConfig({})).toEqual({
       mode: 'live',
       readOnly: true,
+      elicitationOff: false,
       compassApiUrl: COMPASS_API_BASE_URL,
       allowedHosts: [BUILT_IN_HOST],
     });
+  });
+
+  test('turns elicitation off only for COMPASS_ELICITATION=off, in every mode (task 65)', () => {
+    expect(readRuntimeConfig({ COMPASS_ELICITATION: 'off' }).elicitationOff).toBe(true);
+    expect(
+      readRuntimeConfig({ COMPASS_ELICITATION: 'off', COMPASS_MODE: 'simulated' }).elicitationOff,
+    ).toBe(true);
+    for (const value of ['', 'Off', 'OFF', '0', 'false', 'on']) {
+      expect(readRuntimeConfig({ COMPASS_ELICITATION: value }).elicitationOff, value).toBe(false);
+    }
+    const override = readRuntimeConfig({
+      COMPASS_API_URL: 'https://example.test',
+      COMPASS_ALLOW_API_OVERRIDE: '1',
+      COMPASS_ELICITATION: 'off',
+    });
+    expect(override.elicitationOff).toBe(true);
   });
 
   test('live mode is read-only unless COMPASS_ALLOW_WRITES=1; simulated mode is not (task 37)', () => {

@@ -696,6 +696,14 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - [x] 64.2 (showcase-site task 51) After the publish: `SITE_LINKS.packageVersion` becomes `'0.1.1'` with its site and e2e tests (showcase-site), then the owner releases the site
   - _Requirements: 20.1, 20.2_
 
+- [ ] 65. The Power turns off Compass's own questions, because Kiro Powers cancel them (owner, Board recording of 4 November; 0.1.2)
+  - Found on 4 November with 0.1.1 in Kiro 1.4.86: `send_to_phone` through the Power answered "No link was created, because you did not confirm." without showing a question. The Kiro MCP log has "Elicitation request received but no handler is active, cancelling" for every try. In Kiro's extension, a tool on a plain MCP server is dispatched with an elicitation handler (the inline form), but a tool called through a Power is not, so Kiro's default handler answers `cancel`. Kiro still declares the elicitation capability, so Compass asks, and every confirming tool fails through the Power: `scan_repo`, `plan_week`, the schedule writes, `send_to_phone`, `sync_passes` and `forget_me`
+  - `COMPASS_ELICITATION=off` (only that exact value) makes the server ignore the client's elicitation capability: no tool gets `ctx.elicit` or `ctx.choose`, so each tool behaves as it already does for a client that cannot ask. The client's own tool approval is the confirmation, and the guards that need an explicit answer (voiding every pass, or more than five in one run) still refuse. `readRuntimeConfig` reads it as `elicitationOff`, the Runtime carries it in live and simulated mode, and `createCompassServer` checks it before offering elicitation
+  - `power/mcp.json` sets `"env": { "COMPASS_ELICITATION": "off" }` for the `compass` server; other clients keep the questions. The Power test expects the env entry
+  - Version 0.1.2 everywhere task 64 lists (package, lockfile, Power, READMEs, current wiki pages, packaging tests) and the site install commands (`SITE_LINKS.packageVersion`, content test, e2e specs); wiki MCP server (Elicitation), Kiro Power, Read-only by default and Security pages say the Power turns the questions off and why
+  - Full gate, site tests, pack dry run; one QA and security pass. No tag and no publish in this task: the owner tags `v0.1.2` on main
+  - [ ] 65.1 Owner: merge to `main`, tag `v0.1.2`, approve the publish, re-import the Power and check that `send_to_phone` with a QR code creates the link after Kiro's tool approval; then release the site
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

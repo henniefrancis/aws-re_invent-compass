@@ -19,6 +19,11 @@ export interface Runtime {
   mode: 'live' | 'simulated';
   /** True in live mode unless COMPASS_ALLOW_WRITES=1 (compass-power task 37): no Events API write. */
   readOnly?: boolean;
+  /**
+   * True when COMPASS_ELICITATION=off (compass-power task 65): no tool asks through elicitation,
+   * whatever the client declares. Left out otherwise.
+   */
+  elicitationOff?: boolean;
   version: string;
   events: EventsPort;
   rules: RulesPort;

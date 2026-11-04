@@ -56,7 +56,7 @@ While writes are on in live mode:
 With writes on, there are still up to three gates before your schedule changes:
 
 1. **Your client's approval of the tool call.** Write tools must never be auto-approved.
-2. **Compass's own confirmation.** Where your client supports MCP elicitation (asking you a question mid-call), Compass asks you to confirm, listing each session code, title and id and every guardrail warning, ending "Go ahead?". Declining writes nothing. A client without elicitation relies on gate 1 alone.
+2. **Compass's own confirmation.** Where your client supports MCP elicitation (asking you a question mid-call), Compass asks you to confirm, listing each session code, title and id and every guardrail warning, ending "Go ahead?". Declining writes nothing. A client without elicitation relies on gate 1 alone, and so does the Kiro Power, which turns these questions off (`COMPASS_ELICITATION=off`) because Kiro cancels them through a Power.
 3. **The guardrail.** A block sends nothing, whatever you approve.
 
 Each write is sent once and confirmed by reading your schedule back. It is never resent blindly.

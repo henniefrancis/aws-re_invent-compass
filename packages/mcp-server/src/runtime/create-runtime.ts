@@ -270,11 +270,16 @@ export async function createRuntime(
       fs: createNodeAppFileSystem(),
       ...scanRunner,
     });
-    return { ...simulatedRuntime, qrPage: qrPageFor(environment, nowMs) };
+    return {
+      ...simulatedRuntime,
+      ...(config.elicitationOff ? { elicitationOff: true } : {}),
+      qrPage: qrPageFor(environment, nowMs),
+    };
   }
   return {
     mode: 'live',
     ...(config.readOnly ? { readOnly: true } : {}),
+    ...(config.elicitationOff ? { elicitationOff: true } : {}),
     version: environment.version,
     events,
     rules,

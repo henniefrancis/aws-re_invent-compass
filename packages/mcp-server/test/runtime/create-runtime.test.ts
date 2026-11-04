@@ -271,6 +271,21 @@ describe('live composition', () => {
     expect(env.stderr.join('')).toContain(WRITES_ON_NOTICE);
   });
 
+  test('COMPASS_ELICITATION=off reaches the runtime in live and simulated mode, and only then (task 65)', async () => {
+    const env = await testEnvironment({ store: createTokenStore(memoryKeyring()) });
+    const live = await createRuntime(env.environment, { COMPASS_ELICITATION: 'off' });
+    expect(live.elicitationOff).toBe(true);
+    const simulated = await createRuntime(env.environment, {
+      COMPASS_MODE: 'simulated',
+      COMPASS_ELICITATION: 'off',
+    });
+    expect(simulated.elicitationOff).toBe(true);
+    expect((await createRuntime(env.environment, {})).elicitationOff).toBeUndefined();
+    expect(
+      (await createRuntime(env.environment, { COMPASS_MODE: 'simulated' })).elicitationOff,
+    ).toBeUndefined();
+  });
+
   test('simulated mode keeps its made-up bookings: never read-only, no notice', async () => {
     const env = await testEnvironment();
     const runtime = await createRuntime(env.environment, { COMPASS_MODE: 'simulated' });
