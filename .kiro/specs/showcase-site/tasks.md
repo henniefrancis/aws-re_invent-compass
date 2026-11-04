@@ -515,6 +515,9 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 50. The Install page gives the Power folder URL only (owner, SP1 result of 4 November)
   - SP1 recorded that Kiro imports the Power from `.../tree/main/power` and refuses the repository root (compass-power task 63). `kiroImportOptions` returns one option, the full folder URL built from `SITE_LINKS.repository`, with the note that the repository URL does not work; step 4 asks for that address; the source note no longer says "which is why both options are listed". `site/README.md` and design decision 8 record the result. Content tests expect the single folder option. Owner review on the local preview; site tests; commit scoped `showcase-site`
 
+- [x] 51. The install page pins 0.1.1 (compass-power task 64.2, after the owner published 0.1.1 on 4 November)
+  - `SITE_LINKS.packageVersion` becomes `'0.1.1'`, so the install commands read `npx reinvent-compass@0.1.1` and `npx reinvent-compass@0.1.1 demo`; the content test and the e2e specs that copy a command (`pages`, `csp`, `forced-colors`) expect the new text. 0.1.1 carries the fast-uri fix (foundation-contracts task 36). Site gate, site build and a local preview check; the owner releases the site after the merge
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

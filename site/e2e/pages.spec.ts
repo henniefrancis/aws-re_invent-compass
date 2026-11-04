@@ -93,11 +93,11 @@ test.describe('navigation', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/install');
     await page
-      .getByRole('button', { name: 'Copy: npx reinvent-compass@0.1.0', exact: true })
+      .getByRole('button', { name: 'Copy: npx reinvent-compass@0.1.1', exact: true })
       .click();
     await expect(page.getByRole('status')).toHaveText('Copied');
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
-      'npx reinvent-compass@0.1.0',
+      'npx reinvent-compass@0.1.1',
     );
   });
 });
