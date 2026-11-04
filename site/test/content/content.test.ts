@@ -25,6 +25,7 @@ import {
   KIRO_ADD_BUTTON,
   KIRO_IMPORT_INTRO,
   KIRO_IMPORT_SOURCE_NOTE,
+  KIRO_UPDATE_NOTE,
   KIRO_IMPORT_STEPS,
   NODE_REQUIREMENT,
   OTHER_CLIENTS,
@@ -81,6 +82,7 @@ const installBlocks: readonly ContentBlock[] = [
   KIRO_IMPORT_INTRO,
   ...KIRO_IMPORT_STEPS,
   KIRO_IMPORT_SOURCE_NOTE,
+  KIRO_UPDATE_NOTE,
   HOOKS_NOTE,
   ...INSTALL_COMMANDS.map((c) => c.description),
   NODE_REQUIREMENT,
@@ -399,6 +401,15 @@ describe('install content', () => {
     expect(options.map((o) => o.id)).toEqual(['power-folder']);
     expect(options[0]?.value).toBe(`${SITE_LINKS.repository}/tree/main/power`);
     expect(options[0]?.note).toContain('not the repository address');
+  });
+
+  test('tells existing users how to update the power, because importing again is not enough (task 66)', () => {
+    expect(KIRO_UPDATE_NOTE.text).toContain('~/.kiro/powers/repos');
+    expect(KIRO_UPDATE_NOTE.text).toContain('import the folder address again');
+    expect(KIRO_UPDATE_NOTE.text).toContain(
+      'delete only the folders that hold the Compass repository',
+    );
+    expect(KIRO_UPDATE_NOTE.text).toContain('ask for the hooks again');
   });
 
   test('shows the two npx commands, pinned only when a version is known', () => {
