@@ -102,7 +102,7 @@ test.describe('under the Required_CSP', () => {
     const violations = await watchCsp(page);
     await page.goto('/install');
     await page
-      .getByRole('button', { name: 'Copy: npx reinvent-compass@0.1.0 demo', exact: true })
+      .getByRole('button', { name: 'Copy: npx reinvent-compass@0.1.1 demo', exact: true })
       .click();
     await expect(page.getByRole('status')).toHaveText('Copied');
     expect(await violations()).toEqual([]);

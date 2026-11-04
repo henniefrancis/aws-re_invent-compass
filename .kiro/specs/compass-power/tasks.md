@@ -688,12 +688,12 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - In Kiro, "Import power from GitHub" with the repository URL fails with "Nothing to install from the repository root: expected plugin.json, POWER.md, mcp.json or a steering directory"; the folder URL `https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power` imports. `README.md` (wording the owner accepted on 4 November), `packages/mcp-server/README.md` and the wiki Getting Started and Release pages give the folder URL as the one import step, with the reason in one line, and drop "both forms are listed". `readme.test.ts` expects the folder URL and no longer the repository URL as an import form. Gate and dash check; commit scoped `compass-power`
   - _Requirements: 20.1 (CTO review M11)_
 
-- [ ] 64. The 0.1.1 release commit (owner go of 4 November, risk review, tracker RSK1)
+- [x] 64. The 0.1.1 release commit (owner go of 4 November, risk review, tracker RSK1)
   - 0.1.0 bundles fast-uri 3.1.8 (four moderate advisories, through the MCP SDK's ajv). The lockfile has 3.1.9 since foundation-contracts task 36, so a new patch version is the only way the fix reaches users: a published version cannot change
   - Set the version to `0.1.1` in `packages/mcp-server/package.json` (and its lockfile entry), `power/plugin.json`, `power/mcp.json`, `power/POWER.md`, the hook template, every `npx --yes reinvent-compass@X` example in `packages/mcp-server/README.md`, under `power/`, in the root `README.md` and in the wiki pages that describe the current release; the packaging tests that pin the manifest version follow. History (design notes, decisions, How it was built, the hackathon rules record) keeps 0.1.0
   - `COMPASS_API_BASE_URL` stays `https://reinvent-compass.vegas`. Full gate and `npm pack --dry-run --workspace packages/mcp-server`; no tag and no publish in this task
-  - [ ] 64.1 Owner: merge to `main`, check the trusted publisher, tag `v0.1.1` on that commit, approve the publish job; then `npx --yes reinvent-compass@0.1.1 demo` on a clean machine and the Power import from the folder URL
-  - [ ] 64.2 After the publish: `SITE_LINKS.packageVersion` becomes `'0.1.1'` with its site and e2e tests (showcase-site), then the owner releases the site
+  - [x] 64.1 (done by the owner on 4 November: main 72b9c2a, tag v0.1.1, published with provenance) Owner: merge to `main`, check the trusted publisher, tag `v0.1.1` on that commit, approve the publish job; then `npx --yes reinvent-compass@0.1.1 demo` on a clean machine and the Power import from the folder URL
+  - [x] 64.2 (showcase-site task 51) After the publish: `SITE_LINKS.packageVersion` becomes `'0.1.1'` with its site and e2e tests (showcase-site), then the owner releases the site
   - _Requirements: 20.1, 20.2_
 
 ## Notes
