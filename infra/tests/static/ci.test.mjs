@@ -34,6 +34,15 @@ test('Terraform, tflint and Trivy are pinned by version', () => {
     assert.match(block.split('- name:')[0], /version:\s*v\d+\.\d+\.\d+/);
 });
 
+test('Trivy is installed from its GitHub release with a pinned SHA-256, not the action installer', () => {
+  assert.match(workflow, /TRIVY_SHA256:\s*[0-9a-f]{64}/);
+  assert.match(workflow, /sha256sum -c -/);
+  assert.match(workflow, /https:\/\/github\.com\/aquasecurity\/trivy\/releases\/download\//);
+  const trivyBlocks = workflow.split('aquasecurity/trivy-action@').slice(1);
+  for (const block of trivyBlocks)
+    assert.match(block.split('- name:')[0], /skip-setup-trivy:\s*true/);
+});
+
 test('the job has a realistic timeout and caches the Terraform plugins', () => {
   const minutes = Number(/timeout-minutes:\s*(\d+)/.exec(workflow)?.[1]);
   assert.ok(minutes >= 20 && minutes <= 45, `timeout-minutes is ${minutes}`);
