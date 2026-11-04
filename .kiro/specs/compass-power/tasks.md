@@ -684,6 +684,10 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - The live Events API OpenAPI now says a personal-time block must end on the same date it starts, in the event's own time zone. `add_layover` (create and update) refuses a block whose start and end fall on different event-local dates, before any request, with a plain message that names the rule; an end at exactly 00:00 the next day counts as a different date, as the API states. Unit tests at 100 percent coverage, including a block that ends at 23:55 and one that ends at 00:00; full gate; commit scoped `compass-power`
   - _Requirements: 14.1_
 
+- [x] 63. The Power imports from the folder URL only (owner, SP1 steps 12 to 14 on 4 November)
+  - In Kiro, "Import power from GitHub" with the repository URL fails with "Nothing to install from the repository root: expected plugin.json, POWER.md, mcp.json or a steering directory"; the folder URL `https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power` imports. `README.md` (wording the owner accepted on 4 November), `packages/mcp-server/README.md` and the wiki Getting Started and Release pages give the folder URL as the one import step, with the reason in one line, and drop "both forms are listed". `readme.test.ts` expects the folder URL and no longer the repository URL as an import form. Gate and dash check; commit scoped `compass-power`
+  - _Requirements: 20.1 (CTO review M11)_
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.
