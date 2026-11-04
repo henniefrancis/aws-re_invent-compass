@@ -394,11 +394,11 @@ describe('links and footer', () => {
 });
 
 describe('install content', () => {
-  test('shows both import options, with the repository address first', () => {
+  test('gives the power folder URL as the one import address (SP1, 4 November)', () => {
     const options = kiroImportOptions(SITE_LINKS);
-    expect(options.map((o) => o.id)).toEqual(['repository', 'power-folder']);
-    expect(options[0]?.value).toBe(SITE_LINKS.repository);
-    expect(options[1]?.value).toContain('power/');
+    expect(options.map((o) => o.id)).toEqual(['power-folder']);
+    expect(options[0]?.value).toBe(`${SITE_LINKS.repository}/tree/main/power`);
+    expect(options[0]?.note).toContain('not the repository address');
   });
 
   test('shows the two npx commands, pinned only when a version is known', () => {

@@ -54,7 +54,7 @@ export const KIRO_IMPORT_STEPS: readonly ContentBlock[] = [
   ),
   summary(
     'install-kiro-step-4',
-    'Enter the address of the Compass repository (see the options below).',
+    'Enter the address of the Compass power folder (below).',
     KIRO_DOCS,
     'Import power from GitHub',
   ),
@@ -62,7 +62,7 @@ export const KIRO_IMPORT_STEPS: readonly ContentBlock[] = [
 ];
 
 export interface ImportOption {
-  readonly id: 'repository' | 'power-folder';
+  readonly id: 'power-folder';
   readonly label: string;
   /** What to enter or look for. */
   readonly value: string;
@@ -70,30 +70,24 @@ export interface ImportOption {
 }
 
 /**
- * The two ways to point Kiro at the power. The Kiro page says a power needs a plugin.json or
- * POWER.md at its package root and does not say how to name a subfolder, so both options are
- * shown until the day-1 spike SP1 records which one works. This is the one place to change.
+ * The address to give Kiro. The day-1 spike SP1 recorded on 4 November that Kiro imports the
+ * power/ folder URL and refuses the repository root ("Nothing to install from the repository
+ * root"), so only the folder URL is shown. This is the one place to change.
  */
 export function kiroImportOptions(links: SiteLinks): readonly ImportOption[] {
   return [
     {
-      id: 'repository',
-      label: 'Option 1: the repository address',
-      value: links.repository,
-      note: 'Try this first.',
-    },
-    {
       id: 'power-folder',
-      label: 'Option 2: the power folder',
-      value: 'the power/ folder of the same repository',
-      note: 'If Kiro does not find the power at the repository address, point it at this folder instead.',
+      label: 'The power folder',
+      value: `${links.repository}/tree/main/power`,
+      note: 'Use this address, not the repository address: Kiro finds nothing to install at the repository root.',
     },
   ];
 }
 
 export const KIRO_IMPORT_SOURCE_NOTE: ContentBlock = summary(
   'install-kiro-source-note',
-  'A power needs a valid plugin.json or POWER.md at its package root. The official Kiro page does not say how to name a subfolder, which is why both options are listed.',
+  'A power needs a valid plugin.json or POWER.md at its package root. For Compass that root is the power/ folder, not the repository root.',
   KIRO_DOCS,
   'Repository structure',
 );
