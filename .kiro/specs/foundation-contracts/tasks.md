@@ -364,6 +364,12 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - [x] 33. The infra leak scan covers `wiki/` (security review of 3 November)
   - The runbooks now live in `wiki/`, so `infra/tests/static/lib.mjs` adds `wiki/` to the owned prefixes and the `git ls-files` pathspec, and `leakage.test.mjs` asserts the scan reaches it. A pasted account id, account-bearing ARN or email in a wiki page now fails the infra static tests before it can be published
 
+- [x] 34. The README says released, and the rules checklist records the 4 November check (owner request of 4 November)
+  - README.md (wording the owner accepted on 4 November): the status line says released, version 0.1.0, with the site, npm, board and wiki links, and that the Builder Center article and the demo video follow on 4 November; the Quick start "Coming soon" note is removed; the repository layout names the npm package. `docs/hackathon-rules.md`: row 2 names `main` 1c1407b (PR #12) and the final check records the 4 November results for items 1 to 4. Gate and site tests
+
+- [x] 35. CI installs Trivy from its GitHub release (CI failure of 4 November)
+  - The trivy-action installer downloads from `get.trivy.dev`, which stopped resolving on 4 November 2026, so the `check` job failed before scanning (PR #14). A new "Install Trivy" step downloads `trivy_0.76.0_Linux-64bit.tar.gz` from the GitHub release, checks it against a pinned SHA-256 and puts it on the path; both Trivy steps set `skip-setup-trivy: true` and keep `version: v0.76.0`. `ci.test.mjs` asserts the pinned checksum and the skip. Infra static tests
+
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.
 - Each top-level task (1 through 14) ends with a commit sub-task. Commit locally only after that task's tests pass, using Conventional Commits with `foundation-contracts` as the scope. The first commit (1.6) also includes `.kiro/specs/foundation-contracts/`. Never push, merge, tag or open a PR: the integrator does that after review.

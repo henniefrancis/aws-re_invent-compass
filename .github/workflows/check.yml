@@ -147,12 +147,28 @@ jobs:
       - name: Infra static tests and script checks
         run: node --test "infra/tests/static/*.test.mjs"
 
+      # Trivy comes straight from its GitHub release, checked against a pinned SHA-256.
+      # The action's own installer downloads from get.trivy.dev, which stopped resolving
+      # on 4 November 2026, so both Trivy steps below skip it (foundation-contracts task 35).
+      - name: Install Trivy
+        env:
+          TRIVY_VERSION: 0.76.0
+          TRIVY_SHA256: e24b1c51293c1b15e4ba8d45bbc7891ba053f90278ec2698f3562c993e145fe7
+        run: |
+          tarball="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$tarball" "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/$tarball"
+          echo "${TRIVY_SHA256}  $RUNNER_TEMP/$tarball" | sha256sum -c -
+          mkdir -p "$HOME/.local/bin/trivy-bin"
+          tar -xzf "$RUNNER_TEMP/$tarball" -C "$HOME/.local/bin/trivy-bin" trivy
+          echo "$HOME/.local/bin/trivy-bin" >> "$GITHUB_PATH"
+
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
           version: v0.76.0
+          skip-setup-trivy: true
           exit-code: 1
           severity: HIGH,CRITICAL
           ignore-unfixed: true
@@ -165,6 +181,7 @@ jobs:
           # (and its copy in the mcp-server dist) is deliberately minimal test data.
           scan-ref: infra
           version: v0.76.0
+          skip-setup-trivy: true
           exit-code: 1
           severity: HIGH,CRITICAL
 

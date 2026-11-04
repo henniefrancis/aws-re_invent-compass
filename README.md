@@ -10,7 +10,7 @@ Built for the re:Invent Catalog API Builder Challenge (September to November 202
 
 The full documentation is in the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki): a user guide, the architecture, the key decisions, a developer guide, operations and reference pages.
 
-> **Status: built, version 0.1.0, not yet released.** The code, tests and infrastructure are in this repository, and the code is set to version 0.1.0. These parts are **coming soon**: the production site and Compass API at `https://reinvent-compass.vegas`, the npm package `reinvent-compass` (published after the production deploy), the Builder Center article and the demo video. Links will be added here when they are live.
+> **Status: released, version 0.1.0.** Compass is live: the showcase site, the click-through demo and the Compass API at [reinvent-compass.vegas](https://reinvent-compass.vegas), and the npm package [`reinvent-compass`](https://www.npmjs.com/package/reinvent-compass) (`npx --yes reinvent-compass@0.1.0 demo` runs the whole flow on made-up data). The [project board](https://github.com/users/henniefrancis/projects/3) and the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki) show how it was built. The Builder Center article and the demo video follow on 4 November.
 
 ## Contents
 
@@ -76,8 +76,6 @@ The week runs in three acts:
 ```sh
 npx --yes reinvent-compass@0.1.0 demo
 ```
-
-> **Coming soon:** this works once `reinvent-compass` 0.1.0 is published to npm, which happens after the production deploy.
 
 The demo runs the whole flow in your terminal on made-up data, through the real tools, in ten steps:
 
@@ -354,7 +352,7 @@ contracts/             The Compass API OpenAPI contract (the single source)
 packages/contracts/    Shared zod schemas, the Events API OpenAPI document, generated types
 packages/core/         Events API client, sign-in, catalog cache, rules engine, scanner,
                        week spec, passes, calendar file, simulated mode
-packages/mcp-server/   The reinvent-compass MCP server and CLI (published to npm, coming soon)
+packages/mcp-server/   The reinvent-compass MCP server and CLI (on npm as reinvent-compass)
 packages/pass-service/ The Compass API Lambdas: passes, PassKit web service, hand-off, forget me
 power/                 The Kiro Power: plugin.json, POWER.md, mcp.json, skills, hook template
 site/                  The showcase site (Angular 22, static): story, demo, install, documentation, legal pages, board
