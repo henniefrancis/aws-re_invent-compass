@@ -76,12 +76,13 @@ describe('the package README', () => {
     expect(text).toContain('.kiro/settings/mcp.json');
   });
 
-  test('documents both GitHub import forms for the Power (CTO review M11)', async () => {
+  test('documents the folder URL as the GitHub import form for the Power (SP1, 4 November)', async () => {
     const text = await readme;
-    expect(text).toContain('https://github.com/henniefrancis/aws-re_invent-compass`');
     expect(text).toContain(
-      'https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power`',
+      'Import power from GitHub and give it the folder URL of the Power: `https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power`',
     );
+    expect(text).not.toContain('give it the repository URL');
+    expect(text).toContain('Nothing to install from the repository root');
   });
 
   test('says hooks are Kiro only and that the server guardrail runs regardless', async () => {

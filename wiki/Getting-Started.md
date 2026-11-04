@@ -56,10 +56,9 @@ The [Kiro Power](Glossary#kiro-power) is the [power](https://github.com/henniefr
 
 1. In Kiro, open Settings and set **Kiro Agent: Configure MCP** to Enabled. Kiro starts no [MCP server](Glossary#mcp-server) until you do.
 2. Open the Powers panel and choose **Add Custom Power**.
-3. Choose **Import power from GitHub** and give it the repository URL: `https://github.com/henniefrancis/aws-re_invent-compass`.
-4. If Kiro does not find the Power at the root, use the folder URL instead: `https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power`.
+3. Choose **Import power from GitHub** and give it the folder URL of the Power: `https://github.com/henniefrancis/aws-re_invent-compass/tree/main/power`.
 
-Both URL forms are listed because the project has not yet recorded which one Kiro accepts. If you import the folder from a local clone instead, Kiro names the server `power-power-compass`.
+Use the folder URL, not the repository URL: the Power lives in `power/`, and Kiro reports "Nothing to install from the repository root" for the repository URL. If you import the folder from a local clone instead, Kiro names the server `power-power-compass`.
 
 Then open your own project in Kiro and say: **"Plan my re:Invent."** The `plan-my-week` skill tells the agent the order of the tools and that every write needs your approval. To add the optional [Kiro hooks](Glossary#kiro-hook), ask for them: the `install-hooks` skill shows the template and writes `.kiro/hooks/reinvent-compass.json` only after you say yes.
 
