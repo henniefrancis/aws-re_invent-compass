@@ -329,7 +329,6 @@ data/venues.json       Venues and researched walking times, each with its source
 fixtures/              Synthetic catalog and API fixtures
 scripts/               Owner-run release, bootstrap and secret-loading scripts
 spikes/                Day-one spike scripts
-docs/                  The build plan and the hackathon rules (everything else is in the wiki)
 wiki/                  The source of the GitHub wiki: architecture, decisions, runbooks, guides
 ```
 

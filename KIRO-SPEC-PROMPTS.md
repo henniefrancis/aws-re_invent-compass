@@ -2,7 +2,7 @@
 
 **Updated 1 November 2026:** the Kiro credits ran out on 17 October 2026, and Claude's agents built the rest from these Kiro specs (ADR-029). The prompts are kept as they were given, with facts that changed since corrected to today.
 
-re:Invent Compass is built as **eight Kiro specs (S0 to S7)** by up to six Kiro sessions working in parallel. Every prompt below comes from the approved build plan ([docs/architecture/build-plan.md](docs/architecture/build-plan.md)) and its decisions ([Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions)). The steering files in `.kiro/steering/` (product, tech, structure, workflow) load into every session automatically, so the prompts do not repeat them.
+re:Invent Compass is built as **eight Kiro specs (S0 to S7)** by up to six Kiro sessions working in parallel. Every prompt below comes from the approved build plan (retired on 6 November 2026; the [Architecture overview](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Architecture-Overview) on the wiki replaces it, and the section numbers below name the original plan) and its decisions ([Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions)). The steering files in `.kiro/steering/` (product, tech, structure, workflow) load into every session automatically, so the prompts do not repeat them.
 
 ## How to run a spec
 
@@ -34,7 +34,7 @@ Milestones as they happened: contract lock and day-1 spikes **16 Oct**; first de
 
 **Builders from 17 Oct.** The owner's Kiro credits ran out on 17 Oct. Kiro wrote the S0, S1, S2, S4 and S6 specs and built S0 and S1 tasks 1 to 8. From then on, Claude's dev-team agents build from the same Kiro specs, one agent per worktree, under the same steering, ownership and review gates. S1 continues from task 9, S4 from task 1, and S2 and S6 from task 1. The S3, S5 and S7 specs are written by Claude in Kiro's format (requirements, design, tasks), with the spike fallbacks built in. Kiro can pick any stream back up when credits renew: the specs, `tasks.md` checkboxes and `design.md` stay the single record of what is done.
 
-**Kiro first (19 Oct, owner decision).** Kiro is the owner's own requirement, not a contest rule (`docs/hackathon-rules.md`, ADR-029 amendment). Every change starts as a Kiro spec or a task in an existing spec and Claude's agents build from it; work that ran ahead of its task is backfilled as a checked task the same day (infra tasks 19 and 20). The owner uses Kiro for the demo, the Power and the article.
+**Kiro first (19 Oct, owner decision).** Kiro is the owner's own requirement, not a contest rule (`wiki/Hackathon.md`, ADR-029 amendment). Every change starts as a Kiro spec or a task in an existing spec and Claude's agents build from it; work that ran ahead of its task is backfilled as a checked task the same day (infra tasks 19 and 20). The owner uses Kiro for the demo, the Power and the article.
 
 **Lessons for any builder, Kiro or agent:**
 
@@ -53,7 +53,7 @@ Milestones as they happened: contract lock and day-1 spikes **16 Oct**; first de
 ```
 Create a spec named "foundation-contracts" on branch feature/foundation-contracts.
 
-Read first: docs/architecture/build-plan.md sections 3, 4.1, 5 (all), 8 (S0 row), 9.1, 9.2 and 11.1, and docs/decisions/ADR-006, ADR-007, ADR-008, ADR-016, ADR-018.
+Read first: the original build plan, sections 3, 4.1, 5 (all), 8 (S0 row), 9.1, 9.2 and 11.1, and docs/decisions/ADR-006, ADR-007, ADR-008, ADR-016, ADR-018.
 
 Goal: lock the shared contracts and scaffolding in one day, so six engineers can build in parallel tomorrow without touching each other's files.
 
@@ -84,7 +84,7 @@ Out of scope: any feature logic. Leave each package with an index that compiles 
 ```
 Create a spec named "events-client" on branch feature/events-client.
 
-Read first: .kiro/steering/tech.md (Events API facts and behaviour rules), docs/architecture/build-plan.md sections 3.3 (flows 1 to 3), 4.2 (P1 to P5), 4.3 (local MCP server rows), 8 (S1 row) and 11.2.
+Read first: .kiro/steering/tech.md (Events API facts and behaviour rules), the original build plan, sections 3.3 (flows 1 to 3), 4.2 (P1 to P5), 4.3 (local MCP server rows), 8 (S1 row) and 11.2.
 
 You own: packages/core/src/{auth,api,catalog,simulated}/** and fixtures/api/**. Types come from @compass/contracts only.
 
@@ -109,7 +109,7 @@ Live smoke tests exist but run only with COMPASS_LIVE_TESTS=1 (owner, locally).
 ```
 Create a spec named "itinerary-rules" on branch feature/itinerary-rules.
 
-Read first: .kiro/steering/product.md (metaphor and rules), tech.md (re:Invent rules), docs/architecture/build-plan.md section 8 (S2 row) and 11.2.
+Read first: .kiro/steering/product.md (metaphor and rules), tech.md (re:Invent rules), the original build plan, section 8 (S2 row) and 11.2.
 
 You own: packages/core/src/rules/** and data/venues.json. This code must be pure (no I/O) and browser-safe (no Node imports): the showcase site runs it.
 
@@ -134,7 +134,7 @@ All reasons and warnings follow the voice rules (plain English, no em dashes or 
 ```
 Create a spec named "compass-power" on branch feature/compass-power.
 
-Read first: docs/architecture/build-plan.md sections 3 (all), 4.3 (local MCP server, Kiro hooks and remote awsevents rows), 8 (S3 row) and 8.1 (tools and API use), docs/decisions/ADR-005, ADR-017, and the day-1 SP1 result (Kiro hook input and blocking) recorded in docs/decisions or tech.md. Kiro Powers docs: https://kiro.dev/docs/powers/create/ ; hooks: https://kiro.dev/docs/hooks/
+Read first: the original build plan, sections 3 (all), 4.3 (local MCP server, Kiro hooks and remote awsevents rows), 8 (S3 row) and 8.1 (tools and API use), docs/decisions/ADR-005, ADR-017, and the day-1 SP1 result (Kiro hook input and blocking) recorded in docs/decisions or tech.md. Kiro Powers docs: https://kiro.dev/docs/powers/create/ ; hooks: https://kiro.dev/docs/hooks/
 
 You own: packages/mcp-server/**, packages/core/src/{scanner,spec}/**, power/**, fixtures/sample-repo/**. Build against S1, S2 and S4 through their contracts with mocks until they are merged.
 
@@ -156,7 +156,7 @@ Tests: simulated end-to-end of the whole flow above; scanner fixtures; prompt-in
 ```
 Create a spec named "boarding-passes" on branch feature/boarding-passes.
 
-Read first: docs/architecture/build-plan.md sections 3.3 (flows 4 to 7), 4.2 (P4, P5, P9), 5.2 and 5.3, 8 (S4 row), and docs/decisions/ADR-010, ADR-011.
+Read first: the original build plan, sections 3.3 (flows 4 to 7), 4.2 (P4, P5, P9), 5.2 and 5.3, 8 (S4 row), and docs/decisions/ADR-010, ADR-011.
 
 You own: packages/core/src/passes/**. The Compass API is used only through the client generated from contracts/compass-api.openapi.yaml; test against a mock server built from that contract.
 
@@ -179,7 +179,7 @@ Tests: snapshot tests for PassFields, .ics and the itinerary page; sync diff cas
 ```
 Create a spec named "pass-service" on branch feature/pass-service.
 
-Read first: docs/architecture/build-plan.md sections 3 (all), 4 (all), 5 (all), 6, 8 (S5 row) and 11.2, docs/decisions/ADR-009 to ADR-013 and ADR-022, and the day-1 SP2, SP3 and SP4 results. Apple: https://developer.apple.com/documentation/walletpasses/adding-a-web-service-to-update-passes ; Google: https://developers.google.com/wallet/generic/rest/v1/genericobject
+Read first: the original build plan, sections 3 (all), 4 (all), 5 (all), 6, 8 (S5 row) and 11.2, docs/decisions/ADR-009 to ADR-013 and ADR-022, and the day-1 SP2, SP3 and SP4 results. Apple: https://developer.apple.com/documentation/walletpasses/adding-a-web-service-to-update-passes ; Google: https://developers.google.com/wallet/generic/rest/v1/genericobject
 
 You own: packages/pass-service/**. Infrastructure is S6's; you deliver a Lambda bundle and its documented environment variables.
 
@@ -205,7 +205,7 @@ Tests: JWT negative cases (wrong aud, wrong iss, alg none, expired, unknown kid)
 ```
 Create a spec named "infra" on branch feature/infra.
 
-Read first: .kiro/steering/tech.md (Terraform and deploy, public and private), docs/architecture/build-plan.md sections 6, 7 (all), 8 (S6 row), 11.3 and 13, and docs/decisions/ADR-001, ADR-013, ADR-014, ADR-015, ADR-019, ADR-020, ADR-021.
+Read first: .kiro/steering/tech.md (Terraform and deploy, public and private), the original build plan, sections 6, 7 (all), 8 (S6 row), 11.3 and 13, and docs/decisions/ADR-001, ADR-013, ADR-014, ADR-015, ADR-019, ADR-020, ADR-021.
 
 You own: infra/** (except infra/modules/api/openapi.yaml, an S0-owned copy), scripts/** (not spikes/), docs/runbooks/**.
 
@@ -228,7 +228,7 @@ Tests: native terraform test with mock providers asserting prevent_destroy, log 
 ```
 Create a spec named "showcase-site" on branch feature/showcase-site.
 
-Read first: .kiro/steering/product.md (story, metaphor, principles), docs/architecture/build-plan.md sections 4.3 (site row), 5.2 (hand-off routes), 8 (S7 row) and 11.2 (browser matrix and budgets), docs/decisions/ADR-005, ADR-011, ADR-016. Angular prerendering: https://angular.dev/guide/ssr
+Read first: .kiro/steering/product.md (story, metaphor, principles), the original build plan, sections 4.3 (site row), 5.2 (hand-off routes), 8 (S7 row) and 11.2 (browser matrix and budgets), docs/decisions/ADR-005, ADR-011, ADR-016. Angular prerendering: https://angular.dev/guide/ssr
 
 You own: site/**. The demo uses @compass/core/rules (S2, merged) and 17 real re:Invent 2026 sessions in a simulated week (tests use the synthetic catalog); the /board page uses the hand-off routes from the contract.
 

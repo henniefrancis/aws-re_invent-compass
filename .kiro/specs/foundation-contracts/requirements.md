@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This spec is the S0 "foundation-contracts" stream for re:Invent Compass. Its single job is to lock the shared contracts and scaffolding in one day so that six engineers (streams S1 to S7) can build in parallel the next day without editing each other's files. The build plan (docs/architecture/build-plan.md) is the single source of truth where anything conflicts; this spec references build plan sections 3, 4.1, 5, 8 (the S0 row and 8.1), 9.1, 9.2, 11 and 11.1, 11.2 and ADR-006, ADR-007, ADR-008, ADR-016, ADR-018 and ADR-023.
+This spec is the S0 "foundation-contracts" stream for re:Invent Compass. Its single job is to lock the shared contracts and scaffolding in one day so that six engineers (streams S1 to S7) can build in parallel the next day without editing each other's files. The build plan (the original `docs/architecture/build-plan.md`, retired on 6 November 2026 and now the wiki Architecture overview) was the single source of truth where anything conflicted; this spec references build plan sections 3, 4.1, 5, 8 (the S0 row and 8.1), 9.1, 9.2, 11 and 11.1, 11.2 and ADR-006, ADR-007, ADR-008, ADR-016, ADR-018 and ADR-023.
 
 Scope is scaffolding and contracts only: the npm workspaces monorepo, the toolchain configuration, the shared type and schema packages, the Compass API OpenAPI contract and its byte-identical copies, generated types from both the official Events API OpenAPI and the Compass API OpenAPI, a deterministic synthetic catalog, the GitHub workflows and Dependabot configuration, the repo build hooks, two owner-run spike scripts, and doc and example-file updates. Feature logic is out of scope: every package is left with an index that compiles and a placeholder test.
 

@@ -77,17 +77,17 @@ The same headers policy also sends `Strict-Transport-Security`, `X-Content-Type-
 Every unit of copy is a content block in `src/lib/content/` that names its source document and section. A block marked verbatim must appear exactly in that document, and a test checks it. The sources (`SourceDocument` in `src/lib/content/content-block.ts`) are:
 
 - `CONCEPT.md`, `README.md`, `.kiro/steering/product.md` and `.kiro/steering/tech.md`
-- `docs/architecture/build-plan.md` (section 4.2 for the privacy page, section 7.2 for log retention and point-in-time recovery)
+- `wiki/Privacy.md`, `wiki/Data-and-Privacy.md`, `wiki/Decisions-Architecture.md` and `wiki/Getting-Started.md` (the privacy page, log retention and point-in-time recovery, the hand-off link, the hooks note)
 - `KIRO-SPEC-PROMPTS.md` (the `npx reinvent-compass demo` line)
 - `.kiro/specs/showcase-site/requirements.md` (statements about how this site behaves)
 - `packages/mcp-server/README.md` (the code scan, the client setup, live mode, read-only by default, GitHub, updating the Power and what leaves your machine)
 - `NOTICE`, `LICENSE` and `SECURITY.md` (the legal and security pages)
 - `site/content/creator-and-inspiration.md` (The Creator and The Inspiration)
-- `docs/hackathon-rules.md` (the demo data rule and its credit)
+- `wiki/Hackathon.md` (the demo data rule and its credit)
 - `wiki/Decisions-Product-and-Scope.md` (Walk from here)
 - the official Kiro powers installation page at kiro.dev
 
-Where a source conflicts with the code, the code wins, then the build plan. There are no testimonials, no invented numbers and no invented features.
+Where a source conflicts with the code, the code wins, then the wiki. There are no testimonials, no invented numbers and no invented features.
 
 The demo sessions are 17 real sessions of the re:Invent 2026 catalog, read from the AWS Events API and committed as `src/lib/demo/demo-sessions.json` (code, title, start, end, venue and room only, credited to the AWS Events API). `node site/scripts/make-demo-sessions.mjs` rebuilds the file from a local copy of the catalog cache by an explicit list of codes, and refuses to write an unofficial venue or a time outside the event window. Seats and reservations in the demo are demo settings, not catalog data.
 

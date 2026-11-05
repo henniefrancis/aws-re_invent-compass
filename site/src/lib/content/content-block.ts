@@ -9,7 +9,6 @@ export type SourceDocument =
   | 'README.md'
   | '.kiro/steering/product.md'
   | '.kiro/steering/tech.md'
-  | 'docs/architecture/build-plan.md'
   | 'KIRO-SPEC-PROMPTS.md'
   | '.kiro/specs/showcase-site/requirements.md'
   | 'packages/mcp-server/README.md'
@@ -17,8 +16,13 @@ export type SourceDocument =
   | 'LICENSE'
   | 'SECURITY.md'
   | 'site/content/creator-and-inspiration.md'
-  | 'docs/hackathon-rules.md'
+  | 'wiki/Hackathon.md'
   | 'wiki/Decisions-Product-and-Scope.md'
+  | 'wiki/Decisions-Architecture.md'
+  | 'wiki/Decisions-Passes-and-Wallets.md'
+  | 'wiki/Data-and-Privacy.md'
+  | 'wiki/Getting-Started.md'
+  | 'wiki/Privacy.md'
   | 'kiro.dev/docs/powers/installation';
 
 export interface ContentBlock {
@@ -37,7 +41,6 @@ export const FILE_SOURCES: readonly SourceDocument[] = [
   'README.md',
   '.kiro/steering/product.md',
   '.kiro/steering/tech.md',
-  'docs/architecture/build-plan.md',
   'KIRO-SPEC-PROMPTS.md',
   '.kiro/specs/showcase-site/requirements.md',
   'packages/mcp-server/README.md',
@@ -45,8 +48,13 @@ export const FILE_SOURCES: readonly SourceDocument[] = [
   'LICENSE',
   'SECURITY.md',
   'site/content/creator-and-inspiration.md',
-  'docs/hackathon-rules.md',
+  'wiki/Hackathon.md',
   'wiki/Decisions-Product-and-Scope.md',
+  'wiki/Decisions-Architecture.md',
+  'wiki/Decisions-Passes-and-Wallets.md',
+  'wiki/Data-and-Privacy.md',
+  'wiki/Getting-Started.md',
+  'wiki/Privacy.md',
 ];
 
 /** A block whose text appears exactly in its source. */

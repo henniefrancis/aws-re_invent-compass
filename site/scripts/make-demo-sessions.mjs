@@ -3,7 +3,7 @@
 // Reads a local copy of the AWS Events API catalog (the cache file the desktop app writes) and
 // writes src/lib/demo/demo-sessions.json, the committed snapshot the Demo_Page uses.
 //
-// The owner rule (docs/hackathon-rules.md, row 11): the demo carries the session code, title,
+// The owner rule (wiki/Hackathon.md, row 11): the demo carries the session code, title,
 // start, end, venue and room only, credited to the AWS Events API. This script therefore
 //   - picks sessions by the explicit codes listed below, never by a query;
 //   - copies exactly those six fields and nothing else (no abstract, speaker, type, level,

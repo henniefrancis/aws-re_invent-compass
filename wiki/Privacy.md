@@ -8,7 +8,9 @@ In the project owner's words (from the [README](https://github.com/henniefrancis
 
 > The responsible party under South Africa's Protection of Personal Information Act (POPIA) is the project owner, Hennie Francis, acting personally. No human reads server data in normal operation.
 
-The Compass server runs in the AWS us-east-1 Region (N. Virginia, United States), in the owner's AWS account.
+The Compass server runs in the AWS us-east-1 Region (N. Virginia, United States), outside South Africa, in the owner's AWS account.
+
+Apple processes data (the push token) when you add a pass to Apple Wallet. Google holds the pass object from the moment the pass is issued, so that the Add to Google Wallet link works. Google acts as a processor.
 
 ## What stays on your machine
 
@@ -30,7 +32,7 @@ Compass keeps its files in a `reinvent-compass` folder under your app-data folde
 Notes:
 
 - **The schedule snapshot** is the last schedule Compass read from the Events API. It is overwritten on every read and deleted by `forget_me`; there is no time-based purge.
-- **The code scan** runs in memory. Only service and technology names, a depth per service and counts leave the scanner: never a file name, path or content. What it learns is saved as your tech list in the app-data folder, with no file paths.
+- **The code scan** runs in memory. Only service and technology names, a depth per service and counts leave the scanner: never a file name, path or content. What it learns is saved as your tech list in the app-data folder, with no file paths. The week spec gets service names and depth only.
 - **The tech list** stores each project under a one-way hash, so no folder path or repository name is kept. It is never sent anywhere.
 - **The week spec** would show where you will be and when if your repository is public, so Compass offers to add it to `.gitignore` (see [Plan](User-Guide-Plan#the-week-spec)).
 - **Logs.** The MCP server logs to stderr only, through a redacting logger. Nothing logged holds a token, an email address, a link or a file path.
@@ -49,15 +51,15 @@ flowchart LR
   Phone["Your phone"] -->|hand-off id, Apple device token| CA
 ```
 
-| What                  | Goes to                                                                          | Why                                                                                                                               |
-| --------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Access token          | `api.awsevents.com` only                                                         | To read the catalog and your schedule (and write, if you turn writes on)                                                          |
-| Refresh token         | The AWS Events token endpoint only                                               | To renew your sign-in                                                                                                             |
-| ID token              | The [Compass API](Glossary#compass-api) only                                     | To prove you signed in. It is checked and never stored. The server keeps only a keyed one-way hash of your Builder ID subject.    |
-| Printable pass fields | The Compass API                                                                  | To build your passes: session code, title, venue, room, start and end, the walk from the previous commitment and the next session |
-| Pass object           | Google Wallet, when the Compass API issues a pass with Google Wallet switched on | So you can save it to Google Wallet. Google keeps its own copy, set to `INACTIVE` after a void. It has no name in it.             |
-| Pass file             | Your phone, from the Compass API                                                 | When you tap Add to Apple Wallet. Your phone then registers its push token with the Compass API so the pass can be updated.       |
-| GitHub tokens         | `github.com` and `api.github.com` only                                           | To list and read your repositories. Archives come from `codeload.github.com` without the token and are read in memory.            |
+| What                  | Goes to                                                                          | Why                                                                                                                                                                                                |
+| --------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Access token          | `api.awsevents.com` only                                                         | To read the catalog and your schedule (and write, if you turn writes on)                                                                                                                           |
+| Refresh token         | The AWS Events token endpoint only                                               | To renew your sign-in                                                                                                                                                                              |
+| ID token              | The [Compass API](Glossary#compass-api) only                                     | To prove you signed in. It is checked and never stored. The server keeps only a keyed one-way hash of your Builder ID subject.                                                                     |
+| Printable pass fields | The Compass API                                                                  | To build your passes: session code, title, venue, room, start and end, the walk from the previous commitment and the next session                                                                  |
+| Pass object           | Google Wallet, when the Compass API issues a pass with Google Wallet switched on | So you can save it to Google Wallet. Google keeps its own copy, set to `INACTIVE` after a void. It has no name in it: Compass does not send your name, and never takes it from your sign-in token. |
+| Pass file             | Your phone, from the Compass API                                                 | When you tap Add to Apple Wallet. Your phone then registers its push token with the Compass API so the pass can be updated.                                                                        |
+| GitHub tokens         | `github.com` and `api.github.com` only                                           | To list and read your repositories. Archives come from `codeload.github.com` without the token and are read in memory.                                                                             |
 
 Nothing about your code or your repositories goes to Compass or to AWS. Catalog text is shown to your assistant as labelled data, and session abstracts are never passed on.
 

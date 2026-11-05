@@ -1,10 +1,9 @@
 import { quoted, summary, type ContentBlock } from './content-block';
 
-// What leaves your machine, in plain words. Every line comes from build plan section 4.2
+// What leaves your machine, in plain words. Every line comes from the Privacy and Data and privacy wiki pages
 // (the personal data record) and the product principles. The lines about this website come
 // from the showcase-site requirements, which describe how the site itself behaves.
 
-const PLAN = 'docs/architecture/build-plan.md';
 const PRODUCT = '.kiro/steering/product.md';
 const SITE = '.kiro/specs/showcase-site/requirements.md';
 const WALK = 'wiki/Decisions-Product-and-Scope.md';
@@ -37,26 +36,26 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       summary(
         'privacy-catalog-schedule',
         'The session catalog cache and a snapshot of your schedule stay in a folder on your computer. The snapshot is replaced each time Compass reads your schedule, and deleted when you run forget_me.',
-        PLAN,
-        '4.2 (P4)',
+        'wiki/Privacy.md',
+        'What stays on your machine',
       ),
       summary(
         'privacy-issued-record',
         'The record of the passes you have issued stays in that same folder.',
-        PLAN,
-        '4.2 (P5)',
+        'wiki/Privacy.md',
+        'What stays on your machine',
       ),
       summary(
         'privacy-week-spec',
         'Your week spec stays in your workspace. Compass offers to add it to .gitignore, because a public repo would publish where and when you will be.',
-        PLAN,
-        '4.2 (P6)',
+        'wiki/Privacy.md',
+        'What stays on your machine',
       ),
       summary(
         'privacy-code-scan',
         'The code scan never stores file paths. Its result is your tech list, service and technology names with depth, kept in a folder on your computer. The week spec gets service names and depth only.',
-        PLAN,
-        '4.2 (P7)',
+        'wiki/Privacy.md',
+        'What stays on your machine',
       ),
       summary(
         'privacy-tech-list',
@@ -79,44 +78,44 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       summary(
         'privacy-id-token',
         'Your ID token goes only to the Compass API, as proof that you are signed in. It is never stored there. The server keeps only a one-way keyed hash of your sign-in identifier.',
-        PLAN,
-        '4.2 (P3, P10)',
+        'wiki/Privacy.md',
+        'What leaves your machine, and where it goes',
       ),
       summary(
         'privacy-pass-fields',
         'The printable pass fields go to the Compass API: the session code and title, the venue and room, the times, the walk from the previous session and the next connection. They are kept until the session ends plus 24 hours.',
-        PLAN,
-        '4.2 (P10) and 2 (A1)',
+        'wiki/Privacy.md',
+        'What leaves your machine, and where it goes',
       ),
       summary(
         'privacy-name',
-        'Your name is sent only if you choose to add it. It is typed on your machine and never taken from your sign-in token.',
-        PLAN,
-        '4.2 (P8)',
+        'Compass does not send your name, and never takes it from your sign-in token.',
+        'wiki/Privacy.md',
+        'What leaves your machine, and where it goes',
       ),
       summary(
         'privacy-apple-push',
         'For Apple Wallet, your device push token is kept until your device unregisters the pass or the pass record expires.',
-        PLAN,
-        '4.2 (P11)',
+        'wiki/Privacy.md',
+        'What leaves your machine, and where it goes',
       ),
       summary(
         'privacy-google-objects',
         'For Google Wallet, Google holds the pass object. A voided pass is set to inactive, and every pass expires at its session end.',
-        PLAN,
-        '4.2 (P15)',
+        'wiki/Decisions-Passes-and-Wallets.md',
+        'Update, void and expire every pass',
       ),
       summary(
         'privacy-processing-region',
         'The Compass server runs in the AWS us-east-1 Region (N. Virginia, United States), outside South Africa, in the AWS account of the owner.',
-        PLAN,
-        '1, 4.2 and 7',
+        'wiki/Privacy.md',
+        'Who is responsible',
       ),
       summary(
         'privacy-processors',
         'Apple processes data (the push token) when you add a pass to Apple Wallet. Google holds the pass object from the moment the pass is issued, so that the Add to Google Wallet link works. Google acts as a processor.',
-        PLAN,
-        '4.2 (P15, P16)',
+        'wiki/Privacy.md',
+        'Who is responsible',
       ),
       summary(
         'privacy-github',
@@ -127,16 +126,21 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       summary(
         'privacy-logs',
         'The Compass API keeps its logs for 14 days. Its access log records the request path pattern, not your IP address.',
-        PLAN,
-        '7.2 (infra/modules/api)',
+        'wiki/Data-and-Privacy.md',
+        'Logs and metrics',
       ),
       summary(
         'privacy-no-backup',
         'Point-in-time recovery is off on the Compass API table, so there is no backup copy of data that expires or that forget_me deletes.',
-        PLAN,
-        '7.2 (infra/modules/data)',
+        'wiki/Data-and-Privacy.md',
+        'In the Compass API table',
       ),
-      quoted('privacy-no-human', 'No human reads server data in normal operation.', PLAN, '4.2'),
+      quoted(
+        'privacy-no-human',
+        'No human reads server data in normal operation.',
+        'wiki/Privacy.md',
+        'Who is responsible',
+      ),
     ],
   },
   {
@@ -146,14 +150,14 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       summary(
         'privacy-handoff-expiry',
         'A hand-off lasts 15 minutes. After that, the link stops working.',
-        PLAN,
-        '4.2 (P12)',
+        'wiki/Privacy.md',
+        'How long the server keeps it',
       ),
       summary(
         'privacy-handoff-fragment',
         'The hand-off link keeps its secret in the part of the web address after the # sign, which a browser never sends to the website.',
-        PLAN,
-        '4.1 (handoffId)',
+        'wiki/Decisions-Architecture.md',
+        'Cloud hand-off to the phone',
       ),
       summary(
         'privacy-forget-me',
@@ -164,8 +168,8 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       summary(
         'privacy-rate-counters',
         'forget_me does not delete the server rate counters, which are tied to a one-way hash of your sign-in identifier, so that it cannot reset the limits. They are deleted when their one-hour window ends plus 2 minutes.',
-        PLAN,
-        '4.2 (P13, DELETE /api/v1/me)',
+        'wiki/Data-and-Privacy.md',
+        'TTL and expiry',
       ),
       quoted(
         'privacy-no-remote-delete',
@@ -200,7 +204,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       summary(
         'privacy-site-session-data',
         'The session catalog is public. The demo snapshot holds only the session code, title, start and end times, venue and room, so it has no speakers, no attendees and no personal data.',
-        'docs/hackathon-rules.md',
+        'wiki/Hackathon.md',
         'Compliance, rule 11',
       ),
       summary(
@@ -224,8 +228,8 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       summary(
         'privacy-party',
         'The responsible party is Hennie Francis, acting personally.',
-        PLAN,
-        '4.2',
+        'wiki/Privacy.md',
+        'Who is responsible',
       ),
     ],
   },
@@ -236,20 +240,20 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       summary(
         'privacy-rights',
         'forget_me is how you use your POPIA rights for the data Compass keeps on the server.',
-        PLAN,
-        '4.2 (DELETE /api/v1/me)',
+        'wiki/Privacy.md',
+        'Your rights',
       ),
       summary(
         'privacy-contact',
         'To ask about your data, use private vulnerability reporting on the project repository on GitHub.',
-        PLAN,
-        '4.2',
+        'wiki/Privacy.md',
+        'Your rights',
       ),
       summary(
         'privacy-regulator',
         'You may also complain to the Information Regulator (South Africa).',
-        PLAN,
-        '4.2',
+        'wiki/Privacy.md',
+        'Your rights',
       ),
     ],
   },

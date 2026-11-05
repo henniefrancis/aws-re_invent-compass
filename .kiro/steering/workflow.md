@@ -4,7 +4,7 @@ inclusion: always
 
 # How we work (every Kiro session reads this)
 
-Several Kiro sessions ("engineers") build re:Invent Compass at the same time, one spec each. These rules keep them from colliding. Source: build plan sections 9 and 11.3, ADR-002 and ADR-007.
+Several Kiro sessions ("engineers") build re:Invent Compass at the same time, one spec each. These rules keep them from colliding. Source: ADR-002 and ADR-007 (wiki/Decisions-Delivery-and-Tooling.md); the original build plan (sections 9 and 11.3) was retired on 6 November 2026.
 
 ## Branches and worktrees
 

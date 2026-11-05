@@ -346,8 +346,9 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - [x] 27. The runbooks get their own wiki section (owner request of 3 November)
   - A new `wiki/Runbooks.md` page lists the six runbooks (Release, Alarms, Kill switch, Rollback, Secrets, Teardown) and when to open each; the sidebar gets a Runbooks heading under Operations; the Operations page, Home and each runbook link to it. Leak, dash and link checks; owner review on the live preview; publish to the wiki after the owner approves
 
-- [ ] 28. Move the build plan out of `docs/` after the submission (owner request of 3 November; not before 6 November)
+- [x] 28. Move the build plan out of `docs/` after the submission (owner request of 3 November; not before 6 November)
   - `docs/architecture/build-plan.md` stays until then because the steering files load it (`#[[file:]]`, workspace files only) and about 24 Install and Privacy texts on the site quote it, checked by the site content tests. To remove it: point `product.md` and `tech.md` at the wiki pages in `wiki/` (for example `wiki/Architecture-Overview.md`); re-source each site text to a `wiki/` page whose wording matches, or change the site text with the owner; drop it from `FILE_SOURCES`; delete the file. Full gate, site tests and owner review on the local preview
+  - Done 6 November: `docs/architecture/build-plan.md` is deleted. `product.md` and `tech.md` load `wiki/Architecture-Overview.md` instead; the 21 Privacy page blocks and the hooks note on Install are re-sourced to `wiki/Privacy.md`, `wiki/Data-and-Privacy.md`, `wiki/Decisions-Architecture.md` and `wiki/Getting-Started.md` (all summary blocks except one, whose sentence is on `wiki/Privacy.md`; no visible site text changed); `FILE_SOURCES` lists those pages; `CONCEPT.md`, `CONTRIBUTING.md`, `KIRO-SPEC-PROMPTS.md`, `site/README.md`, `structure.md` and the specs follow
 
 - [x] 29. The last two decision records leave `docs/` (owner request of 3 November)
   - The Events API provenance record (ADR-023: source URL, retrieval date, size and SHA-256) moves next to the document as `packages/contracts/events-api.openapi.provenance.md`, and `events-api-provenance.test.ts` reads it there with the same checks. The Privacy page text on Walk from here names `wiki/Decisions-Product-and-Scope.md` (section "Walk from here on the board page") as its source instead of ADR-037; it is a summary block, so only the file must exist. Both ADR files are deleted; steering, `.prettierignore`, `docs/hackathon-rules.md` and `site/README.md` follow. Full gate and site tests
@@ -355,8 +356,9 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - [x] 30. The demo video script leaves `docs/` (owner request of 3 November)
   - Nothing in the build reads `docs/demo/demo-script.md`; it stayed only while the owner recorded the videos. It is deleted (git history keeps it) and the steering structure no longer lists `docs/demo/`
 
-- [ ] 31. Move the hackathon rules out of `docs/` after the submission (owner request of 3 November; not before 6 November)
+- [x] 31. Move the hackathon rules out of `docs/` after the submission (owner request of 3 November; not before 6 November)
   - The creator story already moved (task 32). `docs/hackathon-rules.md` is the submission checklist and the source of the demo data rule on the Disclaimer and Privacy pages (`content.test.ts` checks its wording): once judging ends, turn it into a short Hackathon page in `wiki/` and re-source those blocks to it. With task 28 done as well, `docs/` is gone. Full gate, site tests and owner review on the local preview
+  - Done 6 November: `docs/hackathon-rules.md` moved unchanged to `wiki/Hackathon.md` (linked from the sidebar and Home); the Disclaimer, Privacy and Story blocks and `content.test.ts` read it there; `docs/hackathon-rules.md` is deleted and `docs/` holds no tracked file. `CONTRIBUTING.md`, `structure.md`, `site/README.md`, the demo catalog comments and `make-demo-sessions.mjs` follow
 
 - [x] 32. The creator story moves next to the site (owner request of 3 November)
   - `docs/story/creator-and-inspiration.md` is the owner's approved wording for The Creator and The Inspiration pages; the site quotes it and `creator.test.ts` checks every paragraph word for word. It moves to `site/content/creator-and-inspiration.md` with no change to its text; `about.ts`, `inspiration.ts`, `FILE_SOURCES`, the test, `site/README.md` and the steering structure follow. No visible change on the site. Site tests and the root gate
@@ -394,6 +396,12 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - All work stays inside S0-owned paths. `package.json` and `package-lock.json` pass to the integrator after day 1.
 - Every test runs with `COMPASS_MODE=simulated` against committed fixtures. No task calls the live Events API; the Events API document fetch is an operator action, not a CI or test action.
 - No em dash or en dash appears in any file, comment, test name or commit message. Commits use Conventional Commits with `foundation-contracts` as the scope.
+
+- [x] 40. The rules checklist records the submission of 5 November (owner request of 5 November, tracker RUL)
+  - `docs/hackathon-rules.md` "Final check on submission day" records the submission: the article, the stats article and the hackathon project published and answering 200, with the repository, site, install, npm and video links; the live Events API OpenAPI still byte-identical; `main` `1c77be2` (tag `v0.1.3`) green with no open alert; prod 200 on `v0.1.3`; `reinvent-compass@0.1.3` `latest` with provenance and the demo run from an empty npm cache; the README links. Items 3 and 4 name 0.1.3 and `1c77be2`; the judging row for the article says it is published. All nine items are done
+
+- [x] 41. The wiki links the published submission (owner request of 6 November)
+  - `wiki/How-It-Was-Built.md` (Deliverables) and `wiki/Home.md` link the article, the stats article, the hackathon project, the five videos and the site Video Library; wiki statements that spoke of the submission in the future tense are now past tense
 
 ## Task Dependency Graph
 
