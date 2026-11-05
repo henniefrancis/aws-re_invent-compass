@@ -212,8 +212,11 @@ export function findOutputIssues(html, { file, expectNoindex, requireContent = t
         add('javascript-url', `javascript: URL in ${attribute.name} on <${tag.name}>`);
       }
       // A canonical link only names the page's own public address; a browser never loads it.
+      // Only a canonical on the site's own origin is exempt.
       const isCanonical =
-        tag.name === 'link' && attr(tag.attributes, 'rel')?.trim().toLowerCase() === 'canonical';
+        tag.name === 'link' &&
+        attr(tag.attributes, 'rel')?.trim().toLowerCase() === 'canonical' &&
+        (attr(tag.attributes, 'href') ?? '').startsWith('https://reinvent-compass.vegas/');
       const loadsResource =
         attribute.name === 'src' ||
         (attribute.name === 'href' && tag.name === 'link' && !isCanonical) ||

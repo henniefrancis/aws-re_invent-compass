@@ -164,6 +164,9 @@ describe('findOutputIssues', () => {
     expect(
       rules(page('', '<link rel="canonical stylesheet" href="https://evil.invalid/a.css">')),
     ).toEqual(['cross-origin-resource']);
+    expect(rules(page('', '<link rel="canonical" href="https://evil.invalid/install">'))).toEqual([
+      'cross-origin-resource',
+    ]);
   });
 
   test('exactly one h1, lang en and the Notice', () => {

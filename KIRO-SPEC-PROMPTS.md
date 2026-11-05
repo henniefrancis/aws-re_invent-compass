@@ -2,7 +2,7 @@
 
 **Updated 1 November 2026:** the Kiro credits ran out on 17 October 2026, and Claude's agents built the rest from these Kiro specs (ADR-029). The prompts are kept as they were given, with facts that changed since corrected to today.
 
-re:Invent Compass is built as **eight Kiro specs (S0 to S7)** by up to six Kiro sessions working in parallel. Every prompt below comes from the approved build plan ([docs/architecture/build-plan.md](docs/architecture/build-plan.md)) and its decisions ([docs/decisions/](docs/decisions/)). The steering files in `.kiro/steering/` (product, tech, structure, workflow) load into every session automatically, so the prompts do not repeat them.
+re:Invent Compass is built as **eight Kiro specs (S0 to S7)** by up to six Kiro sessions working in parallel. Every prompt below comes from the approved build plan ([docs/architecture/build-plan.md](docs/architecture/build-plan.md)) and its decisions ([Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions)). The steering files in `.kiro/steering/` (product, tech, structure, workflow) load into every session automatically, so the prompts do not repeat them.
 
 ## How to run a spec
 
