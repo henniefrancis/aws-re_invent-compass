@@ -2,9 +2,9 @@
 
 **From your code to your seat, on time.**
 
-A Kiro Power that turns a first-timer's re:Invent week into a Kiro spec, then issues unofficial boarding passes for every reserved seat so the right information is on their lock screen at the right moment.
+A Kiro Power that scans a first-timer's code and GitHub repositories, finds the re:Invent sessions that match their stack, turns the week into a Kiro spec, then issues unofficial boarding passes for every reserved seat so the right information is on their lock screen at the right moment.
 
-Entry for the re:Invent Event Catalog API Hackathon. Submission deadline: 6 November 2026, 11:59 PM PT.
+Entry for the re:Invent Catalog API Builder Challenge. Submission date: 4 November 2026 (deadline: 6 November 2026, 11:59 PM PT). Live at https://reinvent-compass.vegas.
 
 > **Kept as approved on 15 October 2026.** This is the original concept. The build changed some details, and the [README](README.md), the [key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions) and the [build plan](docs/architecture/build-plan.md) describe what was built. The main changes: the submission target moved from 1 November to 4 November ([hackathon rules](docs/hackathon-rules.md)); the `PostToolUse` hook was removed and the official remote MCP server is not bundled in the Power, because Kiro does not honour `disabledTools` inside a Power ([Kiro hooks block only with exit 2](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Architecture#kiro-hooks-block-only-with-exit-2)); the guardrail runs inside the Compass server, and hooks are a second check; the scanner reads Terraform, AWS CDK TypeScript, the AWS SDK for JavaScript v3, boto3 and the AWS SDK for .NET, not CloudFormation or SAM; and production has been live at https://reinvent-compass.vegas since 31 October 2026.
 
@@ -40,18 +40,19 @@ Everyone at re:Invent has flown to get there. The metaphor needs no explaining.
 
 ### Act 1: Plan (inside Kiro)
 
-- **Your repo is your agenda.** Compass scans the attendee's own workspace (Terraform, CDK, CloudFormation, SAM, AWS SDK imports) and works out which AWS services they actually use and how deeply. It maps those to the catalog's `services` taxonomy and suggests a level per topic. Everything runs locally; nothing about the code leaves the machine.
+- **Your repo is your agenda.** Compass scans the attendee's own code (Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3, boto3, the AWS SDK for .NET and package manifests) and works out which AWS services they actually use and how deeply. A tech scan adds the rest of their stack (.NET, Node.js, Python and more), and a read-only GitHub App reads their GitHub repositories the same way, after they confirm the list. Compass maps the services to the catalog's `services` taxonomy and suggests a level per topic. The code is read on the attendee's machine, and the tech list never leaves it.
 - **Your week becomes a spec.** Compass writes a real Kiro spec for the attendee's week:
   - `requirements.md`: their goals for the week, in plain EARS statements.
   - `design.md`: the itinerary, with a reason for every pick, connection times and an energy budget.
-  - `tasks.md`: each task is one API action (reserve, favorite, personal time). The attendee runs them in Kiro and approves each write.
-- **First-timer guardrails as hooks.** A Kiro `PreToolUse` hook checks every reservation against the rules (connection time, boarding time, clashes, no lunch) before it is sent. A `PostToolUse` hook re-reads the schedule after every write.
+  - `tasks.md`: each task is one API action (reserve, favorite, personal time). The attendee runs them in Kiro and approves each write. Compass is read-only by default: until the attendee sets `COMPASS_ALLOW_WRITES=1`, a booking task says what it would do and the attendee makes the change in the re:Invent app.
+- **First-timer guardrails, in the server and as hooks.** The Compass server checks every reservation against the rules (connection time, boarding time, clashes, no lunch) before it is sent, in every MCP client. In Kiro, an optional `PreToolUse` hook runs the same check first, and a second one blocks the write tools of the remote `awsevents` server. There is no sync hook: Kiro never shows the agent what a hook prints when it lets a call through (ADR-024), so the Compass tool results say when to run `sync_passes`.
 
 ### Act 2: Boarding (on the phone)
 
 - The final task issues a boarding pass for each reserved session: Apple Wallet and Google Wallet.
 - Each pass shows: session code and title, venue and room, **"Boarding closes"**, walk time from the previous session, and the next connection.
-- Every pass says clearly: **"Unofficial. Your badge is your ticket."** No AWS logos or branding.
+- Every pass says clearly: **"Unofficial. Your badge is your ticket."** No AWS logos or branding. The issuer on the pass is "re:Invent Compass".
+- All the passes of the week sit together as one group in the wallet, and the phone shows a change alert when a session's time, venue or room changes.
 - Fallback with no setup: a calendar file (`.ics`) with alarms set to "leave now" and "boarding closes".
 
 ### Act 3: Fly (during the week)
@@ -61,12 +62,12 @@ Everyone at re:Invent has flown to get there. The metaphor needs no explaining.
 
 ## 4. Why this can win
 
-| Judging criterion (25% each)   | How Compass scores                                                                                                                                                                                                                                                                      |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Creativity and novelty         | Compass combines a Kiro Power with hooks that enforce the rules, turns a codebase into an agenda, and puts boarding information in the phone's wallet.                                                                                                                                  |
-| Utility for attendees          | It targets the 10-minute rule, the most costly and least visible first-timer mistake, with information exactly where and when it is needed.                                                                                                                                             |
-| Technical depth and API use    | Uses **all 12 operations** through the REST client (the official remote MCP server joins the Power once spike SP1 confirms its write tools can be disabled there), handles per-session results, throttling and pagination properly, and includes a serverless pass signer in Terraform. |
-| Builder Center article quality | A natural story: "I used Kiro specs to build a tool that turns your re:Invent week into a Kiro spec." Strong visuals: the spec, the hook stopping a bad booking, the pass on a lock screen.                                                                                             |
+| Judging criterion (25% each)   | How Compass scores                                                                                                                                                                                                                                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Creativity and novelty         | Compass combines a Kiro Power with hooks that enforce the rules, turns a codebase into an agenda, and puts boarding information in the phone's wallet.                                                                                                                                                 |
+| Utility for attendees          | It targets the 10-minute rule, the most costly and least visible first-timer mistake, with information exactly where and when it is needed.                                                                                                                                                            |
+| Technical depth and API use    | Uses **all 12 operations** through the REST client (the official remote MCP server stays out of the Power, because Kiro does not honour `disabledTools` inside a Power, ADR-024), handles per-session results, throttling and pagination properly, and includes a serverless pass signer in Terraform. |
+| Builder Center article quality | A natural story: "I used Kiro specs to build a tool that turns your re:Invent week into a Kiro spec." Strong visuals: the spec, the hook stopping a bad booking, the pass on a lock screen.                                                                                                            |
 
 ### How it differs from other approaches
 
@@ -91,7 +92,7 @@ Everyone at re:Invent has flown to get there. The metaphor needs no explaining.
 | AssociateFavorites, DisassociateFavorite                   | Standby list of backups                                                |
 | CreatePersonalTime, UpdatePersonalTime, DeletePersonalTime | Layovers (meals, rest) and transit blocks between venues               |
 
-The Compass local MCP server talks REST for all 12 operations. The official remote MCP server is planned for read exploration in the Power, and is added once spike SP1 confirms its write tools can be disabled there (ADR-024).
+The Compass local MCP server talks REST for all 12 operations. The official remote MCP server is not in the Power: Kiro does not honour `disabledTools` inside a Power (ADR-024). An attendee who adds it to their own workspace lists its seven write tools in `disabledTools`, and the hook template blocks them as a second layer.
 
 ## 6. Architecture
 
@@ -111,8 +112,10 @@ Attendee's computer                          AWS us-east-1 (Terraform, HCP)     
 +---------------+---------------+            +-------------------------------+
                 | access token (never leaves the computer for anywhere else)
                 v
-      api.awsevents.com/v1 (12 operations) + /mcp (read-only in the Power)
+      api.awsevents.com/v1 (12 operations)
 ```
+
+Production runs at https://reinvent-compass.vegas and dev at dev.reinvent-compass.vegas (ADR-031).
 
 Key rules: the **access token** goes only to the Events API. The Compass API receives the ID token (proof of sign-in, never stored) and the printable pass fields only.
 
@@ -120,12 +123,12 @@ Key rules: the **access token** goes only to the Events API. The Compass API rec
 
 1. **The badge is the ticket.** Passes are reminders, say so, and carry no barcode.
 2. **No impersonation.** No AWS logos, colours or official wording.
-3. **A human approves every write.** No background booking, no seat polling.
+3. **A human approves every write.** No background booking, no seat polling. Compass is read-only by default and changes the re:Invent schedule only after the attendee turns writes on.
 4. **Local first.** Tokens, the schedule, the catalog cache and code scanning stay on the attendee's machine.
-5. **Minimal, expiring server data.** Pass fields until session end plus 24 hours; hand-offs 15 minutes; `forget_me` deletes everything.
+5. **Minimal, expiring server data.** Pass fields until session end plus 24 hours; hand-offs 15 minutes; `forget_me` deletes everything Compass holds. Passes already in a wallet stay on the phone, voided, until the attendee removes them.
 6. **Trust `GetSchedule`, not the response.** A 200 does not mean success.
 7. **Explain every pick.** A first-timer should learn why, not just what.
-8. **Try it anywhere.** The showcase site demo runs on any phone with no install, on made-up sessions.
+8. **Try it anywhere.** The showcase site demo runs on any phone with no install, on 17 real re:Invent 2026 sessions in a simulated week. Tests and simulated mode use the synthetic catalog.
 
 ## 8. Scope
 
@@ -133,21 +136,21 @@ Eight Kiro specs (S0 to S7) in the build plan, section 8. **Never cut:** the 12-
 
 **Deliverables:** README, Builder Center post (25% of the score), showcase website, demo video.
 
-**On hold:** extra scanners beyond Terraform, CDK TypeScript, SDK JS v3 and boto3; community trail import.
+**Shipped beyond the plan:** the AWS SDK for .NET and package manifest detectors, the tech scan and the read-only GitHub App.
 
-## 9. Timeline (submit 1 November)
+**On hold:** community trail import.
 
-| Date         | Milestone                                                               |
-| ------------ | ----------------------------------------------------------------------- |
-| 16 Oct       | Contracts locked (S0); day-1 spikes                                     |
-| 17 to 26 Oct | Six Kiro engineers build S1 to S6 in parallel, each in its own worktree |
-| 21 Oct       | First dev deploy                                                        |
-| 25 Oct       | Real iPhone and Android checks                                          |
-| 28 Oct       | Feature freeze                                                          |
-| 29 Oct       | Site freeze, TAM and CTO reviews (0.1.0)                                |
-| 30 Oct       | Release gate and production release (owner runs it)                     |
-| 31 Oct       | Demo video, README and post final                                       |
-| **1 Nov**    | **Submit** (hackathon deadline 6 Nov stays as buffer)                   |
+## 9. Timeline (submit 4 November)
+
+| Date      | Milestone                                                                                            |
+| --------- | ---------------------------------------------------------------------------------------------------- |
+| 16 Oct    | Contracts locked (S0); day-1 spikes                                                                  |
+| 17 Oct    | Kiro credits run out; Claude's agents build the rest from the Kiro specs, one per worktree (ADR-029) |
+| 18 Oct    | First dev deploy; custom domain chosen (ADR-031)                                                     |
+| 19 Oct    | Passes, pushes and voiding checked on a real iPhone (SP3)                                            |
+| 31 Oct    | First production release at https://reinvent-compass.vegas                                           |
+| 3 Nov     | Version 0.1.0 of the `reinvent-compass` npm package published                                        |
+| **4 Nov** | **Submit** on Builder Center (hackathon deadline 6 November 2026, 11:59 PM PT)                       |
 
 Details: [KIRO-SPEC-PROMPTS.md](KIRO-SPEC-PROMPTS.md) and build plan section 9.
 
@@ -163,22 +166,24 @@ The full register (16 risks with owner, likelihood and mitigation) is in build p
 4. They run the tasks. One reservation is blocked: "Likely impossible connection: the walk from The Venetian to Wynn is 40 minutes, an estimate, and you have 30. Try the repeat on Friday." They accept the safe swap.
 5. The final task issues boarding passes. They scan the QR code with an iPhone and add them to Wallet. Cut to the lock screen at the Venetian: "DAT302, Boarding closes at 10:20, 6 min walk."
 6. They cancel a session. Compass voids the pass: it leaves the main Wallet view and moves to expired passes. `GetSchedule` confirms the cancellation. (No wallet lets anyone delete a pass remotely; voiding is the closest, and every pass also expires at its session end.)
-7. On the showcase site, on a phone, anyone can try the clash demo with no install.
+7. On the showcase site (https://reinvent-compass.vegas), on a phone, anyone can try the clash demo with no install.
 
 ## 12. Decisions
 
 All decisions are on the wiki: [Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions). The headline ones (15 October 2026):
 
-| Topic        | Decision                                                                                                                |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| Product name | **re:Invent Compass**                                                                                                   |
-| Repository   | [henniefrancis/aws-re_invent-compass](https://github.com/henniefrancis/aws-re_invent-compass) (public)                  |
-| Licence      | **Apache-2.0**, with a `NOTICE` file crediting Hennie Francis and reserving the product name                            |
-| Devices      | Plan on a computer, board on any device (ADR-005)                                                                       |
-| Wallets      | Apple (with the PassKit update service) and Google, both in scope (ADR-010)                                             |
-| Compass API  | Attendee-only, authenticated by the Builder ID ID token (ADR-009)                                                       |
-| AWS          | Owner's personal account, `us-east-1`, Terraform in HCP Terraform (ADR-001, ADR-014)                                    |
-| Branching    | `main` production, `develop` integration, `feature/*`, `release/*`, `hotfix/*`; one worktree per Kiro session (ADR-002) |
-| Toolchain    | npm workspaces, ESLint and Prettier, TypeScript 6, vitest 4, Node 24, Angular 22 (ADR-006)                              |
-| Submission   | 1 November 2026 (ADR-003)                                                                                               |
-| Open source  | Everything public except security-sensitive and account-specific material (tech.md, "Public and private")               |
+| Topic        | Decision                                                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Product name | **re:Invent Compass**                                                                                                      |
+| Repository   | [henniefrancis/aws-re_invent-compass](https://github.com/henniefrancis/aws-re_invent-compass) (public)                     |
+| Licence      | **Apache-2.0**, with a `NOTICE` file crediting Hennie Francis and reserving the product name                               |
+| Devices      | Plan on a computer, board on any device (ADR-005)                                                                          |
+| Wallets      | Apple (with the PassKit update service) and Google, both in scope (ADR-010)                                                |
+| Compass API  | Attendee-only, authenticated by the Builder ID ID token (ADR-009)                                                          |
+| AWS          | Owner's personal account, `us-east-1`, Terraform in HCP Terraform (ADR-001, ADR-014)                                       |
+| Branching    | `main` production, `develop` integration, `feature/*`, `release/*`, `hotfix/*`; one worktree per builder session (ADR-002) |
+| Builders     | Kiro wrote the first specs; after its credits ran out on 17 October, Claude's agents built from the Kiro specs (ADR-029)   |
+| Domain       | https://reinvent-compass.vegas, with dev at dev.reinvent-compass.vegas (ADR-031)                                           |
+| Toolchain    | npm workspaces, ESLint and Prettier, TypeScript 6, vitest 4, Node 24, Angular 22 (ADR-006)                                 |
+| Submission   | 4 November 2026, moved from 1 November (ADR-003) so that the npm package publishes first, on 3 November                    |
+| Open source  | Everything public except security-sensitive and account-specific material (tech.md, "Public and private")                  |

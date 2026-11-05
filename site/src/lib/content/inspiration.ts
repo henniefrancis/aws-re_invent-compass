@@ -40,14 +40,14 @@ export const INSPIRATION_SECTIONS: readonly StorySection[] = [
   section('aviation', "An aviation geek's eye", [
     'I am an aviation geek and an aspiring pilot, and I live and breathe anything to do with flying. When I looked at my re:Invent week, I saw an airline: an itinerary, a boarding pass for every reserved session, venues as terminals, rooms as gates, connections between them, and boarding that closes.',
   ]),
-  section('spec', 'Plan like a spec, board like a flight', [
-    'Planning a week of sessions is a lot like writing a spec: you say what you want, check it against the rules, and only then commit. So I built Compass with Kiro, spec first. Compass plans your week like a spec and boards it like a flight.',
+  section('spec', 'From your code to your seat', [
+    'Planning a week of sessions is a lot like writing a spec: you say what you want, check it against the rules, and only then commit. So I built Compass with Kiro, spec first. Compass takes you from your code to your seat: it reads the code you work on, finds the sessions that match it, plans your week as a spec and gets you to every reserved seat on time.',
   ]),
   section('south-africa', 'From Cape Town to Las Vegas', [
     'I had the idea before the re:Invent Catalog API Builder Challenge was announced. The challenge gave me the reason to build it properly. I am travelling to re:Invent as the founder of AWS Community South Africa, and I want to represent our community with something every attendee can use.',
   ]),
   section('grew', 'It grew', [
-    'What surprised me most was the size of it. Compass started as a small helper for my own week. It grew into a full product: an MCP server for Kiro, a Kiro Power, Apple Wallet and Google Wallet boarding passes, a calendar file and this website.',
+    'What surprised me most was the size of it. Compass started as a small helper for my own week. It grew into a full product: an MCP server for Kiro that matches sessions to the code in your projects and, if you allow it, your GitHub repositories, a Kiro Power, Apple Wallet and Google Wallet boarding passes, a calendar file and this website.',
   ]),
   section('everyone', 'For every attendee', [
     'Compass is for every attendee with a busy week across several venues. I want you to arrive on time, keep your seat and be free to enjoy re:Invent: the learning, the people and the energy.',

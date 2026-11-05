@@ -1,5 +1,5 @@
 // Session codes as ids (compass-power task 38). Attendees and agents name sessions by code, such
-// as SVS339, while the tools take the catalog id. Before a tool runs, a sessionId or sessionIds
+// as BWP213, while the tools take the catalog id. Before a tool runs, a sessionId or sessionIds
 // value that is not a catalog id is replaced by the id of the one session whose code matches it,
 // ignoring letter case. An unknown or shared code is left as given, so the tool reports it as
 // unknown. With no cached catalog, or a value that fails the identifier check, the input is left

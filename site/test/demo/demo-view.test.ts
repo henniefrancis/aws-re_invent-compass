@@ -155,6 +155,7 @@ describe('page text', () => {
     expect(DEMO_TEXT.sessionNote).toContain('real re:Invent 2026 sessions');
     expect(DEMO_TEXT.credit).toBe('Session data: AWS Events API, catalog as of 29 October 2026.');
     expect(DEMO_TEXT.sessionNote).toContain('real schedule');
+    expect(DEMO_TEXT.codeNote).toContain('starts from a scan of your code');
     expect(DEMO_TEXT.walkNote).toContain('walk plus a buffer');
     expect(DEMO_TEXT.emptyWeek).toBe('Add a session first.');
     expect(EMPTY_DEMO.commitments).toEqual([]);

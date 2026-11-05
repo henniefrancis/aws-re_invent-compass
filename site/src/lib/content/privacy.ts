@@ -30,9 +30,9 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
     items: [
       summary(
         'privacy-tokens',
-        'Your access token and refresh token stay in your computer keychain. The access token goes only to the AWS Events API. The refresh token goes only to the sign-in service.',
-        PLAN,
-        '4.2 (P1, P2)',
+        'Your sign-in tokens (the access token, the refresh token and the ID token) stay in your computer keychain, or in memory only if your computer has no keychain. The access token goes only to the AWS Events API, the refresh token only to the sign-in service, and the ID token only to the Compass API.',
+        MCP_README,
+        'What leaves your machine',
       ),
       summary(
         'privacy-catalog-schedule',
@@ -54,7 +54,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-code-scan',
-        'The result of the code scan stays in memory. The week spec gets service names and depth only, with no file paths.',
+        'The code scan never stores file paths. Its result is your tech list, service and technology names with depth, kept in a folder on your computer. The week spec gets service names and depth only.',
         PLAN,
         '4.2 (P7)',
       ),
@@ -66,9 +66,9 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-generated-files',
-        'The pass files, calendar files and itinerary page that Compass generates stay in a folder on your computer.',
-        PLAN,
-        '4.2 (P9)',
+        'Compass writes no pass files on your computer: your phone gets its passes from the Compass API through the hand-off. The files it writes are the calendar file, in its folder on your computer, and a temporary QR code page in your temp folder. The QR code page is deleted when its link expires, when a newer one replaces it, when you run forget_me and when the server stops.',
+        MCP_README,
+        'Passes on your phone',
       ),
     ],
   },
@@ -124,6 +124,18 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         MCP_README,
         'What leaves your machine',
       ),
+      summary(
+        'privacy-logs',
+        'The Compass API keeps its logs for 14 days. Its access log records the request path pattern, not your IP address.',
+        PLAN,
+        '7.2 (infra/modules/api)',
+      ),
+      summary(
+        'privacy-no-backup',
+        'Point-in-time recovery is off on the Compass API table, so there is no backup copy of data that expires or that forget_me deletes.',
+        PLAN,
+        '7.2 (infra/modules/data)',
+      ),
       quoted('privacy-no-human', 'No human reads server data in normal operation.', PLAN, '4.2'),
     ],
   },
@@ -145,9 +157,9 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-forget-me',
-        'forget_me voids every pass for you and deletes your pass records, device registrations and hand-offs on the server. The local forget_me also deletes your schedule snapshot, your issued-pass record and the generated files on your computer.',
-        PLAN,
-        '4.2 (DELETE /api/v1/me)',
+        'forget_me voids every pass for you and deletes your pass records, device registrations and hand-offs on the server. On your computer it also deletes your schedule snapshot, your issued-pass record, the calendar file and itinerary page, your tech list, your GitHub sign-in and any QR code page. Passes already in a wallet on your phone stay there, voided, until they expire or you remove them.',
+        MCP_README,
+        'What leaves your machine',
       ),
       summary(
         'privacy-rate-counters',
@@ -175,7 +187,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
     items: [
       summary(
         'privacy-site-none',
-        'This website has no sign-in, no cookies, no analytics and no requests to other websites.',
+        'This website has no sign-in, no cookies, no browser storage, no analytics and no requests to other websites.',
         SITE,
         'Requirement 2',
       ),

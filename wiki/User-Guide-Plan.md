@@ -21,7 +21,7 @@ After `sign_in` (see [Getting started](Getting-Started#live-sign-in)), run `refr
 
 ## Scan your code
 
-Compass learns what you work on from your own code. Nothing it reads leaves your machine: only service and technology names, a depth per service and counts come out of the scanner, never a file name, path or file content.
+This is where Compass starts. It learns what you work on from your own code (which AWS services you use and how deeply, plus the rest of your stack such as .NET, Node.js or Python) and then finds the re:Invent sessions that match, with a reason for each. Nothing it reads leaves your machine: only service and technology names, a depth per service and counts come out of the scanner, never a file name, path or file content.
 
 ### A folder or a dev folder
 
@@ -100,7 +100,7 @@ The tasks in `tasks.md` are done one at a time, each with your approval. In live
 ### Check, then reserve
 
 - `check_itinerary` runs the guardrail over sessions you propose and writes nothing.
-- `reserve_with_guardrails` takes 1 to 10 session ids (codes such as `SVS339` work too). It reads your schedule fresh, then checks each session against your confirmed schedule plus the sessions before it in the same request.
+- `reserve_with_guardrails` takes 1 to 10 session ids (codes such as `BWP213` work too). It reads your schedule fresh, then checks each session against your confirmed schedule plus the sessions before it in the same request.
 
 The guardrail answers **allow**, **warn** or **block**, with one plain-English reason for each rule that applied. All the rules and numbers are on [Guardrail rules](Guardrail-Rules).
 

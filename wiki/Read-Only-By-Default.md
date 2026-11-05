@@ -14,7 +14,7 @@ The setting is read once, when the server starts ([packages/mcp-server/src/confi
 
 ## The five schedule tools
 
-These five tools change your real schedule: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby` and `add_layover`. In read-only mode each one still:
+These five tools can change your real schedule when writes are on: `reserve_with_guardrails`, `cancel_reservation`, `add_standby`, `remove_standby` and `add_layover`. In read-only mode each one still:
 
 1. checks your input and looks the sessions up in the cached catalog;
 2. reads your schedule fresh;

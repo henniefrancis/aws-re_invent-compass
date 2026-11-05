@@ -56,7 +56,7 @@ async function judgeReserve(sessionIds: unknown, deps: HookDeps): Promise<HookDe
     return note();
   }
   const catalog = await deps.catalog();
-  // Codes such as SVS339 are judged like ids, as the server does (task 40).
+  // Codes such as BWP213 are judged like ids, as the server does (task 40).
   const resolve = sessionIdResolver(catalog);
   const sessions = ids.flatMap((id) => {
     const entry = catalog.byId.get(resolve(id));

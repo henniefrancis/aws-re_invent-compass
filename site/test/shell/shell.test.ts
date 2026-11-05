@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { COPIED_MESSAGE, COPY_FAILED_MESSAGE } from '../../src/lib/content/install';
 import { copyText } from '../../src/lib/shell/copy';
 import { shouldMoveFocus } from '../../src/lib/shell/focus';
-import { pageTitle } from '../../src/lib/shell/title';
+import { pageTitle, pageUrl } from '../../src/lib/shell/title';
 
 describe('shell helpers', () => {
   test('focus moves after every navigation except the first', () => {
@@ -15,6 +15,15 @@ describe('shell helpers', () => {
     expect(pageTitle('Demo')).toBe('Demo | re:Invent Compass');
     expect(pageTitle(undefined)).toBe('re:Invent Compass');
     expect(pageTitle('')).toBe('re:Invent Compass');
+  });
+
+  test('page addresses are the site address plus the path, never a query or fragment', () => {
+    expect(pageUrl('/')).toBe('https://reinvent-compass.vegas/');
+    expect(pageUrl('')).toBe('https://reinvent-compass.vegas/');
+    expect(pageUrl('/install')).toBe('https://reinvent-compass.vegas/install');
+    expect(pageUrl('/install/')).toBe('https://reinvent-compass.vegas/install');
+    expect(pageUrl('/board#h=secret')).toBe('https://reinvent-compass.vegas/board');
+    expect(pageUrl('/demo?x=1#y')).toBe('https://reinvent-compass.vegas/demo');
   });
 
   test('copy reports Copied and passes the exact text to the clipboard', async () => {

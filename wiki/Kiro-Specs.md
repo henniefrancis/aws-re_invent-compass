@@ -118,7 +118,7 @@ Later tasks added tool contracts as the product grew (the schedule view, the tec
 
 **Built:** everything the attendee touches on their computer. This is the largest spec.
 
-- The repo scanner: a local, read-only scan for AWS services (Terraform, AWS CDK in TypeScript, AWS SDK for JavaScript v3, boto3, AWS SDK for .NET) and other technology, reporting only names, depth and counts, never file contents.
+- The repo scanner: a local, read-only scan for AWS services (Terraform, AWS CDK in TypeScript, AWS SDK for JavaScript v3, boto3, AWS SDK for .NET and package manifests) and other technology, reporting only names, depth and counts, never file contents.
 - The week spec generator, which writes the attendee's week as their own Kiro spec.
 - The local [MCP server](Glossary#mcp-server) with 24 tools, where every booking runs the guardrail inside the server and is confirmed by reading the schedule back.
 - [Read-only mode](Glossary#read-only-mode) by default, an owner decision of 20 October.
@@ -141,7 +141,7 @@ See [Kiro Power](Kiro-Power), [MCP server](MCP-Server) and [MCP tools](MCP-Tools
 - The Compass API client: issue, update, void, [hand-off](Glossary#hand-off) and forget me, using the attendee's ID token.
 - A local record of issued passes, and sync: compare the schedule with the issued passes and issue, update or [void](Glossary#void). Running it twice changes nothing.
 - The hand-off QR code, for the terminal, for chat and as SVG for a browser page.
-- The calendar file, with two alarms per reserved session (leave now, and boarding closes), and an offline itinerary page.
+- The calendar file, with two alarms per reserved session (leave now, and boarding closes), and an offline itinerary page writer (no MCP tool in 0.1.2 calls it).
 
 ## Pass service
 

@@ -1,7 +1,7 @@
 // The About_Page, titled The Creator (showcase-site task 34, Requirement 24), quoted from
 // site/content/creator-and-inspiration.md.
 
-import { quoted, type ContentBlock } from './content-block';
+import { quoted, summary, type ContentBlock } from './content-block';
 
 export const ABOUT_TITLE = 'The Creator';
 
@@ -12,6 +12,14 @@ export const ABOUT_BUILT_BY: ContentBlock = quoted(
   're:Invent Compass was built by Hennie Francis as an entry in the re:Invent Catalog API Builder Challenge.',
   SOURCE,
   'The Creator',
+);
+
+/** A short summary of the product, shown above the biography. */
+export const ABOUT_PRODUCT: ContentBlock = summary(
+  'about-product',
+  're:Invent Compass is a Kiro Power and a local MCP server. It scans the code you work on, on your machine and, if you allow it, in your GitHub repositories, and suggests the re:Invent sessions that match your stack, with a reason for each. It checks every booking against the guardrail and puts unofficial boarding passes for your reserved sessions on your phone. It is free and open source under the Apache License 2.0.',
+  '.kiro/steering/product.md',
+  'Product',
 );
 
 /** The biography after the opening line, in order. */

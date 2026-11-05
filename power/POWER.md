@@ -1,15 +1,15 @@
 ---
 name: 'reinvent-compass'
 displayName: 'Reinvent Compass'
-description: 'Plan your AWS re:Invent week from your own code, book it safely with guardrails, and get unofficial Boarding Passes on your phone. Independent community project, not affiliated with AWS.'
+description: 'Scans your code and GitHub repositories to find the AWS re:Invent sessions that match your stack, books them safely with guardrails, and puts unofficial Boarding Passes on your phone. Independent community project, not affiliated with AWS.'
 keywords:
   ['reinvent', 're:Invent', 'conference', 'sessions', 'schedule', 'boarding pass', 'first-timer']
 author: 'Hennie Francis'
 ---
 
-# Reinvent Compass
+# re:Invent Compass
 
-Unofficial. Your badge is your ticket. Reinvent Compass is an independent community project and is not affiliated with AWS or Amazon.
+Unofficial. Your badge is your ticket. re:Invent Compass is an independent community project and is not affiliated with AWS or Amazon.
 
 This power is the same power that `plugin.json` describes. `plugin.json`, `mcp.json` and `skills/` are the primary files; this file is here so that Kiro can find the power whichever manifest it looks for first, and the two always agree.
 

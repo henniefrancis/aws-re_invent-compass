@@ -34,7 +34,7 @@
 
 <section class="stack" aria-labelledby="install-npx">
   <h2 id="install-npx">Run it with npx</h2>
-  <p>{{ nodeRequirement }}</p>
+  <p>{{ nodeRequirement }} {{ npmRelease }}</p>
   @for (command of commands; track command.id) {
     <div class="stack">
       <p>{{ command.description }}</p>
@@ -53,11 +53,29 @@
   <p class="live-region" role="status" aria-live="polite">{{ message() }}</p>
 </section>
 
-@if (otherClients.length > 0) {
-  <section class="stack" aria-labelledby="install-clients">
-    <h2 id="install-clients">Other MCP clients</h2>
-    @for (block of otherClients; track block.id) {
-      <p>{{ block.text }}</p>
+<section class="stack" aria-labelledby="install-clients">
+  <h2 id="install-clients">Other MCP clients</h2>
+  @for (client of otherClients; track client.id) {
+    <div class="stack">
+      <h3>{{ client.name }}</h3>
+      <p>{{ client.setup }}</p>
+      <pre class="snippet"><code>{{ client.config }}</code></pre>
+      <p>{{ client.after }}</p>
+    </div>
+  }
+  <p>
+    {{ clientsNote }}
+    <a [href]="mcpServerReadme" rel="noopener noreferrer">Open the MCP server README</a>
+  </p>
+</section>
+
+<section class="stack" aria-labelledby="install-live">
+  <h2 id="install-live">Live mode: your real schedule</h2>
+  <p>{{ liveIntro }}</p>
+  <ol>
+    @for (step of liveSteps; track step.id) {
+      <li>{{ step.text }}</li>
     }
-  </section>
-}
+  </ol>
+  <pre class="snippet"><code>{{ allowWrites }}</code></pre>
+</section>
