@@ -59,7 +59,7 @@ The library exports ten subpaths, listed in [packages/core/package.json](https:/
 
 - **Reads nothing at start.** `createCompassServer` touches no catalog, network or keychain, so a cold start stays fast.
 - **Fixed error messages.** Every handler call is wrapped. A thrown error becomes a fixed plain-English message, and only its code is logged.
-- **Codes for ids.** A [session code](Glossary#session-code) such as `SVS339` is accepted wherever a session id is.
+- **Codes for ids.** A [session code](Glossary#session-code) such as `BWP213` is accepted wherever a session id is.
 - **Writes run one at a time.** Write tools run behind a mutex in [mutex.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/src/server/mutex.ts). Two writes that arrive together would each read the same schedule and each pass the guardrail; queued, each re-reads the schedule when its turn comes.
 - **Fresh schedule, confirmed write.** Every schedule write reads `GetSchedule` fresh, runs the guardrail, sends the write once, then reads the schedule back. A session counts as reserved only when the read-back lists it. If the read-back fails, the result says "unconfirmed" and the write is never resent.
 - **Safe swap.** A blocked booking returns rebooking options and, when one exists, a safe swap: reserve the [repeat](Glossary#repeat) first, cancel the original after. `cancel_reservation` on a session in a pending swap re-checks the swap on a fresh schedule and cancels only when it is safe.

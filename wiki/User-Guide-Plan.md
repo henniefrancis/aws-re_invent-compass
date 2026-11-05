@@ -100,7 +100,7 @@ The tasks in `tasks.md` are done one at a time, each with your approval. In live
 ### Check, then reserve
 
 - `check_itinerary` runs the guardrail over sessions you propose and writes nothing.
-- `reserve_with_guardrails` takes 1 to 10 session ids (codes such as `SVS339` work too). It reads your schedule fresh, then checks each session against your confirmed schedule plus the sessions before it in the same request.
+- `reserve_with_guardrails` takes 1 to 10 session ids (codes such as `BWP213` work too). It reads your schedule fresh, then checks each session against your confirmed schedule plus the sessions before it in the same request.
 
 The guardrail answers **allow**, **warn** or **block**, with one plain-English reason for each rule that applied. All the rules and numbers are on [Guardrail rules](Guardrail-Rules).
 

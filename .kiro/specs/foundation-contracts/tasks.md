@@ -383,6 +383,9 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
   - [x] 38.4 The site follows: the home Plan act leads with the code scan, the Board and Fly acts add the wallet group, issuer and change alerts, read-only by default on the home page, the install page's Kiro MCP setting and live-mode section, privacy and terms match the code, per-page Open Graph tags and canonical link, the story heading "From your code to your seat"; owner review on the local preview
   - [x] 38.5 Dash check, prettier, the root and site tests, e2e, a sanitization scan and one QA and security pass; commit scoped `docs` or the stream; PR into `develop` (PR #27, merged 5 November). The README also shows the owner's architecture diagram (owner decision of 5 November)
 
+- [ ] 39. Owner answers of 5 November: the architecture diagram and the example session code
+  - `wiki/images/compass-architecture.png` (also shown in the README) is regenerated from its generator with two additions only: "tech list" under Local app data, and an arrow from Lambda passkit to AWS Secrets Manager (both Lambdas read it). The wiki example code `SVS339` becomes the synthetic `BWP213` (MCP Server, MCP Tools, User guide: plan). The WAF figure of USD 16 to 17 per environment stays (owner decision)
+
 - Tasks run sequentially in numeric order, 1 through 15. There is no parallel wave execution for this spec.
 - Every test sub-task is required: S0's definition of done is 100 percent coverage of the code it owns, with named exclusions only.
 - Each top-level task (1 through 14) ends with a commit sub-task. Commit locally only after that task's tests pass, using Conventional Commits with `foundation-contracts` as the scope. The first commit (1.6) also includes `.kiro/specs/foundation-contracts/`. Never push, merge, tag or open a PR: the integrator does that after review.
