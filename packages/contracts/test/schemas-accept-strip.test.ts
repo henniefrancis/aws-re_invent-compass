@@ -658,7 +658,23 @@ const toolSamples: Record<
   },
   check_itinerary: {
     input: { commitments: [commitmentSample] },
-    output: { verdict: verdictSample },
+    output: {
+      verdict: verdictSample,
+      week: [
+        {
+          kind: 'reservedSession',
+          status: 'reserved',
+          sessionId: 's1',
+          code: 'ABC101',
+          title: 'A session',
+          startsAt: '2026-12-01T17:00:00.000Z',
+          endsAt: '2026-12-01T18:00:00.000Z',
+          venue: 'Venetian',
+          room: 'Level 2',
+          verdict: verdictSample,
+        },
+      ],
+    },
   },
   show_schedule: {
     input: {},

@@ -33,7 +33,7 @@ Each section is one decision with four parts: the context, the decision, why, an
 
 **Trade-off:** The cloud hand-off overrode the kickoff answer that nothing is stored on a server, and the Apple update service means storing device registrations. Both are personal data, handled in [Personal data on the server](Decisions-Security-and-Privacy#personal-data-on-the-server).
 
-**Later:** The answer to submit as version 1.0.0 did not hold. The first release is 0.1.0: the git tag is `v0.1.0` and the npm package `reinvent-compass` was published as 0.1.0 on 3 November 2026. Two fix releases followed on 4 November, and [packages/mcp-server/package.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/package.json) is now at 0.1.2.
+**Later:** The answer to submit as version 1.0.0 did not hold. The first release is 0.1.0: the git tag is `v0.1.0` and the npm package `reinvent-compass` was published as 0.1.0 on 3 November 2026. Two fix releases followed on 4 November and a third on 5 November, and [packages/mcp-server/package.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/package.json) is now at 0.1.3.
 
 ## Plan on a computer and board on any device
 
@@ -50,7 +50,7 @@ Each section is one decision with four parts: the context, the decision, why, an
 
 **Trade-off:** The Power must work on Windows, macOS and Linux. On Linux with no Secret Service keychain, the token store keeps tokens in process memory only, so the attendee signs in again after a restart. The local product still works with no [Compass API](Glossary#compass-api) at all: the calendar file needs no server.
 
-**Later:** An offline itinerary page (`itinerary.html`) was also planned for phones and tablets. Its writer is in `@compass/core`, but no tool in 0.1.2 writes it, so the calendar file is the offline view.
+**Later:** An offline itinerary page (`itinerary.html`) was also planned for phones and tablets. Its writer is in `@compass/core`, but no tool in 0.1.3 writes it, so the calendar file is the offline view.
 
 ## Made-up sessions for tests and the public demo
 

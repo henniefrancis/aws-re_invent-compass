@@ -33,7 +33,7 @@ export const DESCRIPTIONS: Record<McpToolName, string> = {
   plan_week:
     'Suggest a week of sessions from your code and goals, and write it as a Kiro spec in your workspace. It does not book anything.',
   check_itinerary:
-    'Check commitments you pass in (a proposed itinerary) against the booking guardrail and report clashes and tight walks. Nothing is changed. To see your current schedule, use show_schedule.',
+    'Check my whole week: every session reserved on your schedule and your personal time, plus anything you propose, against the booking guardrail. Lists the week in time order, each session with its verdict and reasons (clashes, walks you cannot make, meal breaks, overloaded days). Call it with no arguments to check the schedule as it is. To try sessions first, pass commitments: a session needs only its id, { "sessionId": "..." }, and personal time is { "kind": "personalTime", "title": "...", "startsAt": "...", "endsAt": "..." }. Nothing is changed.',
   show_schedule:
     'What is on my schedule: the sessions you have reserved, your standby (favourites) list and your layovers, each with the id the other tools take. Use it when the attendee asks what they have booked. Takes no input. Nothing is changed.',
   reserve_with_guardrails: `Reserve one to ten sessions after the booking guardrail passes. ${SCHEDULE_WRITE_SENTENCE}`,

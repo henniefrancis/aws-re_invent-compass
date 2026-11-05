@@ -492,7 +492,7 @@ describe('install content', () => {
     );
     expect(unpinned).toEqual(['npx reinvent-compass', 'npx reinvent-compass demo']);
     const commands = INSTALL_COMMANDS.map((c) => commandText(c, SITE_LINKS));
-    expect(commands).toEqual(['npx reinvent-compass@0.1.2', 'npx reinvent-compass@0.1.2 demo']);
+    expect(commands).toEqual(['npx reinvent-compass@0.1.3', 'npx reinvent-compass@0.1.3 demo']);
     const pinned = INSTALL_COMMANDS.map((c) =>
       commandText(c, { ...SITE_LINKS, packageVersion: '1.0.0' }),
     );
@@ -508,7 +508,7 @@ describe('install content', () => {
         '  "mcpServers": {',
         '    "compass": {',
         '      "command": "npx",',
-        '      "args": ["--yes", "reinvent-compass@0.1.2"]',
+        '      "args": ["--yes", "reinvent-compass@0.1.3"]',
         '    }',
         '  }',
         '}',
@@ -518,7 +518,7 @@ describe('install content', () => {
       servers: { compass: { type: string; args: string[] } };
     };
     expect(vscode.servers.compass.type).toBe('stdio');
-    expect(vscode.servers.compass.args).toEqual(['--yes', 'reinvent-compass@0.1.2']);
+    expect(vscode.servers.compass.args).toEqual(['--yes', 'reinvent-compass@0.1.3']);
     expect(clientConfig('mcpServers', { ...SITE_LINKS, packageVersion: null })).toContain(
       '"args": ["--yes", "reinvent-compass"]',
     );
