@@ -30,7 +30,7 @@ Compass keeps its files in a `reinvent-compass` folder under your app-data folde
 Notes:
 
 - **The schedule snapshot** is the last schedule Compass read from the Events API. It is overwritten on every read and deleted by `forget_me`; there is no time-based purge.
-- **The code scan** runs in memory. Only service and technology names, a depth per service and counts leave the scanner: never a file name, path or content.
+- **The code scan** runs in memory. Only service and technology names, a depth per service and counts leave the scanner: never a file name, path or content. What it learns is saved as your tech list in the app-data folder, with no file paths.
 - **The tech list** stores each project under a one-way hash, so no folder path or repository name is kept. It is never sent anywhere.
 - **The week spec** would show where you will be and when if your repository is public, so Compass offers to add it to `.gitignore` (see [Plan](User-Guide-Plan#the-week-spec)).
 - **Logs.** The MCP server logs to stderr only, through a redacting logger. Nothing logged holds a token, an email address, a link or a file path.

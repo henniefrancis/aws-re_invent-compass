@@ -41,7 +41,7 @@ Every pass expires when its session ends: the Apple pass's expiry date and the G
 
 ## Updates when a session changes
 
-If a session moves to another time or room, `sync_passes` updates its pass and your phone shows the change:
+If a session moves to another time, venue or room, `sync_passes` updates its pass and your phone shows the change:
 
 | Wallet | What you see                                                                                                                                              |
 | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |

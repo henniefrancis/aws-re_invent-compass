@@ -1,5 +1,9 @@
 _For attendees and judges: short answers to the questions people ask first, with links to the full pages._
 
+## What does Compass do?
+
+It starts with your code. Compass scans the code you work on (one project, a dev folder of git repositories or, if you allow it, your GitHub repositories through a read-only [GitHub App](Glossary#github-app)), learns which AWS services you use and how deeply, plus the rest of your stack such as .NET, Node.js or Python, and finds the re:Invent sessions that match, with a reason for each. Then it helps a first-time attendee book the week safely, with every booking checked against the [guardrail](Glossary#guardrail), and get into every reserved session on time with unofficial [boarding passes](Glossary#boarding-pass). See [Plan](User-Guide-Plan).
+
 ## Is this an official AWS product?
 
 No. re:Invent Compass is an independent community project, built as an entry in the re:Invent Catalog API Builder Challenge. It is not affiliated with, endorsed by or sponsored by Amazon Web Services. See the [Disclaimer](Disclaimer).
@@ -42,7 +46,7 @@ Very little. Your access token goes only to the AWS Events API. When you issue p
 
 ## Does Compass read my code? Is that safe?
 
-It scans a folder you name, on your machine, read-only. Only AWS service and technology names, a depth per service and counts leave the scanner: never a file name, path or content. Your GitHub repositories are read only if you connect the Compass [GitHub App](Glossary#github-app), which has read-only permissions, and only after you confirm the list. See [Plan](User-Guide-Plan#scan-your-code).
+It scans a folder you name, on your machine, read-only: one project, or a dev folder of git repositories. Only AWS service and technology names, a depth per service and counts leave the scanner: never a file name, path or content. Your GitHub repositories are read only if you connect the Compass [GitHub App](Glossary#github-app), which has read-only permissions, and only after you confirm the list. See [Plan](User-Guide-Plan#scan-your-code).
 
 ## Why does Compass keep a local copy of the catalog?
 
@@ -62,7 +66,7 @@ Compass looks for other ways in: a [repeat](Glossary#repeat) of the same session
 
 ## What happens when a session moves or I cancel?
 
-Run `sync_passes`. It reads your real schedule and makes your passes match: a new time or room updates the pass on your phone, a cancelled session voids its pass, and a new reservation gets a pass. See [Fly](User-Guide-Fly).
+Run `sync_passes`. It reads your real schedule and makes your passes match: a new time, venue or room updates the pass and your phone shows what changed, a cancelled session voids its pass, and a new reservation gets a pass. See [Fly](User-Guide-Fly).
 
 ## Which parts of the AWS Events API does Compass use?
 

@@ -1,6 +1,6 @@
 _For architects: what the Compass Kiro Power contains, how it starts the MCP server and what its skills and hooks do._
 
-A [Kiro Power](Glossary#kiro-power) packages an [MCP server](Glossary#mcp-server) with instructions for the agent. The Compass Power holds no code of its own: it starts the Compass server and tells the agent the order of the tools, which calls need approval and which rules never bend. Every safety check also runs inside the server, so the Power is guidance, not the line of defence.
+A [Kiro Power](Glossary#kiro-power) packages an [MCP server](Glossary#mcp-server) with instructions for the agent. The Compass Power brings re:Invent Compass into Kiro: it scans the code you work on, learns your AWS services and the rest of your stack, finds the re:Invent sessions that match with a reason for each, and then helps you book the week safely and get into every reserved session on time. The Power holds no code of its own: it starts the Compass server and tells the agent the order of the tools, which calls need approval and which rules never bend. Every safety check also runs inside the server, so the Power is guidance, not the line of defence.
 
 ## What is inside
 

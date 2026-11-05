@@ -1,6 +1,6 @@
 _For attendees: three ways to try re:Invent Compass, what you need, and how live sign-in works._
 
-re:Invent Compass plans your AWS re:Invent week from your own code, checks every booking against a [guardrail](Glossary#guardrail), and puts unofficial [boarding passes](Glossary#boarding-pass) on your phone. It is an independent community project and is not affiliated with AWS (see the [Disclaimer](Disclaimer)).
+re:Invent Compass scans the code you work on, on your machine (and, if you allow it, your GitHub repositories, read-only), learns your AWS services and the rest of your stack, and finds the AWS re:Invent sessions that match, with a reason for each. It then checks every booking against a [guardrail](Glossary#guardrail) and puts unofficial [boarding passes](Glossary#boarding-pass) on your phone, so you get into every reserved session on time. It is an independent community project and is not affiliated with AWS (see the [Disclaimer](Disclaimer)).
 
 There are three ways in, from no install at all to the full setup:
 

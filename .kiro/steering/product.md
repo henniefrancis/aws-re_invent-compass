@@ -28,7 +28,7 @@ A reserved seat is only held until 10 minutes before the session starts, then it
 ## Devices (ADR-005)
 
 - **Plan on a computer.** The Events API signs people in only through a loopback redirect on the machine that started sign-in, so planning and booking run on the attendee's computer: Kiro first, other MCP clients documented.
-- **Board on any device.** Phones and tablets get Wallet passes (through a QR hand-off), an `.ics` calendar file, and a responsive offline itinerary page. iPad has no Wallet app, so it uses the calendar file and the itinerary page.
+- **Board on any device.** Phones and tablets get Wallet passes (through a link or QR hand-off) and an `.ics` calendar file. iPad has no Wallet app, so it uses the calendar file. The core library can also write an offline itinerary page, but no Compass tool writes it yet.
 - **Try on any device.** The showcase site runs a click-through demo on 17 real re:Invent 2026 sessions in a simulated week, with no install and no sign-in.
 
 ## The metaphor (use it in UI copy, docs and code names)
