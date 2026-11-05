@@ -23,6 +23,7 @@ The full documentation is in the [wiki](https://github.com/henniefrancis/aws-re_
 - [Guardrails](#guardrails)
 - [Boarding passes and the phone hand-off](#boarding-passes-and-the-phone-hand-off)
 - [Privacy](#privacy)
+- [Support and privacy policy](#support-and-privacy-policy)
 - [Architecture](#architecture)
 - [How it was built](#how-it-was-built)
 - [Repository layout](#repository-layout)
@@ -277,6 +278,11 @@ Compass is local first. The responsible party under South Africa's Protection of
 **No backups of erased data.** The DynamoDB table has point-in-time recovery switched off on purpose, so `forget_me` is a real erasure. The data is short-lived and you can always issue passes again.
 
 The showcase site has no sign-in, no cookies, no storage and no analytics. Its only network call is the hand-off read on `/board`.
+
+## Support and privacy policy
+
+- **Privacy policy:** [reinvent-compass.vegas/privacy](https://reinvent-compass.vegas/privacy)
+- **Support:** open an issue at [github.com/henniefrancis/aws-re_invent-compass/issues](https://github.com/henniefrancis/aws-re_invent-compass/issues). Report security problems privately, as [SECURITY.md](SECURITY.md) explains.
 
 ## Architecture
 

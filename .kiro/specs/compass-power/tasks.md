@@ -712,7 +712,7 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Site tests and the full gate; local preview for the owner; one QA and security pass. The owner releases the site from main with `scripts/release.sh prod`
   - Done on 4 November: PR #24 and #25 merged (main 6609c0f), the owner released the site (live /install shows 0.1.2 and the update note), the wiki is published (5109406) and develop is fast-forwarded to main
 
-- [ ] 67. Ready for the Kiro Powers catalogue (owner request of 5 November)
+- [x] 67. Ready for the Kiro Powers catalogue (owner request of 5 November)
   - The owner wants Compass listed in the Kiro Powers catalogue. Listing goes through the form at https://kiro.dev/powers/submit/ (a public repository with `plugin.json` in the Agent Plugins format; the README links a privacy policy and support contact). `power/plugin.json` already has `$schema`, name, version, description, author, keywords and the Apache-2.0 licence. The README gets a short "Support and privacy policy" section (owner-approved text) linking the site privacy page, GitHub issues and SECURITY.md. The example session code in three MCP server comments becomes the synthetic `BWP213`, and the README line "A listing in the Kiro Powers catalogue is coming soon" stays. The owner submits the form (the owner's own name and email); the listing is at the Kiro team's discretion
 
 ## Notes
