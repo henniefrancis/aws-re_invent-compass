@@ -53,9 +53,7 @@ aws-re_invent-compass/
 │   ├── api/                      # S1: scrubbed per-operation fixtures built on the synthetic catalog
 │   ├── sample-repo/              # S3: sample project for the scanner and the demo
 │   └── .raw/                     # git-ignored: the owner's real recordings (SP5)
-├── docs/
-│   ├── architecture/             # build-plan.md (mirror of the approved plan)
-│   └── hackathon-rules.md        # the contest rules and how each is met
+├── wiki/                         # the published GitHub wiki (architecture, decisions, runbooks, Hackathon.md for the contest rules)
 ├── .github/                      # S0: check.yml, e2e.yml, publish.yml, dependabot.yml
 ├── CONCEPT.md, README.md, CONTRIBUTING.md, SECURITY.md, LICENSE, NOTICE
 └── package.json, package-lock.json   # S0; after day 1 only the integrator changes them

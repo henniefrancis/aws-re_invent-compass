@@ -2,7 +2,7 @@
 //
 // DEMO_SESSIONS are 17 real sessions of the re:Invent 2026 catalog, read from the AWS Events API
 // and committed as demo-sessions.json by site/scripts/make-demo-sessions.mjs. The snapshot holds
-// the session code, title, start, end, venue and room only (owner rule, docs/hackathon-rules.md
+// the session code, title, start, end, venue and room only (owner rule, wiki/Hackathon.md
 // row 11), with the time the catalog was fetched and a source credit. Nothing else of the catalog
 // is copied: no abstract, speaker, type, level, seat or reservation data.
 //

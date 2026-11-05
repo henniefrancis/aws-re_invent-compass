@@ -89,6 +89,6 @@ export const UNOFFICIAL_STATEMENT: ContentBlock = summary(
 export const TRY_IT: ContentBlock = summary(
   'try-it',
   'The demo runs on a small snapshot of real sessions from the AWS Events API, with no install and no sign-in.',
-  'docs/hackathon-rules.md',
+  'wiki/Hackathon.md',
   'Compliance, rule 11',
 );

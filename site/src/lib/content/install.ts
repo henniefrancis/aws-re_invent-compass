@@ -1,12 +1,11 @@
 import { summary, type ContentBlock } from './content-block';
 import type { SiteLinks } from './links';
 
-// Install content. Sources: the product steering (devices), the build plan and the S3 prompt
+// Install content. Sources: the product steering (devices), the S3 prompt
 // (commands), the tech steering (Node.js 24), the official Kiro powers installation page, and
 // packages/mcp-server/README.md (the Kiro MCP setting, the other MCP clients and live mode).
 
 const PRODUCT = '.kiro/steering/product.md';
-const PLAN = 'docs/architecture/build-plan.md';
 const KIRO_DOCS = 'kiro.dev/docs/powers/installation';
 const MCP_README = 'packages/mcp-server/README.md';
 
@@ -108,8 +107,8 @@ export const KIRO_UPDATE_NOTE: ContentBlock = summary(
 export const HOOKS_NOTE: ContentBlock = summary(
   'install-hooks-note',
   'Hooks work in Kiro only. The guardrail runs inside the Compass server, so it protects every client.',
-  PLAN,
-  '3.2 and 8',
+  'wiki/Getting-Started.md',
+  'Other MCP clients',
 );
 
 export interface InstallCommand {

@@ -4,7 +4,7 @@ inclusion: always
 
 # Technology
 
-The approved build plan is the source of truth: #[[file:docs/architecture/build-plan.md]]. Decisions are on the wiki, on the Key decisions pages (`wiki/Key-Decisions.md` and `wiki/Decisions-*.md` in this repo). If this file and the plan disagree, the plan wins; fix this file in the same change.
+The architecture is described on the wiki: #[[file:wiki/Architecture-Overview.md]] and `wiki/AWS-Architecture.md`. Decisions are on the Key decisions pages (`wiki/Key-Decisions.md` and `wiki/Decisions-*.md` in this repo). If this file and those pages disagree, the code and the later decision record win; fix this file in the same change.
 
 ## Stack (ADR-006)
 

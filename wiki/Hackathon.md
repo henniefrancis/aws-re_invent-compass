@@ -77,3 +77,11 @@ The rules do not require Kiro. The owner requires it anyway, to show the newest 
 - Every change starts as a Kiro spec or a task in an existing spec, and Claude's agents build from it (ADR-029, confirmed by the owner on 19 October). Work done before its task was written is backfilled into the spec the same day.
 - The owner uses Kiro for the demo, the Power and the article.
 - The article and the demo video show Kiro: the Power in use, the spec of the week and a hook blocking a bad booking.
+
+## Related pages
+
+- [Home](Home)
+- [How it was built](How-It-Was-Built)
+- [Disclaimer](Disclaimer)
+- [Privacy](Privacy)
+- [Key decisions](Key-Decisions)

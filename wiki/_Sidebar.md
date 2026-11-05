@@ -64,6 +64,7 @@
 - [The build story](How-It-Was-Built)
 - [Kiro specs](Kiro-Specs)
 - [Steering and hooks](Steering-and-Hooks)
+- [Hackathon](Hackathon)
 
 **Reference**
 

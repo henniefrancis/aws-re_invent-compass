@@ -43,6 +43,15 @@ The time that matters at re:Invent is not "Starts 10:30". A reserved seat is hel
 | Read the code                           | [GitHub repository](https://github.com/henniefrancis/aws-re_invent-compass) |
 | Get answers to common questions         | [FAQ](FAQ)                                                                  |
 
+## The submission
+
+The owner submitted re:Invent Compass to the re:Invent Catalog API Builder Challenge on 5 November 2026 (see [Hackathon](Hackathon)):
+
+- the [hackathon project](https://builder.aws.com/project/3LE6YlbFWwf3mrjiuOyMl9wBBo2/reinvent-compass-from-your-code-to-your-seat-on-time);
+- the article [re:Invent Compass: From your code to your seat, on time](https://builder.aws.com/content/3LVhghIjFObX3utBCV2t31xJjqR/reinvent-compass-from-your-code-to-your-seat-on-time);
+- the article [re:Invent Compass: Project Stats and Costs](https://builder.aws.com/content/3LWRjwavL1lcilvpa3XAgpceMLc/reinvent-compass-project-stats-and-costs);
+- the videos: [Promotional Video](https://www.youtube.com/watch?v=YKumzOFCAog), [Plan with Kiro IDE](https://www.youtube.com/watch?v=Xm6ZobZ8smY), [Plan with Terminal](https://www.youtube.com/watch?v=XXz5B5a0nRM), [Boarding with Passes](https://www.youtube.com/watch?v=T9ycY93RnHU) and [Fly with Updates](https://www.youtube.com/watch?v=x_l_M3ByYEA), all in the [Video Library](https://reinvent-compass.vegas/videos).
+
 ## The build, in public
 
 Every task from kickoff on 15 October 2026 to submission is a card on the [project board](https://github.com/users/henniefrancis/projects/3), with its workstream and real date. [How it was built](How-It-Was-Built) tells the story.
@@ -52,4 +61,5 @@ Every task from kickoff on 15 October 2026 to submission is a card on the [proje
 - [Getting started](Getting-Started)
 - [Architecture overview](Architecture-Overview)
 - [How it was built](How-It-Was-Built)
+- [Hackathon](Hackathon)
 - [Glossary](Glossary)
