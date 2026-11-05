@@ -4,7 +4,7 @@
 
 This design covers S7, the `showcase-site` stream: the public website of re:Invent Compass and its `/board` hand-off page. It owns `site/**` only.
 
-The Site is a static Angular 22.2.3 application with standalone components, zoneless change detection and prerendered output (`outputMode: "static"`). It is served from S3 behind CloudFront (S6); prod has served it at https://reinvent-compass.vegas since 31 October 2026. The dated changes at the end of this document add nine pages (The Creator at `/about`, The Inspiration, Documentation and six legal pages), so `site/src/app/app.routes.ts` now declares fourteen routes. This design has five:
+The Site is a static Angular 22.2.3 application with standalone components, zoneless change detection and prerendered output (`outputMode: "static"`). It is served from S3 behind CloudFront (S6); prod has served it at https://reinvent-compass.vegas since 31 October 2026. The dated changes at the end of this document add eleven pages (The Creator at `/about`, The Inspiration, Documentation, Videos, Builder Center and six legal pages), so `site/src/app/app.routes.ts` now declares sixteen routes. This design has five:
 
 - `/` (Home_Page): the "Seat released at" story, the airline metaphor, Plan, Boarding, Fly, and links to the repository, the Builder Center post and the video.
 - `/demo` (Demo_Page): a click-through demo that runs the real rules engine (`@compass/core/rules`, S2) in the browser on sessions copied from the synthetic catalog (ADR-016). Since task 41 the sessions are a snapshot of 17 real catalog sessions from the AWS Events API (`site/src/lib/demo/demo-sessions.json`, code, title, start, end, venue and room only).
@@ -209,12 +209,19 @@ interface ContentBlock {
 // links.ts
 interface SiteLinks {
   repository: string; // https://github.com/henniefrancis/aws-re_invent-compass (CONCEPT.md section 12)
-  builderCenterPost: string | null;
-  video: string | null;
   kiroPowerListing: string | null; // set only if Compass is listed on kiro.dev/powers
   packageVersion: string | null; // npm version pinned in the npx commands once published
 }
 function footerItems(links: SiteLinks): readonly FooterItem[]; // fixed order; null URL becomes text
+// Task 54: the Videos and Builder Center pages list ListLink cards (label, href or null, description);
+// a null href shows as plain "coming soon" text.
+interface ListLink {
+  label: string;
+  href: string | null;
+  description: string;
+}
+const VIDEO_LINKS: readonly ListLink[]; // the project videos on YouTube
+const BUILDER_CENTER_LINKS: readonly ListLink[]; // the posts on AWS Builder Center
 ```
 
 The Notice block is verbatim from `README.md`. The tagline, "Seat released at 10:20", "Starts 10:30" and "Unofficial. Your badge is your ticket." are verbatim blocks. Paraphrased blocks carry their source and section for human review. The scanner list on the Home_Page comes from the build plan and product steering, not from `CONCEPT.md` section 3, because the plan wins where they differ.

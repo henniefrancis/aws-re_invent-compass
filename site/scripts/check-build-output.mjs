@@ -25,6 +25,8 @@ export function expectedRouteFiles() {
     'about/index.html',
     'inspiration/index.html',
     'documentation/index.html',
+    'videos/index.html',
+    'builder-center/index.html',
     'disclaimer/index.html',
     'copyright/index.html',
     'terms/index.html',

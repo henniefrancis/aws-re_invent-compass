@@ -10,22 +10,24 @@ It is a static Angular 22.2.3 site (standalone components, zoneless, prerendered
 
 Fourteen routes, all prerendered:
 
-| Route            | What it is                                                                                                                                                           |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`              | The story: the code scan, boarding closes at 10:20, the airline metaphor, Plan, Boarding, Fly, three promises                                                        |
-| `/demo`          | The demo on real sessions, using the real rules engine, a sample pass and a sample calendar                                                                          |
-| `/install`       | The Kiro MCP setting, the power folder import and how to update the Power, the two npx commands, Node.js 24, Claude Desktop, VS Code and the Kiro CLI, and live mode |
-| `/privacy`       | What stays on your machine, what leaves it and for how long, forget_me, what this site does                                                                          |
-| `/about`         | The Creator: a product summary, the owner's biography, photo and links                                                                                               |
-| `/inspiration`   | The Inspiration: the owner's story, quoted from `site/content/creator-and-inspiration.md`                                                                            |
-| `/documentation` | Links to the README, one link for each wiki section, the Kiro specs and the project board                                                                            |
-| `/disclaimer`    | Unofficial, not a ticket, the demo data credit, warranty and trademarks                                                                                              |
-| `/copyright`     | The copyright line, the Apache License 2.0 and the name and logo rule                                                                                                |
-| `/terms`         | Terms of use for the site, the MCP server, the Kiro Power and the Compass GitHub App                                                                                 |
-| `/security`      | How to report a problem, how secrets and tokens are handled, and the scope                                                                                           |
-| `/accessibility` | The WCAG 2.2 AA aim and how it is tested                                                                                                                             |
-| `/credits`       | The main open-source libraries and their licences                                                                                                                    |
-| `/board`         | The hand-off page. It reads `#h=<id>` from the address, removes it, and shows the passes you can add (`noindex`)                                                     |
+| Route             | What it is                                                                                                                                                           |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`               | The story: the code scan, boarding closes at 10:20, the airline metaphor, Plan, Boarding, Fly, three promises                                                        |
+| `/demo`           | The demo on real sessions, using the real rules engine, a sample pass and a sample calendar                                                                          |
+| `/install`        | The Kiro MCP setting, the power folder import and how to update the Power, the two npx commands, Node.js 24, Claude Desktop, VS Code and the Kiro CLI, and live mode |
+| `/privacy`        | What stays on your machine, what leaves it and for how long, forget_me, what this site does                                                                          |
+| `/about`          | The Creator: a product summary, the owner's biography, photo and links                                                                                               |
+| `/inspiration`    | The Inspiration: the owner's story, quoted from `site/content/creator-and-inspiration.md`                                                                            |
+| `/documentation`  | Links to the README, one link for each wiki section, the Kiro specs and the project board                                                                            |
+| `/videos`         | The Video Library: the project videos on YouTube, each with a short description                                                                                      |
+| `/builder-center` | Builder Center: the articles, the hackathon project and the creator profile on AWS Builder Center                                                                    |
+| `/disclaimer`     | Unofficial, not a ticket, the demo data credit, warranty and trademarks                                                                                              |
+| `/copyright`      | The copyright line, the Apache License 2.0 and the name and logo rule                                                                                                |
+| `/terms`          | Terms of use for the site, the MCP server, the Kiro Power and the Compass GitHub App                                                                                 |
+| `/security`       | How to report a problem, how secrets and tokens are handled, and the scope                                                                                           |
+| `/accessibility`  | The WCAG 2.2 AA aim and how it is tested                                                                                                                             |
+| `/credits`        | The main open-source libraries and their licences                                                                                                                    |
+| `/board`          | The hand-off page. It reads `#h=<id>` from the address, removes it, and shows the passes you can add (`noindex`)                                                     |
 
 Every page sets its own title, `og:title`, `og:url` and canonical link to its address on https://reinvent-compass.vegas (`SiteTitleStrategy`, with `pageUrl` in `src/lib/shell/title.ts`); `src/index.html` carries the description, `og:description` and `twitter:card`. There is no `og:image`, because `public/` takes no PNG files.
 
@@ -36,7 +38,7 @@ From the repository root:
 ```sh
 npx tsc -b                # builds @compass/contracts and @compass/core (the site resolves them from dist)
 cd site
-npx ng build              # prerenders the fourteen routes
+npx ng build              # prerenders the sixteen routes
 node scripts/check-build-output.mjs   # CSP and site rules on every built HTML file
 node scripts/check-budgets.mjs        # JavaScript budgets, gzip
 ```

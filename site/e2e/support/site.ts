@@ -102,6 +102,8 @@ export const PAGES = [
   { path: '/about', h1: 'The Creator', title: 'The Creator | re:Invent Compass' },
   { path: '/inspiration', h1: 'The Inspiration', title: 'The Inspiration | re:Invent Compass' },
   { path: '/documentation', h1: 'Documentation', title: 'Documentation | re:Invent Compass' },
+  { path: '/videos', h1: 'Videos', title: 'Videos | re:Invent Compass' },
+  { path: '/builder-center', h1: 'Builder Center', title: 'Builder Center | re:Invent Compass' },
   { path: '/disclaimer', h1: 'Disclaimer', title: 'Disclaimer | re:Invent Compass' },
   { path: '/terms', h1: 'Terms of use', title: 'Terms of use | re:Invent Compass' },
   { path: '/security', h1: 'Security', title: 'Security | re:Invent Compass' },

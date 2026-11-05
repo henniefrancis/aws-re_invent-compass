@@ -25,7 +25,7 @@ test.describe('every page', () => {
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
   });
 
-  test('the Project group links to the repository and never to an unknown address', async ({
+  test('the Project group links to the repository and to the Builder Center and Videos pages', async ({
     page,
   }) => {
     await page.goto('/');
@@ -38,8 +38,33 @@ test.describe('every page', () => {
     // Outside links open in a new tab and say so to screen readers (task 35).
     await expect(nav.locator('a[href^="https://"]')).toHaveAttribute('target', '_blank');
     await expect(nav.locator('a[href^="https://"]')).toContainText('(opens in a new tab)');
-    await expect(nav.getByText('Builder Center post (coming soon)')).toBeVisible();
-    await expect(nav.getByText('Video (coming soon)')).toBeVisible();
+    // Task 54: both items open a page of the site that lists the posts and the videos.
+    await expect(nav.getByRole('link', { name: /^Builder Center/ })).toHaveAttribute(
+      'href',
+      '/builder-center',
+    );
+    await expect(nav.getByRole('link', { name: /^Video Library/ })).toHaveAttribute(
+      'href',
+      '/videos',
+    );
+  });
+
+  test('the Videos and Builder Center pages open every card in a new tab (task 54)', async ({
+    page,
+  }) => {
+    for (const [path, count] of [
+      ['/videos', 5],
+      ['/builder-center', 4],
+    ] as const) {
+      await page.goto(path);
+      const cards = page.locator('.doc-list a');
+      await expect(cards).toHaveCount(count);
+      for (const card of await cards.all()) {
+        await expect(card).toHaveAttribute('target', '_blank');
+        await expect(card).toHaveAttribute('rel', 'noopener noreferrer');
+        await expect(card).toContainText('(opens in a new tab)');
+      }
+    }
   });
 });
 

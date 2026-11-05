@@ -41,6 +41,19 @@ export const routes: Routes = [
       import('./pages/documentation/documentation-page.component').then((m) => m.DocumentationPage),
   },
   {
+    path: 'videos',
+    title: 'Videos',
+    loadComponent: () => import('./pages/videos/videos-page.component').then((m) => m.VideosPage),
+  },
+  {
+    path: 'builder-center',
+    title: 'Builder Center',
+    loadComponent: () =>
+      import('./pages/builder-center/builder-center-page.component').then(
+        (m) => m.BuilderCenterPage,
+      ),
+  },
+  {
     path: 'disclaimer',
     title: 'Disclaimer',
     loadComponent: () =>
