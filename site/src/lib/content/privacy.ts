@@ -89,7 +89,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       ),
       summary(
         'privacy-name',
-        'Your name is sent only if you choose to add it. It is typed on your machine and never taken from your sign-in token.',
+        'Compass does not send your name, and never takes it from your sign-in token.',
         'wiki/Privacy.md',
         'What leaves your machine, and where it goes',
       ),
@@ -102,20 +102,20 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       summary(
         'privacy-google-objects',
         'For Google Wallet, Google holds the pass object. A voided pass is set to inactive, and every pass expires at its session end.',
-        'wiki/Privacy.md',
-        'What leaves your machine, and where it goes',
+        'wiki/Decisions-Passes-and-Wallets.md',
+        'Update, void and expire every pass',
       ),
       summary(
         'privacy-processing-region',
         'The Compass server runs in the AWS us-east-1 Region (N. Virginia, United States), outside South Africa, in the AWS account of the owner.',
         'wiki/Privacy.md',
-        'What leaves your machine, and where it goes',
+        'Who is responsible',
       ),
       summary(
         'privacy-processors',
         'Apple processes data (the push token) when you add a pass to Apple Wallet. Google holds the pass object from the moment the pass is issued, so that the Add to Google Wallet link works. Google acts as a processor.',
         'wiki/Privacy.md',
-        'What leaves your machine, and where it goes',
+        'Who is responsible',
       ),
       summary(
         'privacy-github',
@@ -169,7 +169,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         'privacy-rate-counters',
         'forget_me does not delete the server rate counters, which are tied to a one-way hash of your sign-in identifier, so that it cannot reset the limits. They are deleted when their one-hour window ends plus 2 minutes.',
         'wiki/Data-and-Privacy.md',
-        'forget_me fan-out',
+        'TTL and expiry',
       ),
       quoted(
         'privacy-no-remote-delete',

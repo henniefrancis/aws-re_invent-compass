@@ -132,7 +132,7 @@ Key rules: the **access token** goes only to the Events API. The Compass API rec
 
 ## 8. Scope
 
-Eight Kiro specs (S0 to S7) in the build plan, section 8. **Never cut:** the 12-operation client, guardrails in the server, the Power with hooks, Apple passes that void on cancel and expire at session end, the QR hand-off, the site story and clash demo, README, post and video. The ranked cut list is in plan section 12.
+Eight Kiro specs (S0 to S7), listed in the wiki [Kiro specs](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Kiro-Specs) page. **Never cut:** the 12-operation client, guardrails in the server, the Power with hooks, Apple passes that void on cancel and expire at session end, the QR hand-off, the site story and clash demo, README, post and video. The ranked cut list is in plan section 12.
 
 **Deliverables:** README, Builder Center post (25% of the score), showcase website, demo video.
 
@@ -152,11 +152,11 @@ Eight Kiro specs (S0 to S7) in the build plan, section 8. **Never cut:** the 12-
 | 3 Nov     | Version 0.1.0 of the `reinvent-compass` npm package published                                        |
 | **4 Nov** | **Submit** on Builder Center (hackathon deadline 6 November 2026, 11:59 PM PT)                       |
 
-Details: [KIRO-SPEC-PROMPTS.md](KIRO-SPEC-PROMPTS.md) and build plan section 9.
+Details: [KIRO-SPEC-PROMPTS.md](KIRO-SPEC-PROMPTS.md) and the wiki [Repository layout](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Repository-Layout).
 
 ## 10. Risks
 
-The full register (16 risks with owner, likelihood and mitigation) is in build plan section 13. The biggest: the schedule (parallel streams and a cut list), the owner's time for approvals and deploys, the Apple certificate and pushes working by 25 October, Google publishing access, and judges never installing anything (the browser demo answers that).
+The full register (16 risks with owner, likelihood and mitigation) was in the original build plan, section 13, retired on 6 November 2026; accepted residual risks are in ADR-027 on the wiki. The biggest: the schedule (parallel streams and a cut list), the owner's time for approvals and deploys, the Apple certificate and pushes working by 25 October, Google publishing access, and judges never installing anything (the browser demo answers that).
 
 ## 11. Demo story (for the post and video, about 3 minutes)
 

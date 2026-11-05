@@ -19,6 +19,7 @@ export type SourceDocument =
   | 'wiki/Hackathon.md'
   | 'wiki/Decisions-Product-and-Scope.md'
   | 'wiki/Decisions-Architecture.md'
+  | 'wiki/Decisions-Passes-and-Wallets.md'
   | 'wiki/Data-and-Privacy.md'
   | 'wiki/Getting-Started.md'
   | 'wiki/Privacy.md'
@@ -50,6 +51,7 @@ export const FILE_SOURCES: readonly SourceDocument[] = [
   'wiki/Hackathon.md',
   'wiki/Decisions-Product-and-Scope.md',
   'wiki/Decisions-Architecture.md',
+  'wiki/Decisions-Passes-and-Wallets.md',
   'wiki/Data-and-Privacy.md',
   'wiki/Getting-Started.md',
   'wiki/Privacy.md',

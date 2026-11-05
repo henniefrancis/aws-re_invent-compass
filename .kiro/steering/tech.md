@@ -14,7 +14,7 @@ The architecture is described on the wiki: #[[file:wiki/Architecture-Overview.md
 | Runtime               | Node.js 24 LTS                                                                             | Lambda `nodejs24.x` on arm64 (supported until 30 April 2028)                 |
 | Package manager       | **npm workspaces**                                                                         | `npm ci` in CI and scripts. Only the integrator changes `package-lock.json`. |
 | Lint and format       | **ESLint** (flat config, typescript-eslint, angular-eslint for the site) plus **Prettier** | No Biome                                                                     |
-| Unit tests            | **vitest 4**, v8 coverage, **100%** lines, branches, functions and statements              | Named exclusions only (build plan section 11.2)                              |
+| Unit tests            | **vitest 4**, v8 coverage, **100%** lines, branches, functions and statements              | Named exclusions only (wiki/Quality-Gate.md)                                 |
 | Browser tests         | Playwright, site only, 7 device profiles, on demand                                        | No retries; tests wait on app state, never on URLs or sleeps                 |
 | Showcase site         | **Angular 22**, zoneless, prerendered static output                                        | Hosted on S3 behind CloudFront                                               |
 | MCP server            | `@modelcontextprotocol/sdk`, stdio                                                         | Published to npm as `reinvent-compass` (trusted publishing)                  |
@@ -99,7 +99,7 @@ Used as `awsevents` for read exploration. It is NOT bundled in `power/mcp.json`:
 ## Compass API (ADR-008 to ADR-013)
 
 - **Contract first:** `contracts/compass-api.openapi.yaml` (OpenAPI 3.0.1) is the single source. Byte-identical copies in `infra/modules/api/openapi.yaml` and `packages/contracts/openapi.yaml`, checked by SHA-256 in CI. TypeScript types are generated from it.
-- **Routes and shapes:** build plan section 5.2. **PassFields rules:** section 5.3, defined once in `packages/contracts/src/pass-fields.ts`.
+- **Routes and shapes:** wiki/Pass-API.md. **PassFields rules:** wiki/Contracts.md, defined once in `packages/contracts/src/pass-fields.ts`.
 - **Edge:** one CloudFront distribution: site at `/`, API at `/api/*` (API Gateway REST, regional, imported from the OpenAPI file, request validation). WAF (CLOUDFRONT scope) on the distribution. An origin-verify header shields the `execute-api` URL.
 - **Auth:** attendee routes need a Builder ID ID token verified for signature, `iss`, `aud = 7vmom55m1qstvq8i71ph127bfq`, `token_use = id`, `exp`, RS256 only. Hand-off routes use a 128-bit capability in the URL fragment. PassKit routes use `ApplePass <authenticationToken>` per Apple's spec.
 - **Pass lifecycle:** Apple PassKit web service plus APNs pushes with the Pass Type ID certificate (empty payload); void sets `voided: true` and `expirationDate: now`. Google objects patched to `INACTIVE`. Every pass expires at session end.

@@ -4,7 +4,7 @@ inclusion: always
 
 # Project structure
 
-Layout and ownership follow the approved build plan (section 9.1, ADR-007). Each folder below has **one owning stream**; a stream never edits another stream's files (see workflow.md).
+Layout and ownership follow ADR-007 (wiki/Decisions-Delivery-and-Tooling.md, "Monorepo layout and file ownership"; the original build plan, section 9.1, was retired on 6 November 2026). Each folder below has **one owning stream**; a stream never edits another stream's files (see workflow.md).
 
 ```
 aws-re_invent-compass/
