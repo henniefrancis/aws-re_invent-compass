@@ -10,7 +10,7 @@ re:Invent Compass scans the code you actually work on, in your local projects an
 
 It ships as a Kiro Power plus a local MCP server that any desktop MCP client can run. It learns which AWS services you use and how deeply, plus the rest of your stack such as .NET, Node.js or Python, writes your week as a Kiro spec, reads your real re:Invent schedule without changing it unless you turn writes on, checks every booking against the guardrail, and issues unofficial Apple Wallet and Google Wallet boarding passes that void when a session is cancelled and expire when it ends. Your code is read on your machine, and your tech list never leaves it.
 
-- Approved build plan (the source for architecture; which source wins for what is in `CONTRIBUTING.md`, Sources of truth): #[[file:docs/architecture/build-plan.md]]
+- Architecture (the wiki Architecture overview, written from the approved build plan; which source wins for what is in `CONTRIBUTING.md`, Sources of truth): #[[file:wiki/Architecture-Overview.md]]
 - Concept and story: #[[file:CONCEPT.md]]
 - Live site: https://reinvent-compass.vegas (dev at dev.reinvent-compass.vegas, ADR-031)
 

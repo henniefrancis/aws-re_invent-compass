@@ -194,7 +194,7 @@ type SourceDocument =
   | 'CONCEPT.md'
   | 'README.md'
   | '.kiro/steering/product.md'
-  | 'docs/architecture/build-plan.md'
+  | 'wiki/Privacy.md' // and the other wiki pages listed in FILE_SOURCES
   | 'packages/mcp-server/README.md'
   | 'https://kiro.dev/docs/powers/installation/';
 

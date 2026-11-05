@@ -34,7 +34,7 @@ Scope boundary: this stream does not build the rules engine (S2), the Events API
 - **Demo_Context**: The Rules_Engine `Context` used by the demo: a fixed demo instant as `now`, the event timezone from the synthetic data, the venue data from `data/venues.json`, and the Rules_Engine defaults.
 - **Sample_Pass**: An image of an unofficial boarding pass for one Demo_Week session, rendered by the Site.
 - **Sample_Calendar**: An RFC 5545 `.ics` file of the Demo_Week, built in the browser.
-- **Source_Document**: One of `CONCEPT.md`, `README.md`, `.kiro/steering/product.md`, `docs/architecture/build-plan.md`, and for install content `packages/mcp-server/README.md` (S3) and the official Kiro powers installation guide.
+- **Source_Document**: One of `CONCEPT.md`, `README.md`, `.kiro/steering/product.md`, the wiki pages named in `FILE_SOURCES` in `content-block.ts` (for example `wiki/Privacy.md`, which replaced the build plan on 6 November 2026), and for install content `packages/mcp-server/README.md` (S3) and the official Kiro powers installation guide.
 - **Content_Block**: One unit of Site copy, kept in a content module with the Source_Document it comes from.
 - **Notice**: The exact sentence from `README.md`: "re:Invent Compass is an independent community project and is not affiliated with, endorsed by, or sponsored by Amazon Web Services."
 - **Required_CSP**: The Content-Security-Policy the Site is built to run under: `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests`.

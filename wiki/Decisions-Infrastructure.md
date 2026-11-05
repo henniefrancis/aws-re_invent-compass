@@ -50,7 +50,7 @@ Each section is one decision with four parts: the context, the decision, why, an
 
 **Trade-off:** Dev roughly doubles the monthly cost while it exists.
 
-**Later:** The submission target moved from 1 November to 4 November 2026 (see [Submit before the hackathon deadline](Decisions-Product-and-Scope#submit-before-the-hackathon-deadline)), so dev comes down after that. Prod has been live at https://reinvent-compass.vegas since 31 October 2026. See [Teardown](Teardown).
+**Later:** The submission target moved from 1 November to 4 November 2026 (see [Submit before the hackathon deadline](Decisions-Product-and-Scope#submit-before-the-hackathon-deadline)), and the project was submitted on 5 November. The owner decided on 6 November to keep dev running next to prod until judging ends (by 27 November), then decide whether to destroy it. Prod has been live at https://reinvent-compass.vegas since 31 October 2026. See [Teardown](Teardown).
 
 ## CloudFront flat-rate Free plan
 

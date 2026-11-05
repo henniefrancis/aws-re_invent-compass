@@ -112,7 +112,8 @@ The showcase site and the Compass API have been live at https://reinvent-compass
 - The Kiro Power in [power/](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/power).
 - The pass service on AWS and the showcase site at https://reinvent-compass.vegas.
 - The README with setup, requirements and how to run it.
-- The Builder Center project post ([D02](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290047381)) and the demo video ([D03](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290047460)).
+- The hackathon submission, published on 5 November 2026: the [hackathon project](https://builder.aws.com/project/3LE6YlbFWwf3mrjiuOyMl9wBBo2/reinvent-compass-from-your-code-to-your-seat-on-time) ([D02](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290047381)), the article ["re:Invent Compass: From your code to your seat, on time"](https://builder.aws.com/content/3LVhghIjFObX3utBCV2t31xJjqR/reinvent-compass-from-your-code-to-your-seat-on-time) and the stats article ["re:Invent Compass: Project Stats and Costs"](https://builder.aws.com/content/3LWRjwavL1lcilvpa3XAgpceMLc/reinvent-compass-project-stats-and-costs).
+- The videos ([D03](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290047460)): [Promotional Video](https://www.youtube.com/watch?v=YKumzOFCAog), [Plan with Kiro IDE](https://www.youtube.com/watch?v=Xm6ZobZ8smY), [Plan with Terminal](https://www.youtube.com/watch?v=XXz5B5a0nRM), [Boarding with Passes](https://www.youtube.com/watch?v=T9ycY93RnHU) and [Fly with Updates](https://www.youtube.com/watch?v=x_l_M3ByYEA), also on the site [Video Library](https://reinvent-compass.vegas/videos).
 - This wiki.
 
 ### Owner tasks
@@ -125,7 +126,7 @@ Some work only the owner could do: register the Apple Pass Type ID and the Googl
 
 [Close-out cards](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Close-out%22)
 
-After the release: the public docs were cleaned of anything private and their content is moving into this wiki, and a final rules check runs on submission day ([S01](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290047759)). The submission date is 4 November 2026, two days before the hackathon deadline of 6 November 2026 at 11:59 PM Pacific time.
+After the release: the public docs were cleaned of anything private and their content moved into this wiki, and a final rules check was made on submission day ([S01](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290047759)). The owner submitted on 5 November 2026, a day before the hackathon deadline of 6 November 2026 at 11:59 PM Pacific time. The rules and how Compass meets them are on the [Hackathon](Hackathon) page.
 
 ## The honest AI story
 

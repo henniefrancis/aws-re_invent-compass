@@ -6,7 +6,7 @@ A Kiro Power that scans a first-timer's code and GitHub repositories, finds the 
 
 Entry for the re:Invent Catalog API Builder Challenge. Submission date: 4 November 2026 (deadline: 6 November 2026, 11:59 PM PT). Live at https://reinvent-compass.vegas.
 
-> **Kept as approved on 15 October 2026.** This is the original concept. The build changed some details, and the [README](README.md), the [key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions) and the [build plan](docs/architecture/build-plan.md) describe what was built. The main changes: the submission target moved from 1 November to 4 November ([hackathon rules](docs/hackathon-rules.md)); the `PostToolUse` hook was removed and the official remote MCP server is not bundled in the Power, because Kiro does not honour `disabledTools` inside a Power ([Kiro hooks block only with exit 2](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Architecture#kiro-hooks-block-only-with-exit-2)); the guardrail runs inside the Compass server, and hooks are a second check; the scanner reads Terraform, AWS CDK TypeScript, the AWS SDK for JavaScript v3, boto3 and the AWS SDK for .NET, not CloudFormation or SAM; and production has been live at https://reinvent-compass.vegas since 31 October 2026.
+> **Kept as approved on 15 October 2026.** This is the original concept. The build changed some details, and the [README](README.md), the [key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions) and the [architecture overview](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Architecture-Overview) describe what was built. The main changes: the submission target moved from 1 November to 4 November ([hackathon rules](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Hackathon)); the `PostToolUse` hook was removed and the official remote MCP server is not bundled in the Power, because Kiro does not honour `disabledTools` inside a Power ([Kiro hooks block only with exit 2](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Architecture#kiro-hooks-block-only-with-exit-2)); the guardrail runs inside the Compass server, and hooks are a second check; the scanner reads Terraform, AWS CDK TypeScript, the AWS SDK for JavaScript v3, boto3 and the AWS SDK for .NET, not CloudFormation or SAM; and production has been live at https://reinvent-compass.vegas since 31 October 2026.
 
 ---
 
@@ -96,7 +96,7 @@ The Compass local MCP server talks REST for all 12 operations. The official remo
 
 ## 6. Architecture
 
-The full design, threat model, routes and costs are in the approved [build plan](docs/architecture/build-plan.md). In short:
+The full design, threat model, routes and costs are in the wiki: the [architecture overview](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Architecture-Overview) and the [AWS architecture](https://github.com/henniefrancis/aws-re_invent-compass/wiki/AWS-Architecture). In short:
 
 ```
 Attendee's computer                          AWS us-east-1 (Terraform, HCP)          Phone
@@ -132,7 +132,7 @@ Key rules: the **access token** goes only to the Events API. The Compass API rec
 
 ## 8. Scope
 
-Eight Kiro specs (S0 to S7) in the build plan, section 8. **Never cut:** the 12-operation client, guardrails in the server, the Power with hooks, Apple passes that void on cancel and expire at session end, the QR hand-off, the site story and clash demo, README, post and video. The ranked cut list is in plan section 12.
+Eight Kiro specs (S0 to S7), listed in the wiki [Kiro specs](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Kiro-Specs) page. **Never cut:** the 12-operation client, guardrails in the server, the Power with hooks, Apple passes that void on cancel and expire at session end, the QR hand-off, the site story and clash demo, README, post and video. The ranked cut list is in plan section 12.
 
 **Deliverables:** README, Builder Center post (25% of the score), showcase website, demo video.
 
@@ -152,11 +152,11 @@ Eight Kiro specs (S0 to S7) in the build plan, section 8. **Never cut:** the 12-
 | 3 Nov     | Version 0.1.0 of the `reinvent-compass` npm package published                                        |
 | **4 Nov** | **Submit** on Builder Center (hackathon deadline 6 November 2026, 11:59 PM PT)                       |
 
-Details: [KIRO-SPEC-PROMPTS.md](KIRO-SPEC-PROMPTS.md) and build plan section 9.
+Details: [KIRO-SPEC-PROMPTS.md](KIRO-SPEC-PROMPTS.md) and the wiki [Repository layout](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Repository-Layout).
 
 ## 10. Risks
 
-The full register (16 risks with owner, likelihood and mitigation) is in build plan section 13. The biggest: the schedule (parallel streams and a cut list), the owner's time for approvals and deploys, the Apple certificate and pushes working by 25 October, Google publishing access, and judges never installing anything (the browser demo answers that).
+The full register (16 risks with owner, likelihood and mitigation) was in the original build plan, section 13, retired on 6 November 2026; accepted residual risks are in ADR-027 on the wiki. The biggest: the schedule (parallel streams and a cut list), the owner's time for approvals and deploys, the Apple certificate and pushes working by 25 October, Google publishing access, and judges never installing anything (the browser demo answers that).
 
 ## 11. Demo story (for the post and video, about 3 minutes)
 

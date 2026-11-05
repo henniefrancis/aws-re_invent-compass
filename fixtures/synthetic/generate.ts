@@ -1,7 +1,7 @@
 // Deterministic synthetic catalog generator (foundation-contracts, S0).
 //
 // Produces a made-up re:Invent catalog in the real Events API shape so tests and
-// the public demo never touch live data (ADR-016, build plan sections 6 and 9.2).
+// the public demo never touch live data (ADR-016).
 // Everything is deterministic:
 //   - a small in-repo mulberry32 PRNG seeded from a fixed constant, so there is no
 //     dependency and the seed is explicit;

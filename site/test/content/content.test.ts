@@ -302,7 +302,7 @@ describe('no impersonation and the product voice', () => {
 });
 
 describe('demo session data attribution', () => {
-  const rules = readFileSync(join(REPO_ROOT, 'docs/hackathon-rules.md'), 'utf8');
+  const rules = readFileSync(join(REPO_ROOT, 'wiki/Hackathon.md'), 'utf8');
   const byId = new Map(allBlocks.map((b) => [b.id, b]));
 
   test('the Disclaimer and Privacy pages credit the AWS Events API and name the owner decision', () => {
@@ -311,7 +311,7 @@ describe('demo session data attribution', () => {
       'code, title, times, venue and room only, credited to the AWS Events API',
     );
     for (const id of ['disclaimer-demo-data', 'privacy-site-session-data']) {
-      expect(byId.get(id)?.source, id).toBe('docs/hackathon-rules.md');
+      expect(byId.get(id)?.source, id).toBe('wiki/Hackathon.md');
     }
     expect(byId.get('disclaimer-demo-data')?.text).toContain('credited to the AWS Events API');
     expect(byId.get('privacy-site-session-data')?.text).toContain('no personal data');
