@@ -105,7 +105,7 @@ Each section is one decision with four parts: the context, the decision, why, an
 
 **Later:** The first plan bundled `awsevents` in the Power, with its write tools in `disabledTools`. The Kiro hook spike showed that Kiro does not honour `disabledTools` inside a Power, so the remote `awsevents` server is not bundled: [power/mcp.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/mcp.json) lists only the Compass server. An attendee who wants `awsevents` adds it to the workspace `.kiro/settings/mcp.json` with the seven write tools in `disabledTools` by their full names. See [Kiro hooks block only with exit 2](#kiro-hooks-block-only-with-exit-2).
 
-**Today:** In live mode the schedule tools change nothing unless the attendee sets `COMPASS_ALLOW_WRITES=1` (see [Read-only by default](Read-Only-By-Default)). The Power ships no auto-approve list, and only `refresh_catalog`, `find_sessions` and `check_itinerary` may be auto-approved ([power/POWER.md](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/POWER.md)).
+**Today:** In live mode the schedule tools change nothing unless the attendee sets `COMPASS_ALLOW_WRITES=1` (see [Read-only by default](Read-Only-By-Default)). The Power ships no auto-approve list, and only `refresh_catalog` and `find_sessions` may be auto-approved (`check_itinerary` left that list in 0.1.3, when it began listing the whole schedule) ([power/POWER.md](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/power/POWER.md)).
 
 ## Kiro hooks block only with exit 2
 

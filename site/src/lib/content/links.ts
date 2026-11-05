@@ -16,7 +16,7 @@ export interface SiteLinks {
 export const SITE_LINKS: SiteLinks = {
   repository: 'https://github.com/henniefrancis/aws-re_invent-compass',
   kiroPowerListing: null,
-  packageVersion: '0.1.2',
+  packageVersion: '0.1.3',
 };
 
 /** One card on a list page (Videos, Builder Center): a null address shows "coming soon". */

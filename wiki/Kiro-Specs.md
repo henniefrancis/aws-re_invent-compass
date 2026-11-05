@@ -141,7 +141,7 @@ See [Kiro Power](Kiro-Power), [MCP server](MCP-Server) and [MCP tools](MCP-Tools
 - The Compass API client: issue, update, void, [hand-off](Glossary#hand-off) and forget me, using the attendee's ID token.
 - A local record of issued passes, and sync: compare the schedule with the issued passes and issue, update or [void](Glossary#void). Running it twice changes nothing.
 - The hand-off QR code, for the terminal, for chat and as SVG for a browser page.
-- The calendar file, with two alarms per reserved session (leave now, and boarding closes), and an offline itinerary page writer (no MCP tool in 0.1.2 calls it).
+- The calendar file, with two alarms per reserved session (leave now, and boarding closes), and an offline itinerary page writer (no MCP tool in 0.1.3 calls it).
 
 ## Pass service
 

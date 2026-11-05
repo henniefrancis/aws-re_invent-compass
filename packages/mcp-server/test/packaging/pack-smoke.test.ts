@@ -103,7 +103,7 @@ describe('the packed package (QA H2, security M1)', () => {
     expect(manifest.dependencies).toEqual({ '@napi-rs/keyring': '2.1.1' });
     // The 0.1.0 release commit removed the safety catch (task 53); only a v0.1.0 tag publishes.
     expect(manifest.private).toBeUndefined();
-    expect(manifest.version).toBe('0.1.2');
+    expect(manifest.version).toBe('0.1.3');
     expect(manifest.bin).toEqual({ 'reinvent-compass': 'dist/bin.js' });
     for (const file of ['bin.js', 'scan-worker.js', 'github-scan-worker.js']) {
       const text = await readFile(join(built.extracted, 'dist', file), 'utf8');

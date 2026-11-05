@@ -5,6 +5,7 @@ import type { McpToolName } from '@compass/contracts';
 import { FolderNotFoundError, ScanTimeoutError } from '@compass/core/scanner';
 import { SpecWriteRefusedError } from '@compass/core/spec';
 import { Writable } from 'node:stream';
+import { ZodError } from 'zod';
 import { CompassError } from '../../src/ports/errors.js';
 import { codeFor, INTERNAL_MESSAGE, messageFor } from '../../src/server/error-messages.js';
 import {
@@ -377,19 +378,82 @@ describe('runStdioServer', () => {
 
 describe('a request that does not match the schema (QA low)', () => {
   const fixed = 'Compass could not read that request. Check the arguments and try again.';
+  const named = (problems: string) =>
+    `Compass could not read that request: ${problems}. Check the arguments and try again.`;
 
-  test('gets the fixed message and never echoes what was sent', async () => {
+  test('names the field and what it expects, and never echoes what was sent (task 69)', async () => {
     const connection = await connect(createFakeRuntime().runtime);
-    for (const [name, args] of [
-      ['reserve_with_guardrails', { sessionIds: 'TOP-SECRET-VALUE' }],
-      ['find_sessions', { query: { nested: 'TOP-SECRET-VALUE' } }],
-      ['forget_me', { confirm: 'TOP-SECRET-VALUE' }],
+    for (const [name, args, problems] of [
+      [
+        'reserve_with_guardrails',
+        { sessionIds: 'TOP-SECRET-VALUE' },
+        'sessionIds should be an array',
+      ],
+      ['find_sessions', { query: { nested: 'TOP-SECRET-VALUE' } }, 'query should be a string'],
+      ['forget_me', { confirm: 'TOP-SECRET-VALUE' }, 'confirm should be one of: true'],
+      [
+        'check_itinerary',
+        { commitments: [{ id: 'TOP-SECRET-VALUE' }] },
+        'commitments[0].sessionId is missing',
+      ],
+      [
+        'check_itinerary',
+        { commitments: [{ kind: 'personalTime', title: 'TOP-SECRET-VALUE' }] },
+        'commitments[0].startsAt is missing; commitments[0].endsAt is missing',
+      ],
+      ['reserve_with_guardrails', { sessionIds: [] }, 'sessionIds needs at least 1 item'],
+      [
+        'reserve_with_guardrails',
+        { sessionIds: ['s', 's'] },
+        'sessionIds must not contain duplicate ids',
+      ],
     ] as const) {
       const result = await connection.call(name, args);
       expect(result.isError).toBe(true);
-      expect(textOf(result)).toBe(fixed);
+      expect(textOf(result)).toBe(named(problems));
+      expect(textOf(result)).not.toContain('TOP-SECRET-VALUE');
     }
     await connection.close();
+  });
+
+  test('a long list of problems names the first three, each field once', () => {
+    const error = mcpTools.check_itinerary.input.safeParse({
+      commitments: [{}, {}, {}, {}],
+    }).error;
+    expect(messageFor(error)).toBe(
+      named(
+        'commitments[0].sessionId is missing; commitments[1].sessionId is missing; commitments[2].sessionId is missing',
+      ),
+    );
+    const many = mcpTools.reserve_with_guardrails.input.safeParse({
+      sessionIds: Array.from({ length: 11 }, (_, i) => `s${i}`),
+    }).error;
+    expect(messageFor(many)).toBe(named('sessionIds takes at most 10 items'));
+  });
+
+  test('a problem it cannot describe still gets the fixed message', () => {
+    expect(messageFor(new ZodError([]))).toBe(fixed);
+  });
+
+  test('each kind of problem is described from the schema side only', () => {
+    const issues = [
+      {
+        code: 'invalid_type',
+        expected: 'object',
+        path: [],
+        message: 'Invalid input: expected object, received string',
+      },
+      { code: 'too_small', origin: 'string', minimum: 1, path: ['query'], message: 'Too small' },
+      { code: 'too_big', origin: 'number', maximum: 50, path: ['limit'], message: 'Too big' },
+      { code: 'too_small', origin: 'array', minimum: 2, path: ['goals'], message: 'Too small' },
+      { code: 'invalid_format', format: 'email', path: ['contact'], message: 'Invalid email' },
+    ] as unknown as ZodError['issues'];
+    expect(messageFor(new ZodError(issues.slice(0, 3)))).toBe(
+      named('the request should be an object; query is too small; limit is too large'),
+    );
+    expect(messageFor(new ZodError(issues.slice(3)))).toBe(
+      named('goals needs at least 2 items; contact is not valid'),
+    );
   });
 
   test('the published input schema is still the contract schema', async () => {
@@ -404,9 +468,9 @@ describe('a request that does not match the schema (QA low)', () => {
     await connection.close();
   });
 
-  test('a schema error has its own code in the log and the fixed message', () => {
+  test('a schema error has its own code in the log and a message that names the field', () => {
     const error = mcpTools.forget_me.input.safeParse({}).error;
-    expect(messageFor(error)).toBe(fixed);
+    expect(messageFor(error)).toBe(named('confirm should be one of: true'));
     expect(codeFor(error)).toBe('InputInvalid');
     expect(codeFor(new Error('x'))).toBe('unexpected');
   });

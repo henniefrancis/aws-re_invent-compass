@@ -27,17 +27,20 @@ describe('the package README', () => {
     expect(names).toHaveLength(24);
   });
 
-  test('allows only the three read tools that read nothing of yours to be auto-approved and says write tools never are', async () => {
+  test('allows only the two read tools that read nothing of yours to be auto-approved and says write tools never are', async () => {
     const text = await readme;
+    // check_itinerary reads the schedule and lists the whole week (task 69), so it is per call.
     const perCall = [
       'scan_repo',
       'show_schedule',
+      'check_itinerary',
       'show_my_tech',
       'find_sessions_by_tech',
       'scan_github',
     ];
     const reads = names.filter((n) => TOOL_SPECS[n].class === 'read' && !perCall.includes(n));
-    expect(reads).toHaveLength(3);
+    expect(reads).toEqual(['refresh_catalog', 'find_sessions']);
+    expect(text).toContain('`check_itinerary` reads your schedule too, to check your whole week');
     expect(text).toContain('`scan_repo` is read-only too, but it reads a folder on your machine');
     expect(text).toContain('`show_schedule` is read-only as well, but it reads your schedule');
     expect(text).toContain(

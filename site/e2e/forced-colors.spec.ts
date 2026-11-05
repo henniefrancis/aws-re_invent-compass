@@ -14,7 +14,7 @@ test.describe('forced colors', () => {
     expect(await page.evaluate(() => matchMedia('(forced-colors: active)').matches)).toBe(true);
 
     const button = page.getByRole('button', {
-      name: 'Copy: npx reinvent-compass@0.1.2',
+      name: 'Copy: npx reinvent-compass@0.1.3',
       exact: true,
     });
     const borders = await button.evaluate((element) => {

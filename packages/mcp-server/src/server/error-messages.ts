@@ -60,13 +60,90 @@ const FIXED: Record<Exclude<CompassErrorCode, 'RateLimited' | 'PassError'>, stri
   Internal: INTERNAL_MESSAGE,
 };
 
+/** How many problems one input message names. */
+const MAX_INPUT_PROBLEMS = 3;
+
+type Issue = ZodError['issues'][number];
+
+/** `commitments[0].sessionId`. Every segment is a schema key or an index: tool inputs have no records. */
+function pathText(path: readonly PropertyKey[]): string {
+  const text = path
+    .map((segment) => (typeof segment === 'number' ? `[${segment}]` : `.${String(segment)}`))
+    .join('')
+    .replace(/^\./, '');
+  return text === '' ? 'the request' : text;
+}
+
+/**
+ * What is wrong with one issue, from the schema side only: the expected type, the allowed values
+ * or a limit. The value that was sent is never part of it.
+ */
+function problemFor(issue: Issue): string {
+  switch (issue.code) {
+    case 'invalid_type':
+      return / received undefined$/.test(issue.message)
+        ? 'is missing'
+        : `should be ${issue.expected === 'array' || issue.expected === 'object' ? 'an' : 'a'} ${issue.expected}`;
+    case 'invalid_value':
+      return `should be one of: ${issue.values.map(String).join(', ')}`;
+    case 'too_small':
+      return issue.origin === 'array'
+        ? `needs at least ${issue.minimum} ${Number(issue.minimum) === 1 ? 'item' : 'items'}`
+        : 'is too small';
+    case 'too_big':
+      return issue.origin === 'array' ? `takes at most ${issue.maximum} items` : 'is too large';
+    default:
+      return 'is not valid';
+  }
+}
+
+/** One field and what is wrong with it. */
+interface Problem {
+  where: string;
+  text: string;
+}
+
+/** The problems of one issue; a union reports the alternative that came closest. */
+function problemsOf(issue: Issue): Problem[] {
+  if (issue.code === 'invalid_union' && issue.errors.length > 0) {
+    const closest = [...issue.errors].sort((a, b) => a.length - b.length)[0] as Issue[];
+    return closest.flatMap((inner) =>
+      problemsOf({ ...inner, path: [...issue.path, ...inner.path] }),
+    );
+  }
+  const where = pathText(issue.path);
+  // A refinement's message is written in the contracts, never built from the input.
+  return [
+    { where, text: issue.code === 'custom' ? issue.message : `${where} ${problemFor(issue)}` },
+  ];
+}
+
+/**
+ * The message for a request that does not match the tool's input schema (compass-power task 69):
+ * it names the fields that are wrong and what each expects, so the caller can correct the
+ * request, and never repeats anything that was sent. Each field is named once, with its first
+ * problem.
+ */
+function inputProblem(error: ZodError): string {
+  const byField = new Map<string, string>();
+  for (const problem of error.issues.flatMap(problemsOf)) {
+    if (!byField.has(problem.where)) {
+      byField.set(problem.where, problem.text);
+    }
+  }
+  const problems = [...byField.values()].slice(0, MAX_INPUT_PROBLEMS);
+  return problems.length === 0
+    ? FIXED.InputInvalid
+    : `Compass could not read that request: ${problems.join('; ')}. Check the arguments and try again.`;
+}
+
 /** The plain-English message for a failure. */
 export function messageFor(error: unknown): string {
   if (error instanceof FolderNotFoundError) {
     return FIXED.FolderNotFound;
   }
   if (error instanceof ZodError) {
-    return FIXED.InputInvalid;
+    return inputProblem(error);
   }
   if (error instanceof ScanTimeoutError) {
     return FIXED.ScanTimeout;

@@ -4,7 +4,7 @@
     "compass": {
       "type": "stdio",
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@0.1.2"],
+      "args": ["--yes", "reinvent-compass@0.1.3"],
       "env": { "COMPASS_ELICITATION": "off" }
     }
   }

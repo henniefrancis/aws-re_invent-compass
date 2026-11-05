@@ -28,7 +28,7 @@ const ReservedSessionSchema = z.object({
  * Personal time on the itinerary (a layover): a free-text title with its timing.
  * personalTimeId and location are optional context.
  */
-const PersonalTimeCommitmentSchema = z.object({
+export const PersonalTimeCommitmentSchema = z.object({
   kind: z.literal('personalTime'),
   title: z.string(),
   startsAt: z.string(),

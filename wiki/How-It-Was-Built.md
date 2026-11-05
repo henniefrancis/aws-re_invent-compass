@@ -100,7 +100,7 @@ No branch merged with an open High or Critical finding. A few residual risks tha
 
 [Release cards](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Release%22)
 
-On 31 October the owner merged `develop` into `main` (pull requests #2, #3 and #4), and ran the release script against prod from `main`. Prod answered its health check that day. The `v0.1.0` tag followed on 3 November, when npm published the package `reinvent-compass` 0.1.0 with provenance; 0.1.1 and 0.1.2 followed on 4 November. The prod preconditions (the prod Google key and class, the Apple certificate check and the workspace secrets) were their own gate ([G03](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290046602)). The first prod apply surfaced two small fixes, both written back into the infrastructure spec as tasks: the apply role may tag CloudFront functions, and the release script builds the TypeScript workspace first.
+On 31 October the owner merged `develop` into `main` (pull requests #2, #3 and #4), and ran the release script against prod from `main`. Prod answered its health check that day. The `v0.1.0` tag followed on 3 November, when npm published the package `reinvent-compass` 0.1.0 with provenance; 0.1.1 and 0.1.2 followed on 4 November, and 0.1.3 on 5 November. The prod preconditions (the prod Google key and class, the Apple certificate check and the workspace secrets) were their own gate ([G03](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290046602)). The first prod apply surfaced two small fixes, both written back into the infrastructure spec as tasks: the apply role may tag CloudFront functions, and the release script builds the TypeScript workspace first.
 
 The showcase site and the Compass API have been live at https://reinvent-compass.vegas since 31 October 2026. See [Release](Release) for the release steps.
 
@@ -108,7 +108,7 @@ The showcase site and the Compass API have been live at https://reinvent-compass
 
 [Deliverables cards](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Deliverables%22)
 
-- The [MCP server](Glossary#mcp-server) and CLI as the npm package `reinvent-compass` (0.1.0 on 3 November, now 0.1.2), run with `npx --yes reinvent-compass@0.1.2`.
+- The [MCP server](Glossary#mcp-server) and CLI as the npm package `reinvent-compass` (0.1.0 on 3 November, now 0.1.3), run with `npx --yes reinvent-compass@0.1.3`.
 - The Kiro Power in [power/](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/power).
 - The pass service on AWS and the showcase site at https://reinvent-compass.vegas.
 - The README with setup, requirements and how to run it.
