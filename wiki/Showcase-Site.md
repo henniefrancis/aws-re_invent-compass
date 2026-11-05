@@ -14,24 +14,26 @@ The showcase site is live at [https://reinvent-compass.vegas](https://reinvent-c
 
 ## Routes
 
-[app.routes.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/site/src/app/app.routes.ts) defines 14 routes, each lazy loaded. [app.routes.server.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/site/src/app/app.routes.server.ts) prerenders every one, and [angular.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/site/angular.json) sets `outputMode` to `static`, so the build is a folder of HTML, JavaScript and CSS with no server.
+[app.routes.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/site/src/app/app.routes.ts) defines 16 routes, each lazy loaded. [app.routes.server.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/site/src/app/app.routes.server.ts) prerenders every one, and [angular.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/site/angular.json) sets `outputMode` to `static`, so the build is a folder of HTML, JavaScript and CSS with no server.
 
-| Path             | Title                 |
-| ---------------- | --------------------- |
-| `/`              | Home                  |
-| `/demo`          | Demo                  |
-| `/install`       | Install               |
-| `/privacy`       | Privacy               |
-| `/about`         | The Creator           |
-| `/inspiration`   | The Inspiration       |
-| `/documentation` | Documentation         |
-| `/disclaimer`    | Disclaimer            |
-| `/copyright`     | Copyright and licence |
-| `/terms`         | Terms of use          |
-| `/security`      | Security              |
-| `/accessibility` | Accessibility         |
-| `/credits`       | Open-source credits   |
-| `/board`         | Board                 |
+| Path              | Title                 |
+| ----------------- | --------------------- |
+| `/`               | Home                  |
+| `/demo`           | Demo                  |
+| `/install`        | Install               |
+| `/privacy`        | Privacy               |
+| `/about`          | The Creator           |
+| `/inspiration`    | The Inspiration       |
+| `/documentation`  | Documentation         |
+| `/videos`         | Videos                |
+| `/builder-center` | Builder Center        |
+| `/disclaimer`     | Disclaimer            |
+| `/copyright`      | Copyright and licence |
+| `/terms`          | Terms of use          |
+| `/security`       | Security              |
+| `/accessibility`  | Accessibility         |
+| `/credits`        | Open-source credits   |
+| `/board`          | Board                 |
 
 A CloudFront Function on the site behaviour rewrites a directory-style path such as `/demo` or `/demo/` to its `index.html`, so clean URLs work against the private bucket.
 

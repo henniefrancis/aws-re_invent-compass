@@ -1,14 +1,12 @@
 // Links the site shows (showcase-site, Component 3).
 //
 // A null address means "not known yet". The site then shows plain "coming soon" text and never
-// links to an address it does not know. The Builder Center post and the video exist only
-// after the site freeze, so their addresses ship in a one-file hotfix to this file.
+// links to an address it does not know. The videos and the Builder Center posts are listed on
+// their own pages (task 54), so a new address is a one-line change to this file.
 
 export interface SiteLinks {
   /** From CONCEPT.md section 12. */
   readonly repository: string;
-  readonly builderCenterPost: string | null;
-  readonly video: string | null;
   /** Set only if Compass is listed on kiro.dev/powers. */
   readonly kiroPowerListing: string | null;
   /** The npm version pinned in the npx commands once the package is published. */
@@ -17,11 +15,72 @@ export interface SiteLinks {
 
 export const SITE_LINKS: SiteLinks = {
   repository: 'https://github.com/henniefrancis/aws-re_invent-compass',
-  builderCenterPost: null,
-  video: null,
   kiroPowerListing: null,
   packageVersion: '0.1.2',
 };
+
+/** One card on a list page (Videos, Builder Center): a null address shows "coming soon". */
+export interface ListLink {
+  readonly label: string;
+  readonly href: string | null;
+  readonly description: string;
+}
+
+/** The project videos on YouTube: the promotional video, then the story of Plan, Board, Fly (task 54). */
+export const VIDEO_LINKS: readonly ListLink[] = [
+  {
+    label: 'Promotional Video',
+    href: 'https://www.youtube.com/watch?v=YKumzOFCAog',
+    description: 'A short tour of Compass, from your code to your seat at re:Invent',
+  },
+  {
+    label: 'Plan with Kiro IDE',
+    href: 'https://www.youtube.com/watch?v=Xm6ZobZ8smY',
+    description:
+      'Compass scans your code in Kiro, suggests the sessions that match your stack and writes your week as a Kiro spec',
+  },
+  {
+    label: 'Plan with Terminal',
+    href: 'https://www.youtube.com/watch?v=XXz5B5a0nRM',
+    description: 'Plan your week from the terminal, without an IDE',
+  },
+  {
+    label: 'Boarding with Passes',
+    href: 'https://www.youtube.com/watch?v=T9ycY93RnHU',
+    description:
+      'Each reserved session becomes a boarding pass, sent to your phone for Apple Wallet or Google Wallet',
+  },
+  {
+    label: 'Fly with Updates',
+    href: 'https://www.youtube.com/watch?v=x_l_M3ByYEA',
+    description: 'Keep your passes right while the week changes, with change alerts on your phone',
+  },
+];
+
+/** The creator's posts on AWS Builder Center, newest topic first (task 54). */
+export const BUILDER_CENTER_LINKS: readonly ListLink[] = [
+  {
+    label: 'Builder Journey',
+    href: 'https://builder.aws.com/content/3LVhghIjFObX3utBCV2t31xJjqR/reinvent-compass-from-your-code-to-your-seat-on-time',
+    description: 'How Compass was built with Kiro, and what it does for your re:Invent week',
+  },
+  {
+    label: 'Operational Stats and Expenses',
+    href: 'https://builder.aws.com/content/3LWRjwavL1lcilvpa3XAgpceMLc/reinvent-compass-project-stats-and-costs',
+    description:
+      'The measured numbers: tests, Lighthouse scores, build times and the monthly AWS cost',
+  },
+  {
+    label: 'The Hackathon Project',
+    href: 'https://builder.aws.com/project/3LE6YlbFWwf3mrjiuOyMl9wBBo2/reinvent-compass-from-your-code-to-your-seat-on-time',
+    description: 'Compass as an entry in the AWS re:Invent hackathon',
+  },
+  {
+    label: 'Builder Center Profile',
+    href: 'https://builder.aws.com/community/@henniefrancis',
+    description: 'Every post by Hennie Francis on AWS Builder Center',
+  },
+];
 
 /** The site's own address, for the canonical link and og:url of each page. */
 export const SITE_URL = 'https://reinvent-compass.vegas/';
@@ -61,12 +120,6 @@ export type LinkItem =
   | { readonly kind: 'external'; readonly label: string; readonly href: string }
   | { readonly kind: 'internal'; readonly label: string; readonly path: string }
   | { readonly kind: 'pending'; readonly label: string; readonly text: string };
-
-function externalOrPending(label: string, href: string | null): LinkItem {
-  return href === null
-    ? { kind: 'pending', label, text: `${label} (${COMING_SOON})` }
-    : { kind: 'external', label, href };
-}
 
 /** One item of a navigation group, with a one-line description under its label. */
 export type NavItem = LinkItem & { readonly description: string };
@@ -116,10 +169,17 @@ export function navGroups(links: SiteLinks): readonly NavGroup[] {
           description: 'How Compass is built and run',
         },
         {
-          ...externalOrPending('Builder Center post', links.builderCenterPost),
+          kind: 'internal',
+          label: 'Builder Center',
+          path: '/builder-center',
           description: 'How Compass was built with Kiro',
         },
-        { ...externalOrPending('Video', links.video), description: 'See Compass in action' },
+        {
+          kind: 'internal',
+          label: 'Video Library',
+          path: '/videos',
+          description: 'See Compass in action',
+        },
       ],
     },
     {

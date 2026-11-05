@@ -323,7 +323,7 @@ packages/core/         Events API client, sign-in, catalog cache, rules engine, 
 packages/mcp-server/   The reinvent-compass MCP server and CLI (on npm as reinvent-compass)
 packages/pass-service/ The Compass API Lambdas: passes, PassKit web service, hand-off, forget me
 power/                 The Kiro Power: plugin.json, POWER.md, mcp.json, skills, hook template
-site/                  The showcase site (Angular 22, static): story, demo, install, documentation, legal pages, board
+site/                  The showcase site (Angular 22, static): story, demo, install, documentation, videos, Builder Center posts, legal pages, board
 infra/                 Terraform: bootstrap, dev and prod roots, six modules, tests
 data/venues.json       Venues and researched walking times, each with its source
 fixtures/              Synthetic catalog and API fixtures
