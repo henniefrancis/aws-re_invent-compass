@@ -1,6 +1,6 @@
 {
   "name": "reinvent-compass",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Scans your code and GitHub repositories to find the AWS re:Invent sessions that match your stack, books them safely with guardrails, and puts unofficial Boarding Passes on your phone. Independent community project, not affiliated with AWS.",
   "keywords": [
     "mcp",

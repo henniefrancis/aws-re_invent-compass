@@ -16,7 +16,7 @@ Do these steps in this order. Do not skip ahead.
 3. `scan_repo` on the folder the attendee names (one project, or a dev folder of git repositories). It reads the folder only. Only AWS service and technology names, depth and counts leave the scanner, never file contents. If the attendee wants their GitHub repositories too, use `connect_github` and then `scan_github` (see "Your tech").
 4. `plan_week`. It writes the plan as a Kiro spec in the workspace. Read the target folder it states, and make sure the attendee agrees with it before anything is written.
 5. For each task in the week spec, one at a time:
-   1. Run `check_itinerary` for that session.
+   1. Run `check_itinerary` with that session: `{ "commitments": [{ "sessionId": "<id>" }] }`. The id is enough; it checks the session against the whole week and lists the week.
    2. Show the attendee the session ids, the codes and the catalog titles, and every warning the check returned.
    3. Ask for approval for this one session.
    4. Only after a clear yes, call the write tool.
@@ -54,4 +54,4 @@ Never ask the attendee to approve several writes in one go. Ask for one, do it, 
 
 ## Trying it without a real account
 
-Running `npx --yes reinvent-compass@0.1.2 demo` shows the whole flow on made-up data, with no network and no sign-in.
+Running `npx --yes reinvent-compass@0.1.3 demo` shows the whole flow on made-up data, with no network and no sign-in.

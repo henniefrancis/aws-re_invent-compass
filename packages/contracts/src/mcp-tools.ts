@@ -22,7 +22,7 @@
 //      of up to 80 session ids to narrow the hand-off or the sync.
 import { z } from 'zod';
 import { NormalisedSessionSchema } from './domain/normalised-session.js';
-import { CommitmentSchema } from './domain/commitment.js';
+import { CommitmentSchema, PersonalTimeCommitmentSchema } from './domain/commitment.js';
 import { VerdictSchema } from './domain/verdict.js';
 import { BulkResultSchema } from './wire/bulk-result.js';
 import { PersonalTimeInputSchema } from './wire/personal-time.js';
@@ -196,13 +196,43 @@ const PlanWeekOutput = z.object({
   commitments: z.array(CommitmentSchema),
 });
 
-// check_itinerary: run the guardrails over a proposed set of commitments without
-// writing anything. This is the read side of the guardrail, so it returns a Verdict.
+// check_itinerary: check the whole week, the attendee's schedule plus anything proposed, with
+// the guardrails, without writing anything (compass-power task 69). A proposed session needs
+// only its id, because the times, venue and title come from the catalog; kind, startsAt and
+// endsAt are still accepted, so the earlier full form keeps working. Personal time needs its
+// title and times. With no commitments, the schedule is checked as it is.
+const ProposedSessionSchema = z.object({
+  kind: z.literal('reservedSession').optional(),
+  sessionId: z.string(),
+  startsAt: z.string().optional(),
+  endsAt: z.string().optional(),
+  title: z.string().optional(),
+  venue: z.string().optional(),
+});
 const CheckItineraryInput = z.object({
-  commitments: z.array(CommitmentSchema),
+  commitments: z
+    .array(z.union([PersonalTimeCommitmentSchema, ProposedSessionSchema]))
+    .max(80)
+    .optional(),
+});
+// One entry of the week in time order: a reserved or proposed session with its own verdict,
+// or personal time. Titles of sessions come from the catalog.
+const WeekEntrySchema = z.object({
+  kind: z.enum(['reservedSession', 'personalTime']),
+  status: z.enum(['reserved', 'proposed']),
+  sessionId: z.string().optional(),
+  personalTimeId: z.string().optional(),
+  code: z.string().optional(),
+  title: z.string(),
+  startsAt: z.string().optional(),
+  endsAt: z.string().optional(),
+  venue: z.string().optional(),
+  room: z.string().optional(),
+  verdict: VerdictSchema.optional(),
 });
 const CheckItineraryOutput = z.object({
   verdict: VerdictSchema,
+  week: z.array(WeekEntrySchema),
 });
 
 // show_schedule: read the attendee's live schedule with the ids the write tools take (SP3,

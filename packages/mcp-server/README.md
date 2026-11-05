@@ -23,7 +23,7 @@ The showcase site, with a browser demo you can try on any phone, is at https://r
 
 ## Install
 
-You need Node.js 24 or newer. Compass starts with `npx --yes reinvent-compass@0.1.2`, which downloads the package on first use.
+You need Node.js 24 or newer. Compass starts with `npx --yes reinvent-compass@0.1.3`, which downloads the package on first use.
 
 ### Kiro (the Power)
 
@@ -51,8 +51,8 @@ Without the Power, add the server to `.kiro/settings/mcp.json` (this workspace) 
   "mcpServers": {
     "compass": {
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@0.1.2"],
-      "autoApprove": ["refresh_catalog", "find_sessions", "check_itinerary"]
+      "args": ["--yes", "reinvent-compass@0.1.3"],
+      "autoApprove": ["refresh_catalog", "find_sessions"]
     }
   }
 }
@@ -69,7 +69,7 @@ Open the Claude menu, then Settings, then Developer, then Edit Config. The file 
   "mcpServers": {
     "compass": {
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@0.1.2"]
+      "args": ["--yes", "reinvent-compass@0.1.3"]
     }
   }
 }
@@ -87,7 +87,7 @@ Create `.vscode/mcp.json` in the workspace, or run MCP: Open User Configuration 
     "compass": {
       "type": "stdio",
       "command": "npx",
-      "args": ["--yes", "reinvent-compass@0.1.2"]
+      "args": ["--yes", "reinvent-compass@0.1.3"]
     }
   }
 }
@@ -115,7 +115,7 @@ Every command here names the exact version of this package. Pinning it is delibe
 | `connect_github`            | local action | Connects the read-only Compass GitHub App. Shows a code to enter on GitHub.                                    |
 | `scan_github`               | read         | Reads your GitHub repositories, read-only, after you confirm the list.                                         |
 | `disconnect_github`         | local action | Deletes the GitHub sign-in on this machine.                                                                    |
-| `check_itinerary`           | read         | Runs the guardrail over proposed sessions. Writes nothing.                                                     |
+| `check_itinerary`           | read         | Checks your whole week, plus any sessions you propose, and lists it in time order. Writes nothing.             |
 | `show_schedule`             | read         | Lists your reservations, standby list and layovers with their ids. Writes nothing.                             |
 | `plan_week`                 | local action | Plans a week and writes it as a Kiro spec in the workspace, after you confirm.                                 |
 | `export_calendar`           | local action | Writes an `.ics` calendar file of your schedule.                                                               |
@@ -132,11 +132,11 @@ Every command here names the exact version of this package. Pinning it is delibe
 
 ## Approvals
 
-Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`. They change nothing and read nothing of yours. `scan_repo` is read-only too, but it reads a folder on your machine, so approve each scan yourself. It scans freely only inside the folder Compass was started in; for any other folder it asks you to confirm first, and a client that cannot ask cannot scan one. A scan never changes where the plan is written: that is always the folder Compass was started in. `show_schedule` is read-only as well, but it reads your schedule, so approve each call yourself. It takes no input and lists your reserved sessions, standby list and layovers with the ids that `cancel_reservation`, `remove_standby` and `add_layover` take. `show_my_tech` and `find_sessions_by_tech` read your tech list on this machine, so approve them per call too. `connect_github`, `scan_github` and `disconnect_github` touch your GitHub account: approve each call yourself. `scan_github` also asks you to confirm the repositories before it reads any, and a client that cannot ask cannot run it.
+Only two read tools may be auto-approved: `refresh_catalog` and `find_sessions`. They change nothing and read nothing of yours. `scan_repo` is read-only too, but it reads a folder on your machine, so approve each scan yourself. It scans freely only inside the folder Compass was started in; for any other folder it asks you to confirm first, and a client that cannot ask cannot scan one. A scan never changes where the plan is written: that is always the folder Compass was started in. `show_schedule` is read-only as well, but it reads your schedule, so approve each call yourself. It takes no input and lists your reserved sessions, standby list and layovers with the ids that `cancel_reservation`, `remove_standby` and `add_layover` take. `check_itinerary` reads your schedule too, to check your whole week, so approve each call yourself. `show_my_tech` and `find_sessions_by_tech` read your tech list on this machine, so approve them per call too. `connect_github`, `scan_github` and `disconnect_github` touch your GitHub account: approve each call yourself. `scan_github` also asks you to confirm the repositories before it reads any, and a client that cannot ask cannot run it.
 
 **Write tools must never be auto-approved.** That means every tool marked write above, including `sync_passes`, which can void passes. Approve each call yourself. Where your client supports it, Compass also asks you to confirm in the client before it changes your schedule, listing the session ids, codes, titles and any warnings. Declining writes nothing.
 
-The Power does not ship an `autoApprove` list. If you add one in your own configuration, list only those three read tools.
+The Power does not ship an `autoApprove` list. If you add one in your own configuration, list only those two read tools.
 
 ## Hooks (Kiro only)
 
@@ -146,7 +146,7 @@ Hooks are an extra check that only Kiro runs. The Power includes a hook template
 - The second hook blocks any write through the remote `awsevents` server, so bookings go through Compass. Its matcher is lower case, because Kiro matches regular expressions against the lower-cased tool name.
 - A hook can only block, with exit code 2. Anything a hook prints when it lets a call through never reaches the agent, so there is no sync reminder hook: the Compass tool results say when to run `sync_passes`.
 
-The server checks every booking again, so nothing is unsafe in a client without hooks. A hook reads its input from stdin only, makes no network call and starts no other program. If it cannot judge a call, it says so and lets the call through. `npx --yes reinvent-compass@0.1.2 hook <name>` accepts only the names `pre-write-guardrail` and `post-write-sync` (the template uses only the first), and exits with code 0 or 2.
+The server checks every booking again, so nothing is unsafe in a client without hooks. A hook reads its input from stdin only, makes no network call and starts no other program. If it cannot judge a call, it says so and lets the call through. `npx --yes reinvent-compass@0.1.3 hook <name>` accepts only the names `pre-write-guardrail` and `post-write-sync` (the template uses only the first), and exits with code 0 or 2.
 
 ## The official AWS Events server (read only)
 
@@ -179,7 +179,7 @@ Set `COMPASS_MODE=simulated` to run the whole server on made-up data: a syntheti
 Try the whole flow in one command:
 
 ```
-npx --yes reinvent-compass@0.1.2 demo
+npx --yes reinvent-compass@0.1.3 demo
 ```
 
 It forces simulated mode and runs ten steps through the real tools on a copy of a sample repo: sign in and load the catalog, scan the repo, plan the week, a clash that is blocked, a safe swap, reserve the session that clashed, issue passes, hand them to a phone with a QR code, cancel a session, and void its pass. It prints which step failed and exits 1 if one does. `demo --repo <folder>` scans a folder of yours instead (a copy is used, so your folder is not changed).
@@ -226,7 +226,7 @@ The score is 2 for each resource, construct or client, plus 1 for each command, 
 | Another program on your machine steals tokens                                                   | Tokens live in the OS keychain. The sign-in server binds to 127.0.0.1, takes one request and closes.                                                                                                                                                                                              |
 | A token or email ends up in a log                                                               | A redacting logger on stderr, and tests that prove no token or email reaches a log or an error.                                                                                                                                                                                                   |
 | Someone books through the remote `awsevents` server and skips the guardrail                     | Do not use its write tools. The hook template blocks them in Kiro.                                                                                                                                                                                                                                |
-| The wrong program runs when you start Compass with `npx` (the local copy risk)                  | `npx` can prefer a copy of a package from the folder you are in. Pin the version (`reinvent-compass@0.1.2`), do not start Compass from inside a repository you do not trust, and prefer a global install of a pinned version.                                                                     |
+| The wrong program runs when you start Compass with `npx` (the local copy risk)                  | `npx` can prefer a copy of a package from the folder you are in. Pin the version (`reinvent-compass@0.1.3`), do not start Compass from inside a repository you do not trust, and prefer a global install of a pinned version.                                                                     |
 | Someone else publishes a package under the same npm name before the owner does (name squatting) | Before the first publish the owner had to claim the npm package name `reinvent-compass`. The owner now holds it and publishes from the owner's account with provenance, starting with version 0.1.0 on 3 November 2026. Install only the pinned version, and check the publisher on the npm page. |
 | A hostile repository (a slow pattern, a huge archive, a deep or `..` path, links)               | Every scan runs in a worker with a hard time budget. Archives stop at 100 MB compressed or 500 MB unpacked, files over 1 MB and binary files are skipped, links and `..` paths are never followed, and nothing is written to disk.                                                                |
 | A GitHub token is stolen or misused                                                             | The Compass GitHub App can only read code. Tokens live in the OS keychain, are redacted from every log and error, go only to `github.com` and `api.github.com`, and are never sent on the archive redirect. `disconnect_github` deletes them.                                                     |

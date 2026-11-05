@@ -10,7 +10,7 @@ Built for the re:Invent Catalog API Builder Challenge (September to November 202
 
 The full documentation is in the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki): a user guide, the architecture, the key decisions, a developer guide, operations and reference pages.
 
-> **Status: released, version 0.1.2.** Compass is live: the showcase site, the click-through demo and the Compass API at [reinvent-compass.vegas](https://reinvent-compass.vegas), and the npm package [`reinvent-compass`](https://www.npmjs.com/package/reinvent-compass) (`npx --yes reinvent-compass@0.1.2 demo` runs the whole flow on made-up data). The [project board](https://github.com/users/henniefrancis/projects/3) and the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki) show how it was built. The Builder Center article and the demo video follow on 4 November.
+> **Status: released, version 0.1.3.** Compass is live: the showcase site, the click-through demo and the Compass API at [reinvent-compass.vegas](https://reinvent-compass.vegas), and the npm package [`reinvent-compass`](https://www.npmjs.com/package/reinvent-compass) (`npx --yes reinvent-compass@0.1.3 demo` runs the whole flow on made-up data). The [project board](https://github.com/users/henniefrancis/projects/3) and the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki) show how it was built. Read the build story in the [Builder Center article](https://builder.aws.com/content/3LVhghIjFObX3utBCV2t31xJjqR/reinvent-compass-from-your-code-to-your-seat-on-time), the measured numbers in [Project Stats and Costs](https://builder.aws.com/content/3LWRjwavL1lcilvpa3XAgpceMLc/reinvent-compass-project-stats-and-costs) and the entry as [the hackathon project](https://builder.aws.com/project/3LE6YlbFWwf3mrjiuOyMl9wBBo2/reinvent-compass-from-your-code-to-your-seat-on-time). Watch the [promotional video](https://www.youtube.com/watch?v=YKumzOFCAog), or all five videos in the [Video Library](https://reinvent-compass.vegas/videos).
 
 ## Contents
 
@@ -75,7 +75,7 @@ The week runs in three acts:
 ### 1. Try the demo (simulated, no sign-in)
 
 ```sh
-npx --yes reinvent-compass@0.1.2 demo
+npx --yes reinvent-compass@0.1.3 demo
 ```
 
 The demo runs the whole flow in your terminal on made-up data, through the real tools, in ten steps:
@@ -118,7 +118,7 @@ Seen in Kiro 1.4.86 on 4 November 2026.
 
 Then open your own project in Kiro and say: "Plan my re:Invent."
 
-**Other MCP clients.** Claude Desktop, VS Code and the Kiro CLI can run the same server with `npx --yes reinvent-compass@0.1.2`. The setup for each is in [Getting started](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Getting-Started). Hooks are Kiro-only, but the guardrail runs inside the server in every client.
+**Other MCP clients.** Claude Desktop, VS Code and the Kiro CLI can run the same server with `npx --yes reinvent-compass@0.1.3`. The setup for each is in [Getting started](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Getting-Started). Hooks are Kiro-only, but the guardrail runs inside the server in every client.
 
 ### 3. Live mode (AWS Builder ID)
 
@@ -151,7 +151,7 @@ Boarding passes in live mode use the production Compass API at `https://reinvent
 | `connect_github`            | local action | Connects the read-only Compass GitHub App. Shows a code to enter on GitHub.                                    |
 | `scan_github`               | read         | Reads your GitHub repositories, read-only, after you confirm the list.                                         |
 | `disconnect_github`         | local action | Deletes the GitHub sign-in on this machine.                                                                    |
-| `check_itinerary`           | read         | Runs the guardrail over proposed sessions. Writes nothing.                                                     |
+| `check_itinerary`           | read         | Checks your whole week, plus any sessions you propose, and lists it in time order. Writes nothing.             |
 | `show_schedule`             | read         | Lists your reservations, standby list and layovers with their ids. Writes nothing.                             |
 | `plan_week`                 | local action | Plans a week and writes it as a Kiro spec in the workspace, after you confirm.                                 |
 | `export_calendar`           | local action | Writes an `.ics` calendar file of your schedule.                                                               |
@@ -166,7 +166,7 @@ Boarding passes in live mode use the production Compass API at `https://reinvent
 | `sync_passes`               | write        | Makes the passes match your schedule. It can void passes.                                                      |
 | `forget_me`                 | write        | Deletes your pass data on the server and on this machine.                                                      |
 
-**Approvals.** Only three read tools may be auto-approved: `refresh_catalog`, `find_sessions` and `check_itinerary`, and the Power ships no auto-approve list. `scan_repo`, `show_schedule`, `show_my_tech`, `find_sessions_by_tech` and the three GitHub tools read your own data or your GitHub account, so approve each call. `scan_github` also asks you to confirm the repositories first. **Write tools must never be auto-approved.** In live mode the schedule tools change nothing until you set `COMPASS_ALLOW_WRITES=1`. Where your client supports it, Compass also asks you to confirm before it changes your schedule, listing the sessions and any warnings. Declining writes nothing. For the two pass tools, your client's approval is the one confirmation. There is no background booking, no seat polling and no retry loop on reservations.
+**Approvals.** Only two read tools may be auto-approved: `refresh_catalog` and `find_sessions`, and the Power ships no auto-approve list. `scan_repo`, `show_schedule`, `check_itinerary`, `show_my_tech`, `find_sessions_by_tech` and the three GitHub tools read your own data or your GitHub account, so approve each call. `scan_github` also asks you to confirm the repositories first. **Write tools must never be auto-approved.** In live mode the schedule tools change nothing until you set `COMPASS_ALLOW_WRITES=1`. Where your client supports it, Compass also asks you to confirm before it changes your schedule, listing the sessions and any warnings. Declining writes nothing. For the two pass tools, your client's approval is the one confirmation. There is no background booking, no seat polling and no retry loop on reservations.
 
 ## Your tech list and GitHub
 
@@ -262,7 +262,7 @@ Compass is local first. The responsible party under South Africa's Protection of
 **What leaves it, and where it goes**
 
 - The access token goes only to `api.awsevents.com`, and the refresh token only to the AWS Events token endpoint.
-- When you issue passes, the printable pass fields (session code, title, venue, room, times, and the walks before and after the session; version 0.1.2 never sends your name) and your ID token go to the Compass API. The ID token proves you signed in. It is checked and never stored. Only a keyed hash of your Builder ID subject is kept.
+- When you issue passes, the printable pass fields (session code, title, venue, room, times, and the walks before and after the session; version 0.1.3 never sends your name) and your ID token go to the Compass API. The ID token proves you signed in. It is checked and never stored. Only a keyed hash of your Builder ID subject is kept.
 - Apple receives a pass only if you add it to Apple Wallet. Google Wallet gets its pass object when the Compass API issues the pass, so the "Add to Google Wallet" link works; Google keeps that object, set to `INACTIVE` after a void.
 - If you connect GitHub, the GitHub tokens go only to `github.com` and `api.github.com`. Repository archives come from `codeload.github.com` without the token and are read in memory. Nothing about your repositories goes to Compass or to AWS.
 

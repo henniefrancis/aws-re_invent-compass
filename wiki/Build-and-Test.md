@@ -110,7 +110,7 @@ node packages/mcp-server/dist/bin.js demo --repo <folder> # scan a copy of your 
 COMPASS_MODE=simulated node packages/mcp-server/dist/bin.js   # the stdio server on made-up data
 ```
 
-`demo` always forces simulated mode. In simulated mode the server serves the synthetic catalog and canned Events API responses, presents a signed-in attendee, runs an in-process pass service and never opens a socket to the outside. Every result starts with `SIMULATED MODE: no real data.` Simulated mode is refused when `NODE_ENV` is `production`, unless `COMPASS_ALLOW_SIMULATED=1` is set. The published package runs the same way: `npx --yes reinvent-compass@0.1.2 demo`.
+`demo` always forces simulated mode. In simulated mode the server serves the synthetic catalog and canned Events API responses, presents a signed-in attendee, runs an in-process pass service and never opens a socket to the outside. Every result starts with `SIMULATED MODE: no real data.` Simulated mode is refused when `NODE_ENV` is `production`, unless `COMPASS_ALLOW_SIMULATED=1` is set. The published package runs the same way: `npx --yes reinvent-compass@0.1.3 demo`.
 
 ## Live tests (owner only)
 
