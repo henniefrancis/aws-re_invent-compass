@@ -4,7 +4,7 @@
 
 A Kiro Power that scans a first-timer's code and GitHub repositories, finds the re:Invent sessions that match their stack, turns the week into a Kiro spec, then issues unofficial boarding passes for every reserved seat so the right information is on their lock screen at the right moment.
 
-Entry for the re:Invent Catalog API Builder Challenge, submitted on 4 November 2026 (deadline: 6 November 2026, 11:59 PM PT). Live at https://reinvent-compass.vegas.
+Entry for the re:Invent Catalog API Builder Challenge. Submission date: 4 November 2026 (deadline: 6 November 2026, 11:59 PM PT). Live at https://reinvent-compass.vegas.
 
 > **Kept as approved on 15 October 2026.** This is the original concept. The build changed some details, and the [README](README.md), the [key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions) and the [build plan](docs/architecture/build-plan.md) describe what was built. The main changes: the submission target moved from 1 November to 4 November ([hackathon rules](docs/hackathon-rules.md)); the `PostToolUse` hook was removed and the official remote MCP server is not bundled in the Power, because Kiro does not honour `disabledTools` inside a Power ([Kiro hooks block only with exit 2](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Architecture#kiro-hooks-block-only-with-exit-2)); the guardrail runs inside the Compass server, and hooks are a second check; the scanner reads Terraform, AWS CDK TypeScript, the AWS SDK for JavaScript v3, boto3 and the AWS SDK for .NET, not CloudFormation or SAM; and production has been live at https://reinvent-compass.vegas since 31 October 2026.
 
