@@ -2,9 +2,9 @@
 
 **From your code to your seat, on time.**
 
-re:Invent Compass helps a first-time AWS re:Invent attendee plan their week from their own code, book it safely, and get into every reserved session on time.
+re:Invent Compass scans the code you actually work on, in your local projects and, if you allow it, your GitHub repositories, and finds the re:Invent sessions that match your real stack, with a reason for each. It then helps a first-time attendee book the week safely and get into every reserved session on time.
 
-It ships as a Kiro Power plus a local MCP server that any desktop MCP client can run. It reads your code (and, if you allow it, your GitHub repositories) to learn your tech, writes your week as a Kiro spec, reads your real re:Invent schedule without changing it unless you turn writes on, checks every booking against the guardrail, and issues unofficial Apple Wallet and Google Wallet boarding passes that void when a session is cancelled and expire when it ends.
+It ships as a Kiro Power plus a local MCP server that any desktop MCP client can run. It learns which AWS services you use and how deeply, plus the rest of your stack such as .NET, Node.js or Python, writes your week as a Kiro spec, reads your real re:Invent schedule without changing it unless you turn writes on, checks every booking against the guardrail, and issues unofficial Apple Wallet and Google Wallet boarding passes that void when a session is cancelled and expire when it ends. Your code is read on your machine, and your tech list never leaves it.
 
 Built for the re:Invent Catalog API Builder Challenge (September to November 2026).
 
@@ -232,7 +232,8 @@ One function, `checkReservation` in `packages/core/src/rules`, answers "should t
 - **What a pass shows:** the session code, the title as the flight name, the venue as the terminal, the room as the gate, the date and times, and **Boarding closes** (10 minutes before the start). The back shows the full room, the walk from the previous session and the next connection. The Google pass shows the same, except your name.
 - **Void on cancel.** When you cancel a session, `sync_passes` voids its pass. For Apple Wallet the Compass API marks the pass voided and expired and pushes an update to each registered device over APNs, so Wallet moves it to expired passes. For Google Wallet the object is set to `INACTIVE`. No wallet lets anyone delete a pass remotely, so Compass never claims to.
 - **Expire at session end.** Every pass expires when its session ends.
-- **Changes.** A change of time or room updates the pass on the phone.
+- **Changes.** A change of time, venue or room updates the pass on the phone and shows an alert, for example "Gate changed to 201".
+- **One group for the week.** All your passes sit together as one group in Wallet, issued by "re:Invent Compass".
 - **Calendar fallback.** `export_calendar` writes an `.ics` file with "Leave now" and "Boarding closes" alarms. When the walk from the previous session is unknown, there is no "Leave now" alarm.
 
 **The phone hand-off.** Planning happens on a computer, because Builder ID sign-in returns to your own machine. To board on your phone:
@@ -332,7 +333,7 @@ flowchart LR
 
 **Key choices** (each one is explained in [Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions)):
 
-- **API Gateway REST behind CloudFront**, imported from the OpenAPI file with request validation. One WAF web ACL covers the site and the API. An origin-verify header shields the API Gateway URL.
+- **API Gateway REST behind CloudFront**, imported from the OpenAPI file with request validation. One WAF web ACL covers the site and the API. An API key that CloudFront adds and API Gateway enforces, plus an origin-verify header, shield the API Gateway URL.
 - **Contract first.** `contracts/compass-api.openapi.yaml` (16 operations) is the single source. Byte-identical copies are checked by SHA-256, TypeScript types are generated from it, and every Compass API response is validated against it in tests.
 - **No stored pass files.** Passes are signed on demand from the pass record, so there is no file store to clean up.
 - **Expiry in code, TTL only for clean-up**, because DynamoDB TTL can take days.
@@ -348,7 +349,7 @@ Compass was built spec first, with [Kiro](https://kiro.dev).
 - **When the Kiro credits ran out.** Kiro wrote the S0, S1, S2, S4 and S6 specs and built S0 and S1 tasks 1 to 8. Then the owner's Kiro credits ran out on 17 October. From there, Claude's dev-team agents built the rest from the same Kiro specs, one agent per worktree, under the same steering and review gates. The S3, S5 and S7 specs were written in Kiro's format. The specs and their task checkboxes stayed the single record of what was done. The full story is in [How it was built](https://github.com/henniefrancis/aws-re_invent-compass/wiki/How-It-Was-Built).
 - **Reviews.** Every stream passed QA and security review before it was merged, and no branch merged with an open High or Critical finding. Accepted residual risks are recorded in [Accepted residual risks](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Security-and-Privacy#accepted-residual-risks).
 - **100% coverage.** Unit tests (vitest) cover 100% of lines, branches, functions and statements, with named exclusions only. The showcase site adds Playwright and axe tests across seven device profiles. Terraform has native tests with mock providers, plus tflint and Trivy.
-- **Made-up data in public.** Tests and demos use a deterministic synthetic catalog of 120 sessions in the real API shape ([made-up sessions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Product-and-Scope#made-up-sessions-for-tests-and-the-public-demo)). The product itself always reads the live API.
+- **Made-up data in tests.** Tests and simulated mode use a deterministic synthetic catalog of 120 sessions in the real API shape ([made-up sessions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Decisions-Product-and-Scope#made-up-sessions-for-tests-and-the-public-demo)). The site demo uses 17 real re:Invent 2026 sessions in a simulated week. The product itself always reads the live API.
 - **The whole build, in public.** Every task from kickoff on 15 October 2026 to submission is a card on the [project board](https://github.com/users/henniefrancis/projects/3), with its workstream and real date, and the [wiki](https://github.com/henniefrancis/aws-re_invent-compass/wiki) documents the whole project for easy reading.
 
 ## Repository layout

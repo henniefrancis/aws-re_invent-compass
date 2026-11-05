@@ -8,11 +8,22 @@ Thank you for your interest in re:Invent Compass. It is an unofficial community 
 - The project is spec driven. Each part has a Kiro spec in `.kiro/specs/<name>/` (requirements, design, tasks). Change the spec first when you change behaviour.
 - Open an issue to discuss a larger change before you write code.
 
+## Sources of truth
+
+Each kind of fact has one source, in this order. When a document disagrees with its source, fix the document, not the source.
+
+1. **What Compass is** (summary, audience, principles): `.kiro/steering/product.md`.
+2. **How it behaves** (tools, flags, pass content, privacy): the code, then the Kiro specs in `.kiro/specs/`.
+3. **Architecture and infrastructure:** `docs/architecture/build-plan.md` and the decision records in the wiki ([Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions); a later record wins), checked against `infra/`.
+4. **What is live, and the dates:** the `main` branch, production at https://reinvent-compass.vegas, and `docs/hackathon-rules.md`.
+
+`README.md`, `CONCEPT.md`, the showcase site, the Power and the package READMEs follow these sources. The wiki lives in `wiki/` and is published to the GitHub wiki; it follows these sources and is checked against the code. Historical documents (decision records, `KIRO-SPEC-PROMPTS.md`, runbooks) are kept current, each with a dated line for what changed.
+
 ## Working on the code
 
 ```sh
 npm ci
-npx tsc -b
+npm run build
 npm test                 # unit and property tests, with coverage
 npm run test:site        # showcase site unit tests
 npm run lint

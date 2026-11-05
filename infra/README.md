@@ -2,6 +2,15 @@
 
 Terraform only, region `us-east-1`, state in HCP Terraform. The build plan (sections 6, 7 and 11.3) and the spec in `.kiro/specs/infra/` are the source of truth. Nothing here is applied by an agent: the owner runs every plan and apply.
 
+## What is deployed where
+
+| Environment | Root        | Address                            |
+| ----------- | ----------- | ---------------------------------- |
+| prod        | `envs/prod` | https://reinvent-compass.vegas     |
+| dev         | `envs/dev`  | https://dev.reinvent-compass.vegas |
+
+Each environment has its own HCP Terraform workspace. Both addresses are the custom domain (ADR-031), serving the site, `/board` and the Compass API under `/api/*`. The owner deploys with `scripts/release.sh <env>`.
+
 ## Layout
 
 ```
@@ -13,6 +22,18 @@ infra/
   tests/               native tests (mock providers, plan only) and static scans
   build/               git-ignored Lambda zips written by scripts/release.sh
 ```
+
+## Bootstrap
+
+`infra/bootstrap` holds what exists once per account, and the owner runs it with `scripts/bootstrap.sh`:
+
+- the HCP Terraform OIDC provider, and a plan role and an apply role for each of dev and prod, each with a permissions boundary;
+- the account API Gateway role for access logs;
+- the domain registration of `reinvent-compass.vegas` with Route 53 Domains (ADR-031), kept by `prevent_destroy`;
+- the one monthly cost budget for the account, with alerts at 50, 80 and 100 percent;
+- the dev and prod HCP Terraform workspaces and their non-sensitive variables (the tfe provider). Sensitive workspace variables are set by `scripts/set-workspace-secrets.sh`, never in Terraform state.
+
+The bootstrap workspace itself is the one seed that must exist before this runs.
 
 ## File conventions
 

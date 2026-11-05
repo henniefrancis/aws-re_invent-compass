@@ -1,6 +1,6 @@
 ---
 name: install-hooks
-description: Install the optional Kiro hooks for Reinvent Compass, an extra check before bookings and a block on the remote awsevents write tools. Use when the attendee asks for the hooks or wants the extra safety check.
+description: Install the optional Kiro hooks for re:Invent Compass, an extra check before bookings and a block on the remote awsevents write tools. Use when the attendee asks for the hooks or wants the extra safety check.
 ---
 
 # Install the Compass hooks

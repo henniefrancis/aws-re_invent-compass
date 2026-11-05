@@ -11,7 +11,7 @@ export const TAGLINE: ContentBlock = quoted(
 
 export const INTRO: ContentBlock = quoted(
   'intro',
-  're:Invent Compass helps a first-time AWS re:Invent attendee plan their week from their own code, book it safely, and get into every reserved session on time.',
+  're:Invent Compass scans the code you actually work on, in your local projects and, if you allow it, your GitHub repositories, and finds the re:Invent sessions that match your real stack, with a reason for each. It then helps a first-time attendee book the week safely and get into every reserved session on time.',
   '.kiro/steering/product.md',
   'Product',
 );
