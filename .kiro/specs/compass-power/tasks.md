@@ -728,6 +728,9 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
   - Version 0.1.3 everywhere 0.1.2 was current (package, lockfile, Power `mcp.json`, `plugin.json` and hook template, skills, READMEs, wiki, site install commands and their tests). Existing Power users update the Power (task 66)
   - Tests for the id-only form, no arguments, the week in time order, a clash already on the schedule, a proposal that clashes, held seats and a rules failure; the full gate at 100% coverage; one QA and security pass. Owner: merge, tag `v0.1.3`, approve the publish, update the Power and check "check my itinerary" in Kiro, then release the site
 
+- [x] 70. The README links the submission: the articles, the project and the videos (owner, 5 November)
+  - After the owner published the Builder Center article, the stats article (Project Stats and Costs) and the hackathon project on 5 November, the README status line links all three, the promotional video and the site Video Library, in place of "follow on 4 November". `.npmrc` notes that GHSA-g3hv-75wg-m249 no longer covers minimatch 5 (tracker DEP1). Goes live with the 0.1.3 release
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.
