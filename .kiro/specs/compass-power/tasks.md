@@ -715,6 +715,9 @@ Conventions followed: kebab-case files, PascalCase types, `Schema` suffix for zo
 - [x] 67. Ready for the Kiro Powers catalogue (owner request of 5 November)
   - The owner wants Compass listed in the Kiro Powers catalogue. Listing goes through the form at https://kiro.dev/powers/submit/ (a public repository with `plugin.json` in the Agent Plugins format; the README links a privacy policy and support contact). `power/plugin.json` already has `$schema`, name, version, description, author, keywords and the Apache-2.0 licence. The README gets a short "Support and privacy policy" section (owner-approved text) linking the site privacy page, GitHub issues and SECURITY.md. The example session code in three MCP server comments becomes the synthetic `BWP213`, and the README line "A listing in the Kiro Powers catalogue is coming soon" stays. The owner submits the form (the owner's own name and email); the listing is at the Kiro team's discretion
 
+- [ ] 68. The Power manifest follows the catalogue recommendations (owner request of 5 November)
+  - The submit page recommends an author url and email: `power/plugin.json` gets `author.url` (the owner's GitHub profile; no email in the public repository); `homepage` stays the repository, as the design pins it. `plugin.json` and `mcp.json` validate against the Agent Plugins 1.0.0 schemas; the power tests pass
+
 ## Notes
 
 - There are no optional tasks. 100% coverage (Requirement 25.6) is part of the definition of done, so every test task is mandatory.

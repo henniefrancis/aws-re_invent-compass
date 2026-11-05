@@ -4,7 +4,8 @@
   "version": "0.1.2",
   "description": "Scans your code and GitHub repositories to find the AWS re:Invent sessions that match your stack, books them safely with guardrails, and puts unofficial Boarding Passes on your phone. Independent community project, not affiliated with AWS.",
   "author": {
-    "name": "Hennie Francis"
+    "name": "Hennie Francis",
+    "url": "https://github.com/henniefrancis"
   },
   "license": "Apache-2.0",
   "homepage": "https://github.com/henniefrancis/aws-re_invent-compass",
