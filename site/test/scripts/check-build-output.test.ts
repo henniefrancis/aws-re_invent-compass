@@ -288,7 +288,7 @@ describe('runCli', () => {
         Promise.resolve(map[path.split(/[\\/]/).slice(1).join('/')] ?? ''),
     });
 
-  test('lists the fourteen prerendered route files', () => {
+  test('lists the sixteen prerendered route files', () => {
     expect(routes).toEqual([
       'index.html',
       'demo/index.html',
@@ -297,6 +297,8 @@ describe('runCli', () => {
       'about/index.html',
       'inspiration/index.html',
       'documentation/index.html',
+      'videos/index.html',
+      'builder-center/index.html',
       'disclaimer/index.html',
       'copyright/index.html',
       'terms/index.html',
@@ -310,7 +312,7 @@ describe('runCli', () => {
   test('passes a clean build', async () => {
     const result = await run(files());
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('ok: 15 HTML files');
+    expect(result.stdout).toContain('ok: 17 HTML files');
   });
 
   test('fails and names the file and the rule', async () => {

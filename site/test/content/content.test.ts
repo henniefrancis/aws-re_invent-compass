@@ -40,14 +40,14 @@ import {
   npmRelease,
 } from '../../src/lib/content/install';
 import {
-  COMING_SOON,
+  BUILDER_CENTER_LINKS,
   PROJECT_BOARD_URL,
+  VIDEO_LINKS,
   documentationLinks,
   mcpServerReadmeUrl,
   navGroups,
   SITE_LINKS,
   privateReportingUrl,
-  type SiteLinks,
 } from '../../src/lib/content/links';
 import { METAPHOR_HEADERS, METAPHOR_ROWS } from '../../src/lib/content/metaphor';
 import { NOTICE, NOTICE_HEADING } from '../../src/lib/content/notice';
@@ -327,12 +327,6 @@ describe('demo session data attribution', () => {
 });
 
 describe('links and footer', () => {
-  const known: SiteLinks = {
-    ...SITE_LINKS,
-    builderCenterPost: 'https://example.invalid/post',
-    video: 'https://example.invalid/video',
-  };
-
   test('the data request link is the private reporting form of the repository', () => {
     expect(privateReportingUrl(SITE_LINKS)).toBe(
       `${SITE_LINKS.repository}/security/advisories/new`,
@@ -343,32 +337,59 @@ describe('links and footer', () => {
     expect(NOTICE_HEADING).toBe('Disclaimer Notice');
   });
 
-  test('an unknown address becomes coming soon text with no link, a known one a link', () => {
-    const project = (links: typeof SITE_LINKS) => navGroups(links)[1]?.items ?? [];
-    expect(project(SITE_LINKS)[2]).toEqual({
-      kind: 'pending',
-      label: 'Builder Center post',
-      text: `Builder Center post (${COMING_SOON})`,
+  test('the Builder Center and Video Library items open pages of the site, with their descriptions (task 54)', () => {
+    const project = navGroups(SITE_LINKS)[1]?.items ?? [];
+    expect(project[2]).toEqual({
+      kind: 'internal',
+      label: 'Builder Center',
+      path: '/builder-center',
       description: 'How Compass was built with Kiro',
     });
-    expect(project(known)[2]).toEqual({
-      kind: 'external',
-      label: 'Builder Center post',
-      href: 'https://example.invalid/post',
-      description: 'How Compass was built with Kiro',
+    expect(project[3]).toEqual({
+      kind: 'internal',
+      label: 'Video Library',
+      path: '/videos',
+      description: 'See Compass in action',
     });
-    expect(project(known)[0]).toMatchObject({
+    expect(project[0]).toMatchObject({
       kind: 'external',
       label: 'Repository',
       href: 'https://github.com/henniefrancis/aws-re_invent-compass',
     });
   });
 
+  test('the Videos page lists the five project videos on YouTube, each described (task 54)', () => {
+    expect(VIDEO_LINKS.map((v) => v.label)).toEqual([
+      'Promotional Video',
+      'Plan with Kiro IDE',
+      'Plan with Terminal',
+      'Boarding with Passes',
+      'Fly with Updates',
+    ]);
+    for (const video of VIDEO_LINKS) {
+      expect(video.href, video.label).toMatch(/^https:\/\/www\.youtube\.com\/watch\?v=[\w-]{11}$/);
+      expect(video.description.length, video.label).toBeGreaterThan(0);
+    }
+  });
+
+  test('the Builder Center page lists the posts on AWS Builder Center, each described (task 54)', () => {
+    expect(BUILDER_CENTER_LINKS.map((l) => l.label)).toEqual([
+      'Builder Journey',
+      'Operational Stats and Expenses',
+      'The Hackathon Project',
+      'Builder Center Profile',
+    ]);
+    for (const link of BUILDER_CENTER_LINKS) {
+      expect(link.href, link.label).toMatch(/^https:\/\/builder\.aws\.com\//);
+      expect(link.description.length, link.label).toBeGreaterThan(0);
+    }
+  });
+
   test('the navigation has Product, Project, About and Legal, each item described (task 28)', () => {
     const groups = navGroups(SITE_LINKS);
     expect(groups.map((g) => [g.label, g.items.map((i) => i.label)])).toEqual([
       ['Product', ['Try the demo', 'Install']],
-      ['Project', ['Repository', 'Documentation', 'Builder Center post', 'Video']],
+      ['Project', ['Repository', 'Documentation', 'Builder Center', 'Video Library']],
       ['About', ['The Inspiration', 'The Creator']],
       [
         'Legal',
@@ -387,25 +408,8 @@ describe('links and footer', () => {
     for (const item of groups.flatMap((g) => g.items)) {
       expect(item.description.length, item.label).toBeGreaterThan(0);
     }
-    // Unknown addresses stay plain text; known ones become links.
-    const project = (links: typeof SITE_LINKS) => navGroups(links)[1]?.items ?? [];
-    expect(project(SITE_LINKS).map((i) => i.kind)).toEqual([
-      'external',
-      'internal',
-      'pending',
-      'pending',
-    ]);
-    const known = {
-      ...SITE_LINKS,
-      builderCenterPost: 'https://example.invalid/post',
-      video: 'https://example.invalid/video',
-    };
-    expect(project(known).map((i) => i.kind)).toEqual([
-      'external',
-      'internal',
-      'external',
-      'external',
-    ]);
+    const project = navGroups(SITE_LINKS)[1]?.items ?? [];
+    expect(project.map((i) => i.kind)).toEqual(['external', 'internal', 'internal', 'internal']);
   });
 
   test('documentation and licence links point into the repository, its wiki or the project board (tasks 28 and 49)', () => {

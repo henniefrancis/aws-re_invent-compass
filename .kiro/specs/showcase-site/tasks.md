@@ -524,6 +524,13 @@ Conventions followed: Angular 22.2.3 standalone components, zoneless, prerendere
 - [x] 53. The canonical check keeps 100% branch coverage (CI failure of 5 November)
   - The canonical hardening of task 52 read the link's href with a `?? ''` fallback that no test reaches, so the site unit tests fell to 99.89% branch coverage and the `check` run failed on every merge into develop from PR #27 to PR #30. The exemption now tests the attribute value it is already looking at, which is the href whenever it applies, so there is no unreachable branch; the existing tests still prove an own-origin canonical is exempt and a canonical on another origin is flagged. Site tests at 100% coverage and the full gate
 
+- [x] 54. A Videos page and a Builder Center page, like the Documentation page (owner request of 5 November)
+  - The Project menu items, with their descriptions, now open pages of the site instead of one outside address: "Builder Center" (was "Builder Center post") opens `/builder-center` and "Video Library" (was "Video") opens `/videos` (owner review on the local preview)
+  - `/videos` lists the five project videos on YouTube, one card each with a short description, each opening in a new tab: Promotional Video, Plan with Kiro IDE, Plan with Terminal, Boarding with Passes and Fly with Updates. The owner chose links only, not embedded players, so the Content Security Policy and the Privacy page stay as they are
+  - `/builder-center` lists the posts on AWS Builder Center the same way: Builder Journey (the main article), Operational Stats and Expenses (the stats article), The Hackathon Project and the Builder Center Profile. The article and project addresses work once the owner publishes them; the owner checks them on the live site
+  - The links live in `site/src/lib/content/links.ts` (`videoLinks`, `builderCenterLinks`); a link without an address shows as plain "coming soon" text and is never a link. Both routes are prerendered and in the build output check, the page list of the browser tests and the content tests
+  - Done 5 November after the owner reviewed the local preview: site tests 462 at 100% coverage, root tests 3029, the site build (16 routes), e2e 1265 passed, one QA and security pass with only Low docs findings, fixed (the design, `site/README.md`, the wiki Showcase site and Architecture overview pages and the root README now list the two pages)
+
 ## Notes
 
 - There are no optional tasks. 100% coverage of Site_Logic (Requirement 22.1) is part of the definition of done, so every test task is mandatory.

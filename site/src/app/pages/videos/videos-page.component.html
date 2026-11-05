@@ -1,0 +1,19 @@
+<h1 tabindex="-1">Videos</h1>
+<p class="lead">
+  Watch Compass at work through a re:Invent week, one video for each part of the story. The videos
+  are on YouTube.
+</p>
+<ul class="doc-list">
+  @for (link of links; track link.label) {
+    <li class="card">
+      @if (link.href) {
+        <a class="doc-list__link" [href]="link.href" target="_blank" rel="noopener noreferrer"
+          >{{ link.label }}<span class="visually-hidden"> (opens in a new tab)</span></a
+        >
+      } @else {
+        <span class="doc-list__link">{{ link.label }} ({{ comingSoon }})</span>
+      }
+      <p>{{ link.description }}</p>
+    </li>
+  }
+</ul>

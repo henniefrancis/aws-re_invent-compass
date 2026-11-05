@@ -86,7 +86,7 @@ The access token check is in [credential-provider.ts](https://github.com/hennief
 - [Kiro Power](Kiro-Power): the manifest, the skills that set the order of the tools, and the optional hooks.
 - [MCP server](MCP-Server): the 24 tools, their classes, the command line, the settings and the shared `@compass/core` library.
 - [Pass service](Pass-Service): the two Lambdas, the 16 routes, the limits, Apple signing, APNs and Google Wallet.
-- [Showcase site](Showcase-Site): the 14 prerendered routes, the strict Content Security Policy, the board page and the demo.
+- [Showcase site](Showcase-Site): the 16 prerendered routes, the strict Content Security Policy, the board page and the demo.
 - [Flows](Flows): plan, issue, board and fly, each as a sequence diagram.
 - [AWS architecture](AWS-Architecture): every AWS service with its real settings from Terraform.
 - [Security](Security): the threat model and how each threat is handled.
