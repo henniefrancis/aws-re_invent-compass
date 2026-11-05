@@ -280,54 +280,7 @@ The showcase site has no sign-in, no cookies, no storage and no analytics. Its o
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  subgraph PC["Your computer"]
-    client["Kiro or another MCP client<br/>Power: skills, mcp.json, hooks (Kiro only)"]
-    server["Compass MCP server (stdio)<br/>rules, scanner, week spec,<br/>passes, sync, .ics, tech list"]
-    local[("OS keychain: tokens<br/>App data: catalog cache,<br/>schedule, issued passes")]
-    client -->|stdio| server
-    server --- local
-  end
-
-  subgraph AWSEvents["AWS Events"]
-    events["api.awsevents.com/v1<br/>12 operations"]
-    oauth["oauth.awsevents.com<br/>Builder ID sign-in, PKCE"]
-  end
-
-  subgraph Cloud["Compass API: owner's AWS account, us-east-1, Terraform"]
-    cf["CloudFront + WAF<br/>reinvent-compass.vegas"]
-    site["S3: showcase site<br/>and /board page"]
-    apigw["API Gateway REST<br/>from the OpenAPI contract"]
-    api["Lambda api<br/>issue, update, void,<br/>hand-off, forget me"]
-    passkit["Lambda passkit<br/>Apple PassKit web service"]
-    ddb[("DynamoDB<br/>TTL, hashed ids, no PITR")]
-    sm[("Secrets Manager")]
-    cf --> site
-    cf -->|"/api/*"| apigw
-    apigw --> api
-    apigw --> passkit
-    api --> ddb
-    passkit --> ddb
-    api --> sm
-    passkit --> sm
-  end
-
-  subgraph Phone["Your phone"]
-    board["Camera opens /board<br/>Add to Apple Wallet<br/>Add to Google Wallet"]
-    wallet["Wallet app"]
-  end
-
-  server -->|access token| events
-  server -->|browser sign-in| oauth
-  server -->|"read-only GitHub App (optional)"| github["github.com, api.github.com,<br/>codeload.github.com"]
-  server -->|ID token + pass fields| cf
-  board -->|hand-off id| cf
-  wallet -->|register for updates| cf
-  api -->|APNs push, empty payload| apple["Apple APNs"]
-  api -->|INACTIVE on void| google["Google Wallet API"]
-  apple --> wallet
-```
+![re:Invent Compass solution architecture: the attendee workstation, the AWS Events platform, the Compass account in us-east-1, the attendee phone, the wallet platforms and the delivery pipeline](wiki/images/compass-architecture.png)
 
 **Trust boundaries.** Your computer sends only the access token and Events API calls to AWS Events. If you connect GitHub, it sends the GitHub tokens only to GitHub. It sends only the ID token and printable pass fields to the Compass API, never the access token. The phone sends the hand-off id and Apple's per-pass token.
 
