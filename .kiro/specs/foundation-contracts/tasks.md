@@ -395,6 +395,9 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - Every test runs with `COMPASS_MODE=simulated` against committed fixtures. No task calls the live Events API; the Events API document fetch is an operator action, not a CI or test action.
 - No em dash or en dash appears in any file, comment, test name or commit message. Commits use Conventional Commits with `foundation-contracts` as the scope.
 
+- [x] 40. The rules checklist records the submission of 5 November (owner request of 5 November, tracker RUL)
+  - `docs/hackathon-rules.md` "Final check on submission day" records the submission: the article, the stats article and the hackathon project published and answering 200, with the repository, site, install, npm and video links; the live Events API OpenAPI still byte-identical; `main` `1c77be2` (tag `v0.1.3`) green with no open alert; prod 200 on `v0.1.3`; `reinvent-compass@0.1.3` `latest` with provenance and the demo run from an empty npm cache; the README links. Items 3 and 4 name 0.1.3 and `1c77be2`; the judging row for the article says it is published. All nine items are done
+
 ## Task Dependency Graph
 
 The waves below run strictly in order, one leaf sub-task per wave, so the whole plan executes sequentially in numeric order (1 through 14). Checkpoint tasks 6, 10 and 15 are prose-only and are not scheduled here.
