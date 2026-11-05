@@ -10,7 +10,7 @@ Include what you found, how to reproduce it, and the impact you expect. You will
 
 ## Supported versions
 
-Only the latest released version of the `reinvent-compass` package, the Kiro Power in `power/` and the deployed Compass API receive security fixes.
+Only the latest released version of the `reinvent-compass` package, the Kiro Power in `power/` and the deployed Compass API (https://reinvent-compass.vegas) receive security fixes.
 
 ## Scope
 
@@ -20,4 +20,4 @@ Out of scope: the AWS Events API, AWS Builder ID, Apple Wallet and Google Wallet
 
 ## How the project handles secrets
 
-No secret, token, key, certificate or account identifier is ever committed. Server secrets live in AWS Secrets Manager and are loaded by the owner. Attendee tokens stay in the operating system keychain on the attendee's own machine. See [Security](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Security) and [Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions) in the wiki for the full design.
+No secret, token, key, certificate or account identifier is ever committed. Server secrets live in AWS Secrets Manager and are loaded by the owner. Attendee sign-in tokens, and GitHub tokens if the attendee connects GitHub, stay in the operating system keychain on the attendee's own machine, or in memory only if there is no keychain. See [Security](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Security) and [Key decisions](https://github.com/henniefrancis/aws-re_invent-compass/wiki/Key-Decisions) in the wiki for the full design.

@@ -19,7 +19,7 @@ Each section is one decision with four parts: the context, the decision, why, an
 
 **Trade-off:** Integration is a manual step through one integrator, and CI guards only `main` and `develop`.
 
-**Later:** Release 0.1.0 used no `release/*` branch. The owner opened the pull request from `develop` into `main`, ran the release script for prod from `main`, and tagged `v0.1.0` after prod answered its health check.
+**Later:** Release 0.1.0 used no `release/*` branch. The owner opened the pull request from `develop` into `main`, ran the release script for prod from `main` on 31 October, and tagged `v0.1.0` on 3 November, after prod had answered its health check, to publish the npm package.
 
 ## Toolchain
 

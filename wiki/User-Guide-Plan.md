@@ -21,7 +21,7 @@ After `sign_in` (see [Getting started](Getting-Started#live-sign-in)), run `refr
 
 ## Scan your code
 
-Compass learns what you work on from your own code. Nothing it reads leaves your machine: only service and technology names, a depth per service and counts come out of the scanner, never a file name, path or file content.
+This is where Compass starts. It learns what you work on from your own code (which AWS services you use and how deeply, plus the rest of your stack such as .NET, Node.js or Python) and then finds the re:Invent sessions that match, with a reason for each. Nothing it reads leaves your machine: only service and technology names, a depth per service and counts come out of the scanner, never a file name, path or file content.
 
 ### A folder or a dev folder
 

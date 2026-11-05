@@ -3,6 +3,8 @@ import { RouterLink } from '@angular/router';
 import { HERO_PASS } from '../../../lib/content/hero-pass';
 import { SamplePassComponent } from '../demo/sample-pass.component';
 import { ACTS } from '../../../lib/content/acts';
+import { npmRelease } from '../../../lib/content/install';
+import { SITE_LINKS } from '../../../lib/content/links';
 import { METAPHOR_HEADERS, METAPHOR_ROWS } from '../../../lib/content/metaphor';
 import { PRINCIPLES } from '../../../lib/content/principles';
 import * as story from '../../../lib/content/story';
@@ -27,6 +29,7 @@ export class HomePage {
   protected readonly disclaimer = story.DISCLAIMER.text;
   protected readonly unofficial = story.UNOFFICIAL_STATEMENT.text;
   protected readonly tryIt = story.TRY_IT.text;
+  protected readonly npmRelease = npmRelease(SITE_LINKS).text;
   protected readonly metaphorHeaders = METAPHOR_HEADERS;
   protected readonly metaphorRows = METAPHOR_ROWS;
   protected readonly acts = ACTS;

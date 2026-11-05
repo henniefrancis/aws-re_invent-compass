@@ -1,4 +1,4 @@
-import { ABOUT_BIO, ABOUT_BUILT_BY } from '../../src/lib/content/about';
+import { ABOUT_BIO, ABOUT_BUILT_BY, ABOUT_PRODUCT } from '../../src/lib/content/about';
 import { INSPIRATION_BLOCKS } from '../../src/lib/content/inspiration';
 import {
   ACCESSIBILITY_BLOCKS,
@@ -17,6 +17,7 @@ import { describe, expect, test } from 'vitest';
 import { ACTS } from '../../src/lib/content/acts';
 import { FILE_SOURCES, type ContentBlock } from '../../src/lib/content/content-block';
 import {
+  ALLOW_WRITES_SNIPPET,
   BOARD_ON_ANY_DEVICE,
   COPIED_MESSAGE,
   COPY_FAILED_MESSAGE,
@@ -27,15 +28,22 @@ import {
   KIRO_IMPORT_SOURCE_NOTE,
   KIRO_UPDATE_NOTE,
   KIRO_IMPORT_STEPS,
+  LIVE_MODE_INTRO,
+  LIVE_MODE_STEPS,
   NODE_REQUIREMENT,
   OTHER_CLIENTS,
+  OTHER_CLIENTS_NOTE,
   PLAN_ON_COMPUTER,
+  clientConfig,
   commandText,
   kiroImportOptions,
+  npmRelease,
 } from '../../src/lib/content/install';
 import {
   COMING_SOON,
+  PROJECT_BOARD_URL,
   documentationLinks,
+  mcpServerReadmeUrl,
   navGroups,
   SITE_LINKS,
   privateReportingUrl,
@@ -65,6 +73,7 @@ const storyBlocks: readonly ContentBlock[] = [
   story.UNOFFICIAL_STATEMENT,
   story.TRY_IT,
   ABOUT_BUILT_BY,
+  ABOUT_PRODUCT,
   ...ABOUT_BIO,
   ...INSPIRATION_BLOCKS,
   ...DISCLAIMER_BLOCKS,
@@ -86,7 +95,11 @@ const installBlocks: readonly ContentBlock[] = [
   HOOKS_NOTE,
   ...INSTALL_COMMANDS.map((c) => c.description),
   NODE_REQUIREMENT,
-  ...OTHER_CLIENTS,
+  npmRelease(SITE_LINKS),
+  ...OTHER_CLIENTS.flatMap((c) => [c.setup, c.after]),
+  OTHER_CLIENTS_NOTE,
+  LIVE_MODE_INTRO,
+  ...LIVE_MODE_STEPS,
 ];
 
 const allBlocks: readonly ContentBlock[] = [
@@ -171,10 +184,37 @@ describe('content provenance', () => {
     ]);
   });
 
-  test('the scanner list follows the build plan, not the longer CONCEPT.md list', () => {
+  test('the Plan act leads with the code scan and the scanner list the code supports', () => {
     const plan = ACTS[0]?.points.map((p) => p.text).join(' ') ?? '';
-    expect(plan).toContain('Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3 and boto3');
+    expect(ACTS[0]?.points[0]?.id).toBe('act-plan-repo');
+    expect(plan).toContain(
+      'Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3, boto3 and the AWS SDK for .NET',
+    );
+    for (const phrase of [
+      'dev folder of up to 50 git repositories',
+      'GitHub repositories through a read-only GitHub App',
+      '.NET, Node.js and Python',
+      'with a reason for each',
+    ]) {
+      expect(plan).toContain(phrase);
+    }
     expect(plan).not.toMatch(/CloudFormation|SAM/);
+  });
+
+  test('the Boarding and Fly acts name the wallet group, the issuer and the change alert', () => {
+    const board = ACTS[1]?.points.map((p) => p.text).join(' ') ?? '';
+    const fly = ACTS[2]?.points.map((p) => p.text).join(' ') ?? '';
+    expect(board).toContain('one group in the wallet, with re:Invent Compass as the issuer');
+    expect(fly).toContain('updates or voids passes');
+    expect(fly).toContain('change alert');
+  });
+
+  test('the home page says live mode is read-only by default', () => {
+    const text = principleBlocks()
+      .map((b) => b.text)
+      .join(' ');
+    expect(text).toContain('read-only by default');
+    expect(text).toContain('COMPASS_ALLOW_WRITES=1');
   });
 });
 
@@ -245,6 +285,14 @@ describe('no impersonation and the product voice', () => {
     expect(byId.get('privacy-processors')?.text).toContain('Google');
     expect(byId.get('privacy-contact')?.text).toContain('private vulnerability reporting');
     expect(byId.get('privacy-rights')?.text).toContain('POPIA');
+    expect(byId.get('privacy-generated-files')?.text).toContain('writes no pass files');
+    expect(byId.get('privacy-forget-me')?.text).toContain('your tech list, your GitHub sign-in');
+    expect(byId.get('privacy-forget-me')?.text).toContain('until they expire');
+    expect(byId.get('privacy-tokens')?.text).toContain('ID token');
+    expect(byId.get('privacy-tokens')?.text).toContain('in memory only');
+    expect(byId.get('privacy-logs')?.text).toContain('14 days');
+    expect(byId.get('privacy-no-backup')?.text).toContain('Point-in-time recovery is off');
+    expect(byId.get('privacy-site-none')?.text).toContain('no browser storage');
     expect(
       privacyBlocks()
         .map((b) => b.id)
@@ -360,7 +408,7 @@ describe('links and footer', () => {
     ]);
   });
 
-  test('documentation and licence links all point into the repository or its wiki (tasks 28 and 49)', () => {
+  test('documentation and licence links point into the repository, its wiki or the project board (tasks 28 and 49)', () => {
     const docs = documentationLinks(SITE_LINKS);
     expect(docs.map((d) => d.label)).toEqual([
       'README',
@@ -374,6 +422,7 @@ describe('links and footer', () => {
       'How it was built',
       'Reference',
       'Kiro specs',
+      'Project board',
     ]);
     // Each wiki section opens on the first page under its sidebar heading.
     const sidebar = readFileSync(join(REPO_ROOT, 'wiki/_Sidebar.md'), 'utf8');
@@ -381,7 +430,13 @@ describe('links and footer', () => {
       const page = doc.href.slice(doc.href.lastIndexOf('/') + 1);
       expect(sidebar, doc.label).toContain(`](${page})`);
     }
-    for (const link of [...docs, ...licenceLinks(SITE_LINKS)]) {
+    expect(docs.find((d) => d.label === 'Project board')?.href).toBe(
+      'https://github.com/users/henniefrancis/projects/3',
+    );
+    for (const link of [
+      ...docs.filter((d) => d.href !== PROJECT_BOARD_URL),
+      ...licenceLinks(SITE_LINKS),
+    ]) {
       expect(link.href.startsWith(SITE_LINKS.repository), link.label).toBe(true);
     }
     for (const doc of docs) {
@@ -412,6 +467,21 @@ describe('install content', () => {
     expect(KIRO_UPDATE_NOTE.text).toContain('ask for the hooks again');
   });
 
+  test('enables MCP in Kiro before the import steps', () => {
+    expect(KIRO_IMPORT_STEPS[0]?.text).toBe(
+      'In Settings, set Kiro Agent: Configure MCP to Enabled. Kiro starts no MCP server until you do.',
+    );
+  });
+
+  test('names the pinned npm version from packageVersion, with no date to go stale', () => {
+    expect(npmRelease(SITE_LINKS).text).toBe(
+      `Compass runs from the npm package reinvent-compass, version ${SITE_LINKS.packageVersion}.`,
+    );
+    expect(npmRelease({ ...SITE_LINKS, packageVersion: null }).text).toBe(
+      'Compass runs from the npm package reinvent-compass.',
+    );
+  });
+
   test('shows the two npx commands, pinned only when a version is known', () => {
     const unpinned = INSTALL_COMMANDS.map((c) =>
       commandText(c, { ...SITE_LINKS, packageVersion: null }),
@@ -425,9 +495,46 @@ describe('install content', () => {
     expect(pinned).toEqual(['npx reinvent-compass@1.0.0', 'npx reinvent-compass@1.0.0 demo']);
   });
 
-  test('states Node.js 24 and invents no client setup before S3 has merged', () => {
+  test('states Node.js 24 and sets up Claude Desktop, VS Code and the Kiro CLI', () => {
     expect(NODE_REQUIREMENT.text).toContain('Node.js 24');
-    expect(OTHER_CLIENTS).toEqual([]);
+    expect(OTHER_CLIENTS.map((c) => c.name)).toEqual(['Claude Desktop', 'VS Code', 'Kiro CLI']);
+    expect(clientConfig('mcpServers', SITE_LINKS)).toBe(
+      [
+        '{',
+        '  "mcpServers": {',
+        '    "compass": {',
+        '      "command": "npx",',
+        '      "args": ["--yes", "reinvent-compass@0.1.2"]',
+        '    }',
+        '  }',
+        '}',
+      ].join('\n'),
+    );
+    const vscode = JSON.parse(clientConfig('servers', SITE_LINKS)) as {
+      servers: { compass: { type: string; args: string[] } };
+    };
+    expect(vscode.servers.compass.type).toBe('stdio');
+    expect(vscode.servers.compass.args).toEqual(['--yes', 'reinvent-compass@0.1.2']);
+    expect(clientConfig('mcpServers', { ...SITE_LINKS, packageVersion: null })).toContain(
+      '"args": ["--yes", "reinvent-compass"]',
+    );
+    expect(mcpServerReadmeUrl(SITE_LINKS)).toBe(
+      `${SITE_LINKS.repository}/blob/main/packages/mcp-server/README.md`,
+    );
     expect(COPIED_MESSAGE).toBe('Copied');
+  });
+
+  test('explains live mode: Builder ID, read-only by default, writes, Plan my re:Invent, GitHub', () => {
+    const text = [LIVE_MODE_INTRO, ...LIVE_MODE_STEPS].map((b) => b.text).join(' ');
+    for (const phrase of [
+      'AWS Builder ID that is registered for re:Invent 2026',
+      'read-only by default',
+      'COMPASS_ALLOW_WRITES=1',
+      '"Plan my re:Invent."',
+      'connect_github',
+    ]) {
+      expect(text).toContain(phrase);
+    }
+    expect(ALLOW_WRITES_SNIPPET).toBe('"env": { "COMPASS_ALLOW_WRITES": "1" }');
   });
 });

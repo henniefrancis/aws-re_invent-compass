@@ -23,6 +23,17 @@ export const SITE_LINKS: SiteLinks = {
   packageVersion: '0.1.2',
 };
 
+/** The site's own address, for the canonical link and og:url of each page. */
+export const SITE_URL = 'https://reinvent-compass.vegas/';
+
+/** The public project board, where the build was tracked. */
+export const PROJECT_BOARD_URL = 'https://github.com/users/henniefrancis/projects/3';
+
+/** The README of the MCP server package: the setup for every client. */
+export function mcpServerReadmeUrl(links: SiteLinks): string {
+  return `${links.repository}/blob/main/packages/mcp-server/README.md`;
+}
+
 /** The private vulnerability reporting form of the repository, the contact channel for data requests. */
 export function privateReportingUrl(links: SiteLinks): string {
   return `${links.repository}/security/advisories/new`;
@@ -190,7 +201,7 @@ export function securityPolicyUrl(links: SiteLinks): string {
   return `${links.repository}/blob/main/SECURITY.md`;
 }
 
-/** The Documentation_Page links (Requirement 26): the README, one link per wiki section (the wiki sidebar headings) and the Kiro specs (task 49). */
+/** The Documentation_Page links (Requirement 26): the README, one link per wiki section (the wiki sidebar headings), the Kiro specs (task 49) and the public project board. */
 export function documentationLinks(
   links: SiteLinks,
 ): readonly { readonly label: string; readonly href: string; readonly description: string }[] {
@@ -250,6 +261,11 @@ export function documentationLinks(
       label: 'Kiro specs',
       href: `${links.repository}/tree/main/.kiro/specs`,
       description: 'The requirements, design and tasks each part was built from',
+    },
+    {
+      label: 'Project board',
+      href: PROJECT_BOARD_URL,
+      description: 'How Compass was planned and built, task by task',
     },
   ];
 }

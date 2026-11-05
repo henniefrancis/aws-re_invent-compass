@@ -4,7 +4,7 @@ re:Invent Compass is an independent community project. It is not affiliated with
 
 ## What the system is
 
-Compass helps an [attendee](Glossary#attendee) of AWS re:Invent 2026 plan a week from their own code, book it safely and carry it on their phone. It has four parts:
+Compass scans the code an [attendee](Glossary#attendee) of AWS re:Invent 2026 works on (local projects and, if they allow it, their GitHub repositories, read-only), learns their AWS services and the rest of their stack, and finds the sessions that match, with a reason for each. It then helps them book the week safely and carry it on their phone. It has four parts:
 
 | Part          | What it is                                                                                                                                                                                                                                    | Page                           |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |

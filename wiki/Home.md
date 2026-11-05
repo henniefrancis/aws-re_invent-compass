@@ -6,14 +6,15 @@
 
 _For everyone: what re:Invent Compass is, who it is for, and where to start reading._
 
-re:Invent Compass helps a first-time AWS re:Invent attendee plan their week from their own code, book it safely, and get into every reserved session on time. It is an independent community project, built for the re:Invent Catalog API Builder Challenge (September to November 2026), and it is not affiliated with AWS (see the [Disclaimer](Disclaimer)).
+re:Invent Compass scans the code you work on (one project, a dev folder of git repositories or, if you allow it, your GitHub repositories through a read-only GitHub App), learns which AWS services you use and how deeply, plus the rest of your stack such as .NET, Node.js or Python, and finds the re:Invent sessions that match, with a reason for each. It then helps a first-time attendee book the week safely and get into every reserved session on time. It is an independent community project, built for the re:Invent Catalog API Builder Challenge (September to November 2026), and it is not affiliated with AWS (see the [Disclaimer](Disclaimer)).
 
 ## What it is
 
 Compass ships as a [Kiro Power](Glossary#kiro-power) plus a local [MCP server](Glossary#mcp-server) that any desktop [MCP client](Glossary#mcp-client) can run. It:
 
-- reads your code (and, if you allow it, your GitHub repositories, read-only) to learn which AWS services and other technology you use;
-- plans your week from the official session catalog and writes it as a [Kiro spec](Glossary#kiro-spec) you can read and edit;
+- scans your code on your machine, read-only, and, if you allow it, your GitHub repositories through the read-only [GitHub App](Glossary#github-app), to learn which AWS services you use and how deeply, plus your other technology;
+- matches that tech list to the official session catalog and gives a reason for each session it suggests;
+- plans your week from those sessions and writes it as a [Kiro spec](Glossary#kiro-spec) you can read and edit;
 - reads your real re:Invent schedule, and changes it only if you turn writes on and approve each change;
 - checks every booking against the [guardrail](Glossary#guardrail): clashes, walking time between venues, meal breaks and the 10-minute seat rule;
 - issues unofficial Apple Wallet and Google Wallet [boarding passes](Glossary#boarding-pass) that update when a session changes, [void](Glossary#void) when you cancel it and expire when it ends.

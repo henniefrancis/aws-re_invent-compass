@@ -7,10 +7,11 @@ export interface Act {
   readonly points: readonly ContentBlock[];
 }
 
-// The three acts follow CONCEPT.md section 3. Where CONCEPT.md differs from the build plan
-// and the product steering, the plan wins: the scanner list is Terraform, AWS CDK TypeScript,
-// AWS SDK for JavaScript v3 and boto3, and the scanner now also reads the AWS SDK for .NET
-// (packages/core/src/scanner/detectors/dotnet.ts).
+// The three acts follow CONCEPT.md section 3. Where CONCEPT.md differs from the code and the
+// package README, the code wins: the AWS evidence list is Terraform, AWS CDK TypeScript, AWS SDK
+// for JavaScript v3, boto3 and the AWS SDK for .NET (packages/mcp-server/README.md).
+
+const MCP_README = 'packages/mcp-server/README.md';
 
 export const ACTS: readonly Act[] = [
   {
@@ -25,9 +26,15 @@ export const ACTS: readonly Act[] = [
     points: [
       summary(
         'act-plan-repo',
-        'Your repo is your agenda. Compass scans your own workspace on your machine (Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3 and boto3, plus the AWS SDK for .NET), works out which AWS services you use and how deeply, and suggests a level for each topic. Only service names and depth leave the scanner, never file contents.',
-        '.kiro/steering/product.md',
-        'Core features, 1',
+        'Your code is your agenda. Compass scans the code you work on: a project, a dev folder of up to 50 git repositories or, if you allow it, your GitHub repositories through a read-only GitHub App. It learns which AWS services you use and how deeply, from Terraform, AWS CDK TypeScript, AWS SDK for JavaScript v3, boto3 and the AWS SDK for .NET, and the rest of your stack, such as .NET, Node.js and Python. Then it suggests the sessions that match, with a reason for each.',
+        MCP_README,
+        'What it does',
+      ),
+      summary(
+        'act-plan-local',
+        'Your code is read on your machine. Only service and technology names, depth and counts leave the scanner, and your tech list never leaves your computer.',
+        MCP_README,
+        'What leaves your machine',
       ),
       summary(
         'act-plan-spec',
@@ -56,6 +63,12 @@ export const ACTS: readonly Act[] = [
       summary(
         'act-board-passes',
         'Compass issues a Boarding Pass for each reserved session, for Apple Wallet and Google Wallet.',
+        'CONCEPT.md',
+        'Act 2: Boarding',
+      ),
+      summary(
+        'act-board-group',
+        'All your passes for the week sit together as one group in the wallet, with re:Invent Compass as the issuer.',
         'CONCEPT.md',
         'Act 2: Boarding',
       ),
@@ -91,9 +104,15 @@ export const ACTS: readonly Act[] = [
     points: [
       summary(
         'act-fly-sync',
-        'When your schedule changes, Compass reads GetSchedule, which is the source of truth, compares it with the passes it issued, and reissues or withdraws passes.',
-        'CONCEPT.md',
-        'Act 3: Fly',
+        'When your schedule changes, Compass reads GetSchedule, which is the source of truth, compares it with the passes it issued, and updates or voids passes.',
+        '.kiro/steering/product.md',
+        'Core features, 7',
+      ),
+      summary(
+        'act-fly-alert',
+        'When the time, venue or room of a session changes, Compass updates its pass and your phone shows a change alert.',
+        '.kiro/steering/product.md',
+        'Core features, 4',
       ),
       summary(
         'act-fly-rebook',

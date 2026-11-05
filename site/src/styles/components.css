@@ -378,6 +378,17 @@ a.site-nav__link:hover {
   background: var(--color-surface);
 }
 
+/* A configuration snippet on the install page. Long lines wrap, so a phone never scrolls sideways. */
+.snippet {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .badge {
   display: inline-block;
   padding: 0 var(--space-2);

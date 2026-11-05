@@ -1,6 +1,6 @@
 _For developers and architects: how re:Invent Compass went from an idea on 15 October 2026 to a live service on 31 October 2026, who built what, and how the work was kept safe._
 
-re:Invent Compass was built spec first, with [Kiro](Glossary#kiro). Every piece of the product started as a [Kiro spec](Glossary#kiro-spec): a requirements file, a design file and a task list. Four [steering](Glossary#steering) files gave every session the same product rules, stack and voice. The work ran as eight parallel streams, one spec each, and every stream passed a QA and security review before it was merged.
+re:Invent Compass scans the code you work on, learns your AWS services and the rest of your stack, finds the re:Invent sessions that match with a reason for each, and then helps a first-time attendee book the week safely and get into every reserved session on time. It was built spec first, with [Kiro](Glossary#kiro). Every piece of the product started as a [Kiro spec](Glossary#kiro-spec): a requirements file, a design file and a task list. Four [steering](Glossary#steering) files gave every session the same product rules, stack and voice. The work ran as eight parallel streams, one spec each, and every stream passed a QA and security review before it was merged.
 
 AI did most of the typing. Kiro wrote five of the eight specs and built the first tasks. When the owner's Kiro credits ran out on 17 October, Claude's dev-team agents built the rest from the same Kiro specs, under the same steering and the same review gates. The owner made every decision, approved every push and is the author of every commit.
 
@@ -100,7 +100,7 @@ No branch merged with an open High or Critical finding. A few residual risks tha
 
 [Release cards](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Release%22)
 
-On 31 October the owner merged `develop` into `main` (pull requests #2, #3 and #4), ran the release script against prod from `main`, and tagged `v0.1.0` after prod answered its health check. The prod preconditions (the prod Google key and class, the Apple certificate check and the workspace secrets) were their own gate ([G03](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290046602)). The first prod apply surfaced two small fixes, both written back into the infrastructure spec as tasks: the apply role may tag CloudFront functions, and the release script builds the TypeScript workspace first.
+On 31 October the owner merged `develop` into `main` (pull requests #2, #3 and #4), and ran the release script against prod from `main`. Prod answered its health check that day. The `v0.1.0` tag followed on 3 November, when npm published the package `reinvent-compass` 0.1.0 with provenance; 0.1.1 and 0.1.2 followed on 4 November. The prod preconditions (the prod Google key and class, the Apple certificate check and the workspace secrets) were their own gate ([G03](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290046602)). The first prod apply surfaced two small fixes, both written back into the infrastructure spec as tasks: the apply role may tag CloudFront functions, and the release script builds the TypeScript workspace first.
 
 The showcase site and the Compass API have been live at https://reinvent-compass.vegas since 31 October 2026. See [Release](Release) for the release steps.
 
@@ -108,7 +108,7 @@ The showcase site and the Compass API have been live at https://reinvent-compass
 
 [Deliverables cards](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Deliverables%22)
 
-- The [MCP server](Glossary#mcp-server) and CLI as the npm package `reinvent-compass`, installed with `npx --yes reinvent-compass@0.1.0`.
+- The [MCP server](Glossary#mcp-server) and CLI as the npm package `reinvent-compass` (0.1.0 on 3 November, now 0.1.2), run with `npx --yes reinvent-compass@0.1.2`.
 - The Kiro Power in [power/](https://github.com/henniefrancis/aws-re_invent-compass/tree/develop/power).
 - The pass service on AWS and the showcase site at https://reinvent-compass.vegas.
 - The README with setup, requirements and how to run it.
@@ -125,7 +125,7 @@ Some work only the owner could do: register the Apple Pass Type ID and the Googl
 
 [Close-out cards](https://github.com/users/henniefrancis/projects/3/views/1?filterQuery=workstream%3A%22Close-out%22)
 
-After the release: the public docs were cleaned of anything private and their content is moving into this wiki, and a final rules check runs on submission day ([S01](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290047759)). The submission target is 4 November 2026.
+After the release: the public docs were cleaned of anything private and their content is moving into this wiki, and a final rules check runs on submission day ([S01](https://github.com/users/henniefrancis/projects/3/views/1?pane=issue&itemId=290047759)). The submission date is 4 November 2026, two days before the hackathon deadline of 6 November 2026 at 11:59 PM Pacific time.
 
 ## The honest AI story
 

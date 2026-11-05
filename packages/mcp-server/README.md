@@ -1,8 +1,8 @@
 # reinvent-compass
 
-Plan your AWS re:Invent week from your own code, book it safely, and get Boarding Passes on your phone.
+Scans your code and GitHub repositories to find the AWS re:Invent sessions that match your stack, books them safely with guardrails, and puts unofficial Boarding Passes on your phone.
 
-**Unofficial. Your badge is your ticket.** Reinvent Compass is an independent community project. It is not affiliated with, endorsed by or sponsored by AWS or Amazon.
+**Unofficial. Your badge is your ticket.** re:Invent Compass is an independent community project. It is not affiliated with, endorsed by or sponsored by AWS or Amazon.
 
 ## What it does
 
@@ -17,7 +17,9 @@ Compass is a local MCP server and a Kiro Power. Your AI assistant uses it to:
 - swap a booking for its repeat safely (it reserves the repeat first and cancels the original after),
 - issue unofficial Boarding Passes and hand them to your phone with a short-lived QR code.
 
-The guardrail that checks bookings runs inside the Compass server. It runs in every client, with or without hooks.
+The guardrail that checks bookings runs inside the Compass server. It runs in every client, with or without hooks. Compass is read-only by default: it changes your re:Invent schedule only after you turn writes on (see "Read-only by default").
+
+The showcase site, with a browser demo you can try on any phone, is at https://reinvent-compass.vegas.
 
 ## Install
 
@@ -117,11 +119,11 @@ Every command here names the exact version of this package. Pinning it is delibe
 | `show_schedule`             | read         | Lists your reservations, standby list and layovers with their ids. Writes nothing.                             |
 | `plan_week`                 | local action | Plans a week and writes it as a Kiro spec in the workspace, after you confirm.                                 |
 | `export_calendar`           | local action | Writes an `.ics` calendar file of your schedule.                                                               |
-| `reserve_with_guardrails`   | write        | Reserves 1 to 10 sessions after the guardrail passes. Changes your real schedule.                              |
-| `cancel_reservation`        | write        | Cancels a reservation, with the safe swap rule. Changes your real schedule.                                    |
-| `add_standby`               | write        | Favourites sessions as backups. Changes your real schedule.                                                    |
-| `remove_standby`            | write        | Removes a favourite. Changes your real schedule.                                                               |
-| `add_layover`               | write        | Creates, changes or deletes personal time. Changes your real schedule.                                         |
+| `reserve_with_guardrails`   | write        | Reserves 1 to 10 sessions after the guardrail passes. Changes your real schedule when writes are on.           |
+| `cancel_reservation`        | write        | Cancels a reservation, with the safe swap rule. Changes your real schedule when writes are on.                 |
+| `add_standby`               | write        | Favourites sessions as backups. Changes your real schedule when writes are on.                                 |
+| `remove_standby`            | write        | Removes a favourite. Changes your real schedule when writes are on.                                            |
+| `add_layover`               | write        | Creates, changes or deletes personal time. Changes your real schedule when writes are on.                      |
 | `issue_all_boarding_passes` | write        | Creates unofficial Boarding Passes for all your reserved sessions; approving the call is the one confirmation. |
 | `issue_boarding_pass`       | write        | Creates one Boarding Pass for a session you hold; without a session it asks which.                             |
 | `send_to_phone`             | write        | Makes a 15-minute link for your passes: shown as a link, a QR code in your browser, or both.                   |
@@ -168,6 +170,8 @@ Where your client supports it, Compass also asks you to confirm inside the tool 
 
 `send_to_phone` takes `show`: `link` gives a 15-minute link in the chat, `qr` opens a page with a QR code in your browser for your phone camera to scan (the chat then shows no link), and `both` does both. Without `show` it creates nothing and asks, and the Power tells your assistant to ask "Link or QR code?" first. The QR page is a static file in a new private folder in your temp folder (file mode 0600 on macOS and Linux; on Windows your own `%TEMP%` folder protects it), with no script and nothing loaded from outside. Compass deletes it when the link expires, when it shows a newer one, when `forget_me` runs and when the server stops, and clears out any page a crashed server left behind. If the browser cannot be opened, the QR code comes back in the chat instead. If no page appears, ask for a link.
 
+On the phone, all the passes of the week sit together as one group in the wallet, with "re:Invent Compass" as the issuer. When a session's time, venue or room changes, `sync_passes` updates its pass and the phone shows a change alert. A cancelled session's pass is voided, and every pass expires when its session ends. `forget_me` voids your passes, but a pass already in a wallet stays on the phone until you remove it.
+
 ## Simulated mode and the demo
 
 Set `COMPASS_MODE=simulated` to run the whole server on made-up data: a synthetic catalog, a signed-in attendee, a pinned clock, and an in-process pass service. No browser opens, no sign-in happens and nothing is sent anywhere. Every result starts with `SIMULATED MODE: no real data.` Simulated files live in a `simulated` folder, apart from real data. Simulated mode is refused when `NODE_ENV=production` unless `COMPASS_ALLOW_SIMULATED=1` is set.
@@ -197,7 +201,7 @@ Every scan adds to one tech list on your machine: the AWS services you use (with
 - **GitHub**: the GitHub tokens stay in your operating system keychain (or in memory only) and go only to `github.com` and `api.github.com`. Repository archives come from `codeload.github.com` without the token, are read in memory and are never saved. Nothing about your repositories goes to Compass or to AWS.
 - **Your schedule** is read from the AWS Events service. A copy is kept in your app-data folder (mode 0600) and removed by `forget_me`.
 - **Session text** from the catalog is shown to your assistant as labelled data, never as instructions. Session abstracts are never passed on.
-- **Boarding Passes**: when you issue passes, the pass fields (session code, title, venue, room, times, and the walks before and after the session) go to the Compass pass service; version 0.1.0 never sends your name. Apple receives a pass only if you add it to Apple Wallet. Google Wallet gets its pass object when the pass service issues the pass, so the "Add to Google Wallet" link works. The ID token is checked and never stored.
+- **Boarding Passes**: when you issue passes, the pass fields (session code, title, venue, room, times, and the walks before and after the session) go to the Compass pass service; Compass never sends your name. Apple receives a pass only if you add it to Apple Wallet. Google Wallet gets its pass object when the pass service issues the pass, so the "Add to Google Wallet" link works. The ID token is checked and never stored.
 - **Nothing is logged** that holds a token, an email address, a link or a file path. Logs go to stderr, never to stdout.
 - **The week spec** is written into your workspace folder, after you confirm the folder. If the folder is a public repository the plan would show where you will be and when, so Compass offers to add it to `.gitignore`.
 
@@ -216,18 +220,18 @@ The score is 2 for each resource, construct or client, plus 1 for each command, 
 
 ## Threat model
 
-| Risk                                                                                            | What Compass does                                                                                                                                                                                                                                                                      |
-| ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A session title or a file in your repo tries to talk to the assistant (prompt injection)        | Catalog text comes back as labelled JSON data. Write tools are never auto-approved. The guardrail runs in the server.                                                                                                                                                                  |
-| Another program on your machine steals tokens                                                   | Tokens live in the OS keychain. The sign-in server binds to 127.0.0.1, takes one request and closes.                                                                                                                                                                                   |
-| A token or email ends up in a log                                                               | A redacting logger on stderr, and tests that prove no token or email reaches a log or an error.                                                                                                                                                                                        |
-| Someone books through the remote `awsevents` server and skips the guardrail                     | Do not use its write tools. The hook template blocks them in Kiro.                                                                                                                                                                                                                     |
-| The wrong program runs when you start Compass with `npx` (the local copy risk)                  | `npx` can prefer a copy of a package from the folder you are in. Pin the version (`reinvent-compass@0.1.2`), do not start Compass from inside a repository you do not trust, and prefer a global install of a pinned version.                                                          |
-| Someone else publishes a package under the same npm name before the owner does (name squatting) | The owner must claim the npm package name `reinvent-compass` (and any scope used) before the first publish, and publish from the owner's account with provenance. Until the name is claimed, install only from the repository. This is an owner action, not something the code can do. |
-| A hostile repository (a slow pattern, a huge archive, a deep or `..` path, links)               | Every scan runs in a worker with a hard time budget. Archives stop at 100 MB compressed or 500 MB unpacked, files over 1 MB and binary files are skipped, links and `..` paths are never followed, and nothing is written to disk.                                                     |
-| A GitHub token is stolen or misused                                                             | The Compass GitHub App can only read code. Tokens live in the OS keychain, are redacted from every log and error, go only to `github.com` and `api.github.com`, and are never sent on the archive redirect. `disconnect_github` deletes them.                                          |
-| A workspace edits the hook to skip the check                                                    | The hook is a convenience. The server runs the same check.                                                                                                                                                                                                                             |
-| Supply chain                                                                                    | Exact version pins in the Power and in the hook template.                                                                                                                                                                                                                              |
+| Risk                                                                                            | What Compass does                                                                                                                                                                                                                                                                                 |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A session title or a file in your repo tries to talk to the assistant (prompt injection)        | Catalog text comes back as labelled JSON data. Write tools are never auto-approved. The guardrail runs in the server.                                                                                                                                                                             |
+| Another program on your machine steals tokens                                                   | Tokens live in the OS keychain. The sign-in server binds to 127.0.0.1, takes one request and closes.                                                                                                                                                                                              |
+| A token or email ends up in a log                                                               | A redacting logger on stderr, and tests that prove no token or email reaches a log or an error.                                                                                                                                                                                                   |
+| Someone books through the remote `awsevents` server and skips the guardrail                     | Do not use its write tools. The hook template blocks them in Kiro.                                                                                                                                                                                                                                |
+| The wrong program runs when you start Compass with `npx` (the local copy risk)                  | `npx` can prefer a copy of a package from the folder you are in. Pin the version (`reinvent-compass@0.1.2`), do not start Compass from inside a repository you do not trust, and prefer a global install of a pinned version.                                                                     |
+| Someone else publishes a package under the same npm name before the owner does (name squatting) | Before the first publish the owner had to claim the npm package name `reinvent-compass`. The owner now holds it and publishes from the owner's account with provenance, starting with version 0.1.0 on 3 November 2026. Install only the pinned version, and check the publisher on the npm page. |
+| A hostile repository (a slow pattern, a huge archive, a deep or `..` path, links)               | Every scan runs in a worker with a hard time budget. Archives stop at 100 MB compressed or 500 MB unpacked, files over 1 MB and binary files are skipped, links and `..` paths are never followed, and nothing is written to disk.                                                                |
+| A GitHub token is stolen or misused                                                             | The Compass GitHub App can only read code. Tokens live in the OS keychain, are redacted from every log and error, go only to `github.com` and `api.github.com`, and are never sent on the archive redirect. `disconnect_github` deletes them.                                                     |
+| A workspace edits the hook to skip the check                                                    | The hook is a convenience. The server runs the same check.                                                                                                                                                                                                                                        |
+| Supply chain                                                                                    | Exact version pins in the Power and in the hook template.                                                                                                                                                                                                                                         |
 
 ## Troubleshooting
 

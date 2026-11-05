@@ -12,7 +12,7 @@ Each section is one decision with four parts: the context, the decision, why, an
 
 **Trade-off:** About 17 days from kickoff to the first target. That forced parallel streams and an [early contract lock](Decisions-Delivery-and-Tooling#early-contract-lock).
 
-**Later:** On 31 October 2026 the owner moved the target to 4 November 2026, because the npm package publishes on 3 November. The 6 November deadline is unchanged.
+**Later:** On 31 October 2026 the owner moved the target to 4 November 2026, because the npm package was due to publish on 3 November, which it did. The 6 November deadline is unchanged.
 
 ## Scope answers from the first architecture interview
 
@@ -33,7 +33,7 @@ Each section is one decision with four parts: the context, the decision, why, an
 
 **Trade-off:** The cloud hand-off overrode the kickoff answer that nothing is stored on a server, and the Apple update service means storing device registrations. Both are personal data, handled in [Personal data on the server](Decisions-Security-and-Privacy#personal-data-on-the-server).
 
-**Later:** The answer to submit as version 1.0.0 did not hold. The release is 0.1.0: the git tag is `v0.1.0` and the npm package `reinvent-compass` is version 0.1.0 in [packages/mcp-server/package.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/package.json).
+**Later:** The answer to submit as version 1.0.0 did not hold. The first release is 0.1.0: the git tag is `v0.1.0` and the npm package `reinvent-compass` was published as 0.1.0 on 3 November 2026. Two fix releases followed on 4 November, and [packages/mcp-server/package.json](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/packages/mcp-server/package.json) is now at 0.1.2.
 
 ## Plan on a computer and board on any device
 
@@ -42,13 +42,15 @@ Each section is one decision with four parts: the context, the decision, why, an
 **Decision:**
 
 - **Plan on a computer.** The [Kiro Power](Glossary#kiro-power) and the local [MCP server](Glossary#mcp-server) run on the attendee's computer, in Kiro, Claude Desktop, VS Code or the Kiro CLI.
-- **Board on any device.** Phones and tablets get Apple or Google Wallet [boarding passes](Glossary#boarding-pass) through a QR [hand-off](Glossary#hand-off), an `.ics` calendar file, and an offline itinerary page (`itinerary.html`).
+- **Board on any device.** Phones and tablets get Apple or Google Wallet [boarding passes](Glossary#boarding-pass) through a QR [hand-off](Glossary#hand-off), and an `.ics` calendar file.
 - The showcase site and its demo work on any device with no install.
 - The site's browser tests run on seven device profiles: desktop Chromium, Firefox and WebKit, and iPad and iPhone in portrait and landscape ([site/e2e/support/profiles.ts](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/site/e2e/support/profiles.ts)).
 
 **Why:** Each job runs where it naturally happens, and there is no hosted web app that has to sign attendees in.
 
-**Trade-off:** The Power must work on Windows, macOS and Linux. On Linux with no Secret Service keychain, the token store keeps tokens in process memory only, so the attendee signs in again after a restart. The local product still works with no [Compass API](Glossary#compass-api) at all: the calendar file and the itinerary page need no server.
+**Trade-off:** The Power must work on Windows, macOS and Linux. On Linux with no Secret Service keychain, the token store keeps tokens in process memory only, so the attendee signs in again after a restart. The local product still works with no [Compass API](Glossary#compass-api) at all: the calendar file needs no server.
+
+**Later:** An offline itinerary page (`itinerary.html`) was also planned for phones and tablets. Its writer is in `@compass/core`, but no tool in 0.1.2 writes it, so the calendar file is the offline view.
 
 ## Made-up sessions for tests and the public demo
 

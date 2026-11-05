@@ -1,6 +1,6 @@
 _For developers: how to propose and make a change to re:Invent Compass, from the spec to the merge, and the rules every change follows._
 
-Thank you for your interest. re:Invent Compass is an unofficial community project for first-time AWS re:Invent attendees and is not affiliated with AWS. This page is the wiki version of [CONTRIBUTING.md](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/CONTRIBUTING.md), with more detail on the workflow.
+Thank you for your interest. re:Invent Compass is an unofficial community project that scans the code you work on to find the AWS re:Invent sessions that match your stack, then helps first-time attendees book the week safely and get to every session on time. It is not affiliated with AWS. This page is the wiki version of [CONTRIBUTING.md](https://github.com/henniefrancis/aws-re_invent-compass/blob/develop/CONTRIBUTING.md), with more detail on the workflow.
 
 ## Before you start
 
