@@ -46,6 +46,12 @@ export const PRINCIPLES: readonly Principle[] = [
         SOURCE,
         'Product principles, 3',
       ),
+      summary(
+        'principle-human-read-only',
+        'Live mode is read-only by default: Compass reads your real schedule and changes it only after you set COMPASS_ALLOW_WRITES=1 yourself.',
+        'packages/mcp-server/README.md',
+        'Read-only by default',
+      ),
     ],
   },
   {
@@ -53,7 +59,7 @@ export const PRINCIPLES: readonly Principle[] = [
     body: [
       summary(
         'principle-local-body',
-        'Your tokens, the catalog cache, your schedule and the code scan stay on your machine.',
+        'Your access and refresh tokens, the catalog cache, your schedule, the code scan and your tech list stay on your machine.',
         SOURCE,
         'Product principles, 4',
       ),

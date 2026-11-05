@@ -44,7 +44,8 @@ describe('the more legal pages', () => {
     ]) {
       expect(text).toContain(phrase);
     }
-    expect(TERMS_UPDATED).toBe('Last updated 22 October 2026.');
+    expect(text).toContain('Compass GitHub App');
+    expect(TERMS_UPDATED).toBe('Last updated 5 November 2026.');
   });
 
   test('the issue tracker and the security policy are inside the repository', () => {

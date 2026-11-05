@@ -1,5 +1,11 @@
 import { Component } from '@angular/core';
-import { ABOUT_BIO, ABOUT_BUILT_BY, ABOUT_PHOTO, ABOUT_TITLE } from '../../../lib/content/about';
+import {
+  ABOUT_BIO,
+  ABOUT_BUILT_BY,
+  ABOUT_PHOTO,
+  ABOUT_PRODUCT,
+  ABOUT_TITLE,
+} from '../../../lib/content/about';
 import { CREATOR_LINKS } from '../../../lib/content/links';
 
 /** The About_Page (Requirement 24): who built re:Invent Compass. */
@@ -10,6 +16,7 @@ import { CREATOR_LINKS } from '../../../lib/content/links';
 export class AboutPage {
   protected readonly title = ABOUT_TITLE;
   protected readonly builtBy = ABOUT_BUILT_BY.text;
+  protected readonly product = ABOUT_PRODUCT.text;
   protected readonly bio = ABOUT_BIO;
   protected readonly photo = ABOUT_PHOTO;
   protected readonly links = CREATOR_LINKS;

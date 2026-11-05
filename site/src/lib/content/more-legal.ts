@@ -4,12 +4,12 @@
 import { summary, type ContentBlock } from './content-block';
 
 export const TERMS_TITLE = 'Terms of use';
-export const TERMS_UPDATED = 'Last updated 22 October 2026.';
+export const TERMS_UPDATED = 'Last updated 5 November 2026.';
 
 export const TERMS_BLOCKS: readonly ContentBlock[] = [
   summary(
     'terms-scope',
-    'These terms cover the re:Invent Compass website, the Compass MCP server and the Kiro Power. By using them, you agree to these terms.',
+    'These terms cover the re:Invent Compass website, the Compass MCP server, the Kiro Power and the Compass GitHub App. By using them, you agree to these terms.',
     '.kiro/specs/showcase-site/requirements.md',
     '28.2',
   ),
@@ -48,6 +48,12 @@ export const TERMS_BLOCKS: readonly ContentBlock[] = [
     'You are responsible for your AWS Builder ID and for every change you approve. By default, Compass does not change your re:Invent schedule.',
     'packages/mcp-server/README.md',
     'Read-only by default',
+  ),
+  summary(
+    'terms-github',
+    "Connecting GitHub is optional. The Compass GitHub App can only read code, and only in the accounts and repositories you choose when you install it. You can disconnect it in Compass and uninstall it on GitHub at any time, and GitHub's own terms still apply to your GitHub account.",
+    'packages/mcp-server/README.md',
+    'Your tech list and GitHub',
   ),
   summary(
     'terms-changes',
@@ -109,7 +115,7 @@ export const SECURITY_BLOCKS: readonly ContentBlock[] = [
   ),
   summary(
     'security-secrets',
-    'No secret, token, key, certificate or account identifier is ever committed. Server secrets live in AWS Secrets Manager, and your sign-in tokens stay in your own operating system keychain.',
+    'No secret, token, key, certificate or account identifier is ever committed. Server secrets live in AWS Secrets Manager. Your sign-in and GitHub tokens stay in your own operating system keychain, or in memory only if there is no keychain.',
     'SECURITY.md',
     'How the project handles secrets',
   ),

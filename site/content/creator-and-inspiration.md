@@ -4,23 +4,23 @@ The owner's answers of 22 October 2026 (showcase-site task 34) and the parts of 
 
 ## The owner's answers
 
-| Question                              | Answer                                                                                                                                                                                           |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| When did the idea click?              | Seeing the campus map, and being a first-time attendee who needs help with navigation and walking times. Videos showed that Las Vegas is huge.                                                   |
-| Where did the airline idea come from? | An aviation geek and aspiring pilot who lives and breathes flying.                                                                                                                               |
-| Before or because of the challenge?   | The idea came first.                                                                                                                                                                             |
-| Did others share the worry?           | Mostly the owner's own worry.                                                                                                                                                                    |
-| Travelling from South Africa          | Representing South Africa.                                                                                                                                                                       |
-| Why Kiro and specs?                   | Plan like a spec: planning a week of sessions is like writing a spec.                                                                                                                            |
-| What surprised you most?              | The size of it.                                                                                                                                                                                  |
-| A moment you nearly gave up?          | No, a steady build.                                                                                                                                                                              |
-| Who is it for?                        | Every attendee.                                                                                                                                                                                  |
-| What should they feel on day one?     | Free to enjoy it.                                                                                                                                                                                |
-| The one line to remember              | As an aviation geek, I wanted my re:Invent week to run like a well-planned flight.                                                                                                               |
-| Roles to mention                      | Founder of AWS Community South Africa, AWS Community Builder, aviation geek.                                                                                                                     |
-| Biography parts                       | Cloud strategist with 20 years, community work, speaker, aviation and swag.                                                                                                                      |
-| Links                                 | Website, LinkedIn, GitHub, AWS Community South Africa, AWS Builder Center.                                                                                                                       |
-| Photo                                 | Yes: `docs/previews/hennie.png`, the full photo, not cropped. It shows the AWS Community Builder logo, which the owner, as an AWS Community Builder, is allowed to use (owner, 22 October 2026). |
+| Question                              | Answer                                                                                                                                                                                                                                                                    |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| When did the idea click?              | Seeing the campus map, and being a first-time attendee who needs help with navigation and walking times. Videos showed that Las Vegas is huge.                                                                                                                            |
+| Where did the airline idea come from? | An aviation geek and aspiring pilot who lives and breathes flying.                                                                                                                                                                                                        |
+| Before or because of the challenge?   | The idea came first.                                                                                                                                                                                                                                                      |
+| Did others share the worry?           | Mostly the owner's own worry.                                                                                                                                                                                                                                             |
+| Travelling from South Africa          | Representing South Africa.                                                                                                                                                                                                                                                |
+| Why Kiro and specs?                   | Plan like a spec: planning a week of sessions is like writing a spec.                                                                                                                                                                                                     |
+| What surprised you most?              | The size of it.                                                                                                                                                                                                                                                           |
+| A moment you nearly gave up?          | No, a steady build.                                                                                                                                                                                                                                                       |
+| Who is it for?                        | Every attendee.                                                                                                                                                                                                                                                           |
+| What should they feel on day one?     | Free to enjoy it.                                                                                                                                                                                                                                                         |
+| The one line to remember              | As an aviation geek, I wanted my re:Invent week to run like a well-planned flight.                                                                                                                                                                                        |
+| Roles to mention                      | Founder of AWS Community South Africa, AWS Community Builder, aviation geek.                                                                                                                                                                                              |
+| Biography parts                       | Cloud strategist with 20 years, community work, speaker, aviation and swag.                                                                                                                                                                                               |
+| Links                                 | Website, LinkedIn, GitHub, AWS Community South Africa, AWS Builder Center.                                                                                                                                                                                                |
+| Photo                                 | Yes: the full photo, not cropped, served by the site as `site/public/artwork/hennie-francis.webp` (the original PNG is not committed). It shows the AWS Community Builder logo, which the owner, as an AWS Community Builder, is allowed to use (owner, 22 October 2026). |
 
 ## The Inspiration
 
@@ -36,9 +36,9 @@ I am an aviation geek and an aspiring pilot, and I live and breathe anything to 
 
 As an aviation geek, I wanted my re:Invent week to run like a well-planned flight.
 
-### Plan like a spec, board like a flight
+### From your code to your seat
 
-Planning a week of sessions is a lot like writing a spec: you say what you want, check it against the rules, and only then commit. So I built Compass with Kiro, spec first. Compass plans your week like a spec and boards it like a flight.
+Planning a week of sessions is a lot like writing a spec: you say what you want, check it against the rules, and only then commit. So I built Compass with Kiro, spec first. Compass takes you from your code to your seat: it reads the code you work on, finds the sessions that match it, plans your week as a spec and gets you to every reserved seat on time.
 
 ### From Cape Town to Las Vegas
 
@@ -46,7 +46,7 @@ I had the idea before the re:Invent Catalog API Builder Challenge was announced.
 
 ### It grew
 
-What surprised me most was the size of it. Compass started as a small helper for my own week. It grew into a full product: an MCP server for Kiro, a Kiro Power, Apple Wallet and Google Wallet boarding passes, a calendar file and this website.
+What surprised me most was the size of it. Compass started as a small helper for my own week. It grew into a full product: an MCP server for Kiro that matches sessions to the code in your projects and, if you allow it, your GitHub repositories, a Kiro Power, Apple Wallet and Google Wallet boarding passes, a calendar file and this website.
 
 ### For every attendee
 
@@ -66,7 +66,7 @@ When he is not working on cloud architecture, Hennie is in the sky whenever poss
 
 ## Links
 
-Shown under the photo as "Connect with Hennie", each with the owner's own image from `docs/previews` (owner review of 22 October 2026).
+Shown under the photo as "Connect with Hennie", each with the owner's own image, served by the site from `site/public/artwork` (the original PNG files are not committed; owner review of 22 October 2026).
 
 - Website: https://henniefrancis.tech/
 - LinkedIn: https://www.linkedin.com/in/henniefrancis/

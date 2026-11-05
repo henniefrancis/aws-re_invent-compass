@@ -11,6 +11,8 @@ import type { RebookOption } from './rules-port';
 export const DEMO_TEXT = {
   sessionNote:
     'These are real re:Invent 2026 sessions, shown by code, title, time, venue and room only. Your week, seats and reservations here are simulated. Nothing in this demo touches a real schedule.',
+  codeNote:
+    'In Compass itself, your week starts from a scan of your code: it suggests the sessions that match your stack. Here you start from a sample week instead.',
   credit: `Session data: ${DEMO_SOURCE.name}, catalog as of ${DEMO_SOURCE.asOf}.`,
   walkNote:
     'Walk times are the rules engine walk plus a buffer. The Leave now alarm in the sample calendar uses the same number.',

@@ -157,6 +157,13 @@ describe('findOutputIssues', () => {
       rules(page('<img src="artwork/a.svg" alt="">', '<link rel="icon" href="artwork/f.svg">')),
     ).toEqual([]);
     expect(rules(page('<a href="https://example.invalid/">x</a>'))).toEqual([]);
+    // A canonical link names the page's own address and is never loaded.
+    expect(
+      rules(page('', '<link rel="canonical" href="https://reinvent-compass.vegas/install">')),
+    ).toEqual([]);
+    expect(
+      rules(page('', '<link rel="canonical stylesheet" href="https://evil.invalid/a.css">')),
+    ).toEqual(['cross-origin-resource']);
   });
 
   test('exactly one h1, lang en and the Notice', () => {
