@@ -57,7 +57,7 @@ function register<K extends McpToolName>(
         ctx.choose = chooseWith(server.server);
       }
       try {
-        // Codes such as SVS339 are accepted wherever a session id is (task 38).
+        // Codes such as BWP213 are accepted wherever a session id is (task 38).
         const input = await resolveSessionCodes(
           mcpTools[name].input.parse(args) as McpToolInput<K>,
           runtime.events,

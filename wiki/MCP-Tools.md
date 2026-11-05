@@ -10,7 +10,7 @@ The Compass [MCP server](Glossary#mcp-server) is the npm package `reinvent-compa
 | Write        | 10    | Makes a real change: to your re:Invent schedule, or on the Compass pass service.                            | `destructiveHint: true` |
 | Local action | 6     | Acts only on this machine or in your browser: sign-in, a plan file, a calendar file, the GitHub connection. | neither                 |
 
-Five of the write tools can change your real re:Invent schedule, but only when writes are on. In live mode they are [read-only](Glossary#read-only-mode) by default: they answer what they would do and change nothing until you set `COMPASS_ALLOW_WRITES=1` (see [Read-only by default](Read-Only-By-Default)). Write tools run one at a time, and each one reads your schedule again when its turn comes. Wherever a tool takes a session id, it also accepts a [session code](Glossary#session-code) such as `SVS339`.
+Five of the write tools can change your real re:Invent schedule, but only when writes are on. In live mode they are [read-only](Glossary#read-only-mode) by default: they answer what they would do and change nothing until you set `COMPASS_ALLOW_WRITES=1` (see [Read-only by default](Read-Only-By-Default)). Write tools run one at a time, and each one reads your schedule again when its turn comes. Wherever a tool takes a session id, it also accepts a [session code](Glossary#session-code) such as `BWP213`.
 
 ## The 24 tools
 
