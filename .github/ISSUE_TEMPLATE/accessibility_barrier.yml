@@ -1,0 +1,27 @@
+name: Accessibility barrier
+description: Something on the site, the board page or the passes is hard or impossible to use with your setup.
+title: '[Accessibility]: '
+labels: [accessibility]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Compass aims to meet WCAG 2.2 level AA (see [ACCESSIBILITY.md](https://github.com/henniefrancis/aws-re_invent-compass/blob/main/ACCESSIBILITY.md)). Tell us what got in your way and we will fix it.
+  - type: input
+    id: page
+    attributes:
+      label: Page or feature
+      placeholder: https://reinvent-compass.vegas/demo
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Your setup
+      description: For example the screen reader, browser, zoom level, keyboard only, high contrast or reduced motion.
+  - type: textarea
+    id: barrier
+    attributes:
+      label: What got in your way
+    validations:
+      required: true

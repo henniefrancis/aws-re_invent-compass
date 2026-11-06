@@ -282,6 +282,8 @@ The showcase site has no sign-in, no cookies, no storage and no analytics. Its o
 ## Support and privacy policy
 
 - **Privacy policy:** [reinvent-compass.vegas/privacy](https://reinvent-compass.vegas/privacy)
+- **Accessibility:** [ACCESSIBILITY.md](ACCESSIBILITY.md), and report a barrier through the issue form.
+- **Code of conduct:** [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 - **Support:** open an issue at [github.com/henniefrancis/aws-re_invent-compass/issues](https://github.com/henniefrancis/aws-re_invent-compass/issues). Report security problems privately, as [SECURITY.md](SECURITY.md) explains.
 
 ## Architecture

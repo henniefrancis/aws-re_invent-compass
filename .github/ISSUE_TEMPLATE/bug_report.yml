@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in Compass, the Kiro Power, the site or the passes does not work as described.
+title: '[Bug]: '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. Please do not paste tokens, passwords, your Builder ID, pass links or anything private. For a security problem, use [private reporting](https://github.com/henniefrancis/aws-re_invent-compass/security/advisories/new) instead.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where did it happen?
+      options:
+        - MCP server or a tool (npx reinvent-compass)
+        - Kiro Power or hooks
+        - Showcase site (reinvent-compass.vegas)
+        - Board page or wallet passes
+        - Documentation or wiki
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The package version (for example 0.1.3), or the page address for the site.
+      placeholder: 0.1.3
+  - type: input
+    id: client
+    attributes:
+      label: Client and system
+      description: For example Kiro 1.4.86 on Windows 11, Claude Desktop on macOS, Safari on iPhone.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you did, step by step. If it happened in a chat with your assistant, the prompt and the tool name help.
+      placeholder: |
+        1. Ask "check my itinerary"
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+      description: Include the message Compass showed. Screenshots help; blur anything personal.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send
+      options:
+        - label: I removed tokens, links and personal details from this report.
+          required: true
