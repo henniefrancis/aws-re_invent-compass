@@ -403,6 +403,9 @@ Tasks run sequentially in numeric order, 1 through 15. Each top-level task ends 
 - [x] 41. The wiki links the published submission (owner request of 6 November)
   - `wiki/How-It-Was-Built.md` (Deliverables) and `wiki/Home.md` link the article, the stats article, the hackathon project, the five videos and the site Video Library; wiki statements that spoke of the submission in the future tense are now past tense
 
+- [x] 42. Community files and an accessibility statement (owner request of 6 November, GitHub community profile)
+  - `CODE_OF_CONDUCT.md` (adapted from the Contributor Covenant 2.1, reports through private reporting or a direct message, never a public issue); `.github/ISSUE_TEMPLATE/` with a bug report, an idea and an accessibility barrier form, and `config.yml` that turns off blank issues and points security problems at private reporting and questions at the wiki; `.github/pull_request_template.md` with the Kiro task and the gate checklist; `ACCESSIBILITY.md` with the WCAG 2.2 AA aim, what the site does, how it is tested and how to report a barrier, matching the site Accessibility page. README and CONTRIBUTING link them
+
 ## Task Dependency Graph
 
 The waves below run strictly in order, one leaf sub-task per wave, so the whole plan executes sequentially in numeric order (1 through 14). Checkpoint tasks 6, 10 and 15 are prose-only and are not scheduled here.

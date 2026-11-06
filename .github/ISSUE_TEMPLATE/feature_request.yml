@@ -1,0 +1,27 @@
+name: Idea or improvement
+description: Suggest a feature, a better flow or a clearer page.
+title: '[Idea]: '
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would it help with?
+      description: The situation at re:Invent, or in planning, that this would make easier.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What Compass, the Power, the site or the passes could do.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Anything you tried or considered instead
+  - type: markdown
+    attributes:
+      value: |
+        Compass never books in the background and never retries a reservation by itself (see the README, "Guardrails"), so ideas that need either are out of scope.

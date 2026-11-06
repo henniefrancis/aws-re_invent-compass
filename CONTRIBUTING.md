@@ -4,6 +4,8 @@ Thank you for your interest in re:Invent Compass. It is an unofficial community 
 
 ## Before you start
 
+Everyone who takes part follows the [code of conduct](CODE_OF_CONDUCT.md). Use the issue forms (bug, idea, accessibility barrier); a pull request fills in the template, which names its Kiro task and the checks.
+
 - Read `README.md`, then the steering files in `.kiro/steering/` (product, tech, structure, workflow). They describe how the project is built.
 - The project is spec driven. Each part has a Kiro spec in `.kiro/specs/<name>/` (requirements, design, tasks). Change the spec first when you change behaviour.
 - Open an issue to discuss a larger change before you write code.
